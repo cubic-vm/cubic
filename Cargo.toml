@@ -1,0 +1,26 @@
+[package]
+name = "cubic"
+version = "0.1.0"
+authors = ["Roger Knecht <rknecht@pm.me>"]
+license = "GPL-2.0-only"
+description = "Cubic is a lightweight command line manager for virtual machines"
+readme = "README.md"
+homepage = "https://github.com/roger652/cubic"
+repository = "https://github.com/roger652/cubic"
+keywords = ["cli", "vm"]
+categories = ["command-line-utilities"]
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.4", features = ["derive"] }
+regex = "1.10.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.117"
+serde_yaml = "0.9"
+
+[profile.release]
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = 'abort'
+strip = true
