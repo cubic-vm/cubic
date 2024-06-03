@@ -105,6 +105,7 @@ impl MachineDao {
         let file = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(&machine_config)
             .map_err(|_| Error::CannotCreateFile(machine_config.to_string()))?;
         serde_yaml::to_writer(file, &config)
