@@ -123,6 +123,18 @@ ubuntu:jammy         amd64   2.2 GiB
 
 ## Build Cubic from Source
 
+Cubic requires the following dependencies:
+  - Cargo
+  - QEMU
+  - Bubblewrap
+  - Cloud Utils
+  - Wget
+
+The dependencies can be installed for Debian and Ubuntu with the following command:
+```
+$ sudo apt install cargo wget qemu-system-x86 bubblewrap cloud-image-utils
+```
+
 Build the Rust project with the Cargo package manager:
 ```
 $ cargo build
