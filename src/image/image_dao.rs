@@ -2,7 +2,7 @@ use crate::error::Error;
 use crate::image::{Image, ImageFetcher, ImageName};
 use crate::util::{self, get_home_dir, setup_directory_access};
 use regex::Regex;
-use std::fs::{create_dir_all, read_dir, remove_file, DirEntry};
+use std::fs::{read_dir, remove_file, DirEntry};
 use std::path::Path;
 use std::str;
 
@@ -59,7 +59,7 @@ impl ImageDao {
     pub fn add(&self, name: &ImageName) -> Result<Image, Error> {
         if !self.exists(name) {
             let fetcher = ImageFetcher::new();
-            create_dir_all(&self.image_dir).map_err(Error::Io)?;
+            util::create_dir(&self.image_dir)?;
             fetcher.fetch(name, &format!("{}/{}", self.image_dir, name.to_file_name()))?;
         }
 
