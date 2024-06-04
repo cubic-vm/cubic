@@ -57,6 +57,8 @@ enum Commands {
         mem: Option<String>,
         #[clap(short, long)]
         disk: Option<String>,
+        #[clap(short, long)]
+        sandbox: Option<bool>,
     },
 
     /// List images and machines
@@ -124,7 +126,8 @@ fn dispatch(command: &Commands) -> Result<(), Error> {
             cpus,
             mem,
             disk,
-        } => commands::config(&machine_dao, instance, cpus, mem, disk),
+            sandbox,
+        } => commands::config(&machine_dao, instance, cpus, mem, disk, sandbox),
         Commands::List { name } => commands::list(&image_dao, &machine_dao, name),
         Commands::Attach { instance } => commands::attach(&machine_dao, instance),
         Commands::Start { ids } => commands::start(&machine_dao, ids),

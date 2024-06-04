@@ -15,6 +15,8 @@ pub struct MachineConfig {
     pub mem: u64,
     pub disk_capacity: u64,
     pub ssh_port: u16,
+    #[serde(default)]
+    pub sandbox: bool,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -82,6 +84,7 @@ impl MachineDao {
                 mem: config.machine.mem,
                 disk_capacity: config.machine.disk_capacity,
                 ssh_port: config.machine.ssh_port,
+                sandbox: config.machine.sandbox,
             })
             .ok_or(Error::UnknownMachine(name.to_string()))
     }
@@ -94,6 +97,7 @@ impl MachineDao {
                 mem: machine.mem,
                 disk_capacity: machine.disk_capacity,
                 ssh_port: machine.ssh_port,
+                sandbox: machine.sandbox,
             },
         };
 
@@ -182,46 +186,55 @@ impl MachineDao {
         util::setup_cloud_init(&machine.name, &cache_dir)?;
 
         let ssh_port = &machine.ssh_port;
+        let qemu = "qemu-system-amd64";
 
-        Command::new("bwrap")
-            .arg("--ro-bind")
-            .arg("/usr")
-            .arg("/usr")
-            .arg("--ro-bind")
-            .arg("/lib64")
-            .arg("/lib64")
-            .arg("--ro-bind")
-            .arg("/lib")
-            .arg("/lib")
-            .arg("--dir")
-            .arg("/etc")
-            .arg("--ro-bind")
-            .arg("/etc/resolv.conf")
-            .arg("/etc/resolv.conf")
-            .arg("--dev")
-            .arg("/dev")
-            .arg("--dev-bind")
-            .arg("/dev/kvm")
-            .arg("/dev/kvm")
-            .arg("--tmpfs")
-            .arg("/home/cubic")
-            .arg("--chdir")
-            .arg("/home/cubic")
-            .arg("--bind")
-            .arg(&machine_dir)
-            .arg(&machine_dir)
-            .arg("--bind")
-            .arg(&cache_dir)
-            .arg(&cache_dir)
-            .arg("--unshare-user")
-            .arg("--unshare-ipc")
-            .arg("--unshare-cgroup")
-            .arg("--unshare-uts")
-            .arg("--clearenv")
-            .arg("--disable-userns")
-            .arg("--die-with-parent")
-            .arg("--new-session")
-            .arg("qemu-system-amd64")
+        let mut command = if machine.sandbox {
+            let mut command = Command::new("bwrap");
+            command
+                .arg("--ro-bind")
+                .arg("/usr")
+                .arg("/usr")
+                .arg("--ro-bind")
+                .arg("/lib64")
+                .arg("/lib64")
+                .arg("--ro-bind")
+                .arg("/lib")
+                .arg("/lib")
+                .arg("--dir")
+                .arg("/etc")
+                .arg("--ro-bind")
+                .arg("/etc/resolv.conf")
+                .arg("/etc/resolv.conf")
+                .arg("--dev")
+                .arg("/dev")
+                .arg("--dev-bind")
+                .arg("/dev/kvm")
+                .arg("/dev/kvm")
+                .arg("--tmpfs")
+                .arg("/home/cubic")
+                .arg("--chdir")
+                .arg("/home/cubic")
+                .arg("--bind")
+                .arg(&machine_dir)
+                .arg(&machine_dir)
+                .arg("--bind")
+                .arg(&cache_dir)
+                .arg(&cache_dir)
+                .arg("--unshare-user")
+                .arg("--unshare-ipc")
+                .arg("--unshare-cgroup")
+                .arg("--unshare-uts")
+                .arg("--clearenv")
+                .arg("--disable-userns")
+                .arg("--die-with-parent")
+                .arg("--new-session")
+                .arg(qemu);
+            command
+        } else {
+            Command::new(qemu)
+        };
+
+        command
             .arg("-sandbox")
             .arg("on")
             .arg("-accel")

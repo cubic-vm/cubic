@@ -8,6 +8,7 @@ pub fn config(
     cpus: &Option<u16>,
     mem: &Option<String>,
     disk: &Option<String>,
+    sandbox: &Option<bool>,
 ) -> Result<(), Error> {
     let mut machine = machine_dao.load(instance)?;
 
@@ -23,12 +24,17 @@ pub fn config(
         machine_dao.resize(&mut machine, util::human_readable_to_bytes(disk)?)?;
     }
 
+    if let Some(sandbox) = sandbox {
+        machine.sandbox = *sandbox;
+    }
+
     machine_dao.store(&machine)?;
-    println!("cpus: {}", machine.cpus);
-    println!("mem:  {}", util::bytes_to_human_readable(machine.mem));
+    println!("cpus:    {}", machine.cpus);
+    println!("mem:     {}", util::bytes_to_human_readable(machine.mem));
     println!(
-        "disk: {}",
+        "disk:    {}",
         util::bytes_to_human_readable(machine.disk_capacity)
     );
+    println!("sandbox: {}", machine.sandbox);
     Result::Ok(())
 }
