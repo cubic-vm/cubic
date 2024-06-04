@@ -8,4 +8,5 @@ pub struct Machine {
     pub mem: u64,
     pub disk_capacity: u64,
     pub ssh_port: u16,
+    pub sandbox: bool,
 }
