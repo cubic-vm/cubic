@@ -13,7 +13,7 @@ pub fn add(
     disk: &Option<String>,
 ) -> Result<(), Error> {
     let image_name = ImageName::from_id(image_name)?;
-    image_dao.add(&image_name).map(|_| ())?;
+    image_dao.add(&image_name)?;
 
     if let Option::Some(instance) = name {
         let machine_dir = format!("{}/{instance}", machine_dao.machine_dir);
