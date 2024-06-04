@@ -129,10 +129,11 @@ Cubic requires the following dependencies:
   - Bubblewrap
   - Cloud Utils
   - Wget
+  - OpenSSH Client
 
 The dependencies can be installed for Debian and Ubuntu with the following command:
 ```
-$ sudo apt install cargo wget qemu-system-x86 bubblewrap cloud-image-utils
+$ sudo apt install cargo wget qemu-system-x86 bubblewrap cloud-image-utils openssh-client
 ```
 
 Build the Rust project with the Cargo package manager:
