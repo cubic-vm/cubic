@@ -58,42 +58,41 @@ pub fn human_readable_to_bytes(size: &str) -> Result<u64, Error> {
 }
 
 pub fn setup_cloud_init(instance: &str, dir: &str) -> Result<(), Error> {
-    let metadata_path = format!("{dir}/metadata.yaml");
-    let user_data_path = format!("{dir}/user-data.yaml");
-    let mut changed = false;
+    let user_data_img_path = format!("{dir}/user-data.img");
 
-    util::create_dir(dir)?;
+    if !Path::new(&user_data_img_path).exists() {
+        let metadata_path = format!("{dir}/metadata.yaml");
+        let user_data_path = format!("{dir}/user-data.yaml");
 
-    if !Path::new(&metadata_path).exists() {
-        changed = true;
-        util::write_file(
-            &metadata_path,
-            format!("instance-id: {instance}\nlocal-hostname: {instance}\n").as_bytes(),
-        )?;
-    }
+        util::create_dir(dir)?;
 
-    if !Path::new(&user_data_path).exists() {
-        changed = true;
-        let ssh_pk = util::get_ssh_pub_keys()?.join("\n\u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- ");
-        util::write_file(
-            &user_data_path,
-            format!(
-                "\
-                #cloud-config\n\
-                users:\n\
-                \u{20}\u{20}- name: {USER}\n\
-                \u{20}\u{20}\u{20}\u{20}ssh-authorized-keys:\n\
-                \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- {ssh_pk}\n\
-                \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
-                \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n"
-            )
-            .as_bytes(),
-        )?;
-    }
+        if !Path::new(&metadata_path).exists() {
+            util::write_file(
+                &metadata_path,
+                format!("instance-id: {instance}\nlocal-hostname: {instance}\n").as_bytes(),
+            )?;
+        }
 
-    if changed {
+        if !Path::new(&user_data_path).exists() {
+            let ssh_pk = util::get_ssh_pub_keys()?.join("\n\u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- ");
+            util::write_file(
+                &user_data_path,
+                format!(
+                    "\
+                    #cloud-config\n\
+                    users:\n\
+                    \u{20}\u{20}- name: {USER}\n\
+                    \u{20}\u{20}\u{20}\u{20}ssh-authorized-keys:\n\
+                    \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- {ssh_pk}\n\
+                    \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
+                    \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n"
+                )
+                .as_bytes(),
+            )?;
+        }
+
         Command::new("cloud-localds")
-            .arg(format!("{dir}/user-data.img"))
+            .arg(&user_data_img_path)
             .arg(user_data_path)
             .arg(metadata_path)
             .stdout(Stdio::inherit())
