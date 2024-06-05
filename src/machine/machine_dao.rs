@@ -186,7 +186,12 @@ impl MachineDao {
         util::setup_cloud_init(&machine.name, &cache_dir)?;
 
         let ssh_port = &machine.ssh_port;
+        let has_kvm = util::is_writable("/dev/kvm");
         let qemu = "qemu-system-amd64";
+
+        if !has_kvm {
+            println!("WARNING: No KVM support detected");
+        }
 
         let mut command = if machine.sandbox {
             let mut command = Command::new("bwrap");
@@ -207,9 +212,6 @@ impl MachineDao {
                 .arg("/etc/resolv.conf")
                 .arg("--dev")
                 .arg("/dev")
-                .arg("--dev-bind")
-                .arg("/dev/kvm")
-                .arg("/dev/kvm")
                 .arg("--tmpfs")
                 .arg("/home/cubic")
                 .arg("--chdir")
@@ -229,16 +231,23 @@ impl MachineDao {
                 .arg("--die-with-parent")
                 .arg("--new-session")
                 .arg(qemu);
+
+            if has_kvm {
+                command.arg("--dev-bind").arg("/dev/kvm").arg("/dev/kvm");
+            }
+
             command
         } else {
             Command::new(qemu)
         };
 
+        if util::is_writable("/dev/kvm") {
+            command.arg("-accel").arg("kvm");
+        }
+
         command
             .arg("-sandbox")
             .arg("on")
-            .arg("-accel")
-            .arg("kvm")
             .arg("-smp")
             .arg(machine.cpus.to_string())
             .arg("-m")

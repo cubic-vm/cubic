@@ -48,6 +48,12 @@ pub fn remove_file(path: &str) -> Result<(), Error> {
     fs::remove_file(path).map_err(|_| Error::CannotRemoveFile(path.to_string()))
 }
 
+pub fn is_writable(path: &str) -> bool {
+    fs::metadata(path)
+        .map(|path| !path.permissions().readonly())
+        .unwrap_or(false)
+}
+
 pub fn setup_directory_access(path: &str) -> Result<(), Error> {
     create_dir(path)?;
 
