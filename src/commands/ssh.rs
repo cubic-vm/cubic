@@ -1,11 +1,14 @@
 use crate::error::Error;
 use crate::machine::{MachineDao, USER};
+use crate::util;
 use std::net::TcpStream;
 use std::os::unix::process::CommandExt;
 use std::process::Command;
 use std::{thread::sleep, time::Duration};
 
 pub fn ssh(machine_dao: &MachineDao, name: &str, cmd: &Option<String>) -> Result<(), Error> {
+    util::check_ssh_key();
+
     let mut user = USER;
     let mut instance = name;
 
@@ -38,11 +41,20 @@ pub fn ssh(machine_dao: &MachineDao, name: &str, cmd: &Option<String>) -> Result
         }
     }
 
-    Command::new("ssh")
+    let mut command = Command::new("ssh");
+
+    for key in util::get_ssh_key_names()? {
+        command.arg("-i").arg(key);
+    }
+
+    command
+        .arg("-o")
+        .arg("StrictHostKeyChecking=no")
         .arg("-p")
         .arg(ssh_port.to_string())
         .arg(format!("{user}@127.0.0.1"))
         .arg(cmd.as_deref().unwrap_or(""))
         .exec();
+
     Result::Ok(())
 }

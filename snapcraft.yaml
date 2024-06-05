@@ -1,14 +1,35 @@
 name: cubic
 version: git
+license: GPL-2.0-only
+website: https://github.com/cubic-vm/cubic
+source-code: https://github.com/cubic-vm/cubic
+issues: https://github.com/cubic-vm/cubic/issues
 summary: Cubic is a lightweight command line manager for virtual machines
 description: |
   Cubic is a lightweight command line manager for virtual machines.
-base: core22
-confinement: classic
+base: core24
+confinement: strict
 parts:
   cubic:
     plugin: rust
     source: .
+  runtime-dependencies:
+    plugin: nil
+    stage-packages:
+      - bubblewrap
+      - cloud-image-utils
+      - openssh-client
+      - qemu-system-x86
+      - seabios
+      - wget
+    override-build: |
+      rm $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-ppc
+      rm $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc32
+      rm $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc64
 apps:
   cubic:
     command: bin/cubic
+    plugs:
+      - kvm
+      - network
+      - network-bind

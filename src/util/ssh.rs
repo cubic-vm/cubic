@@ -1,7 +1,53 @@
 use crate::error::Error;
+use crate::util;
 use std::env;
 use std::ffi::OsStr;
 use std::fs::{read_dir, read_to_string};
+use std::process::{Command, Stdio};
+
+pub fn check_ssh_key() {
+    let home_dir = env::var("HOME").unwrap();
+    util::create_dir(&format!("{home_dir}/.ssh")).ok();
+
+    if util::get_ssh_key_names().unwrap_or_default().is_empty() {
+        println!("No SSH keys found. Please generate a SSH key:");
+        Command::new("ssh-keygen")
+            .arg("-t")
+            .arg("ed25519")
+            .arg("-f")
+            .arg(format!("{home_dir}/.ssh/id_ed25519"))
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .spawn()
+            .expect("Could not run ssh-keygen #1")
+            .wait()
+            .expect("Could not run ssh-keygen #2");
+    }
+}
+
+pub fn get_ssh_key_names() -> Result<Vec<String>, Error> {
+    let home_dir = env::var("HOME").map_err(|_| Error::MissingSshKey)?;
+
+    let mut keys = Vec::new();
+
+    if let Ok(entries) = read_dir(format!("{home_dir}/.ssh")) {
+        for entry in entries.flatten() {
+            let file_name = entry.file_name();
+            let file_name = file_name.to_str().unwrap_or_default();
+            let path = entry.path();
+            let extension = path
+                .extension()
+                .unwrap_or_default()
+                .to_str()
+                .unwrap_or_default();
+            if file_name.starts_with("id_") && extension.is_empty() {
+                keys.push(path.as_os_str().to_str().unwrap().to_string());
+            }
+        }
+    }
+
+    Ok(keys)
+}
 
 pub fn get_ssh_pub_keys() -> Result<Vec<String>, Error> {
     let home_dir = env::var("HOME").map_err(|_| Error::MissingSshKey)?;

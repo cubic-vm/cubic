@@ -187,7 +187,7 @@ impl MachineDao {
 
         let ssh_port = &machine.ssh_port;
         let has_kvm = util::is_writable("/dev/kvm");
-        let qemu = "qemu-system-amd64";
+        let qemu = "qemu-system-x86_64";
 
         if !has_kvm {
             println!("WARNING: No KVM support detected");
@@ -245,7 +245,15 @@ impl MachineDao {
             command.arg("-accel").arg("kvm");
         }
 
+        let qemu_root = std::env::var("SNAP").unwrap_or_default();
+
         command
+            .arg("-L")
+            .arg(format!("{qemu_root}/usr/share/qemu"))
+            .arg("-L")
+            .arg(format!("{qemu_root}/usr/share/seabios"))
+            .arg("-L")
+            .arg(format!("{qemu_root}/usr/lib/ipxe/qemu"))
             .arg("-sandbox")
             .arg("on")
             .arg("-smp")
