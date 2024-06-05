@@ -1,7 +1,10 @@
 use crate::error::Error;
 use crate::machine::MachineDao;
+use crate::util;
 
 pub fn start(machine_dao: &MachineDao, ids: &Vec<String>) -> Result<(), Error> {
+    util::check_ssh_key();
+
     for id in ids {
         if !machine_dao.exists(id) {
             return Result::Err(Error::UnknownMachine(id.clone()));
