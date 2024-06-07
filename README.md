@@ -6,7 +6,7 @@ Cubic is a lightweight command line manager for virtual machines.
 
 Create and run a virtual machine:
 ```
-$ cubic run --name quickstart --image ubuntu:jammy:amd64
+$ cubic run --name quickstart --image ubuntu:jammy
 Welcome to Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-107-generic x86_64)
 
  * Documentation:  https://help.ubuntu.com
@@ -43,7 +43,46 @@ applicable law.
 cubic@quickstart:~$
 ```
 
+## Install Cubic
+
+Cubic can be installed from the Snap Store:
+```
+$ sudo snap install cubic
+```
+Permit access to the kernel virtual machine (KVM) for hardware acceleration:
+```
+$ sudo snap connect cubic:kvm
+```
+
 ## Cubic Usage
+
+Cubic has a simple interface:
+```
+$ cubic
+Cubic is a lightweight command line manager for virtual machines
+
+Usage: cubic [COMMAND]
+
+Commands:
+  run      Add and start a new machine
+  add      Add an image or a machine
+  delete   Delete images and machines
+  clone    Clone a machine
+  rename   Rename a machine
+  config   Read and write configuration parameters
+  list     List images and machines
+  start    Start machines
+  stop     Stop machines
+  restart  Restart a machine
+  attach   Attach to serial console
+  ssh      Connect to a machine with SSH
+  scp      Copy a file from or to a machine with SCP
+  help     Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+```
 
 Create a virtual machine:
 ```
