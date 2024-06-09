@@ -27,7 +27,6 @@ pub enum Error {
     CannotParseFile(String),
     CannotAttach(String),
     InvalidSshTarget(String),
-    ConnectionTimeout(String),
     UserDataCreationFailed(String),
     CannotParseSize(String),
     CannotShrinkDisk(String),

@@ -172,7 +172,6 @@ fn main() {
             Error::CannotParseFile(path) => println!("Cannot parse file '{path}'"),
             Error::CannotAttach(name) => println!("Cannot attach to serial console of machine'{name}'"),
             Error::InvalidSshTarget(name) => println!("Invalid SSH target '{name}'"),
-            Error::ConnectionTimeout(name) => println!("SSH connection to macine '{name}' timed out"),
             Error::UserDataCreationFailed(name) => println!("Failed to create user data for machine '{name}'"),
             Error::CannotParseSize(size) => println!("Invalid data size format '{size}'"),
             Error::CannotShrinkDisk(name) => println!("Cannot shrink the disk of the machine '{name}'"),

@@ -1,16 +1,18 @@
 use crate::error::Error;
-use crate::machine::{MachineDao, USER};
+use crate::machine::{MachineDao, MachineState, USER};
 use crate::util;
-use std::net::TcpStream;
+use std::io::Write;
 use std::os::unix::process::CommandExt;
 use std::process::Command;
-use std::{thread::sleep, time::Duration};
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 
 pub fn ssh(machine_dao: &MachineDao, name: &str, cmd: &Option<String>) -> Result<(), Error> {
     util::check_ssh_key();
 
     let mut user = USER;
     let mut instance = name;
+    let mut stdout = std::io::stdout();
 
     if name.contains('@') {
         let mut tokens = name.split('@');
@@ -29,16 +31,26 @@ pub fn ssh(machine_dao: &MachineDao, name: &str, cmd: &Option<String>) -> Result
         machine_dao.start(&machine)?;
     }
 
-    // wait for SSH connection
-    for i in 1..30 {
-        if TcpStream::connect(format!("127.0.0.1:{ssh_port}")).is_ok() {
-            if i == 30 {
-                return Result::Err(Error::ConnectionTimeout(name.to_string()));
-            }
-            break;
-        } else {
+    if machine_dao.get_state(&machine) != MachineState::Running {
+        // wait for SSH connection
+        let start = Instant::now();
+        let mut running: Option<Instant> = Option::None;
+        while running
+            .map(|running| running.elapsed() < Duration::new(5, 0))
+            .unwrap_or(true)
+        {
             sleep(Duration::from_millis(1000));
+            print!(
+                "\rWaiting for machine to start... {:04.0?}",
+                start.elapsed()
+            );
+            stdout.flush().ok();
+
+            if running.is_none() && machine_dao.get_state(&machine) == MachineState::Running {
+                running = Some(Instant::now());
+            }
         }
+        println!();
     }
 
     let mut command = Command::new("ssh");
