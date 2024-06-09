@@ -176,6 +176,7 @@ fn main() {
             Error::UserDataCreationFailed(name) => println!("Failed to create user data for machine '{name}'"),
             Error::CannotParseSize(size) => println!("Invalid data size format '{size}'"),
             Error::CannotShrinkDisk(name) => println!("Cannot shrink the disk of the machine '{name}'"),
+            Error::ImageDownloadFailed(name) => println!("Failed to download image: '{name}'"),
         }
     }
 }
