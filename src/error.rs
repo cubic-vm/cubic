@@ -31,4 +31,5 @@ pub enum Error {
     UserDataCreationFailed(String),
     CannotParseSize(String),
     CannotShrinkDisk(String),
+    ImageDownloadFailed(String),
 }

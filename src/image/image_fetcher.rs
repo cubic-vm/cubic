@@ -33,18 +33,19 @@ impl ImageFetcher {
 
         let url = get_url(name)?;
 
-        Command::new("wget")
+        if Command::new("wget")
             .arg("-O")
             .arg(&temp_file)
             .arg(&url)
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
-            .spawn()
-            .map_err(Error::Io)?
-            .wait()
-            .map(|_| ())
-            .map_err(Error::Io)?;
-
-        fs::rename(temp_file, target_file).map_err(Error::Io)
+            .status()
+            .map_err(|_| Error::ImageDownloadFailed(name.to_id()))?
+            .success()
+        {
+            fs::rename(temp_file, target_file).map_err(Error::Io)
+        } else {
+            Result::Err(Error::ImageDownloadFailed(name.to_id()))
+        }
     }
 }

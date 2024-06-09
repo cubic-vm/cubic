@@ -37,4 +37,8 @@ impl ImageName {
     pub fn to_file_name(&self) -> String {
         format!("{}_{}_{}", self.vendor, self.image, self.arch)
     }
+
+    pub fn to_id(&self) -> String {
+        format!("{}:{}:{}", self.vendor, self.image, self.arch)
+    }
 }
