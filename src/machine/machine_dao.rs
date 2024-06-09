@@ -9,6 +9,12 @@ use std::str;
 
 pub const USER: &str = "cubic";
 
+pub enum MachineState {
+    Stopped,
+    Starting,
+    Running,
+}
+
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineConfig {
     pub cpus: u16,
@@ -300,6 +306,20 @@ impl MachineDao {
             .wait()
             .map(|_| ())
             .map_err(|_| Error::Stop(machine.name.to_string()))
+    }
+
+    pub fn get_state(&self, machine: &Machine) -> MachineState {
+        if let Ok(pid) = self.get_pid(machine) {
+            if Path::new(&format!("/proc/{pid}")).exists() {
+                return if util::SSHClient::new(machine.ssh_port).try_connect() {
+                    MachineState::Running
+                } else {
+                    MachineState::Starting
+                };
+            }
+        }
+
+        MachineState::Stopped
     }
 
     pub fn is_running(&self, machine: &Machine) -> bool {
