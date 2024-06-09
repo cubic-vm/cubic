@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::image::ImageDao;
-use crate::machine::MachineDao;
+use crate::machine::{MachineDao, MachineState};
 use crate::util;
 
 pub fn list_machines(machine_dao: &MachineDao) -> Result<(), Error> {
@@ -18,10 +18,10 @@ pub fn list_machines(machine_dao: &MachineDao) -> Result<(), Error> {
             &machine.cpus,
             util::bytes_to_human_readable(machine.mem),
             util::bytes_to_human_readable(machine.disk_capacity),
-            if machine_dao.is_running(&machine) {
-                "RUNNING"
-            } else {
-                "STOPPED"
+            match machine_dao.get_state(&machine) {
+                MachineState::Stopped => "STOPPED",
+                MachineState::Starting => "STARTING",
+                MachineState::Running => "RUNNING",
             }
         );
     }

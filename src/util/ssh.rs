@@ -3,7 +3,29 @@ use crate::util;
 use std::env;
 use std::ffi::OsStr;
 use std::fs::{read_dir, read_to_string};
+use std::net::TcpStream;
 use std::process::{Command, Stdio};
+use std::time::Duration;
+
+pub struct SSHClient {
+    pub port: u16,
+}
+
+impl SSHClient {
+    pub fn new(port: u16) -> Self {
+        SSHClient { port }
+    }
+
+    pub fn try_connect(&self) -> bool {
+        let mut buf = [0];
+        TcpStream::connect(format!("127.0.0.1:{}", &self.port))
+            .and_then(|stream| {
+                stream.set_read_timeout(Some(Duration::new(0, 100000000)))?;
+                stream.peek(&mut buf)
+            })
+            .is_ok()
+    }
+}
 
 pub fn check_ssh_key() {
     let home_dir = env::var("HOME").unwrap();
