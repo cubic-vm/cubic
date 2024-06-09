@@ -9,6 +9,7 @@ use std::str;
 
 pub const USER: &str = "cubic";
 
+#[derive(PartialEq)]
 pub enum MachineState {
     Stopped,
     Starting,
