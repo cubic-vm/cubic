@@ -8,6 +8,9 @@ summary: Cubic is a lightweight command line manager for virtual machines
 description: |
   Cubic is a lightweight command line manager for virtual machines.
 base: core24
+platforms:
+  amd64:
+  arm64:
 confinement: strict
 parts:
   cubic:
