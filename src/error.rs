@@ -4,7 +4,6 @@ use std::io;
 pub enum Error {
     UnknownCommand,
     UnknownMachine(String),
-    MachineNotRunning(String),
     MachineNotStopped(String),
     Start(String),
     Stop(String),
@@ -25,7 +24,6 @@ pub enum Error {
     CannotWriteFile(String),
     CannotRemoveFile(String),
     CannotParseFile(String),
-    CannotAttach(String),
     InvalidSshTarget(String),
     UserDataCreationFailed(String),
     CannotParseSize(String),
