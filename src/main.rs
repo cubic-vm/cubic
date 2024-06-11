@@ -65,7 +65,11 @@ enum Commands {
     List { name: Option<String> },
 
     /// Start machines
-    Start { ids: Vec<String> },
+    Start {
+        #[clap(short, long, default_value_t = false)]
+        console: bool,
+        ids: Vec<String>,
+    },
 
     /// Stop machines
     Stop {
@@ -75,10 +79,11 @@ enum Commands {
     },
 
     /// Restart a machine
-    Restart { ids: Vec<String> },
-
-    /// Attach to serial console
-    Attach { instance: String },
+    Restart {
+        #[clap(short, long, default_value_t = false)]
+        console: bool,
+        ids: Vec<String>,
+    },
 
     /// Connect to a machine with SSH
     Ssh {
@@ -129,10 +134,9 @@ fn dispatch(command: &Commands) -> Result<(), Error> {
             sandbox,
         } => commands::config(&machine_dao, instance, cpus, mem, disk, sandbox),
         Commands::List { name } => commands::list(&image_dao, &machine_dao, name),
-        Commands::Attach { instance } => commands::attach(&machine_dao, instance),
-        Commands::Start { ids } => commands::start(&machine_dao, ids),
+        Commands::Start { console, ids } => commands::start(&machine_dao, *console, ids),
         Commands::Stop { ids, all } => commands::stop(&machine_dao, ids, *all),
-        Commands::Restart { ids } => commands::restart(&machine_dao, ids),
+        Commands::Restart { console, ids } => commands::restart(&machine_dao, *console, ids),
         Commands::Ssh { instance, cmd } => commands::ssh(&machine_dao, instance, cmd),
         Commands::Scp { from, to } => commands::scp(&machine_dao, from, to),
     }
@@ -149,7 +153,6 @@ fn main() {
         match error {
             Error::UnknownCommand => println!("Unknown command"),
             Error::UnknownMachine(machine) => println!("Unknown machine '{machine}'"),
-            Error::MachineNotRunning(name) => println!("Machine '{name}' is not running"),
             Error::MachineNotStopped(name) => println!("Machine '{name}' is not stopped"),
             Error::Start(machine) => println!("Failed to start machine '{machine}'"),
             Error::Stop(machine) => println!("Failed to stop machine '{machine}'"),
@@ -170,7 +173,6 @@ fn main() {
             Error::CannotWriteFile(path) => println!("Cannot write file '{path}'"),
             Error::CannotRemoveFile(path) => println!("Cannot write file '{path}'"),
             Error::CannotParseFile(path) => println!("Cannot parse file '{path}'"),
-            Error::CannotAttach(name) => println!("Cannot attach to serial console of machine'{name}'"),
             Error::InvalidSshTarget(name) => println!("Invalid SSH target '{name}'"),
             Error::UserDataCreationFailed(name) => println!("Failed to create user data for machine '{name}'"),
             Error::CannotParseSize(size) => println!("Invalid data size format '{size}'"),

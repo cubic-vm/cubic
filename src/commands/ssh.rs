@@ -28,7 +28,7 @@ pub fn ssh(machine_dao: &MachineDao, name: &str, cmd: &Option<String>) -> Result
     let ssh_port = machine.ssh_port;
 
     if !machine_dao.is_running(&machine) {
-        machine_dao.start(&machine)?;
+        machine_dao.start(&machine, false)?;
     }
 
     if machine_dao.get_state(&machine) != MachineState::Running {

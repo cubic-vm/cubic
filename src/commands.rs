@@ -1,5 +1,4 @@
 pub mod add;
-pub mod attach;
 pub mod clone;
 pub mod config;
 pub mod delete;
@@ -12,7 +11,6 @@ pub mod start;
 pub mod stop;
 
 pub use add::*;
-pub use attach::*;
 pub use clone::*;
 pub use config::*;
 pub use delete::*;

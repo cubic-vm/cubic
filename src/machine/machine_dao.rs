@@ -183,7 +183,7 @@ impl MachineDao {
         }
     }
 
-    pub fn start(&self, machine: &Machine) -> Result<(), Error> {
+    pub fn start(&self, machine: &Machine, console: bool) -> Result<(), Error> {
         if self.is_running(machine) {
             return Result::Ok(());
         }
@@ -252,6 +252,12 @@ impl MachineDao {
             command.arg("-accel").arg("kvm");
         }
 
+        if console {
+            command.arg("-serial").arg("stdio");
+        } else {
+            command.arg("-serial").arg("none").arg("-daemonize");
+        }
+
         let qemu_root = std::env::var("SNAP").unwrap_or_default();
 
         command
@@ -281,9 +287,6 @@ impl MachineDao {
             ))
             .arg("-display")
             .arg("none")
-            .arg("-serial")
-            .arg(format!("unix:{cache_dir}/console.sock,server,nowait"))
-            .arg("-daemonize")
             .arg("-pidfile")
             .arg(format!("{cache_dir}/qemu.pid"))
             .spawn()
