@@ -276,7 +276,7 @@ impl MachineDao {
             .arg("-device")
             .arg("virtio-net-pci,netdev=net0")
             .arg("-netdev")
-            .arg(format!("user,id=net0,hostfwd=tcp::{ssh_port}-:22"))
+            .arg(format!("user,id=net0,hostfwd=tcp:127.0.0.1:{ssh_port}-:22"))
             .arg("-drive")
             .arg(format!(
                 "if=virtio,format=qcow2,file={machine_dir}/machine.img"
