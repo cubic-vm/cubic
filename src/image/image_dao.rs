@@ -1,8 +1,8 @@
 use crate::error::Error;
-use crate::image::{Image, ImageFetcher, ImageName};
-use crate::util::{self, get_home_dir, setup_directory_access};
+use crate::image::{Image, ImageFactory, ImageFetcher, ImageName};
+use crate::util;
 use regex::Regex;
-use std::fs::{read_dir, remove_file, DirEntry};
+use std::fs::remove_file;
 use std::path::Path;
 use std::str;
 
@@ -14,42 +14,49 @@ pub fn is_image(id: &str) -> bool {
 
 pub struct ImageDao {
     pub image_dir: String,
+    pub images: Vec<Image>,
 }
 
 impl ImageDao {
     pub fn new() -> Result<Self, Error> {
-        let image_dir = format!("{}/.local/share/cubic/images", get_home_dir()?);
-        setup_directory_access(&image_dir)?;
+        let image_dir = format!("{}/.local/share/cubic/images", util::get_home_dir()?);
+        util::setup_directory_access(&image_dir)?;
 
-        Result::Ok(ImageDao { image_dir })
+        Result::Ok(ImageDao {
+            image_dir,
+            images: ImageFactory::create_images(),
+        })
     }
 
-    pub fn get_images(&self) -> Vec<ImageName> {
-        read_dir(&self.image_dir)
-            .map_err(|_| ())
-            .and_then(|entries| {
-                entries
-                    .collect::<Result<Vec<DirEntry>, _>>()
-                    .map_err(|_| ())
-            })
-            .and_then(|entries| {
-                entries
-                    .iter()
-                    .map(|entry| entry.file_name().to_str().map(|x| x.to_string()).ok_or(()))
-                    .collect::<Result<Vec<_>, _>>()
-            })
-            .unwrap_or_default()
-            .iter()
-            .filter_map(|name: &String| ImageName::from_file_name(name).ok())
-            .collect::<Vec<_>>()
+    pub fn get_images(&self) -> &Vec<Image> {
+        &self.images
     }
 
     pub fn load(&self, name: &ImageName) -> Result<Image, Error> {
-        let path = format!("{}/{}", self.image_dir, name.to_file_name());
-        let size = util::get_disk_capacity(&path).unwrap_or(0);
-        let name = name.clone();
+        self.images
+            .iter()
+            .find(|image| image.vendor == name.vendor && image.codename == name.image)
+            .cloned()
+            .ok_or(Error::UnknownImage(name.clone()))
+    }
 
-        Result::Ok(Image { path, name, size })
+    pub fn get_capacity(&self, image: &Image) -> Result<u64, Error> {
+        let path = format!(
+            "{}/{}",
+            self.image_dir,
+            image.to_image_name().to_file_name()
+        );
+        util::get_disk_capacity(&path)
+    }
+
+    pub fn copy_image(&self, image: &Image, dir: &str, name: &str) -> Result<(), Error> {
+        let path = format!(
+            "{}/{}",
+            self.image_dir,
+            image.to_image_name().to_file_name()
+        );
+        util::create_dir(dir)?;
+        util::copy_file(&path, &format!("{dir}/{name}"))
     }
 
     pub fn exists(&self, name: &ImageName) -> bool {
@@ -58,9 +65,13 @@ impl ImageDao {
 
     pub fn add(&self, name: &ImageName) -> Result<Image, Error> {
         if !self.exists(name) {
+            let image = self.load(name)?;
             let fetcher = ImageFetcher::new();
             util::create_dir(&self.image_dir)?;
-            fetcher.fetch(name, &format!("{}/{}", self.image_dir, name.to_file_name()))?;
+            fetcher.fetch(
+                &image,
+                &format!("{}/{}", self.image_dir, name.to_file_name()),
+            )?;
         }
 
         self.load(name)

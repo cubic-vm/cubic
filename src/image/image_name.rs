@@ -30,10 +30,6 @@ impl ImageName {
         Self::from(':', id)
     }
 
-    pub fn from_file_name(id: &str) -> Result<Self, Error> {
-        Self::from('_', id)
-    }
-
     pub fn to_file_name(&self) -> String {
         format!("{}_{}_{}", self.vendor, self.image, self.arch)
     }

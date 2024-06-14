@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::image::{ImageDao, ImageName};
 use crate::machine::{Machine, MachineDao};
-use crate::util::{self, copy_file, create_dir, generate_random_ssh_port};
+use crate::util::{self, generate_random_ssh_port};
 
 pub fn add(
     image_dao: &ImageDao,
@@ -17,7 +17,6 @@ pub fn add(
 
     if let Option::Some(instance) = name {
         let machine_dir = format!("{}/{instance}", machine_dao.machine_dir);
-        let machine_image = format!("{machine_dir}/machine.img");
 
         if let Some(id) = name {
             if machine_dao.exists(id) {
@@ -26,13 +25,13 @@ pub fn add(
         }
 
         let image = image_dao.load(&image_name)?;
+        let image_size = image_dao.get_capacity(&image)?;
         let disk_capacity = disk
             .as_ref()
             .map(|size| util::human_readable_to_bytes(size))
-            .unwrap_or(Result::Ok(image.size))?;
+            .unwrap_or(Result::Ok(image_size))?;
 
-        create_dir(&machine_dir)?;
-        copy_file(&image.path, &machine_image)?;
+        image_dao.copy_image(&image, &machine_dir, "machine.img")?;
 
         let ssh_port = generate_random_ssh_port();
 

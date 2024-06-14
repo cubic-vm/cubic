@@ -6,23 +6,26 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::str;
 
-pub fn get_disk_capacity(path: &str) -> Result<u64, ()> {
+pub fn get_disk_capacity(path: &str) -> Result<u64, Error> {
     let out = Command::new("qemu-img")
         .arg("info")
         .arg("--output=json")
         .arg(path)
         .stdout(Stdio::piped())
         .output()
-        .map_err(|_| ())?
+        .map_err(|_| Error::GetCapacityFailed(path.to_string()))?
         .stdout;
 
-    let out_str = str::from_utf8(&out).map_err(|_| ())?;
+    let out_str = str::from_utf8(&out).map_err(|_| Error::GetCapacityFailed(path.to_string()))?;
 
-    let json: Value = serde_json::from_str(out_str).map_err(|_| ())?;
+    let json: Value =
+        serde_json::from_str(out_str).map_err(|_| Error::GetCapacityFailed(path.to_string()))?;
 
     match &json["virtual-size"] {
-        Number(number) => number.as_u64().ok_or(()),
-        _ => Result::Err(()),
+        Number(number) => number
+            .as_u64()
+            .ok_or(Error::GetCapacityFailed(path.to_string())),
+        _ => Result::Err(Error::GetCapacityFailed(path.to_string())),
     }
 }
 
