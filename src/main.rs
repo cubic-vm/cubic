@@ -178,6 +178,7 @@ fn main() {
             Error::CannotParseSize(size) => println!("Invalid data size format '{size}'"),
             Error::CannotShrinkDisk(name) => println!("Cannot shrink the disk of the machine '{name}'"),
             Error::ImageDownloadFailed(name) => println!("Failed to download image: '{name}'"),
+            Error::GetCapacityFailed(path) => println!("Failed to get capacity from image: '{path}'"),
         }
     }
 }

@@ -29,4 +29,5 @@ pub enum Error {
     CannotParseSize(String),
     CannotShrinkDisk(String),
     ImageDownloadFailed(String),
+    GetCapacityFailed(String),
 }

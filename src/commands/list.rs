@@ -31,13 +31,20 @@ pub fn list_machines(machine_dao: &MachineDao) -> Result<(), Error> {
 
 pub fn list_images(image_dao: &ImageDao) -> Result<(), Error> {
     println!("{:20} {: >5} {: >9}", "ID", "ARCH", "SIZE");
-    for name in image_dao.get_images() {
-        let image = image_dao.load(&name)?;
+    for image in image_dao.get_images() {
+        if !image_dao.exists(&image.to_image_name()) {
+            continue;
+        }
+
+        let size = image_dao
+            .get_capacity(image)
+            .map(util::bytes_to_human_readable)
+            .unwrap_or("n/a".to_string());
         println!(
             "{:20} {: >5} {: >9}",
-            format!("{}:{}", name.vendor, name.image),
-            name.arch,
-            util::bytes_to_human_readable(image.size)
+            format!("{}:{}", image.vendor, image.codename),
+            "amd64",
+            size
         )
     }
 
