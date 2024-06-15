@@ -29,22 +29,23 @@ pub fn list_machines(machine_dao: &MachineDao) -> Result<(), Error> {
     Result::Ok(())
 }
 
-pub fn list_images(image_dao: &ImageDao) -> Result<(), Error> {
-    println!("{:20} {: >5} {: >9}", "ID", "ARCH", "SIZE");
+pub fn list_images(image_dao: &ImageDao, all: bool) -> Result<(), Error> {
+    println!(
+        "{:6}  {:>7}  {:10}  {: >5}  {: >9}",
+        "Vendor", "Version", "Name", "Arch", "Size"
+    );
     for image in image_dao.get_images() {
-        if !image_dao.exists(image) {
+        if !(all || image_dao.exists(image)) {
             continue;
         }
 
         let size = image_dao
-            .get_capacity(image)
+            .get_disk_size(image)
             .map(util::bytes_to_human_readable)
-            .unwrap_or("n/a".to_string());
+            .unwrap_or_default();
         println!(
-            "{:20} {: >5} {: >9}",
-            format!("{}:{}", image.vendor, image.codename),
-            "amd64",
-            size
+            "{:6}  {:>7}  {:10}  {: >5}  {: >9}",
+            image.vendor, image.version, image.codename, "amd64", size
         )
     }
 
@@ -55,10 +56,11 @@ pub fn list(
     image_dao: &ImageDao,
     machine_dao: &MachineDao,
     name: &Option<String>,
+    all: bool,
 ) -> Result<(), Error> {
     match name.as_deref() {
         None | Some("machines") => list_machines(machine_dao),
-        Some("images") => list_images(image_dao),
+        Some("images") => list_images(image_dao, all),
         Some(option) => Result::Err(Error::InvalidOption(option.to_string())),
     }
 }

@@ -62,7 +62,11 @@ enum Commands {
     },
 
     /// List images and machines
-    List { name: Option<String> },
+    List {
+        #[clap(short, long, default_value_t = false)]
+        all: bool,
+        name: Option<String>,
+    },
 
     /// Start machines
     Start {
@@ -133,7 +137,7 @@ fn dispatch(command: &Commands) -> Result<(), Error> {
             disk,
             sandbox,
         } => commands::config(&machine_dao, instance, cpus, mem, disk, sandbox),
-        Commands::List { name } => commands::list(&image_dao, &machine_dao, name),
+        Commands::List { name, all } => commands::list(&image_dao, &machine_dao, name, *all),
         Commands::Start { console, ids } => commands::start(&machine_dao, *console, ids),
         Commands::Stop { ids, all } => commands::stop(&machine_dao, ids, *all),
         Commands::Restart { console, ids } => commands::restart(&machine_dao, *console, ids),

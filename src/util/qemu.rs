@@ -6,7 +6,7 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::str;
 
-pub fn get_disk_capacity(path: &str) -> Result<u64, Error> {
+fn run_qemu_info(path: &str) -> Result<Value, Error> {
     let out = Command::new("qemu-img")
         .arg("info")
         .arg("--output=json")
@@ -18,10 +18,24 @@ pub fn get_disk_capacity(path: &str) -> Result<u64, Error> {
 
     let out_str = str::from_utf8(&out).map_err(|_| Error::GetCapacityFailed(path.to_string()))?;
 
-    let json: Value =
-        serde_json::from_str(out_str).map_err(|_| Error::GetCapacityFailed(path.to_string()))?;
+    serde_json::from_str(out_str).map_err(|_| Error::GetCapacityFailed(path.to_string()))
+}
+
+pub fn get_disk_capacity(path: &str) -> Result<u64, Error> {
+    let json: Value = run_qemu_info(path)?;
 
     match &json["virtual-size"] {
+        Number(number) => number
+            .as_u64()
+            .ok_or(Error::GetCapacityFailed(path.to_string())),
+        _ => Result::Err(Error::GetCapacityFailed(path.to_string())),
+    }
+}
+
+pub fn get_disk_size(path: &str) -> Result<u64, Error> {
+    let json: Value = run_qemu_info(path)?;
+
+    match &json["actual-size"] {
         Number(number) => number
             .as_u64()
             .ok_or(Error::GetCapacityFailed(path.to_string())),
