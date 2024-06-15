@@ -16,6 +16,11 @@ parts:
   cubic:
     plugin: rust
     source: .
+    stage-packages:
+      - openssl
+      - libssl-dev
+      - ca-certificates
+      - pkg-config
   runtime-dependencies:
     plugin: nil
     stage-packages:
@@ -24,7 +29,6 @@ parts:
       - openssh-client
       - qemu-system-x86
       - seabios
-      - wget
     override-build: |
       rm $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-ppc
       rm $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc32
