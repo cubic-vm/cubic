@@ -24,7 +24,7 @@ pub fn add(
             }
         }
 
-        let image_size = image_dao.get_capacity(&image)?;
+        let image_size = image_dao.get_disk_capacity(&image)?;
         let disk_capacity = disk
             .as_ref()
             .map(|size| util::human_readable_to_bytes(size))
