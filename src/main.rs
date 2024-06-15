@@ -158,7 +158,7 @@ fn main() {
             Error::Stop(machine) => println!("Failed to stop machine '{machine}'"),
             Error::MachineAlreadyExists(id) => println!("Machine with name '{id}' already exists"),
             Error::Io(e) => println!("{}", e),
-            Error::UnknownImage(name) => println!("Unknown image name {}:{}", name.vendor, name.image),
+            Error::UnknownImage(name) => println!("Unknown image name {name}"),
             Error::MissingSshKey => println!("Could not find any ssh keys. Please create a ssh key to access the virtual machine"),
             Error::InvalidImageName(name) => println!("Invalid image name: {name}"),
             Error::UnsetHomeVar => println!("Environment variable 'HOME' is not defined"),

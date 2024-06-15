@@ -1,4 +1,3 @@
-use crate::image::ImageName;
 use std::io;
 
 pub enum Error {
@@ -9,7 +8,7 @@ pub enum Error {
     Stop(String),
     MachineAlreadyExists(String),
     Io(io::Error),
-    UnknownImage(ImageName),
+    UnknownImage(String),
     MissingSshKey,
     InvalidImageName(String),
     UnsetHomeVar,

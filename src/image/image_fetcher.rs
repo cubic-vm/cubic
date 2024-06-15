@@ -22,8 +22,6 @@ impl ImageFetcher {
             return Result::Ok(());
         }
 
-        let id = image.to_image_name().to_id();
-
         if Command::new("wget")
             .arg("-O")
             .arg(&temp_file)
@@ -31,12 +29,12 @@ impl ImageFetcher {
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
             .status()
-            .map_err(|_| Error::ImageDownloadFailed(id.clone()))?
+            .map_err(|_| Error::ImageDownloadFailed(image.to_id()))?
             .success()
         {
             fs::rename(temp_file, target_file).map_err(Error::Io)
         } else {
-            Result::Err(Error::ImageDownloadFailed(id.clone()))
+            Result::Err(Error::ImageDownloadFailed(image.to_id()))
         }
     }
 }
