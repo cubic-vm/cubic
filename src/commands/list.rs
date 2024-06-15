@@ -32,7 +32,7 @@ pub fn list_machines(machine_dao: &MachineDao) -> Result<(), Error> {
 pub fn list_images(image_dao: &ImageDao) -> Result<(), Error> {
     println!("{:20} {: >5} {: >9}", "ID", "ARCH", "SIZE");
     for image in image_dao.get_images() {
-        if !image_dao.exists(&image.to_image_name()) {
+        if !image_dao.exists(image) {
             continue;
         }
 

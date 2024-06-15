@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::image::{ImageDao, ImageName};
+use crate::image::ImageDao;
 use crate::machine::{Machine, MachineDao};
 use crate::util::{self, generate_random_ssh_port};
 
@@ -12,8 +12,8 @@ pub fn add(
     mem: &Option<String>,
     disk: &Option<String>,
 ) -> Result<(), Error> {
-    let image_name = ImageName::from_id(image_name)?;
-    image_dao.add(&image_name)?;
+    let image = image_dao.get(image_name)?;
+    image_dao.fetch(&image)?;
 
     if let Option::Some(instance) = name {
         let machine_dir = format!("{}/{instance}", machine_dao.machine_dir);
@@ -24,7 +24,6 @@ pub fn add(
             }
         }
 
-        let image = image_dao.load(&image_name)?;
         let image_size = image_dao.get_capacity(&image)?;
         let disk_capacity = disk
             .as_ref()
