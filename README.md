@@ -172,7 +172,7 @@ Cubic requires the following dependencies:
 
 The dependencies can be installed for Debian and Ubuntu with the following command:
 ```
-$ sudo apt install cargo wget qemu-system-x86 bubblewrap cloud-image-utils openssh-client
+$ sudo apt install cargo openssl libssl-dev pkg-config ca-certificates qemu-system-x86 bubblewrap cloud-image-utils openssh-client
 ```
 
 Build the Rust project with the Cargo package manager:

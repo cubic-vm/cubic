@@ -2,8 +2,39 @@ use crate::error::Error;
 use crate::image::Image;
 use crate::util;
 use std::fs;
+use std::io;
 use std::path::Path;
-use std::process::{Command, Stdio};
+
+struct ProgressWriter {
+    file: fs::File,
+    size: Option<u64>,
+    written: u64,
+}
+
+impl io::Write for ProgressWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        if let Some(size) = self.size {
+            self.written += buf.len() as u64;
+            let percent = format!("{: >3.0}%", self.written as f64 / size as f64 * 100_f64);
+            print!(
+                "\rDownloading image: {:>10} / {:>10} [{percent:>4}]",
+                util::bytes_to_human_readable(self.written),
+                util::bytes_to_human_readable(size)
+            );
+            if self.written >= size {
+                println!();
+            }
+        } else {
+            print!("\rDownloading image");
+        }
+        io::stdout().flush().ok();
+        self.file.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.file.flush()
+    }
+}
 
 pub struct ImageFetcher {}
 
@@ -22,19 +53,19 @@ impl ImageFetcher {
             return Result::Ok(());
         }
 
-        if Command::new("wget")
-            .arg("-O")
-            .arg(&temp_file)
-            .arg(&image.url)
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
-            .status()
-            .map_err(|_| Error::ImageDownloadFailed(image.to_id()))?
-            .success()
-        {
-            fs::rename(temp_file, target_file).map_err(Error::Io)
-        } else {
-            Result::Err(Error::ImageDownloadFailed(image.to_id()))
-        }
+        let mut resp = reqwest::blocking::get(&image.url)
+            .map_err(|_| Error::ImageDownloadFailed(image.to_id()))?;
+
+        let size = resp.content_length();
+        let file = util::create_file(&temp_file)?;
+        let mut writer = ProgressWriter {
+            file,
+            size,
+            written: 0,
+        };
+        resp.copy_to(&mut writer)
+            .map_err(|_| Error::ImageDownloadFailed(image.to_id()))?;
+
+        fs::rename(temp_file, target_file).map_err(Error::Io)
     }
 }
