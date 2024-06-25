@@ -313,21 +313,21 @@ impl MachineDao {
     }
 
     pub fn get_state(&self, machine: &Machine) -> MachineState {
-        if let Ok(pid) = self.get_pid(machine) {
-            if Path::new(&format!("/proc/{pid}")).exists() {
-                return if util::SSHClient::new(machine.ssh_port).try_connect() {
-                    MachineState::Running
-                } else {
-                    MachineState::Starting
-                };
+        if self.is_running(machine) {
+            if util::SSHClient::new(machine.ssh_port).try_connect() {
+                MachineState::Running
+            } else {
+                MachineState::Starting
             }
+        } else {
+            MachineState::Stopped
         }
-
-        MachineState::Stopped
     }
 
     pub fn is_running(&self, machine: &Machine) -> bool {
-        Path::new(&format!("{}/{}/qemu.pid", &self.cache_dir, &machine.name)).exists()
+        self.get_pid(machine)
+            .map(|pid| Path::new(&format!("/proc/{pid}")).exists())
+            .unwrap_or(false)
     }
 
     fn get_pid(&self, machine: &Machine) -> Result<u64, ()> {
