@@ -7,6 +7,7 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::str;
 
+pub const CONSOLE_COUNT: u8 = 10;
 pub const USER: &str = "cubic";
 
 #[derive(PartialEq)]
@@ -272,6 +273,20 @@ impl MachineDao {
                 .arg(format!(
                     "virtio-9p-pci,id=cubic{index},fsdev=cubicdev{index},mount_tag=cubic{index}"
                 ));
+        }
+
+        for i in 0..CONSOLE_COUNT {
+            let chardev = format!("console{}", i);
+            let chardev_path = format!("{cache_dir}/{chardev}");
+            command
+                .arg("-device")
+                .arg("virtio-serial")
+                .arg("-chardev")
+                .arg(format!(
+                    "socket,path={chardev_path},server=on,wait=off,id={chardev}"
+                ))
+                .arg("-device")
+                .arg(format!("virtconsole,chardev={chardev}"));
         }
 
         let qemu_root = std::env::var("SNAP").unwrap_or_default();

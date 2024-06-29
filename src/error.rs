@@ -29,6 +29,7 @@ pub enum Error {
     CannotShrinkDisk(String),
     ImageDownloadFailed(String),
     GetCapacityFailed(String),
+    CannotOpenTerminal(String),
 }
 
 pub fn print_error(error: Error) {
@@ -66,5 +67,6 @@ pub fn print_error(error: Error) {
         Error::CannotShrinkDisk(name) => println!("Cannot shrink the disk of the machine '{name}'"),
         Error::ImageDownloadFailed(name) => println!("Failed to download image: '{name}'"),
         Error::GetCapacityFailed(path) => println!("Failed to get capacity from image: '{path}'"),
+        Error::CannotOpenTerminal(path) => println!("Failed to open terminal from path: '{path}'"),
     }
 }

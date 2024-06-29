@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::machine::{Machine, MountPoint, USER};
+use crate::machine::{Machine, MountPoint, CONSOLE_COUNT, USER};
 use crate::util;
 use serde_json::Value::{self, Number};
 use std::path::Path;
@@ -99,6 +99,33 @@ pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(),
 
         if force || !Path::new(&user_data_path).exists() {
             let ssh_pk = util::get_ssh_pub_keys()?.join("\n\u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- ");
+
+            let mut write_files = String::new();
+            let mut consoles = String::new();
+            for i in 0..CONSOLE_COUNT {
+                consoles += &format!(", cubic{i}");
+                write_files +=
+                    &format!("\
+                        \u{20}\u{20}- path: /usr/lib/systemd/system/cubic{i}.service\n\
+                        \u{20}\u{20}\u{20}\u{20}owner: 'root:root'\n\
+                        \u{20}\u{20}\u{20}\u{20}permissions: '0644'\n\
+                        \u{20}\u{20}\u{20}\u{20}content: |\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}[Service]\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}ExecStart=-/sbin/agetty --autologin cubic - /dev/hvc{i} linux\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}Type=idle\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}Restart=always\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}RestartSec=0\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}StandardInput=tty\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}StandardOutput=tty\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}TTYPath=/dev/hvc{i}\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}TTYReset=no\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}TTYVHangup=no\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}TTYVTDisallocate=no\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}[Install]\n\
+                        \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}WantedBy=multi-user.target\n\
+                    ");
+            }
+
             util::write_file(
                 &user_data_path,
                 format!(
@@ -111,7 +138,13 @@ pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(),
                     \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
                     \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n\
                     bootcmd:\n\
-                    {bootcmds}"
+                    {bootcmds}\n\
+                    write_files:\n\
+                    {write_files}\n\
+                    runcmd:\n\
+                    \u{20}\u{20}- [ systemctl, daemon-reload ]\n\
+                    \u{20}\u{20}- [ systemctl, enable, --now, --no-block {consoles} ]\n\
+                "
                 )
                 .as_bytes(),
             )?;
