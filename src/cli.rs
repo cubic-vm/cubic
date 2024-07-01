@@ -92,6 +92,16 @@ pub enum Commands {
 
     /// Copy a file from or to a machine with SCP
     Scp { from: String, to: String },
+
+    /// Mount host directory to guest
+    Mount {
+        name: String,
+        host: String,
+        guest: String,
+    },
+
+    /// Unmount guest directory
+    Umount { name: String, guest: String },
 }
 
 #[derive(Parser)]
@@ -138,5 +148,7 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
         Commands::Restart { console, ids } => commands::restart(&machine_dao, *console, ids),
         Commands::Ssh { instance, cmd } => commands::ssh(&machine_dao, instance, cmd),
         Commands::Scp { from, to } => commands::scp(&machine_dao, from, to),
+        Commands::Mount { name, host, guest } => commands::mount(&machine_dao, name, host, guest),
+        Commands::Umount { name, guest } => commands::umount(&machine_dao, name, guest),
     }
 }

@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::machine::Machine;
+use crate::machine::{Machine, MountPoint};
 use crate::util;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -24,6 +24,8 @@ pub struct MachineConfig {
     pub ssh_port: u16,
     #[serde(default)]
     pub sandbox: bool,
+    #[serde(default)]
+    pub mounts: Vec<MountPoint>,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -92,6 +94,7 @@ impl MachineDao {
                 disk_capacity: config.machine.disk_capacity,
                 ssh_port: config.machine.ssh_port,
                 sandbox: config.machine.sandbox,
+                mounts: config.machine.mounts.clone(),
             })
             .ok_or(Error::UnknownMachine(name.to_string()))
     }
@@ -105,6 +108,7 @@ impl MachineDao {
                 disk_capacity: machine.disk_capacity,
                 ssh_port: machine.ssh_port,
                 sandbox: machine.sandbox,
+                mounts: machine.mounts.clone(),
             },
         };
 
@@ -190,7 +194,7 @@ impl MachineDao {
 
         let machine_dir = format!("{}/{}", &self.machine_dir, &machine.name);
         let cache_dir = format!("{}/{}", &self.cache_dir, &machine.name);
-        util::setup_cloud_init(&machine.name, &cache_dir)?;
+        util::setup_cloud_init(machine, &cache_dir, false)?;
 
         let ssh_port = &machine.ssh_port;
         let has_kvm = util::is_writable("/dev/kvm");
@@ -256,6 +260,18 @@ impl MachineDao {
             command.arg("-serial").arg("stdio");
         } else {
             command.arg("-serial").arg("none").arg("-daemonize");
+        }
+
+        for (index, MountPoint { ref host, .. }) in machine.mounts.iter().enumerate() {
+            command
+                .arg("-fsdev")
+                .arg(format!(
+                    "local,security_model=mapped,id=cubicdev{index},multidevs=remap,path={host}"
+                ))
+                .arg("-device")
+                .arg(format!(
+                    "virtio-9p-pci,id=cubic{index},fsdev=cubicdev{index},mount_tag=cubic{index}"
+                ));
         }
 
         let qemu_root = std::env::var("SNAP").unwrap_or_default();
