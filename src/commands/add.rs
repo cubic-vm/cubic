@@ -41,6 +41,7 @@ pub fn add(
             disk_capacity,
             ssh_port,
             sandbox: false,
+            mounts: Vec::new(),
         };
         machine_dao.store(&machine)?;
         if disk.is_some() {

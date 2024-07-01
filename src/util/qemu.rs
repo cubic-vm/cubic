@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::machine::USER;
+use crate::machine::{Machine, MountPoint, USER};
 use crate::util;
 use serde_json::Value::{self, Number};
 use std::path::Path;
@@ -74,23 +74,30 @@ pub fn human_readable_to_bytes(size: &str) -> Result<u64, Error> {
         .map_err(|_| Error::CannotParseSize(size.to_string()))
 }
 
-pub fn setup_cloud_init(instance: &str, dir: &str) -> Result<(), Error> {
+pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(), Error> {
+    let instance = &machine.name;
+
     let user_data_img_path = format!("{dir}/user-data.img");
 
-    if !Path::new(&user_data_img_path).exists() {
+    if force || !Path::new(&user_data_img_path).exists() {
         let metadata_path = format!("{dir}/metadata.yaml");
         let user_data_path = format!("{dir}/user-data.yaml");
 
         util::create_dir(dir)?;
 
-        if !Path::new(&metadata_path).exists() {
+        if force || !Path::new(&metadata_path).exists() {
             util::write_file(
                 &metadata_path,
                 format!("instance-id: {instance}\nlocal-hostname: {instance}\n").as_bytes(),
             )?;
         }
 
-        if !Path::new(&user_data_path).exists() {
+        let mut bootcmds = String::new();
+        for (index, MountPoint { guest, .. }) in machine.mounts.iter().enumerate() {
+            bootcmds += &format!("  - mount -t 9p cubic{index} {guest}\n");
+        }
+
+        if force || !Path::new(&user_data_path).exists() {
             let ssh_pk = util::get_ssh_pub_keys()?.join("\n\u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- ");
             util::write_file(
                 &user_data_path,
@@ -102,7 +109,9 @@ pub fn setup_cloud_init(instance: &str, dir: &str) -> Result<(), Error> {
                     \u{20}\u{20}\u{20}\u{20}ssh-authorized-keys:\n\
                     \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- {ssh_pk}\n\
                     \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
-                    \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n"
+                    \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n\
+                    bootcmd:\n\
+                    {bootcmds}"
                 )
                 .as_bytes(),
             )?;
