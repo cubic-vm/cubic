@@ -85,7 +85,11 @@ pub enum Commands {
     },
 
     /// Open a shell in the machine
-    Sh { instance: String },
+    Sh {
+        #[clap(short, long, default_value_t = false)]
+        console: bool,
+        instance: String,
+    },
 
     /// Connect to a machine with SSH
     Ssh {
@@ -149,7 +153,7 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
         Commands::Start { console, ids } => commands::start(&machine_dao, *console, ids),
         Commands::Stop { ids, all } => commands::stop(&machine_dao, ids, *all),
         Commands::Restart { console, ids } => commands::restart(&machine_dao, *console, ids),
-        Commands::Sh { instance } => commands::sh(&machine_dao, instance),
+        Commands::Sh { console, instance } => commands::sh(&machine_dao, *console, instance),
         Commands::Ssh { instance, cmd } => commands::ssh(&machine_dao, instance, cmd),
         Commands::Scp { from, to } => commands::scp(&machine_dao, from, to),
         Commands::Mount { name, host, guest } => commands::mount(&machine_dao, name, host, guest),
