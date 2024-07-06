@@ -6,6 +6,8 @@ use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::str;
+use std::thread;
+use std::time::Duration;
 
 pub const CONSOLE_COUNT: u8 = 10;
 pub const USER: &str = "cubic";
@@ -257,12 +259,6 @@ impl MachineDao {
             command.arg("-accel").arg("kvm");
         }
 
-        if console {
-            command.arg("-serial").arg("stdio");
-        } else {
-            command.arg("-serial").arg("none").arg("-daemonize");
-        }
-
         for (index, MountPoint { ref host, .. }) in machine.mounts.iter().enumerate() {
             command
                 .arg("-fsdev")
@@ -320,9 +316,25 @@ impl MachineDao {
             .arg("none")
             .arg("-pidfile")
             .arg(format!("{cache_dir}/qemu.pid"))
+            .arg("-chardev")
+            .arg(format!(
+                "socket,path={cache_dir}/console,server=on,wait=off,id=console"
+            ))
+            .arg("-serial")
+            .arg("chardev:console")
+            .arg("-daemonize")
             .spawn()
             .map(|_| ())
-            .map_err(|_| Error::Start(machine.name.to_string()))
+            .map_err(|_| Error::Start(machine.name.to_string()))?;
+
+        if console {
+            while !Path::new(&format!("{cache_dir}/console")).exists() {
+                thread::sleep(Duration::new(1, 0));
+            }
+            util::Terminal::open(&format!("{cache_dir}/console"))?.run();
+        }
+
+        Ok(())
     }
 
     pub fn stop(&self, machine: &Machine) -> Result<(), Error> {
