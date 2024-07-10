@@ -20,20 +20,8 @@ pub enum MachineState {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct MachineConfig {
-    pub cpus: u16,
-    pub mem: u64,
-    pub disk_capacity: u64,
-    pub ssh_port: u16,
-    #[serde(default)]
-    pub sandbox: bool,
-    #[serde(default)]
-    pub mounts: Vec<MountPoint>,
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Config {
-    pub machine: MachineConfig,
+    pub machine: Machine,
 }
 
 pub struct MachineDao {
@@ -105,16 +93,8 @@ impl MachineDao {
     pub fn store(&self, machine: &Machine) -> Result<(), Error> {
         let path = format!("{}/{}", self.machine_dir, &machine.name);
         let config = Config {
-            machine: MachineConfig {
-                cpus: machine.cpus,
-                mem: machine.mem,
-                disk_capacity: machine.disk_capacity,
-                ssh_port: machine.ssh_port,
-                sandbox: machine.sandbox,
-                mounts: machine.mounts.clone(),
-            },
+            machine: machine.clone(),
         };
-
         let machine_config = format!("{path}/machine.yaml");
         if Path::new(&machine_config).exists() {
             util::remove_file(&machine_config)?;

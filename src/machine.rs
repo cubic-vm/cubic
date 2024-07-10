@@ -9,12 +9,16 @@ pub struct MountPoint {
     pub guest: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Machine {
+    #[serde(skip)]
     pub name: String,
     pub cpus: u16,
     pub mem: u64,
     pub disk_capacity: u64,
     pub ssh_port: u16,
+    #[serde(default)]
     pub sandbox: bool,
+    #[serde(default)]
     pub mounts: Vec<MountPoint>,
 }
