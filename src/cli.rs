@@ -65,6 +65,8 @@ pub enum Commands {
 
     /// Start machines
     Start {
+        #[clap(long)]
+        qemu_args: Option<String>,
         #[clap(short, long, default_value_t = false)]
         console: bool,
         ids: Vec<String>,
@@ -152,7 +154,11 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             sandbox,
         } => commands::config(&machine_dao, instance, cpus, mem, disk, sandbox),
         Commands::List { name, all } => commands::list(&image_dao, &machine_dao, name, *all),
-        Commands::Start { console, ids } => commands::start(&machine_dao, *console, ids),
+        Commands::Start {
+            qemu_args,
+            console,
+            ids,
+        } => commands::start(&machine_dao, qemu_args, *console, ids),
         Commands::Stop { ids, all } => commands::stop(&machine_dao, ids, *all),
         Commands::Restart { console, ids } => commands::restart(&machine_dao, *console, ids),
         Commands::Sh { console, instance } => commands::sh(&machine_dao, *console, instance),
