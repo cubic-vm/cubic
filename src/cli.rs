@@ -94,6 +94,8 @@ pub enum Commands {
     /// Connect to a machine with SSH
     Ssh {
         instance: String,
+        #[clap(long)]
+        ssh_args: Option<String>,
         cmd: Option<String>,
     },
 
@@ -154,7 +156,11 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
         Commands::Stop { ids, all } => commands::stop(&machine_dao, ids, *all),
         Commands::Restart { console, ids } => commands::restart(&machine_dao, *console, ids),
         Commands::Sh { console, instance } => commands::sh(&machine_dao, *console, instance),
-        Commands::Ssh { instance, cmd } => commands::ssh(&machine_dao, instance, cmd),
+        Commands::Ssh {
+            instance,
+            ssh_args,
+            cmd,
+        } => commands::ssh(&machine_dao, instance, ssh_args, cmd),
         Commands::Scp { from, to } => commands::scp(&machine_dao, from, to),
         Commands::Mount { name, host, guest } => commands::mount(&machine_dao, name, host, guest),
         Commands::Umount { name, guest } => commands::umount(&machine_dao, name, guest),
