@@ -14,7 +14,7 @@ pub fn restart(machine_dao: &MachineDao, console: bool, ids: &Vec<String>) -> Re
         let machine = machine_dao.load(id)?;
         machine_dao.stop(&machine)?;
         thread::sleep(Duration::new(2, 0));
-        machine_dao.start(&machine, console)?;
+        machine_dao.start(&machine, &None, console)?;
     }
 
     Result::Ok(())

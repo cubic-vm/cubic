@@ -170,7 +170,12 @@ impl MachineDao {
         }
     }
 
-    pub fn start(&self, machine: &Machine, console: bool) -> Result<(), Error> {
+    pub fn start(
+        &self,
+        machine: &Machine,
+        qemu_args: &Option<String>,
+        console: bool,
+    ) -> Result<(), Error> {
         if self.is_running(machine) {
             return Result::Ok(());
         }
@@ -302,7 +307,15 @@ impl MachineDao {
             ))
             .arg("-serial")
             .arg("chardev:console")
-            .arg("-daemonize")
+            .arg("-daemonize");
+
+        if let Some(qemu_args) = qemu_args {
+            for arg in qemu_args.split(' ') {
+                command.arg(arg);
+            }
+        }
+
+        command
             .spawn()
             .map(|_| ())
             .map_err(|_| Error::Start(machine.name.to_string()))?;

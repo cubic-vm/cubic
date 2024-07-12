@@ -33,7 +33,7 @@ pub fn ssh(
     let ssh_port = machine.ssh_port;
 
     if !machine_dao.is_running(&machine) {
-        machine_dao.start(&machine, false)?;
+        machine_dao.start(&machine, &None, false)?;
     }
 
     if machine_dao.get_state(&machine) != MachineState::Running {

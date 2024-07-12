@@ -10,7 +10,7 @@ pub fn sh(machine_dao: &MachineDao, console: bool, name: &str) -> Result<(), Err
     let machine = machine_dao.load(name)?;
 
     if !machine_dao.is_running(&machine) {
-        machine_dao.start(&machine, false)?;
+        machine_dao.start(&machine, &None, false)?;
     }
 
     if console {
