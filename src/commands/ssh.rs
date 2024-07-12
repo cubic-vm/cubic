@@ -7,7 +7,12 @@ use std::process::Command;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
-pub fn ssh(machine_dao: &MachineDao, name: &str, cmd: &Option<String>) -> Result<(), Error> {
+pub fn ssh(
+    machine_dao: &MachineDao,
+    name: &str,
+    ssh_args: &Option<String>,
+    cmd: &Option<String>,
+) -> Result<(), Error> {
     util::check_ssh_key();
 
     let mut user = USER;
@@ -63,7 +68,15 @@ pub fn ssh(machine_dao: &MachineDao, name: &str, cmd: &Option<String>) -> Result
         .arg("-o")
         .arg("StrictHostKeyChecking=no")
         .arg("-p")
-        .arg(ssh_port.to_string())
+        .arg(ssh_port.to_string());
+
+    if let Some(ssh_args) = ssh_args {
+        for arg in ssh_args.split(' ') {
+            command.arg(arg);
+        }
+    }
+
+    command
         .arg(format!("{user}@127.0.0.1"))
         .arg(cmd.as_deref().unwrap_or(""))
         .exec();
