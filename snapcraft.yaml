@@ -1,12 +1,14 @@
 name: cubic
-version: git
+version: '0.1.0'
 license: GPL-2.0-only
 website: https://github.com/cubic-vm/cubic
 source-code: https://github.com/cubic-vm/cubic
 issues: https://github.com/cubic-vm/cubic/issues
-summary: Cubic is a lightweight command line manager for virtual machines
+summary: Cubic is a lightweight command line manager for virtual machines.
 description: |
-  Cubic is a lightweight command line manager for virtual machines.
+  Cubic is a lightweight command line manager for virtual machines with focus on simplicity and security.
+
+  It has a daemon-less and rootless design. All Cubic virtual machines run unprivileged in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
 base: core24
 platforms:
   amd64:
