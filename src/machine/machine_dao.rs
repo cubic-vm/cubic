@@ -185,7 +185,7 @@ impl MachineDao {
         util::setup_cloud_init(machine, &cache_dir, false)?;
 
         let ssh_port = &machine.ssh_port;
-        let has_kvm = util::is_writable("/dev/kvm");
+        let has_kvm = util::has_kvm();
         let qemu = "qemu-system-x86_64";
 
         if !has_kvm {
@@ -240,7 +240,7 @@ impl MachineDao {
             Command::new(qemu)
         };
 
-        if util::is_writable("/dev/kvm") {
+        if has_kvm {
             command.arg("-accel").arg("kvm");
         }
 
