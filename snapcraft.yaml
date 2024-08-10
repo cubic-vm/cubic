@@ -42,3 +42,4 @@ apps:
       - kvm
       - network
       - network-bind
+      - home
