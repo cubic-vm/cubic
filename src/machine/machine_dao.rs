@@ -272,6 +272,13 @@ impl MachineDao {
 
         let qemu_root = std::env::var("SNAP").unwrap_or_default();
 
+        if std::env::var("SNAP").is_ok() {
+            command.env(
+                "QEMU_MODULE_DIR",
+                "/snap/cubic/current/usr/lib/x86_64-linux-gnu/qemu",
+            );
+        }
+
         command
             .arg("-L")
             .arg(format!("{qemu_root}/usr/share/qemu"))

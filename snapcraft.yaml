@@ -30,6 +30,10 @@ parts:
       - cloud-image-utils
       - openssh-client
       - qemu-system-x86
+      - qemu-system-gui
+      - qemu-system-modules-spice
+      - qemu-system-modules-opengl
+      - libgtk-4-dev
       - seabios
     override-build: |
       rm $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-ppc
@@ -43,3 +47,8 @@ apps:
       - network
       - network-bind
       - home
+      - wayland
+      - x11
+      - desktop
+      - desktop-legacy
+      - opengl
