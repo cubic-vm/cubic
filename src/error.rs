@@ -11,7 +11,7 @@ pub enum Error {
     UnknownImage(String),
     MissingSshKey,
     InvalidImageName(String),
-    UnsetHomeVar,
+    UnsetEnvVar(String),
     InvalidOption(String),
     CannotCopyFile(String, String),
     CannotCopyDir(String, String),
@@ -47,7 +47,7 @@ pub fn print_error(error: Error) {
             "Could not find any ssh keys. Please create a ssh key to access the virtual machine"
         ),
         Error::InvalidImageName(name) => println!("Invalid image name: {name}"),
-        Error::UnsetHomeVar => println!("Environment variable 'HOME' is not defined"),
+        Error::UnsetEnvVar(var) => println!("Environment variable '{var}' is not set"),
         Error::InvalidOption(option) => println!("'{option}' is not a valid option"),
         Error::CannotCopyFile(from, to) => println!("Cannot copy file from '{from}' to '{to}'"),
         Error::CannotCopyDir(from, to) => println!("Cannot copy directory from '{from}' to '{to}'"),
