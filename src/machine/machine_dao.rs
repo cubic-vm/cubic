@@ -33,7 +33,8 @@ impl MachineDao {
     pub fn new() -> Result<Self, Error> {
         let home_dir = util::get_home_dir()?;
         let machine_dir = format!("{home_dir}/.local/share/cubic/machines");
-        let cache_dir = format!("{home_dir}/.cache/cubic/machines");
+        let xdg_runtime_dir = util::get_xdg_runtime_dir()?;
+        let cache_dir = format!("{xdg_runtime_dir}/cubic/machines");
         util::setup_directory_access(&machine_dir)?;
         util::setup_directory_access(&cache_dir)?;
 
