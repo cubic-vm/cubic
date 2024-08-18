@@ -274,10 +274,19 @@ impl MachineDao {
         let qemu_root = std::env::var("SNAP").unwrap_or_default();
 
         if std::env::var("SNAP").is_ok() {
-            command.env(
-                "QEMU_MODULE_DIR",
-                "/snap/cubic/current/usr/lib/x86_64-linux-gnu/qemu",
-            );
+            let ld_library_path = std::env::var("LD_LIBRARY_PATH").unwrap_or_default();
+
+            command
+                .env(
+                    "QEMU_MODULE_DIR",
+                    "/snap/cubic/current/usr/lib/x86_64-linux-gnu/qemu",
+                )
+                .env(
+                    "LD_LIBRARY_PATH",
+                    format!(
+                        "{ld_library_path}:/snap/cubic/current/usr/lib/x86_64-linux-gnu/pulseaudio"
+                    ),
+                );
         }
 
         command
