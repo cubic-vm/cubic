@@ -32,23 +32,60 @@ parts:
       - qemu-system-x86
       - qemu-system-gui
       - qemu-system-modules-spice
-      - qemu-system-modules-opengl
-      - libgtk-4-dev
       - seabios
+      - libvirglrenderer1
     override-build: |
-      rm $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-ppc
-      rm $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc32
-      rm $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc64
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-ppc
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc32
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc64
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/cmake*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/dri*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/gdk*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/gio*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/gli*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/gstreamer*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/gtk*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/icu*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libEGL*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libGL*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libLLVM*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libOpenGL*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libSDL*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libX*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libasound*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libavahi*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libavahi*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libbmp*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libdrm*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libgdk*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libgst*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libgtk*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libicudata*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libjpeg*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libnss*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libogg*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libopus*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libpipewire*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libpulse*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libsensors*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libsharp*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libsnd*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libtiff*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libvorbis*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libvulkan*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libwayland*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libwebp*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libxcb*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libxml*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libxshm*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/spa*
 apps:
   cubic:
+    extensions: [gnome]
     command: bin/cubic
     plugs:
       - kvm
       - network
       - network-bind
       - home
-      - wayland
-      - x11
-      - desktop
-      - desktop-legacy
-      - opengl
