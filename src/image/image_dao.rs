@@ -19,7 +19,7 @@ pub struct ImageDao {
 
 impl ImageDao {
     pub fn new() -> Result<Self, Error> {
-        let image_dir = format!("{}/.local/share/cubic/images", util::get_home_dir()?);
+        let image_dir = util::get_image_data_dir()?;
         util::setup_directory_access(&image_dir)?;
 
         Result::Ok(ImageDao {

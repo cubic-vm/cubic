@@ -22,6 +22,17 @@ pub fn copy_dir(from: &str, to: &str) -> Result<(), Error> {
         .map_err(|_| Error::CannotCopyDir(from.to_string(), to.to_string()))
 }
 
+pub fn move_dir(from: &str, to: &str) -> Result<(), Error> {
+    Command::new("mv")
+        .arg(from)
+        .arg(to)
+        .spawn()
+        .map_err(|_| Error::CannotMoveDir(from.to_string(), to.to_string()))?
+        .wait()
+        .map(|_| ())
+        .map_err(|_| Error::CannotMoveDir(from.to_string(), to.to_string()))
+}
+
 pub fn open_file(path: &str) -> Result<fs::File, Error> {
     fs::File::open(path).map_err(|_| Error::CannotOpenFile(path.to_string()))
 }

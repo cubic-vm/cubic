@@ -8,6 +8,8 @@ mod util;
 use clap::Parser;
 
 fn main() {
+    util::migrate();
+
     cli::Cli::parse()
         .command
         .ok_or(error::Error::UnknownCommand)
