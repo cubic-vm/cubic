@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 pub fn ssh(
     machine_dao: &MachineDao,
     name: &str,
+    xforward: bool,
     ssh_args: &Option<String>,
     cmd: &Option<String>,
 ) -> Result<(), Error> {
@@ -69,6 +70,10 @@ pub fn ssh(
         .arg("StrictHostKeyChecking=no")
         .arg("-p")
         .arg(ssh_port.to_string());
+
+    if xforward {
+        command.arg("-X");
+    }
 
     if let Some(ssh_args) = ssh_args {
         for arg in ssh_args.split(' ') {
