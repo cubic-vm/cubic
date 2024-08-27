@@ -21,5 +21,5 @@ pub fn run(
         mem,
         disk,
     )?;
-    commands::ssh(machine_dao, name, &None, &None)
+    commands::ssh(machine_dao, name, false, &None, &None)
 }

@@ -96,6 +96,9 @@ pub enum Commands {
     /// Connect to a machine with SSH
     Ssh {
         instance: String,
+        /// Forward X over SSH
+        #[clap(short = 'X', default_value_t = false)]
+        xforward: bool,
         #[clap(long)]
         ssh_args: Option<String>,
         cmd: Option<String>,
@@ -164,9 +167,10 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
         Commands::Sh { console, instance } => commands::sh(&machine_dao, *console, instance),
         Commands::Ssh {
             instance,
+            xforward,
             ssh_args,
             cmd,
-        } => commands::ssh(&machine_dao, instance, ssh_args, cmd),
+        } => commands::ssh(&machine_dao, instance, *xforward, ssh_args, cmd),
         Commands::Scp { from, to } => commands::scp(&machine_dao, from, to),
         Commands::Mount { name, host, guest } => commands::mount(&machine_dao, name, host, guest),
         Commands::Umount { name, guest } => commands::umount(&machine_dao, name, guest),
