@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::machine::{MachineDao, MachineState, USER};
+use crate::machine::{MachineDao, MachineState};
 use crate::util;
 use std::io::Write;
 use std::os::unix::process::CommandExt;
@@ -7,31 +7,44 @@ use std::process::Command;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
+fn get_instance_name(target: &str) -> Result<String, Error> {
+    if target.contains('@') {
+        target
+            .split('@')
+            .nth(1)
+            .map(|instance| instance.to_string())
+            .ok_or(Error::InvalidSshTarget(target.to_string()))
+    } else {
+        Ok(target.to_string())
+    }
+}
+
+fn get_user_name(target: &str) -> Result<Option<String>, Error> {
+    if target.contains('@') {
+        target
+            .split('@')
+            .next()
+            .map(|instance| Some(instance.to_string()))
+            .ok_or(Error::InvalidSshTarget(target.to_string()))
+    } else {
+        Ok(None)
+    }
+}
+
 pub fn ssh(
     machine_dao: &MachineDao,
-    name: &str,
+    target: &str,
     xforward: bool,
     ssh_args: &Option<String>,
     cmd: &Option<String>,
 ) -> Result<(), Error> {
     util::check_ssh_key();
 
-    let mut user = USER;
-    let mut instance = name;
-    let mut stdout = std::io::stdout();
-
-    if name.contains('@') {
-        let mut tokens = name.split('@');
-        user = tokens
-            .next()
-            .ok_or(Error::InvalidSshTarget(name.to_string()))?;
-        instance = tokens
-            .next()
-            .ok_or(Error::InvalidSshTarget(name.to_string()))?;
-    }
-
-    let machine = machine_dao.load(instance)?;
+    let instance = get_instance_name(target)?;
+    let machine = machine_dao.load(&instance)?;
+    let user = get_user_name(target)?.unwrap_or(machine.user.to_string());
     let ssh_port = machine.ssh_port;
+    let mut stdout = std::io::stdout();
 
     if !machine_dao.is_running(&machine) {
         machine_dao.start(&machine, &None, false)?;

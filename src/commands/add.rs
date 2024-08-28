@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::image::ImageDao;
-use crate::machine::{Machine, MachineDao};
+use crate::machine::{Machine, MachineDao, USER};
 use crate::util::{self, generate_random_ssh_port};
 
 pub fn add(
@@ -36,6 +36,7 @@ pub fn add(
 
         let mut machine = Machine {
             name: instance.clone(),
+            user: USER.to_string(),
             cpus: cpus.unwrap_or(1),
             mem: util::human_readable_to_bytes(mem.as_deref().unwrap_or("1G"))?,
             disk_capacity,
