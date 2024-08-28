@@ -80,6 +80,7 @@ impl MachineDao {
             .exists()
             .then_some(Machine {
                 name: name.to_string(),
+                user: config.machine.user.to_string(),
                 cpus: config.machine.cpus,
                 mem: config.machine.mem,
                 disk_capacity: config.machine.disk_capacity,

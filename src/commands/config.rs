@@ -35,6 +35,7 @@ pub fn config(
         "disk:    {}",
         util::bytes_to_human_readable(machine.disk_capacity)
     );
+    println!("user:    {}", machine.user);
     println!("mounts:");
     for mount in &machine.mounts {
         println!("  - {} => {}", mount.host, mount.guest);

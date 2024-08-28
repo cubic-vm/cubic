@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::machine::{MachineDao, USER};
+use crate::machine::MachineDao;
 use std::process::Command;
 
 pub fn scp(machine_dao: &MachineDao, from: &str, to: &str) -> Result<(), Error> {
@@ -9,13 +9,14 @@ pub fn scp(machine_dao: &MachineDao, from: &str, to: &str) -> Result<(), Error> 
         let path = from_token.next().unwrap();
 
         let machine = machine_dao.load(name)?;
+        let user = machine.user;
         let ssh_port = machine.ssh_port;
 
         Command::new("scp")
             .arg("-r")
             .arg("-P")
             .arg(ssh_port.to_string())
-            .arg(format!("{USER}@127.0.0.1:{path}"))
+            .arg(format!("{user}@127.0.0.1:{path}"))
             .arg(to)
             .spawn()
             .unwrap()
@@ -27,6 +28,7 @@ pub fn scp(machine_dao: &MachineDao, from: &str, to: &str) -> Result<(), Error> 
         let path = to_token.next().unwrap();
 
         let machine = machine_dao.load(name)?;
+        let user = machine.user;
         let ssh_port = machine.ssh_port;
 
         Command::new("scp")
@@ -34,7 +36,7 @@ pub fn scp(machine_dao: &MachineDao, from: &str, to: &str) -> Result<(), Error> 
             .arg("-P")
             .arg(ssh_port.to_string())
             .arg(from)
-            .arg(format!("cubic@127.0.0.1:{path}"))
+            .arg(format!("{user}@127.0.0.1:{path}"))
             .spawn()
             .unwrap()
             .wait()

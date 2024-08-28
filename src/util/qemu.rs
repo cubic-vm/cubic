@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::machine::{Machine, MountPoint, CONSOLE_COUNT, USER};
+use crate::machine::{Machine, MountPoint, CONSOLE_COUNT};
 use crate::util;
 use serde_json::Value::{self, Number};
 use std::fs::File;
@@ -85,6 +85,7 @@ pub fn human_readable_to_bytes(size: &str) -> Result<u64, Error> {
 
 pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(), Error> {
     let instance = &machine.name;
+    let user = &machine.user;
 
     let user_data_img_path = format!("{dir}/user-data.img");
 
@@ -141,7 +142,7 @@ pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(),
                     "\
                     #cloud-config\n\
                     users:\n\
-                    \u{20}\u{20}- name: {USER}\n\
+                    \u{20}\u{20}- name: {user}\n\
                     \u{20}\u{20}\u{20}\u{20}ssh-authorized-keys:\n\
                     \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- {ssh_pk}\n\
                     \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
