@@ -43,7 +43,6 @@ pub fn add(
             ssh_port,
             display: false,
             gpu: false,
-            sandbox: false,
             mounts: Vec::new(),
         };
         machine_dao.store(&machine)?;

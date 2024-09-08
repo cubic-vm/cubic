@@ -52,8 +52,6 @@ pub enum Commands {
         mem: Option<String>,
         #[clap(short, long)]
         disk: Option<String>,
-        #[clap(short, long)]
-        sandbox: Option<bool>,
     },
 
     /// List images and machines
@@ -154,8 +152,7 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             cpus,
             mem,
             disk,
-            sandbox,
-        } => commands::config(&machine_dao, instance, cpus, mem, disk, sandbox),
+        } => commands::config(&machine_dao, instance, cpus, mem, disk),
         Commands::List { name, all } => commands::list(&image_dao, &machine_dao, name, *all),
         Commands::Start {
             qemu_args,
