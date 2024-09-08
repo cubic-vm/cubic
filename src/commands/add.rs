@@ -41,6 +41,7 @@ pub fn add(
             mem: util::human_readable_to_bytes(mem.as_deref().unwrap_or("1G"))?,
             disk_capacity,
             ssh_port,
+            display: false,
             sandbox: false,
             mounts: Vec::new(),
         };

@@ -40,6 +40,7 @@ pub fn config(
     for mount in &machine.mounts {
         println!("  - {} => {}", mount.host, mount.guest);
     }
+    println!("display: {}", machine.display);
     println!("sandbox: {}", machine.sandbox);
     println!("ssh-port: {}", machine.ssh_port);
     Result::Ok(())
