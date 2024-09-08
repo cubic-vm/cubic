@@ -85,6 +85,7 @@ impl MachineDao {
                 mem: config.machine.mem,
                 disk_capacity: config.machine.disk_capacity,
                 ssh_port: config.machine.ssh_port,
+                display: config.machine.display,
                 sandbox: config.machine.sandbox,
                 mounts: config.machine.mounts.clone(),
             })
@@ -282,6 +283,13 @@ impl MachineDao {
             );
         }
 
+        command.arg("-display");
+        if machine.display {
+            command.arg("sdl,gl=on");
+        } else {
+            command.arg("none");
+        }
+
         command
             .arg("-L")
             .arg(format!("{qemu_root}/usr/share/qemu"))
@@ -307,8 +315,6 @@ impl MachineDao {
             .arg(format!(
                 "if=virtio,file={cache_dir}/user-data.img,format=raw"
             ))
-            .arg("-display")
-            .arg("none")
             .arg("-pidfile")
             .arg(format!("{cache_dir}/qemu.pid"))
             .arg("-chardev")

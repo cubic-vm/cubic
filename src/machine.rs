@@ -24,6 +24,8 @@ pub struct Machine {
     pub disk_capacity: u64,
     pub ssh_port: u16,
     #[serde(default)]
+    pub display: bool,
+    #[serde(default)]
     pub sandbox: bool,
     #[serde(default)]
     pub mounts: Vec<MountPoint>,
