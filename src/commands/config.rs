@@ -41,6 +41,7 @@ pub fn config(
         println!("  - {} => {}", mount.host, mount.guest);
     }
     println!("display: {}", machine.display);
+    println!("gpu: {}", machine.gpu);
     println!("sandbox: {}", machine.sandbox);
     println!("ssh-port: {}", machine.ssh_port);
     Result::Ok(())

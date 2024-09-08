@@ -42,6 +42,7 @@ pub fn add(
             disk_capacity,
             ssh_port,
             display: false,
+            gpu: false,
             sandbox: false,
             mounts: Vec::new(),
         };

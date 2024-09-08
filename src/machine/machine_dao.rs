@@ -86,6 +86,7 @@ impl MachineDao {
                 disk_capacity: config.machine.disk_capacity,
                 ssh_port: config.machine.ssh_port,
                 display: config.machine.display,
+                gpu: config.machine.gpu,
                 sandbox: config.machine.sandbox,
                 mounts: config.machine.mounts.clone(),
             })
@@ -285,7 +286,13 @@ impl MachineDao {
 
         command.arg("-display");
         if machine.display {
-            command.arg("sdl,gl=on");
+            command.arg("gtk,gl=on");
+            command.arg("-device");
+            if machine.gpu {
+                command.arg("virtio-gpu-gl");
+            } else {
+                command.arg("virtio-gpu");
+            }
         } else {
             command.arg("none");
         }
