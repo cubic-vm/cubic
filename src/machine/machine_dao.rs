@@ -87,7 +87,6 @@ impl MachineDao {
                 ssh_port: config.machine.ssh_port,
                 display: config.machine.display,
                 gpu: config.machine.gpu,
-                sandbox: config.machine.sandbox,
                 mounts: config.machine.mounts.clone(),
             })
             .ok_or(Error::UnknownMachine(name.to_string()))
@@ -197,53 +196,7 @@ impl MachineDao {
             println!("WARNING: No KVM support detected");
         }
 
-        let mut command = if machine.sandbox {
-            let mut command = Command::new("bwrap");
-            command
-                .arg("--ro-bind")
-                .arg("/usr")
-                .arg("/usr")
-                .arg("--ro-bind")
-                .arg("/lib64")
-                .arg("/lib64")
-                .arg("--ro-bind")
-                .arg("/lib")
-                .arg("/lib")
-                .arg("--dir")
-                .arg("/etc")
-                .arg("--ro-bind")
-                .arg("/etc/resolv.conf")
-                .arg("/etc/resolv.conf")
-                .arg("--dev")
-                .arg("/dev")
-                .arg("--tmpfs")
-                .arg("/home/cubic")
-                .arg("--chdir")
-                .arg("/home/cubic")
-                .arg("--bind")
-                .arg(&machine_dir)
-                .arg(&machine_dir)
-                .arg("--bind")
-                .arg(&cache_dir)
-                .arg(&cache_dir)
-                .arg("--unshare-user")
-                .arg("--unshare-ipc")
-                .arg("--unshare-cgroup")
-                .arg("--unshare-uts")
-                .arg("--clearenv")
-                .arg("--disable-userns")
-                .arg("--die-with-parent")
-                .arg("--new-session")
-                .arg(qemu);
-
-            if has_kvm {
-                command.arg("--dev-bind").arg("/dev/kvm").arg("/dev/kvm");
-            }
-
-            command
-        } else {
-            Command::new(qemu)
-        };
+        let mut command = Command::new(qemu);
 
         if has_kvm {
             command.arg("-accel").arg("kvm");
