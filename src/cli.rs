@@ -67,6 +67,8 @@ pub enum Commands {
         qemu_args: Option<String>,
         #[clap(short, long, default_value_t = false)]
         console: bool,
+        #[clap(short, long, default_value_t = false)]
+        verbose: bool,
         ids: Vec<String>,
     },
 
@@ -81,6 +83,8 @@ pub enum Commands {
     Restart {
         #[clap(short, long, default_value_t = false)]
         console: bool,
+        #[clap(short, long, default_value_t = false)]
+        verbose: bool,
         ids: Vec<String>,
     },
 
@@ -88,6 +92,8 @@ pub enum Commands {
     Sh {
         #[clap(short, long, default_value_t = false)]
         console: bool,
+        #[clap(short, long, default_value_t = false)]
+        verbose: bool,
         instance: String,
     },
 
@@ -97,6 +103,8 @@ pub enum Commands {
         /// Forward X over SSH
         #[clap(short = 'X', default_value_t = false)]
         xforward: bool,
+        #[clap(short, long, default_value_t = false)]
+        verbose: bool,
         #[clap(long)]
         ssh_args: Option<String>,
         cmd: Option<String>,
@@ -157,17 +165,27 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
         Commands::Start {
             qemu_args,
             console,
+            verbose,
             ids,
-        } => commands::start(&machine_dao, qemu_args, *console, ids),
+        } => commands::start(&machine_dao, qemu_args, *console, *verbose, ids),
         Commands::Stop { ids, all } => commands::stop(&machine_dao, ids, *all),
-        Commands::Restart { console, ids } => commands::restart(&machine_dao, *console, ids),
-        Commands::Sh { console, instance } => commands::sh(&machine_dao, *console, instance),
+        Commands::Restart {
+            console,
+            verbose,
+            ids,
+        } => commands::restart(&machine_dao, *console, *verbose, ids),
+        Commands::Sh {
+            console,
+            verbose,
+            instance,
+        } => commands::sh(&machine_dao, *console, *verbose, instance),
         Commands::Ssh {
             instance,
             xforward,
+            verbose,
             ssh_args,
             cmd,
-        } => commands::ssh(&machine_dao, instance, *xforward, ssh_args, cmd),
+        } => commands::ssh(&machine_dao, instance, *xforward, *verbose, ssh_args, cmd),
         Commands::Scp { from, to } => commands::scp(&machine_dao, from, to),
         Commands::Mount { name, host, guest } => commands::mount(&machine_dao, name, host, guest),
         Commands::Umount { name, guest } => commands::umount(&machine_dao, name, guest),

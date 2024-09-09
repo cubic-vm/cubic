@@ -179,6 +179,7 @@ impl MachineDao {
         machine: &Machine,
         qemu_args: &Option<String>,
         console: bool,
+        verbose: bool,
     ) -> Result<(), Error> {
         if self.is_running(machine) {
             return Result::Ok(());
@@ -291,10 +292,16 @@ impl MachineDao {
             }
         }
 
+        if verbose {
+            util::print_command(&command);
+        } else {
+            command
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null());
+        }
+
         command
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
             .spawn()
             .map(|_| ())
             .map_err(|_| Error::Start(machine.name.to_string()))?;
