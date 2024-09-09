@@ -35,6 +35,7 @@ pub fn ssh(
     machine_dao: &MachineDao,
     target: &str,
     xforward: bool,
+    verbose: bool,
     ssh_args: &Option<String>,
     cmd: &Option<String>,
 ) -> Result<(), Error> {
@@ -47,7 +48,7 @@ pub fn ssh(
     let mut stdout = std::io::stdout();
 
     if !machine_dao.is_running(&machine) {
-        machine_dao.start(&machine, &None, false)?;
+        machine_dao.start(&machine, &None, false, verbose)?;
     }
 
     if machine_dao.get_state(&machine) != MachineState::Running {
@@ -96,8 +97,13 @@ pub fn ssh(
 
     command
         .arg(format!("{user}@127.0.0.1"))
-        .arg(cmd.as_deref().unwrap_or(""))
-        .exec();
+        .arg(cmd.as_deref().unwrap_or(""));
+
+    if verbose {
+        util::print_command(&command);
+    }
+
+    command.exec();
 
     Result::Ok(())
 }

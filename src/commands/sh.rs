@@ -6,11 +6,11 @@ use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
 
-pub fn sh(machine_dao: &MachineDao, console: bool, name: &str) -> Result<(), Error> {
+pub fn sh(machine_dao: &MachineDao, console: bool, verbose: bool, name: &str) -> Result<(), Error> {
     let machine = machine_dao.load(name)?;
 
     if !machine_dao.is_running(&machine) {
-        machine_dao.start(&machine, &None, false)?;
+        machine_dao.start(&machine, &None, false, verbose)?;
     }
 
     if console {

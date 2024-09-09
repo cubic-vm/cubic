@@ -6,6 +6,7 @@ pub fn start(
     machine_dao: &MachineDao,
     qemu_args: &Option<String>,
     console: bool,
+    verbose: bool,
     ids: &Vec<String>,
 ) -> Result<(), Error> {
     util::check_ssh_key();
@@ -18,7 +19,7 @@ pub fn start(
 
     for id in ids {
         let machine = machine_dao.load(id)?;
-        machine_dao.start(&machine, qemu_args, console)?;
+        machine_dao.start(&machine, qemu_args, console, verbose)?;
     }
 
     Result::Ok(())
