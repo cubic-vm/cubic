@@ -1,16 +1,10 @@
 use crate::error::Error;
 use crate::image::{Image, ImageFactory, ImageFetcher};
 use crate::util;
-use regex::Regex;
+
 use std::fs::remove_file;
 use std::path::Path;
 use std::str;
-
-pub fn is_image(id: &str) -> bool {
-    Regex::new("^[A-Za-z0-9-]+:[A-Za-z0-9-]+$")
-        .unwrap()
-        .is_match(id)
-}
 
 pub struct ImageDao {
     pub image_dir: String,

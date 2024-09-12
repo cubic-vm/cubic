@@ -12,7 +12,7 @@ pub fn run(
     mem: &Option<String>,
     disk: &Option<String>,
 ) -> Result<(), Error> {
-    commands::add(
+    commands::InstanceCommands::add_instance(
         image_dao,
         machine_dao,
         image_name,
