@@ -1,5 +1,6 @@
 mod cli;
 mod commands;
+mod emulator;
 mod error;
 mod image;
 mod machine;

@@ -1,3 +1,4 @@
+use crate::emulator::Emulator;
 use crate::error::Error;
 use crate::machine::{Machine, MountPoint};
 use crate::util;
@@ -189,122 +190,43 @@ impl MachineDao {
         let cache_dir = format!("{}/{}", &self.cache_dir, &machine.name);
         util::setup_cloud_init(machine, &cache_dir, false)?;
 
-        let ssh_port = &machine.ssh_port;
-        let has_kvm = util::has_kvm();
-        let qemu = "qemu-system-x86_64";
-
-        if !has_kvm {
-            println!("WARNING: No KVM support detected");
-        }
-
-        let mut command = Command::new(qemu);
-
-        if has_kvm {
-            command.arg("-accel").arg("kvm");
-        }
-
-        for (index, MountPoint { ref host, .. }) in machine.mounts.iter().enumerate() {
-            command
-                .arg("-fsdev")
-                .arg(format!(
-                    "local,security_model=mapped,id=cubicdev{index},multidevs=remap,path={host}"
-                ))
-                .arg("-device")
-                .arg(format!(
-                    "virtio-9p-pci,id=cubic{index},fsdev=cubicdev{index},mount_tag=cubic{index}"
-                ));
-        }
-
+        let mut emulator = Emulator::from(machine.name.clone())?;
+        emulator.set_cpus(machine.cpus);
+        emulator.set_memory(machine.mem);
+        emulator.enable_kvm();
+        emulator.enable_sandbox();
+        emulator.set_console(&format!("{cache_dir}/console"));
         for i in 0..CONSOLE_COUNT {
-            let chardev = format!("console{}", i);
-            let chardev_path = format!("{cache_dir}/{chardev}");
-            command
-                .arg("-device")
-                .arg("virtio-serial")
-                .arg("-chardev")
-                .arg(format!(
-                    "socket,path={chardev_path},server=on,wait=off,id={chardev}"
-                ))
-                .arg("-device")
-                .arg(format!("virtconsole,chardev={chardev}"));
+            let name = format!("console{}", i);
+            let path = format!("{cache_dir}/{name}");
+            emulator.add_serial(&name, &path);
         }
+        emulator.add_drive(&format!("{machine_dir}/machine.img"), "qcow2");
+        emulator.add_drive(&format!("{cache_dir}/user-data.img"), "raw");
+        emulator.set_network(machine.ssh_port);
+        for (index, MountPoint { ref host, .. }) in machine.mounts.iter().enumerate() {
+            emulator.add_mount(&format!("cubicdev{index}"), host);
+        }
+        emulator.set_display(machine.display, machine.gpu);
+        if let Some(ref args) = qemu_args {
+            emulator.set_qemu_args(args);
+        }
+        emulator.set_verbose(verbose);
+        emulator.set_pid_file(&format!("{cache_dir}/qemu.pid"));
 
-        let qemu_root = std::env::var("SNAP").unwrap_or_default();
-
-        if std::env::var("SNAP").is_ok() {
-            command.env(
+        if let Ok(qemu_root) = std::env::var("SNAP") {
+            emulator.add_env(
                 "QEMU_MODULE_DIR",
                 "/snap/cubic/current/usr/lib/x86_64-linux-gnu/qemu",
             );
+            emulator.add_search_path(&format!("{qemu_root}/usr/share/qemu"));
+            emulator.add_search_path(&format!("{qemu_root}/usr/share/seabios"));
+            emulator.add_search_path(&format!("{qemu_root}/usr/lib/ipxe/qemu"));
         }
 
-        command.arg("-display");
-        if machine.display {
-            command.arg("gtk,gl=on");
-            command.arg("-device");
-            if machine.gpu {
-                command.arg("virtio-gpu-gl");
-            } else {
-                command.arg("virtio-gpu");
-            }
-        } else {
-            command.arg("none");
-        }
+        emulator.run()?;
 
-        command
-            .arg("-L")
-            .arg(format!("{qemu_root}/usr/share/qemu"))
-            .arg("-L")
-            .arg(format!("{qemu_root}/usr/share/seabios"))
-            .arg("-L")
-            .arg(format!("{qemu_root}/usr/lib/ipxe/qemu"))
-            .arg("-sandbox")
-            .arg("on")
-            .arg("-smp")
-            .arg(machine.cpus.to_string())
-            .arg("-m")
-            .arg(format!("{}B", machine.mem))
-            .arg("-device")
-            .arg("virtio-net-pci,netdev=net0")
-            .arg("-netdev")
-            .arg(format!("user,id=net0,hostfwd=tcp:127.0.0.1:{ssh_port}-:22"))
-            .arg("-drive")
-            .arg(format!(
-                "if=virtio,format=qcow2,file={machine_dir}/machine.img"
-            ))
-            .arg("-drive")
-            .arg(format!(
-                "if=virtio,file={cache_dir}/user-data.img,format=raw"
-            ))
-            .arg("-pidfile")
-            .arg(format!("{cache_dir}/qemu.pid"))
-            .arg("-chardev")
-            .arg(format!(
-                "socket,path={cache_dir}/console,server=on,wait=off,id=console"
-            ))
-            .arg("-serial")
-            .arg("chardev:console")
-            .arg("-daemonize");
-
-        if let Some(qemu_args) = qemu_args {
-            for arg in qemu_args.split(' ') {
-                command.arg(arg);
-            }
-        }
-
-        if verbose {
-            util::print_command(&command);
-        } else {
-            command
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null());
-        }
-
-        command
-            .spawn()
-            .map(|_| ())
-            .map_err(|_| Error::Start(machine.name.to_string()))?;
+        let cache_dir = &self.cache_dir;
 
         if console {
             while !Path::new(&format!("{cache_dir}/console")).exists() {
