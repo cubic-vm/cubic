@@ -6,7 +6,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Add and start a new machine
+    /// Setup and run a new instance
     Run {
         #[clap(short, long)]
         image: String,
@@ -20,75 +20,10 @@ pub enum Commands {
         disk: Option<String>,
     },
 
-    /// Add an image or a machine
-    Add {
-        #[clap(short, long)]
-        image: String,
-        #[clap(short, long)]
-        name: Option<String>,
-        #[clap(short, long)]
-        cpus: Option<u16>,
-        #[clap(short, long)]
-        mem: Option<String>,
-        #[clap(short, long)]
-        disk: Option<String>,
-    },
+    /// List instances
+    List,
 
-    /// Delete images and machines
-    Delete { ids: Vec<String> },
-
-    /// Clone a machine
-    Clone { name: String, new_name: String },
-
-    /// Rename a machine
-    Rename { old_name: String, new_name: String },
-
-    /// Read and write configuration parameters
-    Config {
-        instance: String,
-        #[clap(short, long)]
-        cpus: Option<u16>,
-        #[clap(short, long)]
-        mem: Option<String>,
-        #[clap(short, long)]
-        disk: Option<String>,
-    },
-
-    /// List images and machines
-    List {
-        #[clap(short, long, default_value_t = false)]
-        all: bool,
-        name: Option<String>,
-    },
-
-    /// Start machines
-    Start {
-        #[clap(long)]
-        qemu_args: Option<String>,
-        #[clap(short, long, default_value_t = false)]
-        console: bool,
-        #[clap(short, long, default_value_t = false)]
-        verbose: bool,
-        ids: Vec<String>,
-    },
-
-    /// Stop machines
-    Stop {
-        #[clap(short, long, default_value_t = false)]
-        all: bool,
-        ids: Vec<String>,
-    },
-
-    /// Restart a machine
-    Restart {
-        #[clap(short, long, default_value_t = false)]
-        console: bool,
-        #[clap(short, long, default_value_t = false)]
-        verbose: bool,
-        ids: Vec<String>,
-    },
-
-    /// Open a shell in the machine
+    /// Open a shell in an instance
     Sh {
         #[clap(short, long, default_value_t = false)]
         console: bool,
@@ -97,7 +32,7 @@ pub enum Commands {
         instance: String,
     },
 
-    /// Connect to a machine with SSH
+    /// Connect to an instance with SSH
     Ssh {
         instance: String,
         /// Forward X over SSH
@@ -110,18 +45,47 @@ pub enum Commands {
         cmd: Option<String>,
     },
 
-    /// Copy a file from or to a machine with SCP
+    /// Copy a file from or to an instance with SCP
     Scp { from: String, to: String },
 
-    /// Mount host directory to guest
-    Mount {
-        name: String,
-        host: String,
-        guest: String,
+    /// Start instances
+    Start {
+        #[clap(long)]
+        qemu_args: Option<String>,
+        #[clap(short, long, default_value_t = false)]
+        console: bool,
+        #[clap(short, long, default_value_t = false)]
+        verbose: bool,
+        ids: Vec<String>,
     },
 
-    /// Unmount guest directory
-    Umount { name: String, guest: String },
+    /// Stop instances
+    Stop {
+        #[clap(short, long, default_value_t = false)]
+        all: bool,
+        ids: Vec<String>,
+    },
+
+    /// Restart instances
+    Restart {
+        #[clap(short, long, default_value_t = false)]
+        console: bool,
+        #[clap(short, long, default_value_t = false)]
+        verbose: bool,
+        ids: Vec<String>,
+    },
+
+    /// Instance commands
+    #[command(subcommand)]
+    Instance(commands::InstanceCommands),
+
+    /// Image commands
+    #[command(subcommand)]
+    Image(commands::ImageCommands),
+
+    /// Mount commands
+    #[command(subcommand)]
+    Mount(commands::MountCommands),
 }
 
 #[derive(Parser)]
@@ -143,25 +107,7 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             mem,
             disk,
         } => commands::run(&image_dao, &machine_dao, image, name, cpus, mem, disk),
-        Commands::Add {
-            image,
-            name,
-            cpus,
-            mem,
-            disk,
-        } => commands::add(&image_dao, &machine_dao, image, name, cpus, mem, disk),
-        Commands::Delete { ids } => commands::delete(&image_dao, &machine_dao, ids),
-        Commands::Clone { name, new_name } => commands::clone(&machine_dao, name, new_name),
-        Commands::Rename { old_name, new_name } => {
-            machine_dao.rename(&mut machine_dao.load(old_name)?, new_name)
-        }
-        Commands::Config {
-            instance,
-            cpus,
-            mem,
-            disk,
-        } => commands::config(&machine_dao, instance, cpus, mem, disk),
-        Commands::List { name, all } => commands::list(&image_dao, &machine_dao, name, *all),
+        Commands::List => commands::InstanceCommands::list_instances(&machine_dao),
         Commands::Start {
             qemu_args,
             console,
@@ -187,7 +133,8 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             cmd,
         } => commands::ssh(&machine_dao, instance, *xforward, *verbose, ssh_args, cmd),
         Commands::Scp { from, to } => commands::scp(&machine_dao, from, to),
-        Commands::Mount { name, host, guest } => commands::mount(&machine_dao, name, host, guest),
-        Commands::Umount { name, guest } => commands::umount(&machine_dao, name, guest),
+        Commands::Instance(command) => command.dispatch(&image_dao, &machine_dao),
+        Commands::Image(command) => command.dispatch(&image_dao),
+        Commands::Mount(command) => command.dispatch(&machine_dao),
     }
 }
