@@ -13,7 +13,7 @@ Cubic is built on top of `QEMU`, `KVM` and `cloud-init`.
 - Daemon-less design
 - Works without root rights
 - Supports KVM acceleration
-- Supports Ubuntu and Debian guest images
+- Supports Ubuntu, Debian and Fedora guest images
 - Supports file transfers between host and guest
 - Supports directory mounting between host and guest
 - Written in Rust

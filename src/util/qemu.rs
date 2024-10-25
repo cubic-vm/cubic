@@ -147,6 +147,8 @@ pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(),
                     \u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- {ssh_pk}\n\
                     \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
                     \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n\
+                    packages:\n\
+                    \u{20}\u{20}- openssh-server\n\
                     bootcmd:\n\
                     {bootcmds}\n\
                     write_files:\n\
