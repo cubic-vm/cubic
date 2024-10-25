@@ -43,6 +43,28 @@ impl ImageFactory {
             });
         }
 
+        let fedora_url = "https://download.fedoraproject.org/pub/fedora/linux/releases/";
+        images.push(Image {
+            vendor: "fedora".to_string(),
+            codename: "39".to_string(),
+            version: "39".to_string(),
+            url: fedora_url.to_string()
+                + "39/Cloud/x86_64/images/Fedora-Cloud-Base-39-1.5.x86_64.qcow2",
+        });
+        images.push(Image {
+            vendor: "fedora".to_string(),
+            codename: "40".to_string(),
+            version: "40".to_string(),
+            url: fedora_url.to_string()
+                + "40/Cloud/x86_64/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2",
+        });
+        images.push(Image{
+            vendor: "fedora".to_string(),
+            codename: "41".to_string(),
+            version: "41".to_string(),
+            url: fedora_url.to_string() + "test/41_Beta/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-41_Beta-1.2.x86_64.qcow2"
+        });
+
         images
     }
 }
