@@ -103,8 +103,11 @@ pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(),
         }
 
         let mut bootcmds = String::new();
-        for (index, MountPoint { guest, .. }) in machine.mounts.iter().enumerate() {
-            bootcmds += &format!("  - mount -t 9p cubic{index} {guest}\n");
+        if !machine.mounts.is_empty() {
+            bootcmds += "bootcmd:\n";
+            for (index, MountPoint { guest, .. }) in machine.mounts.iter().enumerate() {
+                bootcmds += &format!("  - mount -t 9p cubic{index} {guest}\n");
+            }
         }
 
         if force || !Path::new(&user_data_path).exists() {
@@ -148,8 +151,7 @@ pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(),
                     \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
                     \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n\
                     packages:\n\
-                    \u{20}\u{20}- openssh-server\n\
-                    bootcmd:\n\
+                    \u{20}\u{20}- openssh\n\
                     {bootcmds}\n\
                     write_files:\n\
                     {write_files}\n\
