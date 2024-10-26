@@ -23,7 +23,7 @@ impl ImageCommands {
         match self {
             ImageCommands::List { all } => {
                 println!(
-                    "{:6}  {:>7}  {:10}  {: >5}  {: >9}",
+                    "{:10}  {:>7}  {:10}  {: >5}  {: >9}",
                     "Vendor", "Version", "Name", "Arch", "Size"
                 );
                 for image in image_dao.get_images() {
@@ -36,7 +36,7 @@ impl ImageCommands {
                         .map(util::bytes_to_human_readable)
                         .unwrap_or_default();
                     println!(
-                        "{:6}  {:>7}  {:10}  {: >5}  {: >9}",
+                        "{:10}  {:>7}  {:10}  {: >5}  {: >9}",
                         image.vendor, image.version, image.codename, "amd64", size
                     )
                 }
