@@ -208,10 +208,12 @@ impl InstanceCommands {
             }
         }
 
-        if util::confirm("Do you really want delete it? [y/n]: ") {
-            for instance in instances {
+        for instance in instances {
+            if util::confirm(&format!(
+                "Do you really want delete the instance '{instance}'? [y/n]: "
+            )) {
                 machine_dao.delete(&machine_dao.load(instance)?)?;
-                println!("Deleted machine {instance}");
+                println!("Deleted instance {instance}");
             }
         }
 

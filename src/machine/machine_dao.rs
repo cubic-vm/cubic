@@ -169,9 +169,9 @@ impl MachineDao {
         if self.is_running(machine) {
             Result::Err(Error::MachineNotStopped(machine.name.to_string()))
         } else {
-            fs::remove_dir_all(format!("{}/{}", self.cache_dir, machine.name))
-                .map_err(Error::Io)?;
-            fs::remove_dir_all(format!("{}/{}", self.machine_dir, machine.name)).map_err(Error::Io)
+            fs::remove_dir_all(format!("{}/{}", self.cache_dir, machine.name)).ok();
+            fs::remove_dir_all(format!("{}/{}", self.machine_dir, machine.name)).ok();
+            Ok(())
         }
     }
 
