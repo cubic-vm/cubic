@@ -1,5 +1,6 @@
 use std::io;
 
+#[derive(Debug)]
 pub enum Error {
     UnknownCommand,
     UnknownMachine(String),

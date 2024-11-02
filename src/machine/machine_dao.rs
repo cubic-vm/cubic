@@ -68,50 +68,35 @@ impl MachineDao {
     pub fn load(&self, name: &str) -> Result<Machine, Error> {
         let path = format!("{}/{name}", self.machine_dir);
 
+        if !Path::new(&path).exists() {
+            return Result::Err(Error::UnknownMachine(name.to_string()));
+        }
+
         if !self.exists(name) {
             return Result::Err(Error::UnknownMachine(name.to_string()));
         }
 
         let config_path = format!("{path}/machine.yaml");
-        let config_file = util::open_file(&config_path)?;
-        let config: Config = serde_yaml::from_reader(config_file)
-            .map_err(|_| Error::CannotParseFile(config_path.to_string()))?;
-
-        Path::new(&path)
-            .exists()
-            .then_some(Machine {
-                name: name.to_string(),
-                user: config.machine.user.to_string(),
-                cpus: config.machine.cpus,
-                mem: config.machine.mem,
-                disk_capacity: config.machine.disk_capacity,
-                ssh_port: config.machine.ssh_port,
-                display: config.machine.display,
-                gpu: config.machine.gpu,
-                mounts: config.machine.mounts.clone(),
-                hostfwd: config.machine.hostfwd.clone(),
-            })
-            .ok_or(Error::UnknownMachine(name.to_string()))
+        let mut config_file = util::open_file(&config_path)?;
+        Machine::deserialize(name, &mut config_file)
     }
 
     pub fn store(&self, machine: &Machine) -> Result<(), Error> {
         let path = format!("{}/{}", self.machine_dir, &machine.name);
-        let config = Config {
-            machine: machine.clone(),
-        };
         let machine_config = format!("{path}/machine.yaml");
+
         if Path::new(&machine_config).exists() {
             util::remove_file(&machine_config)?;
         }
 
-        let file = std::fs::OpenOptions::new()
+        let mut file = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
             .truncate(true)
             .open(&machine_config)
             .map_err(|_| Error::CannotCreateFile(machine_config.to_string()))?;
-        serde_yaml::to_writer(file, &config)
-            .map_err(|_| Error::CannotWriteFile(machine_config.to_string()))
+
+        machine.serialize(&mut file)
     }
 
     pub fn clone(&self, machine: &Machine, new_name: &str) -> Result<(), Error> {
