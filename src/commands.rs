@@ -1,4 +1,5 @@
 pub mod image;
+pub mod info;
 pub mod instance;
 pub mod mount;
 pub mod restart;
@@ -10,6 +11,7 @@ pub mod start;
 pub mod stop;
 
 pub use image::*;
+pub use info::*;
 pub use instance::*;
 pub use mount::*;
 pub use restart::*;
