@@ -23,6 +23,9 @@ pub enum Commands {
     /// List instances
     List,
 
+    /// Get information about an instance
+    Info { instance: String },
+
     /// Open a shell in an instance
     Sh {
         #[clap(short, long, default_value_t = false)]
@@ -108,6 +111,7 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             disk,
         } => commands::run(&image_dao, &machine_dao, image, name, cpus, mem, disk),
         Commands::List => commands::InstanceCommands::list_instances(&machine_dao),
+        Commands::Info { instance } => commands::info(&machine_dao, instance.clone()),
         Commands::Start {
             qemu_args,
             console,

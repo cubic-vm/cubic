@@ -180,20 +180,6 @@ impl InstanceCommands {
         }
 
         machine_dao.store(&machine)?;
-        println!("cpus:    {}", machine.cpus);
-        println!("mem:     {}", util::bytes_to_human_readable(machine.mem));
-        println!(
-            "disk:    {}",
-            util::bytes_to_human_readable(machine.disk_capacity)
-        );
-        println!("user:    {}", machine.user);
-        println!("mounts:");
-        for mount in &machine.mounts {
-            println!("  - {} => {}", mount.host, mount.guest);
-        }
-        println!("display: {}", machine.display);
-        println!("gpu: {}", machine.gpu);
-        println!("ssh-port: {}", machine.ssh_port);
         Result::Ok(())
     }
 
