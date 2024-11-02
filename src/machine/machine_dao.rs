@@ -89,6 +89,7 @@ impl MachineDao {
                 display: config.machine.display,
                 gpu: config.machine.gpu,
                 mounts: config.machine.mounts.clone(),
+                hostfwd: config.machine.hostfwd.clone(),
             })
             .ok_or(Error::UnknownMachine(name.to_string()))
     }
@@ -203,7 +204,7 @@ impl MachineDao {
         }
         emulator.add_drive(&format!("{machine_dir}/machine.img"), "qcow2");
         emulator.add_drive(&format!("{cache_dir}/user-data.img"), "raw");
-        emulator.set_network(machine.ssh_port);
+        emulator.set_network(&machine.hostfwd, machine.ssh_port);
         for (index, MountPoint { ref host, .. }) in machine.mounts.iter().enumerate() {
             emulator.add_mount(&format!("cubicdev{index}"), host);
         }

@@ -29,4 +29,6 @@ pub struct Machine {
     pub gpu: bool,
     #[serde(default)]
     pub mounts: Vec<MountPoint>,
+    #[serde(default)]
+    pub hostfwd: Vec<String>,
 }

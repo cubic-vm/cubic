@@ -65,12 +65,20 @@ impl Emulator {
             .arg("chardev:console");
     }
 
-    pub fn set_network(&mut self, ssh_port: u16) {
+    pub fn set_network(&mut self, hostfwd: &[String], ssh_port: u16) {
+        let mut hostfwd_options = String::new();
+        for fwd in hostfwd {
+            hostfwd_options.push_str(",hostfwd=");
+            hostfwd_options.push_str(fwd);
+        }
+
         self.command
             .arg("-device")
             .arg("virtio-net-pci,netdev=net0")
             .arg("-netdev")
-            .arg(format!("user,id=net0,hostfwd=tcp:127.0.0.1:{ssh_port}-:22"));
+            .arg(format!(
+                "user,id=net0,hostfwd=tcp:127.0.0.1:{ssh_port}-:22{hostfwd_options}"
+            ));
     }
 
     pub fn add_drive(&mut self, path: &str, format: &str) {

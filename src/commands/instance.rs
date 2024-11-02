@@ -148,6 +148,7 @@ impl InstanceCommands {
                 display: false,
                 gpu: false,
                 mounts: Vec::new(),
+                hostfwd: Vec::new(),
             };
             machine_dao.store(&machine)?;
             if disk.is_some() {
