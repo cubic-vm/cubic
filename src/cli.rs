@@ -49,7 +49,14 @@ pub enum Commands {
     },
 
     /// Copy a file from or to an instance with SCP
-    Scp { from: String, to: String },
+    Scp {
+        from: String,
+        to: String,
+        #[clap(short, long, default_value_t = false)]
+        verbose: bool,
+        #[clap(long)]
+        scp_args: Option<String>,
+    },
 
     /// Start instances
     Start {
@@ -136,7 +143,12 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             ssh_args,
             cmd,
         } => commands::ssh(&machine_dao, instance, *xforward, *verbose, ssh_args, cmd),
-        Commands::Scp { from, to } => commands::scp(&machine_dao, from, to),
+        Commands::Scp {
+            from,
+            to,
+            verbose,
+            scp_args,
+        } => commands::scp(&machine_dao, from, to, *verbose, scp_args),
         Commands::Instance(command) => command.dispatch(&image_dao, &machine_dao),
         Commands::Image(command) => command.dispatch(&image_dao),
         Commands::Mount(command) => command.dispatch(&machine_dao),
