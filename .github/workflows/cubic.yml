@@ -7,6 +7,9 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     steps:
+      - name: Install Dependencies
+        run: cargo install cargo-audit
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -21,3 +24,6 @@ jobs:
 
       - name: Test Code
         run: cargo test
+
+      - name: Audit Code
+        run: cargo audit
