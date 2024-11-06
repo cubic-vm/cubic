@@ -5,7 +5,6 @@ pub mod input;
 pub mod migration;
 pub mod process;
 pub mod qemu;
-pub mod ssh;
 pub mod terminal;
 
 pub use env::*;
@@ -15,5 +14,4 @@ pub use input::*;
 pub use migration::*;
 pub use process::*;
 pub use qemu::*;
-pub use ssh::*;
 pub use terminal::*;

@@ -2,6 +2,7 @@ use crate::emulator::Emulator;
 use crate::error::Error;
 use crate::machine::{Machine, MountPoint};
 use crate::qemu::Monitor;
+use crate::ssh_cmd::PortChecker;
 use crate::util;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -238,7 +239,7 @@ impl MachineDao {
 
     pub fn get_state(&self, machine: &Machine) -> MachineState {
         if self.is_running(machine) {
-            if util::SSHClient::new(machine.ssh_port).try_connect() {
+            if PortChecker::new(machine.ssh_port).try_connect() {
                 MachineState::Running
             } else {
                 MachineState::Starting

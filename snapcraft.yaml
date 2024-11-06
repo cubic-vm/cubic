@@ -88,3 +88,4 @@ apps:
       - network
       - network-bind
       - home
+      - ssh-keys

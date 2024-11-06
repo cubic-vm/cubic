@@ -5,6 +5,7 @@ mod error;
 mod image;
 mod machine;
 mod qemu;
+mod ssh_cmd;
 mod util;
 
 use clap::Parser;
