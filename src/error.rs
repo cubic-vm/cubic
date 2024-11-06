@@ -42,8 +42,13 @@ pub fn print_error(error: Error) {
         Error::MachineAlreadyExists(id) => println!("Machine with name '{id}' already exists"),
         Error::Io(e) => println!("{}", e),
         Error::UnknownImage(name) => println!("Unknown image name {name}"),
-        Error::MissingSshKey => println!(
-            "Could not find any ssh keys. Please create a ssh key to access the virtual machine"
+        Error::MissingSshKey => print!(
+            "No SSH keys found. Please try the following:\n\
+- Check if cubic has read access to $HOME/.ssh
+  - Snap users must grant access with: `sudo snap connect cubic:ssh-keys`\n\
+- Check if you have a ssh key in $HOME/.ssh
+  - You can generate one with `ssh-keygen`\n\
+- Use `cubic sh mymachine` instead\n"
         ),
         Error::InvalidImageName(name) => println!("Invalid image name: {name}"),
         Error::UnsetEnvVar(var) => println!("Environment variable '{var}' is not set"),

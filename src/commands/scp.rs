@@ -1,7 +1,8 @@
 use crate::error::Error;
 use crate::machine::MachineDao;
-use crate::util;
-use std::process::Command;
+use crate::ssh_cmd::{get_ssh_private_key_names, Scp};
+use std::env;
+use std::os::unix::process::CommandExt;
 
 fn resolve_name(machine_dao: &MachineDao, location: &str) -> Result<String, Error> {
     Ok(if location.contains(':') {
@@ -40,35 +41,14 @@ pub fn scp(
     let from = &resolve_name(machine_dao, from)?;
     let to = &resolve_name(machine_dao, to)?;
 
-    let mut command = Command::new("scp");
-    for key in util::get_ssh_key_names()? {
-        command.arg("-i").arg(key);
-    }
+    Scp::new()
+        .set_root_dir(env::var("SNAP").unwrap_or_default().as_str())
+        .set_verbose(verbose)
+        .set_private_keys(get_ssh_private_key_names()?)
+        .set_port(Some(ssh_port))
+        .set_args(scp_args.as_ref().unwrap_or(&String::new()))
+        .copy(from, to)
+        .exec();
 
-    command
-        .arg("-o")
-        .arg("StrictHostKeyChecking=no")
-        .arg("-r")
-        .arg("-P")
-        .arg(ssh_port.to_string());
-
-    if let Ok(snap_root) = std::env::var("SNAP") {
-        command.arg(format!("-S{snap_root}/usr/bin/ssh"));
-    }
-
-    if let Some(scp_args) = scp_args {
-        for arg in scp_args.split(' ') {
-            command.arg(arg);
-        }
-    }
-
-    command.arg(from).arg(to);
-
-    if verbose {
-        util::print_command(&command);
-    }
-
-    command.spawn().unwrap().wait().unwrap();
-
-    Result::Ok(())
+    Ok(())
 }

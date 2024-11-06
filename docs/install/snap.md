@@ -3,6 +3,8 @@
 Cubic can be installed from the Snap Store:
 ```
 $ sudo snap install cubic
+$ sudo snap connect cubic:kvm
+$ sudo snap connect cubic:ssh-keys
 ```
 
 ## How to enable Kernel Virtual Machine (KVM) acceleration?

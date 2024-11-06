@@ -90,8 +90,8 @@ machine:
         assert_eq!(machine.mem, 1073741824);
         assert_eq!(machine.disk_capacity, 2361393152);
         assert_eq!(machine.ssh_port, 14357);
-        assert_eq!(machine.display, false);
-        assert_eq!(machine.gpu, false);
+        assert!(!machine.display);
+        assert!(!machine.gpu);
         assert!(machine.mounts.is_empty());
         assert!(machine.hostfwd.is_empty());
     }
@@ -123,8 +123,8 @@ machine:
         assert_eq!(machine.mem, 1073741824);
         assert_eq!(machine.disk_capacity, 2361393152);
         assert_eq!(machine.ssh_port, 14357);
-        assert_eq!(machine.display, false);
-        assert_eq!(machine.gpu, false);
+        assert!(!machine.display);
+        assert!(!machine.gpu);
         assert_eq!(
             machine.mounts,
             [MountPoint {
@@ -163,8 +163,8 @@ machine:
         assert_eq!(machine.mem, 1073741824);
         assert_eq!(machine.disk_capacity, 2361393152);
         assert_eq!(machine.ssh_port, 14357);
-        assert_eq!(machine.display, true);
-        assert_eq!(machine.gpu, true);
+        assert!(machine.display);
+        assert!(machine.gpu);
         assert!(machine.mounts.is_empty());
         assert!(machine.hostfwd.is_empty());
     }

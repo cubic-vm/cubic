@@ -1,9 +1,10 @@
 use crate::error::Error;
 use crate::machine::{MachineDao, MachineState};
-use crate::util;
+use crate::ssh_cmd::{get_ssh_private_key_names, Ssh};
+
 use std::io::Write;
 use std::os::unix::process::CommandExt;
-use std::process::Command;
+
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
@@ -39,8 +40,6 @@ pub fn ssh(
     ssh_args: &Option<String>,
     cmd: &Option<String>,
 ) -> Result<(), Error> {
-    util::check_ssh_key();
-
     let instance = get_instance_name(target)?;
     let machine = machine_dao.load(&instance)?;
     let user = get_user_name(target)?.unwrap_or(machine.user.to_string());
@@ -73,37 +72,16 @@ pub fn ssh(
         println!();
     }
 
-    let mut command = Command::new("ssh");
+    Ssh::new()
+        .set_private_keys(get_ssh_private_key_names()?)
+        .set_port(Some(ssh_port))
+        .set_xforward(xforward)
+        .set_args(ssh_args.clone().unwrap_or_default())
+        .set_user(user)
+        .set_cmd(cmd.clone())
+        .set_verbose(verbose)
+        .connect()
+        .exec();
 
-    for key in util::get_ssh_key_names()? {
-        command.arg("-i").arg(key);
-    }
-
-    command
-        .arg("-o")
-        .arg("StrictHostKeyChecking=no")
-        .arg("-p")
-        .arg(ssh_port.to_string());
-
-    if xforward {
-        command.arg("-X");
-    }
-
-    if let Some(ssh_args) = ssh_args {
-        for arg in ssh_args.split(' ') {
-            command.arg(arg);
-        }
-    }
-
-    command
-        .arg(format!("{user}@127.0.0.1"))
-        .arg(cmd.as_deref().unwrap_or(""));
-
-    if verbose {
-        util::print_command(&command);
-    }
-
-    command.exec();
-
-    Result::Ok(())
+    Ok(())
 }

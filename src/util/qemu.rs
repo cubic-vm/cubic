@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::machine::{Machine, MountPoint, CONSOLE_COUNT};
+use crate::ssh_cmd::get_ssh_pub_keys;
 use crate::util;
 use serde_json::Value::{self, Number};
 use std::fs::File;
@@ -111,7 +112,7 @@ pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(),
         }
 
         if force || !Path::new(&user_data_path).exists() {
-            let ssh_pk = util::get_ssh_pub_keys()?.join("\n\u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- ");
+            let ssh_pk = get_ssh_pub_keys()?.join("\n\u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- ");
 
             let mut write_files = String::new();
             let mut consoles = String::new();
