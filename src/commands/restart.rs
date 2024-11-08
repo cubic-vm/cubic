@@ -18,7 +18,11 @@ pub fn restart(
     for id in ids {
         let machine = machine_dao.load(id)?;
         machine_dao.stop(&machine)?;
-        thread::sleep(Duration::new(2, 0));
+
+        while machine_dao.is_running(&machine) {
+            thread::sleep(Duration::new(1, 0));
+        }
+
         machine_dao.start(&machine, &None, console, verbose)?;
     }
 

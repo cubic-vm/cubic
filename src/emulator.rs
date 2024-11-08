@@ -57,6 +57,15 @@ impl Emulator {
             .arg(format!("virtconsole,chardev={name}"));
     }
 
+    pub fn add_qmp(&mut self, name: &str, path: &str) {
+        self.command
+            .args([
+                "-chardev",
+                &format!("socket,id={name},path={path},server=on,wait=off"),
+            ])
+            .args(["-mon", &format!("chardev={name},mode=control,pretty=off")]);
+    }
+
     pub fn set_console(&mut self, path: &str) {
         self.command
             .arg("-chardev")
