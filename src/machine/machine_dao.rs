@@ -1,6 +1,7 @@
 use crate::emulator::Emulator;
 use crate::error::Error;
 use crate::machine::{Machine, MountPoint};
+use crate::qemu::Monitor;
 use crate::util;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -210,6 +211,7 @@ impl MachineDao {
             emulator.add_search_path(&format!("{qemu_root}/usr/lib/ipxe/qemu"));
         }
 
+        emulator.add_qmp("qmp", &format!("{cache_dir}/qmp.socket"));
         emulator.run()?;
 
         let cache_dir = &self.cache_dir;
@@ -229,17 +231,9 @@ impl MachineDao {
             return Result::Ok(());
         }
 
-        let pid = self
-            .get_pid(machine)
-            .map_err(|_| Error::Stop(machine.name.to_string()))?;
-
-        Command::new("kill")
-            .arg(pid.to_string())
-            .spawn()
-            .map_err(|_| Error::Stop(machine.name.to_string()))?
-            .wait()
-            .map(|_| ())
-            .map_err(|_| Error::Stop(machine.name.to_string()))
+        let mut monitor =
+            Monitor::new(&format!("{}/{}/qmp.socket", self.cache_dir, &machine.name))?;
+        monitor.shutdown()
     }
 
     pub fn get_state(&self, machine: &Machine) -> MachineState {

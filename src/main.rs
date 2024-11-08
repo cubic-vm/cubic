@@ -4,6 +4,7 @@ mod emulator;
 mod error;
 mod image;
 mod machine;
+mod qemu;
 mod util;
 
 use clap::Parser;
