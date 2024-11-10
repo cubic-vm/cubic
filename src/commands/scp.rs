@@ -44,6 +44,11 @@ pub fn scp(
     Scp::new()
         .set_root_dir(env::var("SNAP").unwrap_or_default().as_str())
         .set_verbose(verbose)
+        .set_known_hosts_file(
+            env::var("HOME")
+                .map(|dir| format!("{dir}/.ssh/known_hosts"))
+                .ok(),
+        )
         .set_private_keys(get_ssh_private_key_names()?)
         .set_port(Some(ssh_port))
         .set_args(scp_args.as_ref().unwrap_or(&String::new()))

@@ -1,8 +1,10 @@
 use crate::util;
+use std::path::Path;
 use std::process::Command;
 
 #[derive(Default)]
 pub struct Ssh {
+    known_hosts_file: Option<String>,
     private_keys: Vec<String>,
     user: String,
     port: Option<u16>,
@@ -15,6 +17,11 @@ pub struct Ssh {
 impl Ssh {
     pub fn new() -> Self {
         Ssh::default()
+    }
+
+    pub fn set_known_hosts_file(&mut self, path: Option<String>) -> &mut Self {
+        self.known_hosts_file = path;
+        self
     }
 
     pub fn set_private_keys(&mut self, private_keys: Vec<String>) -> &mut Self {
@@ -54,6 +61,16 @@ impl Ssh {
 
     pub fn connect(&self) -> Command {
         let mut command = Command::new("ssh");
+
+        if let Some(ref known_hosts_file) = self.known_hosts_file {
+            Path::new(known_hosts_file)
+                .parent()
+                .and_then(|dir| dir.to_str())
+                .map(util::create_dir);
+
+            command.arg(format!("-oUserKnownHostsFile={known_hosts_file}"));
+        }
+
         command
             .args(self.port.map(|port| format!("-p{port}")).as_slice())
             .args(
