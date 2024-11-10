@@ -2,34 +2,34 @@
 
 ## Config Command
 ```
-$ cubic config -h
+$ cubic instance config --help
 Read and write configuration parameters
 
-Usage: cubic config [OPTIONS] <INSTANCE>
+Usage: cubic instance config [OPTIONS] <INSTANCE>
 
 Arguments:
-  <INSTANCE>  
+  <INSTANCE>
 
 Options:
-  -c, --cpus <CPUS>        
-  -m, --mem <MEM>          
-  -d, --disk <DISK>        
-  -s, --sandbox <SANDBOX>  [possible values: true, false]
-  -h, --help               Print help
+  -c, --cpus <CPUS>
+  -m, --mem <MEM>
+  -d, --disk <DISK>
+  -h, --help         Print help
 ```
 **Example:**
 
 Show a virtual machine config:
 ```
-$ cubic config example 
-cpus: 4 
+$ cubic instance config example
+cpus: 4
 mem:  4.0 GiB
 disk: 2.2 GiB
 ```
+
 Change a virtual machine config:
 ```
-$ cubic config --cpus 5 --mem 5G --disk 5G example
-cpus: 5 
+$ cubic instance config --cpus 5 --mem 5G --disk 5G example
+cpus: 5
 mem:  5.0 GiB
 disk: 5.0 GiB
 ```

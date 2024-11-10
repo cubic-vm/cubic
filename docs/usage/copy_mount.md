@@ -2,52 +2,67 @@
 
 ## SCP Command
 ```
-$ cubic scp -h
-Copy a file from or to a machine with SCP
+$ cubic scp --help
+Copy a file from or to an instance with SCP
 
-Usage: cubic scp <FROM> <TO>
+Usage: cubic scp [OPTIONS] <FROM> <TO>
 
 Arguments:
-  <FROM>  
-  <TO>    
+  <FROM>
+  <TO>
 
 Options:
-  -h, --help  Print help
+  -v, --verbose
+      --scp-args <SCP_ARGS>
+  -h, --help                 Print help
 ```
+
 **Example:**
+Copy a file from the host to an virtual machine instance:
 ```
 $ touch test
-$ cubic scp mymachine test example:~/
+$ cubic scp test example:~/
+```
+
+Copy a directory from the virtual machine instance to the host:
+```
+$ cubic scp example:~/Documents/ .
 ```
 
 ## Mount Command
 ```
-$ cubic mount -h
-Mount host directory to guest
+$ cubic mount --help
+Mount commands
 
-Usage: cubic mount <NAME> <HOST> <GUEST>
+Usage: cubic mount <COMMAND>
 
-Arguments:
-  <NAME>   
-  <HOST>   
-  <GUEST>  
-
-Options:
-  -h, --help  Print help
-```
-
-
-## Umount Command
-```
-$ cubic umount -h
-Unmount guest directory
-
-Usage: cubic umount <NAME> <GUEST>
-
-Arguments:
-  <NAME>   
-  <GUEST>  
+Commands:
+  list  List mount mounts
+  add   Add a directory mount
+  del   Delete a directory mount
+  help  Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help  Print help
 ```
+
+**Example:**
+Mount a host directory to the virtual machine instance:
+```
+$ cubic mount add example /home/tux/Documennts /home/cubic/Documents
+```
+
+List mounts of virtual machine instance:
+```
+$ cubic mount list example
+HOST                           GUEST
+/home/tux/Documennts           /home/cubic/Documents
+```
+
+Unmount a directory:
+```
+$ cubic mount del example /home/cubic/Documents
+```
+
+
+

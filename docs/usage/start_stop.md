@@ -2,46 +2,48 @@
 
 ## Start Command
 ```
-$ cubic start -h
-Start machines
+$ cubic start --help
+Start instances
 
 Usage: cubic start [OPTIONS] [IDS]...
 
 Arguments:
-  [IDS]...  
+  [IDS]...
 
 Options:
-      --qemu-args <QEMU_ARGS>  
-  -c, --console                
+      --qemu-args <QEMU_ARGS>
+  -c, --console
+  -v, --verbose
   -h, --help                   Print help
 ```
 
 ## Stop Command
 ```
-$ cubic stop -h
-Stop machines
+$ cubic stop --help
+Stop instances
 
 Usage: cubic stop [OPTIONS] [IDS]...
 
 Arguments:
-  [IDS]...  
+  [IDS]...
 
 Options:
-  -a, --all   
+  -a, --all
   -h, --help  Print help
 ```
 
 ## Restart Command
 ```
-$ cubic restart -h
-Restart a machine
+$ cubic restart --help
+Restart instances
 
 Usage: cubic restart [OPTIONS] [IDS]...
 
 Arguments:
-  [IDS]...  
+  [IDS]...
 
 Options:
-  -c, --console  
+  -c, --console
+  -v, --verbose
   -h, --help     Print help
 ```
