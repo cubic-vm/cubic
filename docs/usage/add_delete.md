@@ -3,40 +3,40 @@
 ## Add Command
 Create a virtual machine:
 ```
-$ cubic add -h
-Add an image or a machine
+$ cubic instance add -h
+Add an instance
 
-Usage: cubic add [OPTIONS] --image <IMAGE>
+Usage: cubic instance add [OPTIONS] --image <IMAGE>
 
 Options:
-  -i, --image <IMAGE>  
-  -n, --name <NAME>    
-  -c, --cpus <CPUS>    
-  -m, --mem <MEM>      
-  -d, --disk <DISK>    
+  -i, --image <IMAGE>
+  -n, --name <NAME>
+  -c, --cpus <CPUS>
+  -m, --mem <MEM>
+  -d, --disk <DISK>
   -h, --help           Print help
 ```
 **Example**:
 ```
-$ cubic add --name example --image ubuntu:jammy:amd64 --cpus 4 --mem 4G --disk 5G
+$ cubic instance add --name example --image ubuntu:jammy:amd64 --cpus 4 --mem 4G --disk 5G
 ```
 
 ## Delete Command
 
 Delete a virtual machine:
 ```
-$ cubic delete -h
-Delete images and machines
+$ cubic instance del --help
+Delete instances
 
-Usage: cubic delete [IDS]...
+Usage: cubic instance del [INSTANCES]...
 
 Arguments:
-  [IDS]...  
+  [INSTANCES]...
 
 Options:
   -h, --help  Print help
 ```
 **Example**:
 ```
-$ cubic delete example
+$ cubic instance del example
 ```
