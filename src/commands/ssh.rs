@@ -1,10 +1,9 @@
 use crate::error::Error;
 use crate::machine::{MachineDao, MachineState};
 use crate::ssh_cmd::{get_ssh_private_key_names, Ssh};
-
+use std::env;
 use std::io::Write;
 use std::os::unix::process::CommandExt;
-
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
@@ -73,6 +72,11 @@ pub fn ssh(
     }
 
     Ssh::new()
+        .set_known_hosts_file(
+            env::var("HOME")
+                .map(|dir| format!("{dir}/.ssh/known_hosts"))
+                .ok(),
+        )
         .set_private_keys(get_ssh_private_key_names()?)
         .set_port(Some(ssh_port))
         .set_xforward(xforward)
