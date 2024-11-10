@@ -66,6 +66,19 @@ impl Emulator {
             .args(["-mon", &format!("chardev={name},mode=control,pretty=off")]);
     }
 
+    pub fn add_guest_agent(&mut self, name: &str, path: &str) {
+        self.command
+            .args([
+                "-chardev",
+                &format!("socket,id={name},path={path},server=on,wait=off"),
+            ])
+            .args(["-device", "virtio-serial"])
+            .args([
+                "-device",
+                &format!("virtserialport,chardev={name},name=org.qemu.guest_agent.0"),
+            ]);
+    }
+
     pub fn set_console(&mut self, path: &str) {
         self.command
             .arg("-chardev")

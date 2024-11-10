@@ -154,6 +154,7 @@ pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(
                     \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n\
                     packages:\n\
                     \u{20}\u{20}- openssh\n\
+                    \u{20}\u{20}- qemu-guest-agent\n\
                     {bootcmds}\n\
                     write_files:\n\
                     {write_files}\n\
