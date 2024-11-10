@@ -1,7 +1,7 @@
 use crate::emulator::Emulator;
 use crate::error::Error;
 use crate::instance::{Instance, MountPoint};
-use crate::qemu::Monitor;
+use crate::qemu::{GuestAgent, Monitor};
 use crate::ssh_cmd::PortChecker;
 use crate::util;
 use serde::{Deserialize, Serialize};
@@ -213,6 +213,7 @@ impl InstanceDao {
         }
 
         emulator.add_qmp("qmp", &format!("{cache_dir}/qmp.socket"));
+        emulator.add_guest_agent("guest-agent", &format!("{cache_dir}/guest-agent.socket"));
         let child = emulator.run()?;
 
         Ok(child)
@@ -230,7 +231,10 @@ impl InstanceDao {
 
     pub fn get_state(&self, instance: &Instance) -> InstanceState {
         if self.is_running(instance) {
-            if PortChecker::new(instance.ssh_port).try_connect() {
+            let ga = self.get_guest_agent(instance);
+            if ga.and_then(|mut ga| ga.ping()).is_ok()
+                || PortChecker::new(instance.ssh_port).try_connect()
+            {
                 InstanceState::Running
             } else {
                 InstanceState::Starting
@@ -251,5 +255,12 @@ impl InstanceDao {
             .map_err(|_| ())?;
 
         pid.trim().parse::<u64>().map_err(|_| ())
+    }
+
+    pub fn get_guest_agent(&self, instance: &Instance) -> Result<GuestAgent, Error> {
+        GuestAgent::new(&format!(
+            "{}/{}/guest-agent.socket",
+            self.cache_dir, &instance.name
+        ))
     }
 }
