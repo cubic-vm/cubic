@@ -168,6 +168,7 @@ Options:
 - [Transfer Directories and Files](docs/usage/copy_mount.md)
 - [Configure Virtual Machines](docs/usage/configure.md)
 - [Rename and Clone Virtual Machines](docs/usage/rename_clone.md)
+- [Guest to Host Port Forwarding](docs/usage/hostfwd.md)
 
 ## How to contribute to Cubic?
 

@@ -30,6 +30,7 @@ pub enum Error {
     ImageDownloadFailed(String),
     GetCapacityFailed(String),
     CannotOpenTerminal(String),
+    HostFwdRuleMalformed(String),
 }
 
 pub fn print_error(error: Error) {
@@ -72,5 +73,6 @@ pub fn print_error(error: Error) {
         Error::ImageDownloadFailed(name) => println!("Failed to download image: '{name}'"),
         Error::GetCapacityFailed(path) => println!("Failed to get capacity from image: '{path}'"),
         Error::CannotOpenTerminal(path) => println!("Failed to open terminal from path: '{path}'"),
+        Error::HostFwdRuleMalformed(rule) => println!("Host forwarding rule is malformed: {rule}"),
     }
 }

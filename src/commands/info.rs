@@ -33,5 +33,10 @@ pub fn info(machine_dao: &MachineDao, instance: String) -> Result<(), Error> {
         println!("  - {} => {}", mount.host, mount.guest);
     }
 
+    println!("hostfwd:");
+    for rule in &machine.hostfwd {
+        println!("  - {rule}");
+    }
+
     Result::Ok(())
 }

@@ -96,6 +96,10 @@ pub enum Commands {
     /// Mount commands
     #[command(subcommand)]
     Mount(commands::MountCommands),
+
+    /// Network commands
+    #[command(subcommand)]
+    Net(commands::NetworkCommands),
 }
 
 #[derive(Parser)]
@@ -152,5 +156,6 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
         Commands::Instance(command) => command.dispatch(&image_dao, &machine_dao),
         Commands::Image(command) => command.dispatch(&image_dao),
         Commands::Mount(command) => command.dispatch(&machine_dao),
+        Commands::Net(command) => command.dispatch(&machine_dao),
     }
 }
