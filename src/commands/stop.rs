@@ -1,5 +1,6 @@
 use crate::error::Error;
-use crate::machine::MachineDao;
+use crate::machine::{MachineDao, MachineState};
+use crate::view::InstanceStateChangeView;
 
 pub fn stop(machine_dao: &MachineDao, ids: &Vec<String>, all: bool) -> Result<(), Error> {
     for id in ids {
@@ -14,10 +15,15 @@ pub fn stop(machine_dao: &MachineDao, ids: &Vec<String>, all: bool) -> Result<()
         ids.clone()
     };
 
+    let mut machines = Vec::new();
     for id in stop_ids {
         let machine = machine_dao.load(&id)?;
         machine_dao.stop(&machine)?;
+        machines.push(machine);
     }
+
+    InstanceStateChangeView::new("Stopping instance(s)", MachineState::Stopped)
+        .run(machine_dao, &machines);
 
     Result::Ok(())
 }

@@ -1,5 +1,6 @@
 use crate::error::Error;
-use crate::machine::MachineDao;
+use crate::machine::{MachineDao, MachineState};
+use crate::view::InstanceStateChangeView;
 
 pub fn start(
     machine_dao: &MachineDao,
@@ -14,10 +15,15 @@ pub fn start(
         }
     }
 
+    let mut machines = Vec::new();
     for id in ids {
         let machine = machine_dao.load(id)?;
         machine_dao.start(&machine, qemu_args, console, verbose)?;
+        machines.push(machine);
     }
+
+    InstanceStateChangeView::new("Starting instance(s)", MachineState::Running)
+        .run(machine_dao, &machines);
 
     Result::Ok(())
 }

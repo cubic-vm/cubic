@@ -7,6 +7,7 @@ mod machine;
 mod qemu;
 mod ssh_cmd;
 mod util;
+mod view;
 
 use clap::Parser;
 
