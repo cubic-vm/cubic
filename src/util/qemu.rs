@@ -22,6 +22,7 @@ fn run_qemu_info(path: &str) -> Result<Value, Error> {
         .arg("--output=json")
         .arg(path)
         .stdout(Stdio::piped())
+        .stderr(Stdio::null())
         .output()
         .map_err(|_| Error::GetCapacityFailed(path.to_string()))?
         .stdout;
@@ -169,8 +170,8 @@ pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(),
             .arg(&user_data_img_path)
             .arg(user_data_path)
             .arg(metadata_path)
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
             .spawn()
             .map_err(|_| Error::UserDataCreationFailed(instance.to_string()))?
             .wait()

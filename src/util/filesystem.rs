@@ -2,7 +2,7 @@ use crate::error::Error;
 use std::fs;
 use std::io::prelude::*;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 pub fn copy_file(from: &str, to: &str) -> Result<(), Error> {
     fs::copy(from, to)
@@ -15,6 +15,8 @@ pub fn copy_dir(from: &str, to: &str) -> Result<(), Error> {
         .arg("--recursive")
         .arg(from)
         .arg(to)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
         .map_err(|_| Error::CannotCopyDir(from.to_string(), to.to_string()))?
         .wait()
@@ -26,6 +28,8 @@ pub fn move_dir(from: &str, to: &str) -> Result<(), Error> {
     Command::new("mv")
         .arg(from)
         .arg(to)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
         .map_err(|_| Error::CannotMoveDir(from.to_string(), to.to_string()))?
         .wait()
