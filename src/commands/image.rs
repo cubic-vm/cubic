@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::image::ImageDao;
 use crate::util;
+use crate::view::{Alignment, TableView};
 use clap::Subcommand;
 
 #[derive(Subcommand)]
@@ -22,10 +23,14 @@ impl ImageCommands {
     pub fn dispatch(&self, image_dao: &ImageDao) -> Result<(), Error> {
         match self {
             ImageCommands::List { all } => {
-                println!(
-                    "{:10}  {:>7}  {:10}  {: >5}  {: >9}",
-                    "Vendor", "Version", "Name", "Arch", "Size"
-                );
+                let mut view = TableView::new();
+                view.add_row()
+                    .add("Vendor", Alignment::Left)
+                    .add("Version", Alignment::Right)
+                    .add("Name", Alignment::Left)
+                    .add("Arch", Alignment::Left)
+                    .add("Size", Alignment::Right);
+
                 for image in image_dao.get_images() {
                     if !(*all || image_dao.exists(image)) {
                         continue;
@@ -35,12 +40,15 @@ impl ImageCommands {
                         .get_disk_size(image)
                         .map(util::bytes_to_human_readable)
                         .unwrap_or_default();
-                    println!(
-                        "{:10}  {:>7}  {:10}  {: >5}  {: >9}",
-                        image.vendor, image.version, image.codename, "amd64", size
-                    )
-                }
 
+                    view.add_row()
+                        .add(&image.vendor, Alignment::Left)
+                        .add(&image.version, Alignment::Right)
+                        .add(&image.codename, Alignment::Left)
+                        .add("amd64", Alignment::Left)
+                        .add(&size, Alignment::Right);
+                }
+                view.print();
                 Ok(())
             }
 

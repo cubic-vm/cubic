@@ -2,6 +2,7 @@ use crate::error::Error;
 use crate::image::ImageDao;
 use crate::machine::{Machine, MachineDao, MachineState, USER};
 use crate::util;
+use crate::view::{Alignment, TableView};
 use clap::Subcommand;
 
 #[derive(Subcommand)]
@@ -84,26 +85,37 @@ impl InstanceCommands {
     pub fn list_instances(machine_dao: &MachineDao) -> Result<(), Error> {
         let machine_names = machine_dao.get_machines();
 
-        println!(
-            "{:15}  {: >4}  {: >9}  {: >9}  {:10}",
-            "Name", "CPUs", "Memory", "Disk", "State"
-        );
-        for machine_name in machine_names {
-            let machine = machine_dao.load(&machine_name)?;
-            println!(
-                "{:15}  {: >4}  {: >9}  {: >9}  {:10}",
-                machine_name,
-                &machine.cpus,
-                util::bytes_to_human_readable(machine.mem),
-                util::bytes_to_human_readable(machine.disk_capacity),
-                match machine_dao.get_state(&machine) {
-                    MachineState::Stopped => "STOPPED",
-                    MachineState::Starting => "STARTING",
-                    MachineState::Running => "RUNNING",
-                }
-            );
-        }
+        let mut view = TableView::new();
+        view.add_row()
+            .add("Name", Alignment::Left)
+            .add("CPUs", Alignment::Right)
+            .add("Memory", Alignment::Right)
+            .add("Disk", Alignment::Right)
+            .add("State", Alignment::Left);
 
+        for machine_name in &machine_names {
+            let machine = machine_dao.load(machine_name)?;
+            view.add_row()
+                .add(machine_name, Alignment::Left)
+                .add(&machine.cpus.to_string(), Alignment::Right)
+                .add(
+                    &util::bytes_to_human_readable(machine.mem),
+                    Alignment::Right,
+                )
+                .add(
+                    &util::bytes_to_human_readable(machine.disk_capacity),
+                    Alignment::Right,
+                )
+                .add(
+                    match machine_dao.get_state(&machine) {
+                        MachineState::Stopped => "STOPPED",
+                        MachineState::Starting => "STARTING",
+                        MachineState::Running => "RUNNING",
+                    },
+                    Alignment::Left,
+                );
+        }
+        view.print();
         Result::Ok(())
     }
 
