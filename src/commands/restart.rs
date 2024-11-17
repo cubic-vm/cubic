@@ -4,10 +4,9 @@ use crate::machine::MachineDao;
 
 pub fn restart(
     machine_dao: &MachineDao,
-    console: bool,
     verbosity: Verbosity,
     ids: &Vec<String>,
 ) -> Result<(), Error> {
     commands::stop(machine_dao, ids, false, verbosity)?;
-    commands::start(machine_dao, &None, console, verbosity, ids)
+    commands::start(machine_dao, &None, verbosity, ids)
 }

@@ -9,8 +9,6 @@ use std::fs;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::str;
-use std::thread;
-use std::time::Duration;
 
 pub const CONSOLE_COUNT: u8 = 10;
 pub const USER: &str = "cubic";
@@ -167,7 +165,6 @@ impl MachineDao {
         &self,
         machine: &Machine,
         qemu_args: &Option<String>,
-        console: bool,
         verbose: bool,
     ) -> Result<Child, Error> {
         if self.is_running(machine) {
@@ -214,15 +211,6 @@ impl MachineDao {
 
         emulator.add_qmp("qmp", &format!("{cache_dir}/qmp.socket"));
         let child = emulator.run()?;
-
-        let cache_dir = &self.cache_dir;
-
-        if console {
-            while !Path::new(&format!("{cache_dir}/console")).exists() {
-                thread::sleep(Duration::new(1, 0));
-            }
-            util::Terminal::open(&format!("{cache_dir}/console"))?.run();
-        }
 
         Ok(child)
     }
