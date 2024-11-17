@@ -1,7 +1,7 @@
 use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::image::ImageDao;
-use crate::machine::MachineDao;
+use crate::instance::InstanceDao;
 use clap::{Parser, Subcommand};
 
 #[derive(Subcommand)]
@@ -125,7 +125,7 @@ pub struct CommandDispatcher {
 
 pub fn dispatch(command: Commands) -> Result<(), Error> {
     let image_dao = ImageDao::new()?;
-    let machine_dao = MachineDao::new()?;
+    let instance_dao = InstanceDao::new()?;
 
     match &command {
         Commands::Run {
@@ -138,7 +138,7 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             quiet,
         } => commands::run(
             &image_dao,
-            &machine_dao,
+            &instance_dao,
             image,
             name,
             cpus,
@@ -146,15 +146,15 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             disk,
             Verbosity::new(*verbose, *quiet),
         ),
-        Commands::List => commands::InstanceCommands::list_instances(&machine_dao),
-        Commands::Info { instance } => commands::info(&machine_dao, instance.clone()),
+        Commands::List => commands::InstanceCommands::list_instances(&instance_dao),
+        Commands::Info { instance } => commands::info(&instance_dao, instance.clone()),
         Commands::Start {
             qemu_args,
             verbose,
             quiet,
             instances,
         } => commands::start(
-            &machine_dao,
+            &instance_dao,
             qemu_args,
             Verbosity::new(*verbose, *quiet),
             instances,
@@ -165,7 +165,7 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             quiet,
             all,
         } => commands::stop(
-            &machine_dao,
+            &instance_dao,
             *all,
             Verbosity::new(*verbose, *quiet),
             instances,
@@ -174,14 +174,14 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             verbose,
             quiet,
             instances,
-        } => commands::restart(&machine_dao, Verbosity::new(*verbose, *quiet), instances),
+        } => commands::restart(&instance_dao, Verbosity::new(*verbose, *quiet), instances),
         Commands::Sh {
             console,
             verbose,
             quiet,
             instance,
         } => commands::sh(
-            &machine_dao,
+            &instance_dao,
             *console,
             Verbosity::new(*verbose, *quiet),
             instance,
@@ -194,7 +194,7 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             ssh_args,
             cmd,
         } => commands::ssh(
-            &machine_dao,
+            &instance_dao,
             instance,
             *xforward,
             Verbosity::new(*verbose, *quiet),
@@ -208,15 +208,15 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             quiet,
             scp_args,
         } => commands::scp(
-            &machine_dao,
+            &instance_dao,
             from,
             to,
             Verbosity::new(*verbose, *quiet),
             scp_args,
         ),
-        Commands::Instance(command) => command.dispatch(&image_dao, &machine_dao),
+        Commands::Instance(command) => command.dispatch(&image_dao, &instance_dao),
         Commands::Image(command) => command.dispatch(&image_dao),
-        Commands::Mount(command) => command.dispatch(&machine_dao),
-        Commands::Net(command) => command.dispatch(&machine_dao),
+        Commands::Mount(command) => command.dispatch(&instance_dao),
+        Commands::Net(command) => command.dispatch(&instance_dao),
     }
 }

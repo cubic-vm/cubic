@@ -11,7 +11,7 @@ pub fn get_data_dir() -> Result<String, Error> {
         .map_err(|_| Error::UnsetEnvVar(HOME_ENV.to_string())))
 }
 
-pub fn get_machine_data_dir() -> Result<String, Error> {
+pub fn get_instance_data_dir() -> Result<String, Error> {
     get_data_dir().map(|dir| format!("{dir}/cubic/machines"))
 }
 

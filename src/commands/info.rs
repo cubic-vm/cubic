@@ -1,20 +1,20 @@
 use crate::error::Error;
-use crate::machine::MachineDao;
+use crate::instance::InstanceDao;
 use crate::util;
 
-pub fn info(machine_dao: &MachineDao, instance: String) -> Result<(), Error> {
-    if !machine_dao.exists(&instance) {
-        return Result::Err(Error::UnknownMachine(instance.clone()));
+pub fn info(instance_dao: &InstanceDao, instance: String) -> Result<(), Error> {
+    if !instance_dao.exists(&instance) {
+        return Result::Err(Error::UnknownInstance(instance.clone()));
     }
 
-    let machine = machine_dao.load(&instance)?;
-    let cpus = &machine.cpus;
-    let mem = util::bytes_to_human_readable(machine.mem);
-    let disk = util::bytes_to_human_readable(machine.disk_capacity);
-    let user = &machine.user;
-    let display = &machine.display;
-    let gpu = &machine.gpu;
-    let port = &machine.ssh_port;
+    let instance = instance_dao.load(&instance)?;
+    let cpus = &instance.cpus;
+    let mem = util::bytes_to_human_readable(instance.mem);
+    let disk = util::bytes_to_human_readable(instance.disk_capacity);
+    let user = &instance.user;
+    let display = &instance.display;
+    let gpu = &instance.gpu;
+    let port = &instance.ssh_port;
 
     print!(
         "\
@@ -29,12 +29,12 @@ pub fn info(machine_dao: &MachineDao, instance: String) -> Result<(), Error> {
     "
     );
 
-    for mount in &machine.mounts {
+    for mount in &instance.mounts {
         println!("  - {} => {}", mount.host, mount.guest);
     }
 
     println!("hostfwd:");
-    for rule in &machine.hostfwd {
+    for rule in &instance.hostfwd {
         println!("  - {rule}");
     }
 

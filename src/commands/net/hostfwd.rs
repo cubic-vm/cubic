@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::machine::MachineDao;
+use crate::instance::InstanceDao;
 use crate::view::{Alignment, TableView};
 use clap::Subcommand;
 use regex::Regex;
@@ -39,20 +39,20 @@ pub enum HostfwdCommands {
 }
 
 impl HostfwdCommands {
-    pub fn dispatch(&self, machine_dao: &MachineDao) -> Result<(), Error> {
+    pub fn dispatch(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
         match self {
             HostfwdCommands::List => {
-                let machine_names = machine_dao.get_machines();
+                let instance_names = instance_dao.get_instances();
 
                 let mut view = TableView::new();
                 view.add_row()
                     .add("INSTANCE", Alignment::Left)
                     .add("RULE", Alignment::Left);
 
-                for machine_name in machine_names {
-                    for hostfwd in machine_dao.load(&machine_name)?.hostfwd {
+                for instance_name in instance_names {
+                    for hostfwd in instance_dao.load(&instance_name)?.hostfwd {
                         view.add_row()
-                            .add(&machine_name, Alignment::Left)
+                            .add(&instance_name, Alignment::Left)
                             .add(&hostfwd, Alignment::Left);
                     }
                 }
@@ -68,14 +68,14 @@ impl HostfwdCommands {
                 {
                     return Err(Error::HostFwdRuleMalformed(rule.to_string()));
                 }
-                let mut machine = machine_dao.load(instance)?;
-                machine.hostfwd.push(rule.to_string());
-                machine_dao.store(&machine)
+                let mut instance = instance_dao.load(instance)?;
+                instance.hostfwd.push(rule.to_string());
+                instance_dao.store(&instance)
             }
             HostfwdCommands::Del { instance, rule } => {
-                let mut machine = machine_dao.load(instance)?;
-                machine.hostfwd.retain(|item| item != rule);
-                machine_dao.store(&machine)
+                let mut instance = instance_dao.load(instance)?;
+                instance.hostfwd.retain(|item| item != rule);
+                instance_dao.store(&instance)
             }
         }
     }
