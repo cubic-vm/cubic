@@ -1,3 +1,4 @@
+use crate::commands::Verbosity;
 use crate::error::Error;
 use crate::machine::MachineDao;
 use crate::ssh_cmd::{get_ssh_private_key_names, Scp};
@@ -32,7 +33,7 @@ pub fn scp(
     machine_dao: &MachineDao,
     from: &str,
     to: &str,
-    verbose: bool,
+    verbosity: Verbosity,
     scp_args: &Option<String>,
 ) -> Result<(), Error> {
     let ssh_port = resolve_port(machine_dao, from)?
@@ -43,7 +44,7 @@ pub fn scp(
 
     Scp::new()
         .set_root_dir(env::var("SNAP").unwrap_or_default().as_str())
-        .set_verbose(verbose)
+        .set_verbose(verbosity.is_verbose())
         .set_known_hosts_file(
             env::var("HOME")
                 .map(|dir| format!("{dir}/.ssh/known_hosts"))

@@ -1,4 +1,4 @@
-use crate::commands;
+use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::image::ImageDao;
 use crate::machine::MachineDao;
@@ -18,6 +18,10 @@ pub enum Commands {
         mem: Option<String>,
         #[clap(short, long)]
         disk: Option<String>,
+        #[clap(short, long, default_value_t = false)]
+        verbose: bool,
+        #[clap(short, long, default_value_t = false)]
+        quiet: bool,
     },
 
     /// List instances
@@ -32,6 +36,8 @@ pub enum Commands {
         console: bool,
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        #[clap(short, long, default_value_t = false)]
+        quiet: bool,
         instance: String,
     },
 
@@ -43,6 +49,8 @@ pub enum Commands {
         xforward: bool,
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        #[clap(short, long, default_value_t = false)]
+        quiet: bool,
         #[clap(long)]
         ssh_args: Option<String>,
         cmd: Option<String>,
@@ -54,6 +62,8 @@ pub enum Commands {
         to: String,
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        #[clap(short, long, default_value_t = false)]
+        quiet: bool,
         #[clap(long)]
         scp_args: Option<String>,
     },
@@ -75,6 +85,8 @@ pub enum Commands {
     Stop {
         #[clap(short, long, default_value_t = false)]
         all: bool,
+        #[clap(short, long, default_value_t = false)]
+        verbose: bool,
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
         ids: Vec<String>,
@@ -126,7 +138,18 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             cpus,
             mem,
             disk,
-        } => commands::run(&image_dao, &machine_dao, image, name, cpus, mem, disk),
+            verbose,
+            quiet,
+        } => commands::run(
+            &image_dao,
+            &machine_dao,
+            image,
+            name,
+            cpus,
+            mem,
+            disk,
+            Verbosity::new(*verbose, *quiet),
+        ),
         Commands::List => commands::InstanceCommands::list_instances(&machine_dao),
         Commands::Info { instance } => commands::info(&machine_dao, instance.clone()),
         Commands::Start {
@@ -135,32 +158,69 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             verbose,
             quiet,
             ids,
-        } => commands::start(&machine_dao, qemu_args, *console, *verbose, *quiet, ids),
-        Commands::Stop { ids, quiet, all } => commands::stop(&machine_dao, ids, *all, *quiet),
+        } => commands::start(
+            &machine_dao,
+            qemu_args,
+            *console,
+            Verbosity::new(*verbose, *quiet),
+            ids,
+        ),
+        Commands::Stop {
+            ids,
+            verbose,
+            quiet,
+            all,
+        } => commands::stop(&machine_dao, ids, *all, Verbosity::new(*verbose, *quiet)),
         Commands::Restart {
             console,
             verbose,
             quiet,
             ids,
-        } => commands::restart(&machine_dao, *console, *verbose, *quiet, ids),
+        } => commands::restart(
+            &machine_dao,
+            *console,
+            Verbosity::new(*verbose, *quiet),
+            ids,
+        ),
         Commands::Sh {
             console,
             verbose,
+            quiet,
             instance,
-        } => commands::sh(&machine_dao, *console, *verbose, instance),
+        } => commands::sh(
+            &machine_dao,
+            *console,
+            Verbosity::new(*verbose, *quiet),
+            instance,
+        ),
         Commands::Ssh {
             instance,
             xforward,
             verbose,
+            quiet,
             ssh_args,
             cmd,
-        } => commands::ssh(&machine_dao, instance, *xforward, *verbose, ssh_args, cmd),
+        } => commands::ssh(
+            &machine_dao,
+            instance,
+            *xforward,
+            Verbosity::new(*verbose, *quiet),
+            ssh_args,
+            cmd,
+        ),
         Commands::Scp {
             from,
             to,
             verbose,
+            quiet,
             scp_args,
-        } => commands::scp(&machine_dao, from, to, *verbose, scp_args),
+        } => commands::scp(
+            &machine_dao,
+            from,
+            to,
+            Verbosity::new(*verbose, *quiet),
+            scp_args,
+        ),
         Commands::Instance(command) => command.dispatch(&image_dao, &machine_dao),
         Commands::Image(command) => command.dispatch(&image_dao),
         Commands::Mount(command) => command.dispatch(&machine_dao),
