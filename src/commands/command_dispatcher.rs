@@ -118,7 +118,7 @@ pub enum Commands {
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None, arg_required_else_help = true)]
-pub struct Cli {
+pub struct CommandDispatcher {
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
