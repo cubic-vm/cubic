@@ -1,4 +1,3 @@
-mod cli;
 mod commands;
 mod emulator;
 mod error;
@@ -9,15 +8,16 @@ mod ssh_cmd;
 mod util;
 mod view;
 
+use crate::commands::{dispatch, CommandDispatcher};
 use clap::Parser;
 
 fn main() {
     util::migrate();
 
-    cli::Cli::parse()
+    CommandDispatcher::parse()
         .command
         .ok_or(error::Error::UnknownCommand)
-        .and_then(cli::dispatch)
+        .and_then(dispatch)
         .map_err(error::print_error)
         .ok();
 }
