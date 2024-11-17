@@ -1,7 +1,8 @@
+use crate::commands;
 use crate::error::Error;
-use crate::machine::{MachineDao, MachineState};
+use crate::machine::MachineDao;
 use crate::ssh_cmd::{get_ssh_private_key_names, Ssh};
-use crate::view::InstanceStateChangeView;
+
 use std::env;
 use std::os::unix::process::CommandExt;
 use std::thread::sleep;
@@ -45,9 +46,14 @@ pub fn ssh(
     let ssh_port = machine.ssh_port;
 
     if !machine_dao.is_running(&machine) {
-        machine_dao.start(&machine, &None, false, verbose)?;
-        InstanceStateChangeView::new("Starting instance", MachineState::Running)
-            .run(machine_dao, &[machine]);
+        commands::start(
+            machine_dao,
+            &None,
+            false,
+            verbose,
+            false,
+            &vec![instance.to_string()],
+        )?;
         sleep(Duration::from_millis(3000));
     }
 

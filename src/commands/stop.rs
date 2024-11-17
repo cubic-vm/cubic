@@ -1,8 +1,13 @@
 use crate::error::Error;
 use crate::machine::{MachineDao, MachineState};
-use crate::view::InstanceStateChangeView;
+use crate::view::TimerView;
 
-pub fn stop(machine_dao: &MachineDao, ids: &Vec<String>, all: bool) -> Result<(), Error> {
+pub fn stop(
+    machine_dao: &MachineDao,
+    ids: &Vec<String>,
+    all: bool,
+    quiet: bool,
+) -> Result<(), Error> {
     for id in ids {
         if !machine_dao.exists(id) {
             return Result::Err(Error::UnknownMachine(id.clone()));
@@ -22,8 +27,13 @@ pub fn stop(machine_dao: &MachineDao, ids: &Vec<String>, all: bool) -> Result<()
         machines.push(machine);
     }
 
-    InstanceStateChangeView::new("Stopping instance(s)", MachineState::Stopped)
-        .run(machine_dao, &machines);
+    if !quiet {
+        TimerView::new("Stopping instance(s)").run(&mut || {
+            machines
+                .iter()
+                .all(|machine| machine_dao.get_state(machine) == MachineState::Stopped)
+        });
+    }
 
     Result::Ok(())
 }

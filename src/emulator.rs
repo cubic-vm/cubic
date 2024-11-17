@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::util;
 
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 
 pub struct Emulator {
     name: String,
@@ -137,23 +137,20 @@ impl Emulator {
         self.command.arg("-pidfile").arg(path);
     }
 
-    pub fn run(&mut self) -> Result<(), Error> {
-        self.command.arg("-daemonize");
+    pub fn run(&mut self) -> Result<Child, Error> {
+        self.command
+            .arg("-daemonize")
+            .stdin(Stdio::null())
+            .stderr(Stdio::piped());
 
         if self.verbose {
             util::print_command(&self.command);
         } else {
-            self.command
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null());
+            self.command.stdout(Stdio::null());
         }
 
         self.command
             .spawn()
-            .map(|_| ())
-            .map_err(|_| Error::Start(self.name.clone()))?;
-
-        Ok(())
+            .map_err(|_| Error::Start(self.name.clone()))
     }
 }
