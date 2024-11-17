@@ -7,7 +7,6 @@ use std::io::Read;
 pub fn start(
     machine_dao: &MachineDao,
     qemu_args: &Option<String>,
-    console: bool,
     verbosity: Verbosity,
     ids: &Vec<String>,
 ) -> Result<(), Error> {
@@ -22,7 +21,7 @@ pub fn start(
     for id in ids {
         let machine = machine_dao.load(id)?;
         if !machine_dao.is_running(&machine) {
-            let child = machine_dao.start(&machine, qemu_args, console, verbosity.is_verbose())?;
+            let child = machine_dao.start(&machine, qemu_args, verbosity.is_verbose())?;
             children.push(child);
         }
         machines.push(machine);

@@ -46,13 +46,7 @@ pub fn ssh(
     let ssh_port = machine.ssh_port;
 
     if !machine_dao.is_running(&machine) {
-        commands::start(
-            machine_dao,
-            &None,
-            false,
-            verbosity,
-            &vec![instance.to_string()],
-        )?;
+        commands::start(machine_dao, &None, verbosity, &vec![instance.to_string()])?;
         sleep(Duration::from_millis(3000));
     }
 

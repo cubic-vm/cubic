@@ -16,13 +16,7 @@ pub fn sh(
     let machine = machine_dao.load(name)?;
 
     if !machine_dao.is_running(&machine) {
-        commands::start(
-            machine_dao,
-            &None,
-            console,
-            verbosity,
-            &vec![name.to_string()],
-        )?;
+        commands::start(machine_dao, &None, verbosity, &vec![name.to_string()])?;
     }
 
     if console {

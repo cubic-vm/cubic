@@ -73,8 +73,6 @@ pub enum Commands {
         #[clap(long)]
         qemu_args: Option<String>,
         #[clap(short, long, default_value_t = false)]
-        console: bool,
-        #[clap(short, long, default_value_t = false)]
         verbose: bool,
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
@@ -94,8 +92,6 @@ pub enum Commands {
 
     /// Restart instances
     Restart {
-        #[clap(short, long, default_value_t = false)]
-        console: bool,
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
         #[clap(short, long, default_value_t = false)]
@@ -154,14 +150,12 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
         Commands::Info { instance } => commands::info(&machine_dao, instance.clone()),
         Commands::Start {
             qemu_args,
-            console,
             verbose,
             quiet,
             ids,
         } => commands::start(
             &machine_dao,
             qemu_args,
-            *console,
             Verbosity::new(*verbose, *quiet),
             ids,
         ),
@@ -172,16 +166,10 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             all,
         } => commands::stop(&machine_dao, ids, *all, Verbosity::new(*verbose, *quiet)),
         Commands::Restart {
-            console,
             verbose,
             quiet,
             ids,
-        } => commands::restart(
-            &machine_dao,
-            *console,
-            Verbosity::new(*verbose, *quiet),
-            ids,
-        ),
+        } => commands::restart(&machine_dao, Verbosity::new(*verbose, *quiet), ids),
         Commands::Sh {
             console,
             verbose,
