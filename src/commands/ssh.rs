@@ -1,4 +1,4 @@
-use crate::commands;
+use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::machine::MachineDao;
 use crate::ssh_cmd::{get_ssh_private_key_names, Ssh};
@@ -36,7 +36,7 @@ pub fn ssh(
     machine_dao: &MachineDao,
     target: &str,
     xforward: bool,
-    verbose: bool,
+    verbosity: Verbosity,
     ssh_args: &Option<String>,
     cmd: &Option<String>,
 ) -> Result<(), Error> {
@@ -50,8 +50,7 @@ pub fn ssh(
             machine_dao,
             &None,
             false,
-            verbose,
-            false,
+            verbosity,
             &vec![instance.to_string()],
         )?;
         sleep(Duration::from_millis(3000));
@@ -69,7 +68,7 @@ pub fn ssh(
         .set_args(ssh_args.clone().unwrap_or_default())
         .set_user(user.clone())
         .set_cmd(cmd.clone())
-        .set_verbose(verbose)
+        .set_verbose(verbosity.is_verbose())
         .connect()
         .exec();
 

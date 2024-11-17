@@ -1,3 +1,4 @@
+use crate::commands::Verbosity;
 use crate::error::Error;
 use crate::machine::{MachineDao, MachineState};
 use crate::view::TimerView;
@@ -6,7 +7,7 @@ pub fn stop(
     machine_dao: &MachineDao,
     ids: &Vec<String>,
     all: bool,
-    quiet: bool,
+    verbosity: Verbosity,
 ) -> Result<(), Error> {
     for id in ids {
         if !machine_dao.exists(id) {
@@ -27,7 +28,7 @@ pub fn stop(
         machines.push(machine);
     }
 
-    if !quiet {
+    if !verbosity.is_quiet() {
         TimerView::new("Stopping instance(s)").run(&mut || {
             machines
                 .iter()

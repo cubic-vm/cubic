@@ -1,4 +1,4 @@
-use crate::commands;
+use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::machine::{MachineDao, CONSOLE_COUNT};
 use crate::util::Terminal;
@@ -7,16 +7,20 @@ use std::path::Path;
 use std::thread;
 use std::time::Duration;
 
-pub fn sh(machine_dao: &MachineDao, console: bool, verbose: bool, name: &str) -> Result<(), Error> {
+pub fn sh(
+    machine_dao: &MachineDao,
+    console: bool,
+    verbosity: Verbosity,
+    name: &str,
+) -> Result<(), Error> {
     let machine = machine_dao.load(name)?;
 
     if !machine_dao.is_running(&machine) {
         commands::start(
             machine_dao,
             &None,
-            false,
-            verbose,
             console,
+            verbosity,
             &vec![name.to_string()],
         )?;
     }

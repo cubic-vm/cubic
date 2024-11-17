@@ -10,6 +10,7 @@ pub mod sh;
 pub mod ssh;
 pub mod start;
 pub mod stop;
+pub mod verbosity;
 
 pub use image::*;
 pub use info::*;
@@ -23,3 +24,4 @@ pub use sh::*;
 pub use ssh::*;
 pub use start::*;
 pub use stop::*;
+pub use verbosity::*;

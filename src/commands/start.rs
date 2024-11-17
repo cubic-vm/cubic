@@ -1,3 +1,4 @@
+use crate::commands::Verbosity;
 use crate::error::Error;
 use crate::machine::{MachineDao, MachineState};
 use crate::view::TimerView;
@@ -7,8 +8,7 @@ pub fn start(
     machine_dao: &MachineDao,
     qemu_args: &Option<String>,
     console: bool,
-    verbose: bool,
-    quiet: bool,
+    verbosity: Verbosity,
     ids: &Vec<String>,
 ) -> Result<(), Error> {
     for id in ids {
@@ -22,13 +22,13 @@ pub fn start(
     for id in ids {
         let machine = machine_dao.load(id)?;
         if !machine_dao.is_running(&machine) {
-            let child = machine_dao.start(&machine, qemu_args, console, verbose)?;
+            let child = machine_dao.start(&machine, qemu_args, console, verbosity.is_verbose())?;
             children.push(child);
         }
         machines.push(machine);
     }
 
-    if !quiet {
+    if !verbosity.is_quiet() {
         TimerView::new("Starting instance(s)").run(&mut || {
             let all_running = machines
                 .iter()
