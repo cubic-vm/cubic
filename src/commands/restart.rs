@@ -5,8 +5,8 @@ use crate::machine::MachineDao;
 pub fn restart(
     machine_dao: &MachineDao,
     verbosity: Verbosity,
-    ids: &Vec<String>,
+    instances: &Vec<String>,
 ) -> Result<(), Error> {
-    commands::stop(machine_dao, ids, false, verbosity)?;
-    commands::start(machine_dao, &None, verbosity, ids)
+    commands::stop(machine_dao, false, verbosity, instances)?;
+    commands::start(machine_dao, &None, verbosity, instances)
 }
