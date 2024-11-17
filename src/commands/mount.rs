@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::machine::{MachineDao, MountPoint};
+use crate::instance::{InstanceDao, MountPoint};
 use crate::util;
 use clap::Subcommand;
 use std::path::Path;
@@ -21,12 +21,12 @@ pub enum MountCommands {
 }
 
 impl MountCommands {
-    pub fn dispatch(&self, machine_dao: &MachineDao) -> Result<(), Error> {
+    pub fn dispatch(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
         match self {
             MountCommands::List { name } => {
-                let machine = machine_dao.load(name)?;
+                let instance = instance_dao.load(name)?;
                 println!("{:30} {:30}", "HOST", "GUEST");
-                for mount in machine.mounts {
+                for mount in instance.mounts {
                     println!("{:30} {:30}", mount.host, mount.guest);
                 }
                 Ok(())
@@ -37,23 +37,23 @@ impl MountCommands {
                     return Err(Error::CannotAccessDir(host.clone()));
                 }
 
-                let mut machine = machine_dao.load(name)?;
-                machine.mounts.push(MountPoint {
+                let mut instance = instance_dao.load(name)?;
+                instance.mounts.push(MountPoint {
                     host: host.to_string(),
                     guest: guest.to_string(),
                 });
-                machine_dao.store(&machine)?;
-                util::setup_cloud_init(&machine, &machine_dao.cache_dir, true)
+                instance_dao.store(&instance)?;
+                util::setup_cloud_init(&instance, &instance_dao.cache_dir, true)
             }
 
             MountCommands::Del {
                 ref name,
                 ref guest,
             } => {
-                let mut machine = machine_dao.load(name)?;
-                machine.mounts.retain(|mount| mount.guest != *guest);
-                machine_dao.store(&machine)?;
-                util::setup_cloud_init(&machine, &machine_dao.cache_dir, true)
+                let mut instance = instance_dao.load(name)?;
+                instance.mounts.retain(|mount| mount.guest != *guest);
+                instance_dao.store(&instance)?;
+                util::setup_cloud_init(&instance, &instance_dao.cache_dir, true)
             }
         }
     }

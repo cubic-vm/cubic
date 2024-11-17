@@ -1,6 +1,6 @@
 use crate::commands::{self, Verbosity};
 use crate::error::Error;
-use crate::machine::MachineDao;
+use crate::instance::InstanceDao;
 use crate::ssh_cmd::{get_ssh_private_key_names, Ssh};
 
 use std::env;
@@ -33,20 +33,20 @@ fn get_user_name(target: &str) -> Result<Option<String>, Error> {
 }
 
 pub fn ssh(
-    machine_dao: &MachineDao,
+    instance_dao: &InstanceDao,
     target: &str,
     xforward: bool,
     verbosity: Verbosity,
     ssh_args: &Option<String>,
     cmd: &Option<String>,
 ) -> Result<(), Error> {
-    let instance = get_instance_name(target)?;
-    let machine = machine_dao.load(&instance)?;
-    let user = get_user_name(target)?.unwrap_or(machine.user.to_string());
-    let ssh_port = machine.ssh_port;
+    let name = get_instance_name(target)?;
+    let instance = instance_dao.load(&name)?;
+    let user = get_user_name(target)?.unwrap_or(instance.user.to_string());
+    let ssh_port = instance.ssh_port;
 
-    if !machine_dao.is_running(&machine) {
-        commands::start(machine_dao, &None, verbosity, &vec![instance.to_string()])?;
+    if !instance_dao.is_running(&instance) {
+        commands::start(instance_dao, &None, verbosity, &vec![name.to_string()])?;
         sleep(Duration::from_millis(3000));
     }
 

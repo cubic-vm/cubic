@@ -1,38 +1,38 @@
 use crate::commands::Verbosity;
 use crate::error::Error;
-use crate::machine::{MachineDao, MachineState};
+use crate::instance::{InstanceDao, InstanceState};
 use crate::view::TimerView;
 
 pub fn stop(
-    machine_dao: &MachineDao,
+    instance_dao: &InstanceDao,
     all: bool,
     verbosity: Verbosity,
     instances: &Vec<String>,
 ) -> Result<(), Error> {
     for instance in instances {
-        if !machine_dao.exists(instance) {
-            return Result::Err(Error::UnknownMachine(instance.clone()));
+        if !instance_dao.exists(instance) {
+            return Result::Err(Error::UnknownInstance(instance.clone()));
         }
     }
 
     let stop_instances = if all {
-        machine_dao.get_machines()
+        instance_dao.get_instances()
     } else {
         instances.clone()
     };
 
-    let mut machines = Vec::new();
+    let mut instances = Vec::new();
     for instance in stop_instances {
-        let machine = machine_dao.load(&instance)?;
-        machine_dao.stop(&machine)?;
-        machines.push(machine);
+        let instance = instance_dao.load(&instance)?;
+        instance_dao.stop(&instance)?;
+        instances.push(instance);
     }
 
     if !verbosity.is_quiet() {
         TimerView::new("Stopping instance(s)").run(&mut || {
-            machines
+            instances
                 .iter()
-                .all(|machine| machine_dao.get_state(machine) == MachineState::Stopped)
+                .all(|instance| instance_dao.get_state(instance) == InstanceState::Stopped)
         });
     }
 

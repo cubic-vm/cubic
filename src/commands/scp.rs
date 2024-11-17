@@ -1,46 +1,46 @@
 use crate::commands::Verbosity;
 use crate::error::Error;
-use crate::machine::MachineDao;
+use crate::instance::InstanceDao;
 use crate::ssh_cmd::{get_ssh_private_key_names, Scp};
 use std::env;
 use std::os::unix::process::CommandExt;
 
-fn resolve_name(machine_dao: &MachineDao, location: &str) -> Result<String, Error> {
+fn resolve_name(instance_dao: &InstanceDao, location: &str) -> Result<String, Error> {
     Ok(if location.contains(':') {
         let mut location_token = location.split(':');
         let name = location_token.next().unwrap();
         let path = location_token.next().unwrap();
-        let machine = machine_dao.load(name)?;
-        let user = machine.user;
+        let instance = instance_dao.load(name)?;
+        let user = instance.user;
         format!("{user}@127.0.0.1:{path}")
     } else {
         location.to_string()
     })
 }
 
-fn resolve_port(machine_dao: &MachineDao, location: &str) -> Result<Option<u16>, Error> {
+fn resolve_port(instance_dao: &InstanceDao, location: &str) -> Result<Option<u16>, Error> {
     Ok(if location.contains(':') {
         let mut location_token = location.split(':');
         let name = location_token.next().unwrap();
-        let machine = machine_dao.load(name)?;
-        Some(machine.ssh_port)
+        let instance = instance_dao.load(name)?;
+        Some(instance.ssh_port)
     } else {
         None
     })
 }
 
 pub fn scp(
-    machine_dao: &MachineDao,
+    instance_dao: &InstanceDao,
     from: &str,
     to: &str,
     verbosity: Verbosity,
     scp_args: &Option<String>,
 ) -> Result<(), Error> {
-    let ssh_port = resolve_port(machine_dao, from)?
-        .or(resolve_port(machine_dao, to)?)
+    let ssh_port = resolve_port(instance_dao, from)?
+        .or(resolve_port(instance_dao, to)?)
         .unwrap();
-    let from = &resolve_name(machine_dao, from)?;
-    let to = &resolve_name(machine_dao, to)?;
+    let from = &resolve_name(instance_dao, from)?;
+    let to = &resolve_name(instance_dao, to)?;
 
     Scp::new()
         .set_root_dir(env::var("SNAP").unwrap_or_default().as_str())

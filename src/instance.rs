@@ -1,7 +1,7 @@
-pub mod machine_dao;
+pub mod instance_dao;
 
 pub use crate::error::Error;
-pub use machine_dao::*;
+pub use instance_dao::*;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 
@@ -16,7 +16,7 @@ pub struct MountPoint {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Machine {
+pub struct Instance {
     #[serde(skip)]
     pub name: String,
     #[serde(default = "default_user")]
@@ -35,13 +35,13 @@ pub struct Machine {
     pub hostfwd: Vec<String>,
 }
 
-impl Machine {
-    pub fn deserialize(name: &str, reader: &mut dyn Read) -> Result<Machine, Error> {
+impl Instance {
+    pub fn deserialize(name: &str, reader: &mut dyn Read) -> Result<Instance, Error> {
         serde_yaml::from_reader(reader)
             .map(|config: Config| config.machine)
-            .map(|mut machine: Machine| {
-                machine.name = name.to_string();
-                machine
+            .map(|mut instance: Instance| {
+                instance.name = name.to_string();
+                instance
             })
             .map_err(|_| Error::CannotParseFile(String::new()))
     }
@@ -66,8 +66,8 @@ mod tests {
     #[test]
     fn test_deserialize_empty_file() {
         let reader = &mut BufReader::new("".as_bytes());
-        let machine = Machine::deserialize("test", reader);
-        assert!(machine.is_err());
+        let instance = Instance::deserialize("test", reader);
+        assert!(instance.is_err());
     }
 
     #[test]
@@ -83,17 +83,17 @@ machine:
             .as_bytes(),
         );
 
-        let machine = Machine::deserialize("test", reader).expect("Cannot parser config");
-        assert_eq!(machine.name, "test");
-        assert_eq!(machine.user, "cubic");
-        assert_eq!(machine.cpus, 1);
-        assert_eq!(machine.mem, 1073741824);
-        assert_eq!(machine.disk_capacity, 2361393152);
-        assert_eq!(machine.ssh_port, 14357);
-        assert!(!machine.display);
-        assert!(!machine.gpu);
-        assert!(machine.mounts.is_empty());
-        assert!(machine.hostfwd.is_empty());
+        let instance = Instance::deserialize("test", reader).expect("Cannot parser config");
+        assert_eq!(instance.name, "test");
+        assert_eq!(instance.user, "cubic");
+        assert_eq!(instance.cpus, 1);
+        assert_eq!(instance.mem, 1073741824);
+        assert_eq!(instance.disk_capacity, 2361393152);
+        assert_eq!(instance.ssh_port, 14357);
+        assert!(!instance.display);
+        assert!(!instance.gpu);
+        assert!(instance.mounts.is_empty());
+        assert!(instance.hostfwd.is_empty());
     }
 
     #[test]
@@ -116,24 +116,24 @@ machine:
             .as_bytes(),
         );
 
-        let machine = Machine::deserialize("test", reader).expect("Cannot parser config");
-        assert_eq!(machine.name, "test");
-        assert_eq!(machine.user, "tux");
-        assert_eq!(machine.cpus, 1);
-        assert_eq!(machine.mem, 1073741824);
-        assert_eq!(machine.disk_capacity, 2361393152);
-        assert_eq!(machine.ssh_port, 14357);
-        assert!(!machine.display);
-        assert!(!machine.gpu);
+        let instance = Instance::deserialize("test", reader).expect("Cannot parser config");
+        assert_eq!(instance.name, "test");
+        assert_eq!(instance.user, "tux");
+        assert_eq!(instance.cpus, 1);
+        assert_eq!(instance.mem, 1073741824);
+        assert_eq!(instance.disk_capacity, 2361393152);
+        assert_eq!(instance.ssh_port, 14357);
+        assert!(!instance.display);
+        assert!(!instance.gpu);
         assert_eq!(
-            machine.mounts,
+            instance.mounts,
             [MountPoint {
                 host: "/home/tux/guest".to_string(),
                 guest: "/home/tux".to_string()
             }]
         );
         assert_eq!(
-            machine.hostfwd,
+            instance.hostfwd,
             ["tcp:127.0.0.1:8000-:8000", "tcp:127.0.0.1:9000-:10000"]
         );
     }
@@ -156,24 +156,24 @@ machine:
             .as_bytes(),
         );
 
-        let machine = Machine::deserialize("test", reader).expect("Cannot parser config");
-        assert_eq!(machine.name, "test");
-        assert_eq!(machine.user, "tux");
-        assert_eq!(machine.cpus, 1);
-        assert_eq!(machine.mem, 1073741824);
-        assert_eq!(machine.disk_capacity, 2361393152);
-        assert_eq!(machine.ssh_port, 14357);
-        assert!(machine.display);
-        assert!(machine.gpu);
-        assert!(machine.mounts.is_empty());
-        assert!(machine.hostfwd.is_empty());
+        let instance = Instance::deserialize("test", reader).expect("Cannot parser config");
+        assert_eq!(instance.name, "test");
+        assert_eq!(instance.user, "tux");
+        assert_eq!(instance.cpus, 1);
+        assert_eq!(instance.mem, 1073741824);
+        assert_eq!(instance.disk_capacity, 2361393152);
+        assert_eq!(instance.ssh_port, 14357);
+        assert!(instance.display);
+        assert!(instance.gpu);
+        assert!(instance.mounts.is_empty());
+        assert!(instance.hostfwd.is_empty());
     }
 
     #[test]
     fn test_serialize_minimal_config() {
         let mut writer = Vec::new();
 
-        Machine {
+        Instance {
             name: "test".to_string(),
             user: "tux".to_string(),
             cpus: 1,

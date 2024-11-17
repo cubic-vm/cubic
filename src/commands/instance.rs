@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::image::ImageDao;
-use crate::machine::{Machine, MachineDao, MachineState, USER};
+use crate::instance::{Instance, InstanceDao, InstanceState, USER};
 use crate::util;
 use crate::view::{Alignment, TableView};
 use clap::Subcommand;
@@ -46,44 +46,50 @@ pub enum InstanceCommands {
 }
 
 impl InstanceCommands {
-    pub fn dispatch(&self, image_dao: &ImageDao, machine_dao: &MachineDao) -> Result<(), Error> {
+    pub fn dispatch(&self, image_dao: &ImageDao, instance_dao: &InstanceDao) -> Result<(), Error> {
         match self {
-            InstanceCommands::List => InstanceCommands::list_instances(machine_dao),
+            InstanceCommands::List => InstanceCommands::list_instances(instance_dao),
             InstanceCommands::Add {
                 image,
                 name,
                 cpus,
                 mem,
                 disk,
-            } => {
-                InstanceCommands::add_instance(image_dao, machine_dao, image, name, cpus, mem, disk)
-            }
+            } => InstanceCommands::add_instance(
+                image_dao,
+                instance_dao,
+                image,
+                name,
+                cpus,
+                mem,
+                disk,
+            ),
             InstanceCommands::Del { instances } => {
-                InstanceCommands::delete_instance(machine_dao, instances)
+                InstanceCommands::delete_instance(instance_dao, instances)
             }
             InstanceCommands::Config {
                 instance,
                 cpus,
                 mem,
                 disk,
-            } => InstanceCommands::config(machine_dao, instance, cpus, mem, disk),
+            } => InstanceCommands::config(instance_dao, instance, cpus, mem, disk),
 
             InstanceCommands::Clone { name, new_name } => {
-                machine_dao.clone(&machine_dao.load(name)?, new_name)?;
+                instance_dao.clone(&instance_dao.load(name)?, new_name)?;
 
-                let mut new_machine = machine_dao.load(new_name)?;
-                new_machine.ssh_port = util::generate_random_ssh_port();
-                machine_dao.store(&new_machine)
+                let mut new_instance = instance_dao.load(new_name)?;
+                new_instance.ssh_port = util::generate_random_ssh_port();
+                instance_dao.store(&new_instance)
             }
 
             InstanceCommands::Rename { old_name, new_name } => {
-                machine_dao.rename(&mut machine_dao.load(old_name)?, new_name)
+                instance_dao.rename(&mut instance_dao.load(old_name)?, new_name)
             }
         }
     }
 
-    pub fn list_instances(machine_dao: &MachineDao) -> Result<(), Error> {
-        let machine_names = machine_dao.get_machines();
+    pub fn list_instances(instance_dao: &InstanceDao) -> Result<(), Error> {
+        let instance_names = instance_dao.get_instances();
 
         let mut view = TableView::new();
         view.add_row()
@@ -93,24 +99,24 @@ impl InstanceCommands {
             .add("Disk", Alignment::Right)
             .add("State", Alignment::Left);
 
-        for machine_name in &machine_names {
-            let machine = machine_dao.load(machine_name)?;
+        for instance_name in &instance_names {
+            let instance = instance_dao.load(instance_name)?;
             view.add_row()
-                .add(machine_name, Alignment::Left)
-                .add(&machine.cpus.to_string(), Alignment::Right)
+                .add(instance_name, Alignment::Left)
+                .add(&instance.cpus.to_string(), Alignment::Right)
                 .add(
-                    &util::bytes_to_human_readable(machine.mem),
+                    &util::bytes_to_human_readable(instance.mem),
                     Alignment::Right,
                 )
                 .add(
-                    &util::bytes_to_human_readable(machine.disk_capacity),
+                    &util::bytes_to_human_readable(instance.disk_capacity),
                     Alignment::Right,
                 )
                 .add(
-                    match machine_dao.get_state(&machine) {
-                        MachineState::Stopped => "STOPPED",
-                        MachineState::Starting => "STARTING",
-                        MachineState::Running => "RUNNING",
+                    match instance_dao.get_state(&instance) {
+                        InstanceState::Stopped => "STOPPED",
+                        InstanceState::Starting => "STARTING",
+                        InstanceState::Running => "RUNNING",
                     },
                     Alignment::Left,
                 );
@@ -121,7 +127,7 @@ impl InstanceCommands {
 
     pub fn add_instance(
         image_dao: &ImageDao,
-        machine_dao: &MachineDao,
+        instance_dao: &InstanceDao,
         image_name: &str,
         name: &Option<String>,
         cpus: &Option<u16>,
@@ -132,11 +138,11 @@ impl InstanceCommands {
         image_dao.fetch(&image)?;
 
         if let Option::Some(instance) = name {
-            let machine_dir = format!("{}/{instance}", machine_dao.machine_dir);
+            let instance_dir = format!("{}/{instance}", instance_dao.instance_dir);
 
             if let Some(id) = name {
-                if machine_dao.exists(id) {
-                    return Result::Err(Error::MachineAlreadyExists(id.to_string()));
+                if instance_dao.exists(id) {
+                    return Result::Err(Error::InstanceAlreadyExists(id.to_string()));
                 }
             }
 
@@ -146,11 +152,11 @@ impl InstanceCommands {
                 .map(|size| util::human_readable_to_bytes(size))
                 .unwrap_or(Result::Ok(image_size))?;
 
-            image_dao.copy_image(&image, &machine_dir, "machine.img")?;
+            image_dao.copy_image(&image, &instance_dir, "machine.img")?;
 
             let ssh_port = util::generate_random_ssh_port();
 
-            let mut machine = Machine {
+            let mut instance = Instance {
                 name: instance.clone(),
                 user: USER.to_string(),
                 cpus: cpus.unwrap_or(1),
@@ -162,9 +168,9 @@ impl InstanceCommands {
                 mounts: Vec::new(),
                 hostfwd: Vec::new(),
             };
-            machine_dao.store(&machine)?;
+            instance_dao.store(&instance)?;
             if disk.is_some() {
-                machine_dao.resize(&mut machine, disk_capacity)?;
+                instance_dao.resize(&mut instance, disk_capacity)?;
             }
         }
 
@@ -172,38 +178,41 @@ impl InstanceCommands {
     }
 
     pub fn config(
-        machine_dao: &MachineDao,
+        instance_dao: &InstanceDao,
         instance: &str,
         cpus: &Option<u16>,
         mem: &Option<String>,
         disk: &Option<String>,
     ) -> Result<(), Error> {
-        let mut machine = machine_dao.load(instance)?;
+        let mut instance = instance_dao.load(instance)?;
 
         if let Some(cpus) = cpus {
-            machine.cpus = *cpus;
+            instance.cpus = *cpus;
         }
 
         if let Some(mem) = mem {
-            machine.mem = util::human_readable_to_bytes(mem)?;
+            instance.mem = util::human_readable_to_bytes(mem)?;
         }
 
         if let Some(disk) = disk {
-            machine_dao.resize(&mut machine, util::human_readable_to_bytes(disk)?)?;
+            instance_dao.resize(&mut instance, util::human_readable_to_bytes(disk)?)?;
         }
 
-        machine_dao.store(&machine)?;
+        instance_dao.store(&instance)?;
         Result::Ok(())
     }
 
-    pub fn delete_instance(machine_dao: &MachineDao, instances: &Vec<String>) -> Result<(), Error> {
+    pub fn delete_instance(
+        instance_dao: &InstanceDao,
+        instances: &Vec<String>,
+    ) -> Result<(), Error> {
         for instance in instances {
-            if !machine_dao.exists(instance) {
-                return Result::Err(Error::UnknownMachine(instance.clone()));
+            if !instance_dao.exists(instance) {
+                return Result::Err(Error::UnknownInstance(instance.clone()));
             }
 
-            if machine_dao.is_running(&machine_dao.load(instance)?) {
-                return Result::Err(Error::MachineNotStopped(instance.to_string()));
+            if instance_dao.is_running(&instance_dao.load(instance)?) {
+                return Result::Err(Error::InstanceNotStopped(instance.to_string()));
             }
         }
 
@@ -211,7 +220,7 @@ impl InstanceCommands {
             if util::confirm(&format!(
                 "Do you really want delete the instance '{instance}'? [y/n]: "
             )) {
-                machine_dao.delete(&machine_dao.load(instance)?)?;
+                instance_dao.delete(&instance_dao.load(instance)?)?;
                 println!("Deleted instance {instance}");
             }
         }

@@ -2,7 +2,7 @@ mod commands;
 mod emulator;
 mod error;
 mod image;
-mod machine;
+mod instance;
 mod qemu;
 mod ssh_cmd;
 mod util;

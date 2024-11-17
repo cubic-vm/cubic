@@ -1,37 +1,37 @@
 use crate::commands::Verbosity;
 use crate::error::Error;
-use crate::machine::{MachineDao, MachineState};
+use crate::instance::{InstanceDao, InstanceState};
 use crate::view::TimerView;
 use std::io::Read;
 
 pub fn start(
-    machine_dao: &MachineDao,
+    instance_dao: &InstanceDao,
     qemu_args: &Option<String>,
     verbosity: Verbosity,
-    instances: &Vec<String>,
+    instance_names: &Vec<String>,
 ) -> Result<(), Error> {
-    for instance in instances {
-        if !machine_dao.exists(instance) {
-            return Result::Err(Error::UnknownMachine(instance.clone()));
+    for name in instance_names {
+        if !instance_dao.exists(name) {
+            return Result::Err(Error::UnknownInstance(name.clone()));
         }
     }
 
-    let mut machines = Vec::new();
+    let mut instances = Vec::new();
     let mut children = Vec::new();
-    for instance in instances {
-        let machine = machine_dao.load(instance)?;
-        if !machine_dao.is_running(&machine) {
-            let child = machine_dao.start(&machine, qemu_args, verbosity.is_verbose())?;
+    for name in instance_names {
+        let instance = instance_dao.load(name)?;
+        if !instance_dao.is_running(&instance) {
+            let child = instance_dao.start(&instance, qemu_args, verbosity.is_verbose())?;
             children.push(child);
         }
-        machines.push(machine);
+        instances.push(instance);
     }
 
     if !verbosity.is_quiet() {
         TimerView::new("Starting instance(s)").run(&mut || {
-            let all_running = machines
+            let all_running = instances
                 .iter()
-                .all(|machine| machine_dao.get_state(machine) == MachineState::Running);
+                .all(|instance| instance_dao.get_state(instance) == InstanceState::Running);
             let any_fails = children.iter_mut().any(|child| {
                 child
                     .try_wait()

@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::machine::{Machine, MountPoint, CONSOLE_COUNT};
+use crate::instance::{Instance, MountPoint, CONSOLE_COUNT};
 use crate::ssh_cmd::get_ssh_pub_keys;
 use crate::util;
 use serde_json::Value::{self, Number};
@@ -85,9 +85,9 @@ pub fn human_readable_to_bytes(size: &str) -> Result<u64, Error> {
         .map_err(|_| Error::CannotParseSize(size.to_string()))
 }
 
-pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(), Error> {
-    let instance = &machine.name;
-    let user = &machine.user;
+pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(), Error> {
+    let name = &instance.name;
+    let user = &instance.user;
 
     let user_data_img_path = format!("{dir}/user-data.img");
 
@@ -100,14 +100,14 @@ pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(),
         if force || !Path::new(&metadata_path).exists() {
             util::write_file(
                 &metadata_path,
-                format!("instance-id: {instance}\nlocal-hostname: {instance}\n").as_bytes(),
+                format!("instance-id: {name}\nlocal-hostname: {name}\n").as_bytes(),
             )?;
         }
 
         let mut bootcmds = String::new();
-        if !machine.mounts.is_empty() {
+        if !instance.mounts.is_empty() {
             bootcmds += "bootcmd:\n";
-            for (index, MountPoint { guest, .. }) in machine.mounts.iter().enumerate() {
+            for (index, MountPoint { guest, .. }) in instance.mounts.iter().enumerate() {
                 bootcmds += &format!("  - mount -t 9p cubic{index} {guest}\n");
             }
         }
@@ -173,10 +173,10 @@ pub fn setup_cloud_init(machine: &Machine, dir: &str, force: bool) -> Result<(),
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
-            .map_err(|_| Error::UserDataCreationFailed(instance.to_string()))?
+            .map_err(|_| Error::UserDataCreationFailed(name.to_string()))?
             .wait()
             .map(|_| ())
-            .map_err(|_| Error::UserDataCreationFailed(instance.to_string()))?;
+            .map_err(|_| Error::UserDataCreationFailed(name.to_string()))?;
     }
 
     Result::Ok(())

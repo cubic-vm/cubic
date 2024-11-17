@@ -3,11 +3,11 @@ use std::io;
 #[derive(Debug)]
 pub enum Error {
     UnknownCommand,
-    UnknownMachine(String),
-    MachineIsRunning(String),
-    MachineNotStopped(String),
+    UnknownInstance(String),
+    InstanceIsRunning(String),
+    InstanceNotStopped(String),
     Start(String),
-    MachineAlreadyExists(String),
+    InstanceAlreadyExists(String),
     Io(io::Error),
     UnknownImage(String),
     MissingSshKey,
@@ -39,11 +39,11 @@ pub fn print_error(error: Error) {
     print!("ERROR: ");
     match error {
         Error::UnknownCommand => println!("Unknown command"),
-        Error::UnknownMachine(machine) => println!("Unknown machine '{machine}'"),
-        Error::MachineIsRunning(name) => println!("Machine '{name}' is already runing"),
-        Error::MachineNotStopped(name) => println!("Machine '{name}' is not stopped"),
-        Error::Start(machine) => println!("Failed to start machine '{machine}'"),
-        Error::MachineAlreadyExists(id) => println!("Machine with name '{id}' already exists"),
+        Error::UnknownInstance(instance) => println!("Unknown instance '{instance}'"),
+        Error::InstanceIsRunning(name) => println!("Instance '{name}' is already runing"),
+        Error::InstanceNotStopped(name) => println!("Instance '{name}' is not stopped"),
+        Error::Start(instance) => println!("Failed to start instance '{instance}'"),
+        Error::InstanceAlreadyExists(id) => println!("Instance with name '{id}' already exists"),
         Error::Io(e) => println!("{}", e),
         Error::UnknownImage(name) => println!("Unknown image name {name}"),
         Error::MissingSshKey => print!(
@@ -52,7 +52,7 @@ pub fn print_error(error: Error) {
   - Snap users must grant access with: `sudo snap connect cubic:ssh-keys`\n\
 - Check if you have a ssh key in $HOME/.ssh
   - You can generate one with `ssh-keygen`\n\
-- Use `cubic sh mymachine` instead\n"
+- Use `cubic sh myinstance` instead\n"
         ),
         Error::InvalidImageName(name) => println!("Invalid image name: {name}"),
         Error::UnsetEnvVar(var) => println!("Environment variable '{var}' is not set"),
@@ -69,10 +69,12 @@ pub fn print_error(error: Error) {
         Error::CannotParseFile(path) => println!("Cannot parse file '{path}'"),
         Error::InvalidSshTarget(name) => println!("Invalid SSH target '{name}'"),
         Error::UserDataCreationFailed(name) => {
-            println!("Failed to create user data for machine '{name}'")
+            println!("Failed to create user data for instance '{name}'")
         }
         Error::CannotParseSize(size) => println!("Invalid data size format '{size}'"),
-        Error::CannotShrinkDisk(name) => println!("Cannot shrink the disk of the machine '{name}'"),
+        Error::CannotShrinkDisk(name) => {
+            println!("Cannot shrink the disk of the instance '{name}'")
+        }
         Error::ImageDownloadFailed(name) => println!("Failed to download image: '{name}'"),
         Error::GetCapacityFailed(path) => println!("Failed to get capacity from image: '{path}'"),
         Error::CannotOpenTerminal(path) => println!("Failed to open terminal from path: '{path}'"),
