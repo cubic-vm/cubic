@@ -7,7 +7,7 @@ use crate::util;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::str;
 use std::thread;
 use std::time::Duration;
@@ -169,9 +169,9 @@ impl MachineDao {
         qemu_args: &Option<String>,
         console: bool,
         verbose: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<Child, Error> {
         if self.is_running(machine) {
-            return Result::Ok(());
+            return Result::Err(Error::MachineIsRunning(machine.name.to_string()));
         }
 
         let machine_dir = format!("{}/{}", &self.machine_dir, &machine.name);
@@ -213,7 +213,7 @@ impl MachineDao {
         }
 
         emulator.add_qmp("qmp", &format!("{cache_dir}/qmp.socket"));
-        emulator.run()?;
+        let child = emulator.run()?;
 
         let cache_dir = &self.cache_dir;
 
@@ -224,7 +224,7 @@ impl MachineDao {
             util::Terminal::open(&format!("{cache_dir}/console"))?.run();
         }
 
-        Ok(())
+        Ok(child)
     }
 
     pub fn stop(&self, machine: &Machine) -> Result<(), Error> {

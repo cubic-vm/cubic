@@ -4,6 +4,7 @@ use std::io;
 pub enum Error {
     UnknownCommand,
     UnknownMachine(String),
+    MachineIsRunning(String),
     MachineNotStopped(String),
     Start(String),
     MachineAlreadyExists(String),
@@ -31,6 +32,7 @@ pub enum Error {
     GetCapacityFailed(String),
     CannotOpenTerminal(String),
     HostFwdRuleMalformed(String),
+    CommandFailed(String),
 }
 
 pub fn print_error(error: Error) {
@@ -38,6 +40,7 @@ pub fn print_error(error: Error) {
     match error {
         Error::UnknownCommand => println!("Unknown command"),
         Error::UnknownMachine(machine) => println!("Unknown machine '{machine}'"),
+        Error::MachineIsRunning(name) => println!("Machine '{name}' is already runing"),
         Error::MachineNotStopped(name) => println!("Machine '{name}' is not stopped"),
         Error::Start(machine) => println!("Failed to start machine '{machine}'"),
         Error::MachineAlreadyExists(id) => println!("Machine with name '{id}' already exists"),
@@ -74,5 +77,6 @@ pub fn print_error(error: Error) {
         Error::GetCapacityFailed(path) => println!("Failed to get capacity from image: '{path}'"),
         Error::CannotOpenTerminal(path) => println!("Failed to open terminal from path: '{path}'"),
         Error::HostFwdRuleMalformed(rule) => println!("Host forwarding rule is malformed: {rule}"),
+        Error::CommandFailed(message) => println!("{message}"),
     }
 }

@@ -66,6 +66,8 @@ pub enum Commands {
         console: bool,
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        #[clap(short, long, default_value_t = false)]
+        quiet: bool,
         ids: Vec<String>,
     },
 
@@ -73,6 +75,8 @@ pub enum Commands {
     Stop {
         #[clap(short, long, default_value_t = false)]
         all: bool,
+        #[clap(short, long, default_value_t = false)]
+        quiet: bool,
         ids: Vec<String>,
     },
 
@@ -82,6 +86,8 @@ pub enum Commands {
         console: bool,
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        #[clap(short, long, default_value_t = false)]
+        quiet: bool,
         ids: Vec<String>,
     },
 
@@ -127,14 +133,16 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             qemu_args,
             console,
             verbose,
+            quiet,
             ids,
-        } => commands::start(&machine_dao, qemu_args, *console, *verbose, ids),
-        Commands::Stop { ids, all } => commands::stop(&machine_dao, ids, *all),
+        } => commands::start(&machine_dao, qemu_args, *console, *verbose, *quiet, ids),
+        Commands::Stop { ids, quiet, all } => commands::stop(&machine_dao, ids, *all, *quiet),
         Commands::Restart {
             console,
             verbose,
+            quiet,
             ids,
-        } => commands::restart(&machine_dao, *console, *verbose, ids),
+        } => commands::restart(&machine_dao, *console, *verbose, *quiet, ids),
         Commands::Sh {
             console,
             verbose,

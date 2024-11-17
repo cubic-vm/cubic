@@ -1,7 +1,8 @@
+use crate::commands;
 use crate::error::Error;
-use crate::machine::{MachineDao, MachineState, CONSOLE_COUNT};
+use crate::machine::{MachineDao, CONSOLE_COUNT};
 use crate::util::Terminal;
-use crate::view::InstanceStateChangeView;
+
 use std::path::Path;
 use std::thread;
 use std::time::Duration;
@@ -10,11 +11,14 @@ pub fn sh(machine_dao: &MachineDao, console: bool, verbose: bool, name: &str) ->
     let machine = machine_dao.load(name)?;
 
     if !machine_dao.is_running(&machine) {
-        machine_dao.start(&machine, &None, false, verbose)?;
-        if !console {
-            InstanceStateChangeView::new("Starting instance", MachineState::Running)
-                .run(machine_dao, &[machine.clone()]);
-        }
+        commands::start(
+            machine_dao,
+            &None,
+            false,
+            verbose,
+            console,
+            &vec![name.to_string()],
+        )?;
     }
 
     if console {
