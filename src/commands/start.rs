@@ -8,18 +8,18 @@ pub fn start(
     machine_dao: &MachineDao,
     qemu_args: &Option<String>,
     verbosity: Verbosity,
-    ids: &Vec<String>,
+    instances: &Vec<String>,
 ) -> Result<(), Error> {
-    for id in ids {
-        if !machine_dao.exists(id) {
-            return Result::Err(Error::UnknownMachine(id.clone()));
+    for instance in instances {
+        if !machine_dao.exists(instance) {
+            return Result::Err(Error::UnknownMachine(instance.clone()));
         }
     }
 
     let mut machines = Vec::new();
     let mut children = Vec::new();
-    for id in ids {
-        let machine = machine_dao.load(id)?;
+    for instance in instances {
+        let machine = machine_dao.load(instance)?;
         if !machine_dao.is_running(&machine) {
             let child = machine_dao.start(&machine, qemu_args, verbosity.is_verbose())?;
             children.push(child);

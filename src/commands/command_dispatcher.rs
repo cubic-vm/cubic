@@ -76,7 +76,7 @@ pub enum Commands {
         verbose: bool,
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
-        ids: Vec<String>,
+        instances: Vec<String>,
     },
 
     /// Stop instances
@@ -87,7 +87,7 @@ pub enum Commands {
         verbose: bool,
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
-        ids: Vec<String>,
+        instances: Vec<String>,
     },
 
     /// Restart instances
@@ -96,7 +96,7 @@ pub enum Commands {
         verbose: bool,
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
-        ids: Vec<String>,
+        instances: Vec<String>,
     },
 
     /// Instance commands
@@ -152,24 +152,29 @@ pub fn dispatch(command: Commands) -> Result<(), Error> {
             qemu_args,
             verbose,
             quiet,
-            ids,
+            instances,
         } => commands::start(
             &machine_dao,
             qemu_args,
             Verbosity::new(*verbose, *quiet),
-            ids,
+            instances,
         ),
         Commands::Stop {
-            ids,
+            instances,
             verbose,
             quiet,
             all,
-        } => commands::stop(&machine_dao, ids, *all, Verbosity::new(*verbose, *quiet)),
+        } => commands::stop(
+            &machine_dao,
+            *all,
+            Verbosity::new(*verbose, *quiet),
+            instances,
+        ),
         Commands::Restart {
             verbose,
             quiet,
-            ids,
-        } => commands::restart(&machine_dao, Verbosity::new(*verbose, *quiet), ids),
+            instances,
+        } => commands::restart(&machine_dao, Verbosity::new(*verbose, *quiet), instances),
         Commands::Sh {
             console,
             verbose,

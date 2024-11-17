@@ -5,25 +5,25 @@ use crate::view::TimerView;
 
 pub fn stop(
     machine_dao: &MachineDao,
-    ids: &Vec<String>,
     all: bool,
     verbosity: Verbosity,
+    instances: &Vec<String>,
 ) -> Result<(), Error> {
-    for id in ids {
-        if !machine_dao.exists(id) {
-            return Result::Err(Error::UnknownMachine(id.clone()));
+    for instance in instances {
+        if !machine_dao.exists(instance) {
+            return Result::Err(Error::UnknownMachine(instance.clone()));
         }
     }
 
-    let stop_ids = if all {
+    let stop_instances = if all {
         machine_dao.get_machines()
     } else {
-        ids.clone()
+        instances.clone()
     };
 
     let mut machines = Vec::new();
-    for id in stop_ids {
-        let machine = machine_dao.load(&id)?;
+    for instance in stop_instances {
+        let machine = machine_dao.load(&instance)?;
         machine_dao.stop(&machine)?;
         machines.push(machine);
     }
