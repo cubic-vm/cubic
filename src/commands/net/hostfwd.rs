@@ -1,19 +1,17 @@
 use crate::error::Error;
 use crate::machine::MachineDao;
+use crate::view::{Alignment, TableView};
 use clap::Subcommand;
 use regex::Regex;
 
 #[derive(Subcommand)]
 pub enum HostfwdCommands {
-    /// List host port forwarding rule
+    /// List forwarded host ports
     ///
-    /// List forwarded ports of instance "myinstance":
-    /// $ cubic net hostfwd list myinstance
+    /// List forwarded ports for all instances:
+    /// $ cubic net hostfwd list
     #[clap(verbatim_doc_comment)]
-    List {
-        /// Virtual machine instance
-        instance: String,
-    },
+    List,
 
     /// Add host port forwarding rule
     ///
@@ -43,10 +41,22 @@ pub enum HostfwdCommands {
 impl HostfwdCommands {
     pub fn dispatch(&self, machine_dao: &MachineDao) -> Result<(), Error> {
         match self {
-            HostfwdCommands::List { instance } => {
-                for hostfwd in machine_dao.load(instance)?.hostfwd {
-                    println!("{hostfwd}");
+            HostfwdCommands::List => {
+                let machine_names = machine_dao.get_machines();
+
+                let mut view = TableView::new();
+                view.add_row()
+                    .add("INSTANCE", Alignment::Left)
+                    .add("RULE", Alignment::Left);
+
+                for machine_name in machine_names {
+                    for hostfwd in machine_dao.load(&machine_name)?.hostfwd {
+                        view.add_row()
+                            .add(&machine_name, Alignment::Left)
+                            .add(&hostfwd, Alignment::Left);
+                    }
                 }
+                view.print();
                 Ok(())
             }
             HostfwdCommands::Add { instance, rule } => {

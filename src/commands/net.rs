@@ -10,8 +10,8 @@ use hostfwd::HostfwdCommands;
 pub enum NetworkCommands {
     /// Guest to host port forwarding commands
     ///
-    /// List forwarded ports of instance "myinstance":
-    /// $ cubic net hostfwd list myinstance
+    /// List forwarded ports for all instances:
+    /// $ cubic net hostfwd list
     ///
     /// Forward guest SSH port (TCP port 22) to host on port 8000:
     /// $ cubic net hostfwd add myinstance tcp:127.0.0.1:8000-:22
