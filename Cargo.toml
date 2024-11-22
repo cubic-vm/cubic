@@ -33,8 +33,8 @@ Copy a file from the instance to the hots:
 $ cubic scp <machine>:<path/to/guest/file> <path/to/host/file>
 """
 readme = "README.md"
-homepage = "https://github.com/roger652/cubic"
-repository = "https://github.com/roger652/cubic"
+homepage = "https://github.com/cubic-vm/cubic"
+repository = "https://github.com/cubic-vm/cubic"
 keywords = ["cli", "vm"]
 categories = ["command-line-utilities"]
 edition = "2021"
