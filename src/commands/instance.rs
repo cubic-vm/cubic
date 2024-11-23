@@ -1,3 +1,4 @@
+use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::image::ImageDao;
 use crate::instance::{Instance, InstanceDao, InstanceState, USER};
@@ -25,7 +26,15 @@ pub enum InstanceCommands {
     },
 
     /// Delete instances
-    Del { instances: Vec<String> },
+    Del {
+        #[clap(short, long, default_value_t = false)]
+        verbose: bool,
+        #[clap(short, long, default_value_t = false)]
+        quiet: bool,
+        #[clap(short, long, default_value_t = false)]
+        force: bool,
+        instances: Vec<String>,
+    },
 
     /// Read and write configuration parameters
     Config {
@@ -64,9 +73,17 @@ impl InstanceCommands {
                 mem,
                 disk,
             ),
-            InstanceCommands::Del { instances } => {
-                InstanceCommands::delete_instance(instance_dao, instances)
-            }
+            InstanceCommands::Del {
+                verbose,
+                quiet,
+                force,
+                instances,
+            } => InstanceCommands::delete_instance(
+                instance_dao,
+                Verbosity::new(*verbose, *quiet),
+                *force,
+                instances,
+            ),
             InstanceCommands::Config {
                 instance,
                 cpus,
@@ -204,8 +221,14 @@ impl InstanceCommands {
 
     pub fn delete_instance(
         instance_dao: &InstanceDao,
+        verbosity: Verbosity,
+        force: bool,
         instances: &Vec<String>,
     ) -> Result<(), Error> {
+        if force {
+            commands::stop(instance_dao, false, verbosity, instances)?;
+        }
+
         for instance in instances {
             if !instance_dao.exists(instance) {
                 return Result::Err(Error::UnknownInstance(instance.clone()));
