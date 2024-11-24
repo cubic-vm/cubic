@@ -246,7 +246,7 @@ impl InstanceDao {
             .unwrap_or(false)
     }
 
-    fn get_pid(&self, instance: &Instance) -> Result<u64, ()> {
+    pub fn get_pid(&self, instance: &Instance) -> Result<u64, ()> {
         let pid = fs::read_to_string(format!("{}/{}/qemu.pid", self.cache_dir, instance.name))
             .map_err(|_| ())?;
 
