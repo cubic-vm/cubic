@@ -110,6 +110,7 @@ impl InstanceCommands {
 
         let mut view = TableView::new();
         view.add_row()
+            .add("PID", Alignment::Left)
             .add("Name", Alignment::Left)
             .add("CPUs", Alignment::Right)
             .add("Memory", Alignment::Right)
@@ -118,7 +119,13 @@ impl InstanceCommands {
 
         for instance_name in &instance_names {
             let instance = instance_dao.load(instance_name)?;
+            let pid = instance_dao
+                .get_pid(&instance)
+                .map(|pid| pid.to_string())
+                .unwrap_or_default();
+
             view.add_row()
+                .add(&pid, Alignment::Left)
                 .add(instance_name, Alignment::Left)
                 .add(&instance.cpus.to_string(), Alignment::Right)
                 .add(
