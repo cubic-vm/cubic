@@ -33,6 +33,7 @@ pub enum Error {
     CannotOpenTerminal(String),
     HostFwdRuleMalformed(String),
     CommandFailed(String),
+    SerdeJson(serde_json::Error),
 }
 
 pub fn print_error(error: Error) {
@@ -80,5 +81,6 @@ pub fn print_error(error: Error) {
         Error::CannotOpenTerminal(path) => println!("Failed to open terminal from path: '{path}'"),
         Error::HostFwdRuleMalformed(rule) => println!("Host forwarding rule is malformed: {rule}"),
         Error::CommandFailed(message) => println!("{message}"),
+        Error::SerdeJson(err) => println!("[JSON] {err}"),
     }
 }

@@ -1,6 +1,7 @@
 use crate::commands::Verbosity;
 use crate::error::Error;
-use std::collections::HashMap;
+use crate::qemu;
+use serde_json::Value;
 use std::io::{prelude::*, BufReader, BufWriter, Read, Write};
 use std::os::unix::net::UnixStream;
 use std::time::Duration;
@@ -25,37 +26,37 @@ impl Qmp {
         })
     }
 
-    pub fn read_line(&mut self) -> Result<String, Error> {
+    pub fn send(&mut self, message: &qemu::QmpMessage) -> Result<(), Error> {
+        let request = serde_json::to_string(message).map_err(Error::SerdeJson)?;
+
+        if self.verbosity.is_verbose() {
+            println!("QMP send: {request}");
+        }
+        self.writer.write(request.as_bytes()).map_err(Error::Io)?;
+        self.writer.flush().map_err(Error::Io)
+    }
+
+    pub fn recv(&mut self) -> Result<qemu::QmpMessage, Error> {
         let mut response = String::new();
         self.reader.read_line(&mut response).map_err(Error::Io)?;
 
         if self.verbosity.is_verbose() {
-            print!("Guest-Agent Server: {response}");
+            println!("QMP recv: {response}");
         }
-        Ok(response)
+
+        serde_json::from_str(&response).map_err(Error::SerdeJson)
     }
 
-    pub fn execute_with_args(
-        &mut self,
-        cmd: &str,
-        args: &HashMap<String, String>,
-    ) -> Result<String, Error> {
-        let args = args
-            .iter()
-            .map(|(key, value)| format!("\"{key}\": {value}"))
-            .collect::<Vec<_>>()
-            .join(", ");
-
-        let request = format!("{{ \"execute\": \"{cmd}\", \"arguments\": {{{args}}} }}\n");
-        if self.verbosity.is_verbose() {
-            print!("Guest-Agent Client: {request}");
-        }
-        self.writer.write(request.as_bytes()).map_err(Error::Io)?;
-        self.writer.flush().map_err(Error::Io)?;
-        self.read_line()
+    pub fn execute_with_args(&mut self, cmd: &str, arguments: Value) -> Result<(), Error> {
+        self.send(&qemu::QmpMessage::Command {
+            id: None,
+            execute: cmd.to_string(),
+            arguments,
+        })?;
+        self.recv().map(|_| ())
     }
 
-    pub fn execute(&mut self, cmd: &str) -> Result<String, Error> {
-        self.execute_with_args(cmd, &HashMap::new())
+    pub fn execute(&mut self, cmd: &str) -> Result<(), Error> {
+        self.execute_with_args(cmd, Value::Null).map(|_| ())
     }
 }
