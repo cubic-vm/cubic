@@ -16,11 +16,11 @@ impl Monitor {
     }
 
     fn init(&mut self) -> Result<(), Error> {
-        self.qmp.read_line().map(|_| ())?;
+        self.qmp.recv().map(|_| ())?;
         self.qmp.execute("qmp_capabilities").map(|_| ())
     }
 
     pub fn shutdown(&mut self) -> Result<(), Error> {
-        self.qmp.execute("system_powerdown").map(|_| ())
+        self.qmp.execute("system_powerdown")
     }
 }
