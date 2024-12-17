@@ -83,20 +83,12 @@ impl InstanceDao {
 
     pub fn store(&self, instance: &Instance) -> Result<(), Error> {
         let path = format!("{}/{}", self.instance_dir, &instance.name);
-        let instance_config = format!("{path}/machine.yaml");
+        let file_name = format!("{path}/machine.yaml");
+        let temp_file_name = format!("{file_name}.tmp");
 
-        if Path::new(&instance_config).exists() {
-            util::remove_file(&instance_config)?;
-        }
-
-        let mut file = std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(&instance_config)
-            .map_err(|_| Error::CannotCreateFile(instance_config.to_string()))?;
-
-        instance.serialize(&mut file)
+        let mut file = util::create_file(&temp_file_name)?;
+        instance.serialize(&mut file)?;
+        util::rename_file(&temp_file_name, &file_name)
     }
 
     pub fn clone(&self, instance: &Instance, new_name: &str) -> Result<(), Error> {
