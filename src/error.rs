@@ -13,17 +13,8 @@ pub enum Error {
     MissingSshKey,
     InvalidImageName(String),
     UnsetEnvVar(String),
-    CannotCopyFile(String, String),
-    CannotCopyDir(String, String),
-    CannotMoveDir(String, String),
-    CannotOpenFile(String),
-    CannotCreateFile(String),
-    CannotCreateDir(String),
     CannotAccessDir(String),
     CannotWriteDir(String),
-    CannotWriteFile(String),
-    CannotRemoveFile(String),
-    CannotRenameFile(String, String),
     CannotParseFile(String),
     InvalidSshTarget(String),
     UserDataCreationFailed(String),
@@ -35,6 +26,7 @@ pub enum Error {
     HostFwdRuleMalformed(String),
     CommandFailed(String),
     SerdeJson(serde_json::Error),
+    SerdeYaml(serde_yaml::Error),
 }
 
 pub fn print_error(error: Error) {
@@ -58,17 +50,8 @@ pub fn print_error(error: Error) {
         ),
         Error::InvalidImageName(name) => println!("Invalid image name: {name}"),
         Error::UnsetEnvVar(var) => println!("Environment variable '{var}' is not set"),
-        Error::CannotCopyFile(from, to) => println!("Cannot copy file from '{from}' to '{to}'"),
-        Error::CannotCopyDir(from, to) => println!("Cannot copy directory from '{from}' to '{to}'"),
-        Error::CannotMoveDir(from, to) => println!("Cannot move directory from '{from}' to '{to}'"),
-        Error::CannotCreateFile(path) => println!("Cannot create file '{path}'"),
-        Error::CannotOpenFile(path) => println!("Cannot open file '{path}'"),
-        Error::CannotCreateDir(path) => println!("Cannot create directory '{path}'"),
         Error::CannotAccessDir(path) => println!("Cannot access directory '{path}'"),
         Error::CannotWriteDir(path) => println!("Cannot write directory '{path}'"),
-        Error::CannotWriteFile(path) => println!("Cannot write file '{path}'"),
-        Error::CannotRenameFile(old, new) => println!("Cannot rename file from '{old}' to '{new}'"),
-        Error::CannotRemoveFile(path) => println!("Cannot write file '{path}'"),
         Error::CannotParseFile(path) => println!("Cannot parse file '{path}'"),
         Error::InvalidSshTarget(name) => println!("Invalid SSH target '{name}'"),
         Error::UserDataCreationFailed(name) => {
@@ -84,5 +67,6 @@ pub fn print_error(error: Error) {
         Error::HostFwdRuleMalformed(rule) => println!("Host forwarding rule is malformed: {rule}"),
         Error::CommandFailed(message) => println!("{message}"),
         Error::SerdeJson(err) => println!("[JSON] {err}"),
+        Error::SerdeYaml(err) => println!("[YAML] {err}"),
     }
 }

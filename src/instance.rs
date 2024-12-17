@@ -53,7 +53,7 @@ impl Instance {
                 machine: self.clone(),
             },
         )
-        .map_err(|_| Error::CannotWriteFile(String::new()))
+        .map_err(Error::SerdeYaml)
     }
 }
 
