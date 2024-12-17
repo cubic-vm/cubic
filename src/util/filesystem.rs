@@ -5,9 +5,7 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 
 pub fn copy_file(from: &str, to: &str) -> Result<(), Error> {
-    fs::copy(from, to)
-        .map(|_| ())
-        .map_err(|_| Error::CannotCopyFile(from.to_string(), to.to_string()))
+    fs::copy(from, to).map(|_| ()).map_err(Error::Io)
 }
 
 pub fn copy_dir(from: &str, to: &str) -> Result<(), Error> {
@@ -18,10 +16,10 @@ pub fn copy_dir(from: &str, to: &str) -> Result<(), Error> {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .map_err(|_| Error::CannotCopyDir(from.to_string(), to.to_string()))?
+        .map_err(Error::Io)?
         .wait()
         .map(|_| ())
-        .map_err(|_| Error::CannotCopyDir(from.to_string(), to.to_string()))
+        .map_err(Error::Io)
 }
 
 pub fn move_dir(from: &str, to: &str) -> Result<(), Error> {
@@ -31,14 +29,14 @@ pub fn move_dir(from: &str, to: &str) -> Result<(), Error> {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .map_err(|_| Error::CannotMoveDir(from.to_string(), to.to_string()))?
+        .map_err(Error::Io)?
         .wait()
         .map(|_| ())
-        .map_err(|_| Error::CannotMoveDir(from.to_string(), to.to_string()))
+        .map_err(Error::Io)
 }
 
 pub fn open_file(path: &str) -> Result<fs::File, Error> {
-    fs::File::open(path).map_err(|_| Error::CannotOpenFile(path.to_string()))
+    fs::File::open(path).map_err(Error::Io)
 }
 
 pub fn create_file(path: &str) -> Result<fs::File, Error> {
@@ -47,37 +45,33 @@ pub fn create_file(path: &str) -> Result<fs::File, Error> {
         .create(true)
         .truncate(true)
         .open(path)
-        .map_err(|_| Error::CannotCreateFile(path.to_string()))
+        .map_err(Error::Io)
 }
 
 pub fn create_dir(path: &str) -> Result<(), Error> {
     if !Path::new(path).exists() {
-        fs::create_dir_all(path).map_err(|_| Error::CannotCreateDir(path.to_string()))?;
+        fs::create_dir_all(path).map_err(Error::Io)?;
     }
 
     Result::Ok(())
 }
 
 pub fn write_file(path: &str, data: &[u8]) -> Result<(), Error> {
-    create_file(path)?
-        .write_all(data)
-        .map_err(|_| Error::CannotWriteFile(path.to_string()))
+    create_file(path)?.write_all(data).map_err(Error::Io)
 }
 
 pub fn rename_file(old: &str, new: &str) -> Result<(), Error> {
-    fs::rename(old, new).map_err(|_| Error::CannotRenameFile(old.to_string(), new.to_string()))
+    fs::rename(old, new).map_err(Error::Io)
 }
 
 pub fn remove_file(path: &str) -> Result<(), Error> {
-    fs::remove_file(path).map_err(|_| Error::CannotRemoveFile(path.to_string()))
+    fs::remove_file(path).map_err(Error::Io)
 }
 
 pub fn setup_directory_access(path: &str) -> Result<(), Error> {
     create_dir(path)?;
 
-    let permission = fs::metadata(path)
-        .map_err(|_| Error::CannotAccessDir(path.to_string()))?
-        .permissions();
+    let permission = fs::metadata(path).map_err(Error::Io)?.permissions();
 
     if permission.readonly() {
         return Result::Err(Error::CannotWriteDir(path.to_string()));
