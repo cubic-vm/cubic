@@ -15,7 +15,7 @@ pub struct MountPoint {
     pub guest: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Instance {
     #[serde(skip)]
     pub name: String,

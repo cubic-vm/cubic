@@ -66,19 +66,21 @@ impl InstanceDao {
     }
 
     pub fn load(&self, name: &str) -> Result<Instance, Error> {
-        let path = format!("{}/{name}", self.instance_dir);
-
-        if !Path::new(&path).exists() {
-            return Result::Err(Error::UnknownInstance(name.to_string()));
-        }
-
         if !self.exists(name) {
             return Result::Err(Error::UnknownInstance(name.to_string()));
         }
 
-        let config_path = format!("{path}/machine.yaml");
-        let mut config_file = util::open_file(&config_path)?;
-        Instance::deserialize(name, &mut config_file)
+        util::open_file(&format!("{}/{name}/machine.yaml", self.instance_dir))
+            .and_then(|mut file| Instance::deserialize(name, &mut file))
+            .or(Ok(Instance {
+                name: name.to_string(),
+                user: USER.to_string(),
+                cpus: 1,
+                mem: util::human_readable_to_bytes("1G").unwrap(),
+                disk_capacity: util::human_readable_to_bytes("1G").unwrap(),
+                ssh_port: util::generate_random_ssh_port(),
+                ..Instance::default()
+            }))
     }
 
     pub fn store(&self, instance: &Instance) -> Result<(), Error> {
