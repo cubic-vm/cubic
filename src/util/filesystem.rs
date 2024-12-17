@@ -42,7 +42,12 @@ pub fn open_file(path: &str) -> Result<fs::File, Error> {
 }
 
 pub fn create_file(path: &str) -> Result<fs::File, Error> {
-    fs::File::create(path).map_err(|_| Error::CannotCreateFile(path.to_string()))
+    std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(path)
+        .map_err(|_| Error::CannotCreateFile(path.to_string()))
 }
 
 pub fn create_dir(path: &str) -> Result<(), Error> {
@@ -57,6 +62,10 @@ pub fn write_file(path: &str, data: &[u8]) -> Result<(), Error> {
     create_file(path)?
         .write_all(data)
         .map_err(|_| Error::CannotWriteFile(path.to_string()))
+}
+
+pub fn rename_file(old: &str, new: &str) -> Result<(), Error> {
+    fs::rename(old, new).map_err(|_| Error::CannotRenameFile(old.to_string(), new.to_string()))
 }
 
 pub fn remove_file(path: &str) -> Result<(), Error> {
