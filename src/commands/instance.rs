@@ -187,10 +187,7 @@ impl InstanceCommands {
                 mem: util::human_readable_to_bytes(mem.as_deref().unwrap_or("1G"))?,
                 disk_capacity,
                 ssh_port,
-                display: false,
-                gpu: false,
-                mounts: Vec::new(),
-                hostfwd: Vec::new(),
+                ..Instance::default()
             };
             instance_dao.store(&instance)?;
             if disk.is_some() {
