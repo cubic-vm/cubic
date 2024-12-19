@@ -6,7 +6,10 @@ use std::io::{prelude::*, BufReader, BufWriter, Read, Write};
 use std::os::unix::net::UnixStream;
 use std::time::Duration;
 
+const QMP_TIMEOUT_MS: u64 = 10;
+
 pub struct Qmp {
+    counter: u64,
     verbosity: Verbosity,
     reader: BufReader<Box<dyn Read>>,
     writer: BufWriter<Box<dyn Write>>,
@@ -15,11 +18,13 @@ pub struct Qmp {
 impl Qmp {
     pub fn new(path: &str, verbosity: Verbosity) -> Result<Self, Error> {
         let socket = UnixStream::connect(path).map_err(Error::Io)?;
-        socket
-            .set_read_timeout(Some(Duration::from_millis(50)))
-            .map_err(Error::Io)?;
+
+        let get_timeout = || Some(Duration::from_millis(QMP_TIMEOUT_MS));
+        socket.set_read_timeout(get_timeout()).map_err(Error::Io)?;
+        socket.set_write_timeout(get_timeout()).map_err(Error::Io)?;
 
         Ok(Qmp {
+            counter: 0,
             verbosity,
             reader: BufReader::new(Box::new(socket.try_clone().map_err(Error::Io)?)),
             writer: BufWriter::new(Box::new(socket.try_clone().map_err(Error::Io)?)),
@@ -47,13 +52,31 @@ impl Qmp {
         serde_json::from_str(&response).map_err(Error::SerdeJson)
     }
 
-    pub fn execute_with_args(&mut self, cmd: &str, arguments: Value) -> Result<(), Error> {
+    pub fn execute_with_args(
+        &mut self,
+        cmd: &str,
+        arguments: Value,
+    ) -> Result<qemu::QmpMessage, Error> {
+        let request_id = Some(self.counter.to_string());
+        self.counter += 1;
+
         self.send(&qemu::QmpMessage::Command {
-            id: None,
+            id: request_id.clone(),
             execute: cmd.to_string(),
             arguments,
         })?;
-        self.recv().map(|_| ())
+
+        loop {
+            let response = self.recv()?;
+            match &response {
+                qemu::QmpMessage::Success { id, .. } | qemu::QmpMessage::Error { id, .. }
+                    if *id == request_id =>
+                {
+                    return Ok(response)
+                }
+                _ => {}
+            }
+        }
     }
 
     pub fn execute(&mut self, cmd: &str) -> Result<(), Error> {
