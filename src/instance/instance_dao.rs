@@ -10,7 +10,6 @@ use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::str;
 
-pub const CONSOLE_COUNT: u8 = 10;
 pub const USER: &str = "cubic";
 
 #[derive(PartialEq)]
@@ -178,11 +177,6 @@ impl InstanceDao {
         emulator.enable_kvm();
         emulator.enable_sandbox();
         emulator.set_console(&format!("{cache_dir}/console"));
-        for i in 0..CONSOLE_COUNT {
-            let name = format!("console{}", i);
-            let path = format!("{cache_dir}/{name}");
-            emulator.add_serial(&name, &path);
-        }
         emulator.add_drive(&format!("{instance_dir}/machine.img"), "qcow2");
         emulator.add_drive(&format!("{cache_dir}/user-data.img"), "raw");
         emulator.set_network(&instance.hostfwd, instance.ssh_port);
@@ -206,11 +200,11 @@ impl InstanceDao {
             emulator.add_search_path(&format!("{qemu_root}/usr/lib/ipxe/qemu"));
         }
 
-        emulator.add_qmp("qmp", &format!("{cache_dir}/qmp.socket"));
+        emulator.add_qmp("qmp", &format!("{cache_dir}/monitor.socket"));
         emulator.add_guest_agent("guest-agent", &format!("{cache_dir}/guest-agent.socket"));
-        let child = emulator.run()?;
 
-        Ok(child)
+        emulator.add_virtio_serial("sh_serial");
+        emulator.run()
     }
 
     pub fn stop(&self, instance: &Instance) -> Result<(), Error> {
@@ -218,9 +212,7 @@ impl InstanceDao {
             return Result::Ok(());
         }
 
-        let mut monitor =
-            Monitor::new(&format!("{}/{}/qmp.socket", self.cache_dir, &instance.name))?;
-        monitor.shutdown()
+        self.get_monitor(instance)?.shutdown()
     }
 
     pub fn get_state(&self, instance: &Instance) -> InstanceState {
@@ -249,6 +241,10 @@ impl InstanceDao {
             .map_err(|_| ())?;
 
         pid.trim().parse::<u64>().map_err(|_| ())
+    }
+
+    pub fn get_monitor(&self, instance: &Instance) -> Result<Monitor, Error> {
+        Monitor::new(&format!("{}/{}", self.cache_dir, &instance.name))
     }
 
     pub fn get_guest_agent(&self, instance: &Instance) -> Result<GuestAgent, Error> {

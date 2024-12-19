@@ -1,13 +1,12 @@
 use crate::error::Error;
-use crate::util;
+
 use libc;
-use std::fs;
+
 use std::io::{self, prelude::*};
 use std::mem;
 use std::net::Shutdown;
 use std::os::unix::net::UnixStream;
-use std::path::Path;
-use std::process;
+
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     mpsc::{self, Receiver, Sender},
@@ -16,17 +15,19 @@ use std::sync::{
 use std::thread;
 use std::time::Duration;
 
+const TIOCGWINSZ: libc::c_ulong = 0x5413;
+
 pub struct Terminal {
     threads: Vec<thread::JoinHandle<()>>,
+    running: Arc<AtomicBool>,
 }
 
 fn spawn_stdin_thread(sender: Sender<u8>, running: Arc<AtomicBool>) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         let mut buffer = [0u8];
-        sender.send(b'\n').ok();
         while running.load(Ordering::Relaxed) {
             if io::stdin().read(&mut buffer).is_ok() {
-                running.store(buffer[0] != 0x4, Ordering::Relaxed);
+                running.store(buffer[0] != 0x17, Ordering::Relaxed);
                 sender.send(buffer[0]).ok();
             }
         }
@@ -82,16 +83,6 @@ fn spawn_stream_thread(
 
 impl Terminal {
     pub fn open(path: &str) -> Result<Self, Error> {
-        let pid_file = format!("{path}.pid");
-        let is_used = fs::read_to_string(&pid_file)
-            .map(|pid| Path::new(&format!("/proc/{pid}")).exists())
-            .unwrap_or(false);
-
-        if is_used {
-            return Err(Error::CannotOpenTerminal(path.to_string()));
-        }
-
-        util::write_file(&pid_file, process::id().to_string().as_bytes())?;
         UnixStream::connect(path)
             .map(|stream| {
                 stream.set_nonblocking(true).ok();
@@ -103,11 +94,37 @@ impl Terminal {
                 Terminal {
                     threads: vec![
                         spawn_stdin_thread(tx, running.clone()),
-                        spawn_stream_thread(stream, rx, running),
+                        spawn_stream_thread(stream, rx, running.clone()),
                     ],
+                    running,
                 }
             })
             .map_err(|_| Error::CannotOpenTerminal(path.to_string()))
+    }
+
+    pub fn is_running(&mut self) -> bool {
+        self.running.load(Ordering::Relaxed)
+    }
+
+    pub fn stop(&mut self) {
+        self.running.store(false, Ordering::SeqCst)
+    }
+
+    pub fn get_term_size(&self) -> Option<(isize, isize)> {
+        let winsize = libc::winsize {
+            ws_row: 0,
+            ws_col: 0,
+            ws_xpixel: 0,
+            ws_ypixel: 0,
+        };
+
+        unsafe {
+            if libc::ioctl(libc::STDOUT_FILENO, TIOCGWINSZ, &winsize) == 0 {
+                Some((winsize.ws_col as isize, winsize.ws_row as isize))
+            } else {
+                None
+            }
+        }
     }
 
     pub fn wait(&mut self) {

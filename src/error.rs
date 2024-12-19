@@ -27,6 +27,8 @@ pub enum Error {
     CommandFailed(String),
     SerdeJson(serde_json::Error),
     SerdeYaml(serde_yaml::Error),
+    MissingQemuGA,
+    ExecFailed,
 }
 
 pub fn print_error(error: Error) {
@@ -68,5 +70,7 @@ pub fn print_error(error: Error) {
         Error::CommandFailed(message) => println!("{message}"),
         Error::SerdeJson(err) => println!("[JSON] {err}"),
         Error::SerdeYaml(err) => println!("[YAML] {err}"),
+        Error::MissingQemuGA => println!("Cannot access QEMU guest agent. Please install qemu-guest-agent in the virtual machine instance."),
+        Error::ExecFailed => println!("Failed to execute command in virtual machine instance."),
     }
 }

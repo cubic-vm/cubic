@@ -6,7 +6,7 @@ use std::io::{prelude::*, BufReader, BufWriter, Read, Write};
 use std::os::unix::net::UnixStream;
 use std::time::Duration;
 
-const QMP_TIMEOUT_MS: u64 = 10;
+const QMP_TIMEOUT_MS: u64 = 100;
 
 pub struct Qmp {
     counter: u64,
