@@ -47,14 +47,10 @@ impl Emulator {
         self.command.arg("-sandbox").arg("on");
     }
 
-    pub fn add_serial(&mut self, name: &str, path: &str) {
+    pub fn add_virtio_serial(&mut self, name: &str) {
         self.command
             .arg("-device")
-            .arg("virtio-serial")
-            .arg("-chardev")
-            .arg(format!("socket,path={path},server=on,wait=off,id={name}"))
-            .arg("-device")
-            .arg(format!("virtconsole,chardev={name}"));
+            .arg(format!("virtio-serial,id={name},max_ports=32"));
     }
 
     pub fn add_qmp(&mut self, name: &str, path: &str) {
