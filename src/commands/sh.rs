@@ -26,7 +26,7 @@ pub fn sh(
         }
 
         if let Ok(mut term) = Terminal::open(&console_path) {
-            term.run();
+            term.wait();
         } else {
             println!("Cannot open shell");
         }
@@ -34,7 +34,7 @@ pub fn sh(
         for i in 1..CONSOLE_COUNT {
             let console_path = format!("{}/{}/console{i}", instance_dao.cache_dir, name);
             if let Ok(mut term) = Terminal::open(&console_path) {
-                term.run();
+                term.wait();
                 return Ok(());
             }
         }

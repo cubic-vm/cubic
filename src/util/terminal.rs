@@ -2,18 +2,81 @@ use crate::error::Error;
 use crate::util;
 use libc;
 use std::fs;
-use std::io::prelude::*;
-
+use std::io::{self, prelude::*};
 use std::mem;
 use std::net::Shutdown;
-use std::os::unix::io::FromRawFd;
 use std::os::unix::net::UnixStream;
 use std::path::Path;
 use std::process;
-use std::thread::{self};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    mpsc::{self, Receiver, Sender},
+    Arc,
+};
+use std::thread;
+use std::time::Duration;
 
 pub struct Terminal {
-    stream: UnixStream,
+    threads: Vec<thread::JoinHandle<()>>,
+}
+
+fn spawn_stdin_thread(sender: Sender<u8>, running: Arc<AtomicBool>) -> thread::JoinHandle<()> {
+    thread::spawn(move || {
+        let mut buffer = [0u8];
+        while running.load(Ordering::Relaxed) {
+            if io::stdin().read(&mut buffer).is_ok() {
+                running.store(buffer[0] != 0x4, Ordering::Relaxed);
+                sender.send(buffer[0]).ok();
+            }
+        }
+    })
+}
+
+fn spawn_stream_thread(
+    mut stream: UnixStream,
+    receiver: Receiver<u8>,
+    running: Arc<AtomicBool>,
+) -> thread::JoinHandle<()> {
+    thread::spawn(move || {
+        let mut termios_original: libc::termios;
+        unsafe {
+            termios_original = mem::zeroed();
+            libc::tcgetattr(0, &mut termios_original);
+            let mut termios = mem::zeroed();
+            libc::tcgetattr(0, &mut termios);
+            termios.c_lflag &= !libc::ICANON;
+            termios.c_lflag &= !libc::ECHO;
+            termios.c_lflag &= !libc::ISIG;
+            termios.c_cc[libc::VMIN] = 1;
+            termios.c_cc[libc::VTIME] = 0;
+            libc::tcsetattr(0, libc::TCSANOW, &termios);
+        }
+
+        let buf = &mut [0u8; 10];
+        let mut out = std::io::stdout();
+
+        while running.load(Ordering::Relaxed) {
+            while let Ok(input) = receiver.try_recv() {
+                stream.write_all(&[input]).ok();
+            }
+            stream.flush().ok();
+
+            while let Ok(size) = stream.read(buf) {
+                out.write_all(&buf[..size]).ok();
+            }
+            out.flush().ok();
+
+            thread::sleep(Duration::from_millis(10));
+        }
+
+        stream.shutdown(Shutdown::Both).ok();
+        out.write_all("\n".as_bytes()).ok();
+        out.flush().ok();
+
+        unsafe {
+            libc::tcsetattr(0, libc::TCSANOW, &termios_original);
+        }
+    })
 }
 
 impl Terminal {
@@ -24,44 +87,31 @@ impl Terminal {
             .unwrap_or(false);
 
         if is_used {
-            Err(Error::CannotOpenTerminal(path.to_string()))
-        } else {
-            util::write_file(&pid_file, process::id().to_string().as_bytes())?;
-            UnixStream::connect(path)
-                .map(|stream| Terminal { stream })
-                .map_err(|_| Error::CannotOpenTerminal(path.to_string()))
+            return Err(Error::CannotOpenTerminal(path.to_string()));
         }
+
+        util::write_file(&pid_file, process::id().to_string().as_bytes())?;
+        UnixStream::connect(path)
+            .map(|stream| {
+                stream.set_nonblocking(true).ok();
+                stream
+                    .set_read_timeout(Some(Duration::from_millis(10)))
+                    .ok();
+                let running = Arc::new(AtomicBool::new(true));
+                let (tx, rx) = mpsc::channel::<u8>();
+                Terminal {
+                    threads: vec![
+                        spawn_stdin_thread(tx, running.clone()),
+                        spawn_stream_thread(stream, rx, running),
+                    ],
+                }
+            })
+            .map_err(|_| Error::CannotOpenTerminal(path.to_string()))
     }
 
-    pub fn run(&mut self) {
-        let mut stream2 = self.stream.try_clone().unwrap();
-        stream2.write_all("\n".as_bytes()).ok();
-
-        unsafe {
-            let mut termios_original: libc::termios = mem::zeroed();
-            libc::tcgetattr(0, &mut termios_original);
-            let mut termios = mem::zeroed();
-            libc::tcgetattr(0, &mut termios);
-            termios.c_lflag &= !libc::ICANON;
-            termios.c_lflag &= !libc::ECHO;
-            termios.c_lflag &= !libc::ISIG;
-            termios.c_cc[libc::VMIN] = 1;
-            termios.c_cc[libc::VTIME] = 0;
-            libc::tcsetattr(0, libc::TCSANOW, &termios);
-
-            thread::spawn(move || {
-                std::io::copy(&mut stream2, &mut fs::File::from_raw_fd(1)).ok();
-            });
-
-            for byte in std::io::stdin().bytes().flatten() {
-                self.stream.write_all(&[byte]).ok();
-                if byte == 0x4 {
-                    break;
-                }
-            }
-            self.stream.shutdown(Shutdown::Both).ok();
-            libc::tcsetattr(0, libc::TCSANOW, &termios_original);
-            println!();
+    pub fn wait(&mut self) {
+        while let Some(thread) = self.threads.pop() {
+            thread.join().ok();
         }
     }
 }
