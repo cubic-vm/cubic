@@ -23,6 +23,7 @@ pub struct Terminal {
 fn spawn_stdin_thread(sender: Sender<u8>, running: Arc<AtomicBool>) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         let mut buffer = [0u8];
+        sender.send(b'\n').ok();
         while running.load(Ordering::Relaxed) {
             if io::stdin().read(&mut buffer).is_ok() {
                 running.store(buffer[0] != 0x4, Ordering::Relaxed);
