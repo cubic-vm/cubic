@@ -159,6 +159,8 @@ pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(
                     #cloud-config\n\
                     users:\n\
                     \u{20}\u{20}- name: {user}\n\
+                    \u{20}\u{20}  lock_passwd: false\n\
+                    \u{20}\u{20}  hashed_passwd: $y$j9T$wifmOLBedd7NSaH2IqG4L.$2J.8E.qE57lxapsWosOFod37djHePHg7Go03iDNsRe4\n\
                     {ssh_pk}\n\
                     \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
                     \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n\
