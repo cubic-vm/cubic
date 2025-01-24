@@ -50,21 +50,21 @@ pub fn ssh(
         sleep(Duration::from_millis(3000));
     }
 
-    Ssh::new()
-        .set_known_hosts_file(
-            env::var("HOME")
-                .map(|dir| format!("{dir}/.ssh/known_hosts"))
-                .ok(),
-        )
-        .set_private_keys(get_ssh_private_key_names()?)
-        .set_port(Some(ssh_port))
-        .set_xforward(xforward)
-        .set_args(ssh_args.clone().unwrap_or_default())
-        .set_user(user.clone())
-        .set_cmd(cmd.clone())
-        .set_verbose(verbosity.is_verbose())
-        .connect()
-        .exec();
-
-    Ok(())
+    Err(Error::Io(
+        Ssh::new()
+            .set_known_hosts_file(
+                env::var("HOME")
+                    .map(|dir| format!("{dir}/.ssh/known_hosts"))
+                    .ok(),
+            )
+            .set_private_keys(get_ssh_private_key_names()?)
+            .set_port(Some(ssh_port))
+            .set_xforward(xforward)
+            .set_args(ssh_args.clone().unwrap_or_default())
+            .set_user(user.clone())
+            .set_cmd(cmd.clone())
+            .set_verbose(verbosity.is_verbose())
+            .connect()
+            .exec(),
+    ))
 }
