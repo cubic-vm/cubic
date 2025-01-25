@@ -8,16 +8,13 @@ mod ssh_cmd;
 mod util;
 mod view;
 
-use crate::commands::{dispatch, CommandDispatcher};
-use clap::Parser;
+use crate::commands::CommandDispatcher;
 
 fn main() {
     util::migrate();
 
-    CommandDispatcher::parse()
-        .command
-        .ok_or(error::Error::UnknownCommand)
-        .and_then(dispatch)
+    CommandDispatcher::new()
+        .dispatch()
         .map_err(error::print_error)
         .ok();
 }

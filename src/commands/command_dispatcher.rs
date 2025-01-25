@@ -116,107 +116,115 @@ pub enum Commands {
     Net(commands::NetworkCommands),
 }
 
-#[derive(Parser)]
+#[derive(Default, Parser)]
 #[command(author, version, about, long_about = None, arg_required_else_help = true)]
 pub struct CommandDispatcher {
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
 
-pub fn dispatch(command: Commands) -> Result<(), Error> {
-    let image_dao = ImageDao::new()?;
-    let instance_dao = InstanceDao::new()?;
+impl CommandDispatcher {
+    pub fn new() -> Self {
+        CommandDispatcher::default()
+    }
 
-    match &command {
-        Commands::Run {
-            image,
-            name,
-            cpus,
-            mem,
-            disk,
-            verbose,
-            quiet,
-        } => commands::run(
-            &image_dao,
-            &instance_dao,
-            image,
-            name,
-            cpus,
-            mem,
-            disk,
-            Verbosity::new(*verbose, *quiet),
-        ),
-        Commands::List => commands::InstanceCommands::list_instances(&instance_dao),
-        Commands::Info { instance } => commands::info(&instance_dao, instance.clone()),
-        Commands::Start {
-            qemu_args,
-            verbose,
-            quiet,
-            instances,
-        } => commands::start(
-            &instance_dao,
-            qemu_args,
-            Verbosity::new(*verbose, *quiet),
-            instances,
-        ),
-        Commands::Stop {
-            instances,
-            verbose,
-            quiet,
-            all,
-        } => commands::stop(
-            &instance_dao,
-            *all,
-            Verbosity::new(*verbose, *quiet),
-            instances,
-        ),
-        Commands::Restart {
-            verbose,
-            quiet,
-            instances,
-        } => commands::restart(&instance_dao, Verbosity::new(*verbose, *quiet), instances),
-        Commands::Sh {
-            console,
-            verbose,
-            quiet,
-            instance,
-        } => commands::sh(
-            &instance_dao,
-            *console,
-            Verbosity::new(*verbose, *quiet),
-            instance,
-        ),
-        Commands::Ssh {
-            instance,
-            xforward,
-            verbose,
-            quiet,
-            ssh_args,
-            cmd,
-        } => commands::ssh(
-            &instance_dao,
-            instance,
-            *xforward,
-            Verbosity::new(*verbose, *quiet),
-            ssh_args,
-            cmd,
-        ),
-        Commands::Scp {
-            from,
-            to,
-            verbose,
-            quiet,
-            scp_args,
-        } => commands::scp(
-            &instance_dao,
-            from,
-            to,
-            Verbosity::new(*verbose, *quiet),
-            scp_args,
-        ),
-        Commands::Instance(command) => command.dispatch(&image_dao, &instance_dao),
-        Commands::Image(command) => command.dispatch(&image_dao),
-        Commands::Mount(command) => command.dispatch(&instance_dao),
-        Commands::Net(command) => command.dispatch(&instance_dao),
+    pub fn dispatch(self) -> Result<(), Error> {
+        let command = Self::parse().command.ok_or(Error::UnknownCommand)?;
+
+        let image_dao = ImageDao::new()?;
+        let instance_dao = InstanceDao::new()?;
+
+        match &command {
+            Commands::Run {
+                image,
+                name,
+                cpus,
+                mem,
+                disk,
+                verbose,
+                quiet,
+            } => commands::run(
+                &image_dao,
+                &instance_dao,
+                image,
+                name,
+                cpus,
+                mem,
+                disk,
+                Verbosity::new(*verbose, *quiet),
+            ),
+            Commands::List => commands::InstanceCommands::list_instances(&instance_dao),
+            Commands::Info { instance } => commands::info(&instance_dao, instance.clone()),
+            Commands::Start {
+                qemu_args,
+                verbose,
+                quiet,
+                instances,
+            } => commands::start(
+                &instance_dao,
+                qemu_args,
+                Verbosity::new(*verbose, *quiet),
+                instances,
+            ),
+            Commands::Stop {
+                instances,
+                verbose,
+                quiet,
+                all,
+            } => commands::stop(
+                &instance_dao,
+                *all,
+                Verbosity::new(*verbose, *quiet),
+                instances,
+            ),
+            Commands::Restart {
+                verbose,
+                quiet,
+                instances,
+            } => commands::restart(&instance_dao, Verbosity::new(*verbose, *quiet), instances),
+            Commands::Sh {
+                console,
+                verbose,
+                quiet,
+                instance,
+            } => commands::sh(
+                &instance_dao,
+                *console,
+                Verbosity::new(*verbose, *quiet),
+                instance,
+            ),
+            Commands::Ssh {
+                instance,
+                xforward,
+                verbose,
+                quiet,
+                ssh_args,
+                cmd,
+            } => commands::ssh(
+                &instance_dao,
+                instance,
+                *xforward,
+                Verbosity::new(*verbose, *quiet),
+                ssh_args,
+                cmd,
+            ),
+            Commands::Scp {
+                from,
+                to,
+                verbose,
+                quiet,
+                scp_args,
+            } => commands::scp(
+                &instance_dao,
+                from,
+                to,
+                Verbosity::new(*verbose, *quiet),
+                scp_args,
+            ),
+            Commands::Instance(command) => command.dispatch(&image_dao, &instance_dao),
+            Commands::Image(command) => command.dispatch(&image_dao),
+            Commands::Mount(command) => command.dispatch(&instance_dao),
+            Commands::Net(command) => command.dispatch(&instance_dao),
+        }
     }
 }
