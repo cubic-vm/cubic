@@ -30,10 +30,14 @@ pub enum Commands {
     /// Get information about an instance
     Info { instance: String },
 
+    /// Open the console of an instance
+    Console {
+        /// Name of the instance
+        instance: String,
+    },
+
     /// Open a shell in an instance
     Sh {
-        #[clap(short, long, default_value_t = false)]
-        console: bool,
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
         #[clap(short, long, default_value_t = false)]
@@ -182,17 +186,12 @@ impl CommandDispatcher {
                 quiet,
                 instances,
             } => commands::restart(&instance_dao, Verbosity::new(*verbose, *quiet), instances),
+            Commands::Console { instance } => commands::console(&instance_dao, instance),
             Commands::Sh {
-                console,
                 verbose,
                 quiet,
                 instance,
-            } => commands::sh(
-                &instance_dao,
-                *console,
-                Verbosity::new(*verbose, *quiet),
-                instance,
-            ),
+            } => commands::sh(&instance_dao, Verbosity::new(*verbose, *quiet), instance),
             Commands::Ssh {
                 instance,
                 xforward,

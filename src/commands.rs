@@ -1,4 +1,5 @@
 pub mod command_dispatcher;
+pub mod console;
 pub mod image;
 pub mod info;
 pub mod instance;
@@ -14,6 +15,7 @@ pub mod stop;
 pub mod verbosity;
 
 pub use command_dispatcher::*;
+pub use console::*;
 pub use image::*;
 pub use info::*;
 pub use instance::*;
