@@ -23,5 +23,5 @@ pub fn run(
         mem,
         disk,
     )?;
-    commands::sh(instance_dao, false, verbosity, name)
+    commands::sh(instance_dao, verbosity, name)
 }
