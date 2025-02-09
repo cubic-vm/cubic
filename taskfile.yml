@@ -1,0 +1,36 @@
+version: '3'
+
+tasks:
+  format:
+    cmds:
+      - cargo fmt --check
+
+  fix-format:
+    cmds:
+      - cargo fmt
+
+  lint:
+    cmds:
+      - cargo clippy -- -D warnings
+
+  fix-lint:
+    cmds:
+      - cargo clippy --fix --allow-dirty --allow-staged
+
+  test:
+    cmds:
+      - cargo test
+
+  audit:
+    cmds:
+      - cargo audit
+
+  check:
+    deps: [format, lint, test, audit]
+
+  fix:
+    deps: [fix-format, fix-lint]
+
+  build:
+    cmds:
+      - cargo build
