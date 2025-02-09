@@ -7,23 +7,14 @@ jobs:
     name: Check
     runs-on: ubuntu-24.04
     steps:
+      - name: Install task
+        run: sudo snap install task --classic
+
       - name: Install Dependencies
         run: cargo install cargo-audit
 
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Build Code
-        run: cargo build
-
-      - name: Format Code
-        run: cargo fmt --check
-
-      - name: Lint Code
-        run: cargo clippy -- -D warnings
-
-      - name: Test Code
-        run: cargo test
-
-      - name: Audit Code
-        run: cargo audit
+      - name: Check
+        run: task check
