@@ -1,29 +1,42 @@
 version: '3'
 
+env:
+  DOCKER_CMD: docker run --rm -v .:/usr/local/app cubic
+
 tasks:
-  format:
+  build-image:
     cmds:
-      - cargo fmt --check
+      - docker build -t cubic .
+
+  format:
+    deps: [build-image]
+    cmds:
+      - $DOCKER_CMD cargo fmt --check
 
   fix-format:
+    deps: [build-image]
     cmds:
-      - cargo fmt
+      - $DOCKER_CMD cargo fmt
 
   lint:
+    deps: [build-image]
     cmds:
-      - cargo clippy -- -D warnings
+      - $DOCKER_CMD cargo clippy -- -D warnings
 
   fix-lint:
+    deps: [build-image]
     cmds:
-      - cargo clippy --fix --allow-dirty --allow-staged
+      - $DOCKER_CMD cargo clippy --fix --allow-dirty --allow-staged
 
   test:
+    deps: [build-image]
     cmds:
-      - cargo test
+      - $DOCKER_CMD cargo test
 
   audit:
+    deps: [build-image]
     cmds:
-      - cargo audit
+      - $DOCKER_CMD cargo audit
 
   check:
     deps: [format, lint, test, audit]
@@ -33,4 +46,4 @@ tasks:
 
   build:
     cmds:
-      - cargo build
+      - $DOCKER_CMD cargo build
