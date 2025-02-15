@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::image::ImageDao;
+use crate::image::{Image, ImageDao};
 use crate::util;
 use crate::view::{Alignment, TableView};
 use clap::Subcommand;
@@ -16,7 +16,19 @@ pub enum ImageCommands {
     Fetch { image: String },
 
     /// Delete images
-    Del { images: Vec<String> },
+    Del {
+        /// List of images to delete
+        images: Vec<String>,
+        #[clap(short, long, default_value_t = false)]
+        /// Delete all images
+        all: bool,
+        /// Force delete images without asking for confirmation
+        #[clap(short, long, default_value_t = false)]
+        force: bool,
+        /// Silence command output
+        #[clap(short, long, default_value_t = false)]
+        quiet: bool,
+    },
 }
 
 impl ImageCommands {
@@ -54,19 +66,40 @@ impl ImageCommands {
 
             ImageCommands::Fetch { image } => image_dao.fetch(&image_dao.get(image)?),
 
-            ImageCommands::Del { images } => {
-                for name in images {
-                    let image = image_dao.get(name)?;
+            ImageCommands::Del {
+                images,
+                all,
+                force,
+                quiet,
+            } => {
+                let selected_images = if *all {
+                    image_dao.get_images().clone()
+                } else {
+                    images
+                        .iter()
+                        .map(|name| image_dao.get(name))
+                        .collect::<Result<Vec<Image>, Error>>()?
+                };
 
-                    if !image_dao.exists(&image) {
-                        return Result::Err(Error::UnknownImage(image.to_id()));
+                for image in &selected_images {
+                    let name = image.to_id();
+
+                    if !image_dao.exists(image) {
+                        if !*all && !*quiet {
+                            println!("Image '{name}' does not exists");
+                        }
+                        continue;
                     }
 
-                    if util::confirm(&format!(
-                        "Do you really want delete the image '{name}'? [y/n]: "
-                    )) {
-                        image_dao.delete(&image)?;
-                        println!("Deleted image {name}");
+                    if *force
+                        || util::confirm(&format!(
+                            "Do you really want delete the image '{name}'? [y/n]: "
+                        ))
+                    {
+                        image_dao.delete(image)?;
+                        if !*quiet {
+                            println!("Deleted image {name}");
+                        }
                     }
                 }
 
