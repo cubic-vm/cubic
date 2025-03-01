@@ -7,17 +7,28 @@ use std::path::Path;
 #[derive(Subcommand)]
 pub enum MountCommands {
     /// List mount mounts
-    List { name: String },
+    List {
+        /// Name of the virtual machine instance
+        name: String,
+    },
 
     /// Add a directory mount
     Add {
+        /// Name of the virtual machine instance
         name: String,
+        /// Path on the host filesystem
         host: String,
+        /// Path on guest filesystem
         guest: String,
     },
 
     /// Delete a directory mount
-    Del { name: String, guest: String },
+    Del {
+        /// Name of the virtual machine instance
+        name: String,
+        /// Path on guest filesystem
+        guest: String,
+    },
 }
 
 impl MountCommands {
