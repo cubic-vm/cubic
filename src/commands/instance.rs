@@ -13,45 +13,68 @@ pub enum InstanceCommands {
 
     /// Add an instance
     Add {
+        /// Name of the virtual machine image
         #[clap(short, long)]
         image: String,
+        /// Name of the virtual machine instance
         #[clap(short, long)]
         name: Option<String>,
+        /// Number of CPUs for the virtual machine instance
         #[clap(short, long)]
         cpus: Option<u16>,
+        /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
         #[clap(short, long)]
         mem: Option<String>,
+        /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
         #[clap(short, long)]
         disk: Option<String>,
     },
 
     /// Delete instances
     Del {
+        /// Enable verbose logging
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        /// Reduce logging output
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
+        /// Delete the virtual machine instances without confirmation
         #[clap(short, long, default_value_t = false)]
         force: bool,
+        /// Name of the virtual machine instances to delete
         instances: Vec<String>,
     },
 
     /// Read and write configuration parameters
     Config {
+        /// Name of the virtual machine instance
         instance: String,
+        /// Number of CPUs for the virtual machine instance
         #[clap(short, long)]
         cpus: Option<u16>,
+        /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
         #[clap(short, long)]
         mem: Option<String>,
+        /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
         #[clap(short, long)]
         disk: Option<String>,
     },
 
     /// Clone an instane
-    Clone { name: String, new_name: String },
+    Clone {
+        /// Name of the virtual machine instance to clone
+        name: String,
+        /// Name of the copy
+        new_name: String,
+    },
 
     /// Rename an instance
-    Rename { old_name: String, new_name: String },
+    Rename {
+        /// Name of the virtual machine instance to rename
+        old_name: String,
+        /// New name of the virutal machine instance
+        new_name: String,
+    },
 }
 
 impl InstanceCommands {

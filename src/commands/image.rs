@@ -8,12 +8,16 @@ use clap::Subcommand;
 pub enum ImageCommands {
     /// List images
     List {
+        /// List all images
         #[clap(short, long, default_value_t = false)]
         all: bool,
     },
 
     /// Fetch an image
-    Fetch { image: String },
+    Fetch {
+        /// Name of the virtual machine image
+        image: String,
+    },
 
     /// Delete images
     Del {

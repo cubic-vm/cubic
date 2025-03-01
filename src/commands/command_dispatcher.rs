@@ -8,18 +8,25 @@ use clap::{Parser, Subcommand};
 pub enum Commands {
     /// Setup and run a new instance
     Run {
+        /// Name of the virtual machine image
         #[clap(short, long)]
         image: String,
+        /// Name of the virtual machine instance
         #[clap(short, long)]
         name: String,
+        /// Number of CPUs for the virtual machine instance
         #[clap(short, long)]
         cpus: Option<u16>,
+        /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
         #[clap(short, long)]
         mem: Option<String>,
+        /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
         #[clap(short, long)]
         disk: Option<String>,
+        /// Enable verbose logging
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        /// Reduce logging output
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
     },
@@ -28,78 +35,105 @@ pub enum Commands {
     List,
 
     /// Get information about an instance
-    Info { instance: String },
+    Info {
+        /// Name of the virtual machine instance
+        instance: String,
+    },
 
     /// Open the console of an instance
     Console {
-        /// Name of the instance
+        /// Name of the virtual machine instance
         instance: String,
     },
 
     /// Open a shell in an instance
     Sh {
+        /// Enable verbose logging
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        /// Reduce logging output
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
+        /// Name of the virtual machine instance
         instance: String,
     },
 
     /// Connect to an instance with SSH
     Ssh {
+        /// Name of the virtual machine instance
         instance: String,
         /// Forward X over SSH
         #[clap(short = 'X', default_value_t = false)]
         xforward: bool,
+        /// Enable verbose logging
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        /// Reduce logging output
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
+        /// Pass additional SSH arguments
         #[clap(long)]
         ssh_args: Option<String>,
+        /// Execute a command in the virtual machine
         cmd: Option<String>,
     },
 
     /// Copy a file from or to an instance with SCP
     Scp {
+        /// Source of the data to copy
         from: String,
+        /// Target of the data to copy
         to: String,
+        /// Enable verbose logging
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        /// Reduce logging output
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
+        /// Pass additional SCP arguments
         #[clap(long)]
         scp_args: Option<String>,
     },
 
-    /// Start instances
+    /// Start virtual machine instances
     Start {
+        /// Pass additional QEMU arguments
         #[clap(long)]
         qemu_args: Option<String>,
+        /// Enable verbose logging
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        /// Reduce logging output
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
+        /// Name of the virtual machine instances to start
         instances: Vec<String>,
     },
 
-    /// Stop instances
+    /// Stop virtual machine instances
     Stop {
+        /// Stop all virtual machine instances
         #[clap(short, long, default_value_t = false)]
         all: bool,
+        /// Enable verbose logging
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        /// Reduce logging output
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
+        /// Name of the virtual machine instances to stop
         instances: Vec<String>,
     },
 
-    /// Restart instances
+    /// Restart virtual machine instances
     Restart {
+        /// Enable verbose logging
         #[clap(short, long, default_value_t = false)]
         verbose: bool,
+        /// Reduce logging output
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
+        /// Name of the virtual machine instances to restart
         instances: Vec<String>,
     },
 
