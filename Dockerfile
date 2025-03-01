@@ -3,4 +3,4 @@ WORKDIR /usr/local/app
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN rustup component add clippy rustfmt && \
-    cargo install --locked cargo-audit
+    cargo install --locked cargo-audit@0.21.1
