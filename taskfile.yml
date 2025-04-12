@@ -45,5 +45,6 @@ tasks:
     deps: [fix-format, fix-lint]
 
   build:
+    deps: [build-image]
     cmds:
       - $DOCKER_CMD cargo build
