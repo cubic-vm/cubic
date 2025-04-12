@@ -38,6 +38,11 @@ tasks:
     cmds:
       - $DOCKER_CMD cargo audit
 
+  update:
+    deps: [build-image]
+    cmds:
+      - $DOCKER_CMD cargo update
+
   check:
     deps: [format, lint, test, audit]
 
