@@ -8,6 +8,11 @@ tasks:
     cmds:
       - docker build -t cubic .
 
+  clean:
+    deps: [build-image]
+    cmds:
+      - $DOCKER_CMD cargo clean
+
   format:
     deps: [build-image]
     cmds:
