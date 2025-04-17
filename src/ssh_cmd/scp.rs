@@ -7,7 +7,6 @@ pub struct Scp {
     root_dir: String,
     known_hosts_file: Option<String>,
     private_keys: Vec<String>,
-    port: Option<u16>,
     args: String,
     verbose: bool,
 }
@@ -29,11 +28,6 @@ impl Scp {
 
     pub fn set_private_keys(&mut self, private_keys: Vec<String>) -> &mut Self {
         self.private_keys = private_keys;
-        self
-    }
-
-    pub fn set_port(&mut self, port: Option<u16>) -> &mut Self {
-        self.port = port;
         self
     }
 
@@ -60,8 +54,8 @@ impl Scp {
         }
 
         command
+            .arg("-3")
             .arg("-r")
-            .args(self.port.map(|port| format!("-P{port}")).as_slice())
             .arg(format!("-S{}/usr/bin/ssh", self.root_dir))
             .args(
                 self.private_keys
@@ -92,7 +86,10 @@ mod tests {
         let args: Vec<&OsStr> = cmd.get_args().collect();
 
         assert_eq!(cmd.get_program(), "/usr/bin/scp");
-        assert_eq!(args, &["-r", "-S/usr/bin/ssh", "/from/file", "/to/file"]);
+        assert_eq!(
+            args,
+            &["-3", "-r", "-S/usr/bin/ssh", "/from/file", "/to/file"]
+        );
     }
 
     #[test]
@@ -106,6 +103,7 @@ mod tests {
         assert_eq!(
             args,
             &[
+                "-3",
                 "-r",
                 "-S/snap/cubic/current/usr/bin/ssh",
                 "/from/file",
@@ -124,7 +122,6 @@ mod tests {
                 "/home/cubic/.ssh/id_rsa".to_string(),
                 "/home/cubic/.ssh/id_ed25519".to_string(),
             ])
-            .set_port(Some(10000))
             .set_args("-myarg1 -myarg2 -myarg3")
             .copy("/from/file", "/to/file");
         let args: Vec<&OsStr> = cmd.get_args().collect();
@@ -134,8 +131,8 @@ mod tests {
             args,
             &[
                 "-oUserKnownHostsFile=/home/test/.ssh/known_hosts",
+                "-3",
                 "-r",
-                "-P10000",
                 "-S/snap/cubic/current/usr/bin/ssh",
                 "-i/home/cubic/.ssh/id_rsa",
                 "-i/home/cubic/.ssh/id_ed25519",
