@@ -52,6 +52,13 @@ impl ImageFactory {
             version: "41".to_string(),
             url: fedora_url.to_string() + "test/41_Beta/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-41_Beta-1.2.x86_64.qcow2"
         });
+        images.push(Image {
+            vendor: "fedora".to_string(),
+            codename: "42".to_string(),
+            version: "42".to_string(),
+            url: fedora_url.to_string()
+                + "42/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2",
+        });
 
         let ubuntu_releases = &[
             "bionic", "cosmic", "disco", "eoan", "focal", "groovy", "hirsute", "impish", "jammy",
