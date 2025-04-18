@@ -7,6 +7,7 @@ use std::path::Path;
 #[derive(Subcommand)]
 pub enum MountCommands {
     /// List mount mounts
+    #[clap(alias = "ls")]
     List {
         /// Name of the virtual machine instance
         name: String,
@@ -23,6 +24,7 @@ pub enum MountCommands {
     },
 
     /// Delete a directory mount
+    #[clap(alias = "rm")]
     Del {
         /// Name of the virtual machine instance
         name: String,

@@ -9,6 +9,7 @@ use clap::Subcommand;
 #[derive(Subcommand)]
 pub enum InstanceCommands {
     /// List instances
+    #[clap(alias = "ls")]
     List,
 
     /// Add an instance
@@ -31,6 +32,7 @@ pub enum InstanceCommands {
     },
 
     /// Delete instances
+    #[clap(alias = "rm")]
     Del {
         /// Enable verbose logging
         #[clap(short, long, default_value_t = false)]

@@ -32,6 +32,7 @@ pub enum Commands {
     },
 
     /// List instances
+    #[clap(alias = "ls")]
     List,
 
     /// Get information about an instance

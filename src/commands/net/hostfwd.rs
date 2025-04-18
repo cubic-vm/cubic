@@ -10,7 +10,7 @@ pub enum HostfwdCommands {
     ///
     /// List forwarded ports for all instances:
     /// $ cubic net hostfwd list
-    #[clap(verbatim_doc_comment)]
+    #[clap(verbatim_doc_comment, alias = "ls")]
     List,
 
     /// Add host port forwarding rule
@@ -29,7 +29,7 @@ pub enum HostfwdCommands {
     ///
     /// Remove port forwarding:
     /// $ cubic net hostfwd del myinstance tcp:127.0.0.1:8000-:22
-    #[clap(verbatim_doc_comment)]
+    #[clap(verbatim_doc_comment, alias = "rm")]
     Del {
         /// Virtual machine instance
         instance: String,
