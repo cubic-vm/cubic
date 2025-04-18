@@ -55,7 +55,7 @@ impl ImageFactory {
 
         let ubuntu_releases = &[
             "bionic", "cosmic", "disco", "eoan", "focal", "groovy", "hirsute", "impish", "jammy",
-            "kinetic", "lunar", "mantic", "noble", "oracular",
+            "kinetic", "lunar", "mantic", "noble", "oracular", "plucky",
         ];
         let ubuntu_url = "https://cloud-images.ubuntu.com/minimal/releases/{name}/release/ubuntu-{version}-minimal-cloudimg-amd64.img";
         let vendor = "ubuntu";
