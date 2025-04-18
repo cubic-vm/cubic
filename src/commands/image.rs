@@ -13,6 +13,12 @@ pub enum ImageCommands {
         all: bool,
     },
 
+    /// Show image information
+    Info {
+        /// Name of the virtual machine image
+        name: String,
+    },
+
     /// Fetch an image
     Fetch {
         /// Name of the virtual machine image
@@ -65,6 +71,23 @@ impl ImageCommands {
                         .add(&size, Alignment::Right);
                 }
                 view.print();
+                Ok(())
+            }
+
+            ImageCommands::Info { name } => {
+                let image = image_dao.get(name)?;
+                let vendor = image.vendor;
+                let codename = image.codename;
+                let version = image.version;
+                let url = image.url;
+                print!(
+                    "\
+                    Vendor:   {vendor}\n\
+                    Codename: {codename}\n\
+                    Version:  {version}\n\
+                    URL:      {url}\n\
+                "
+                );
                 Ok(())
             }
 
