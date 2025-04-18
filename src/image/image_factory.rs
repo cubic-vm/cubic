@@ -46,11 +46,12 @@ impl ImageFactory {
             url: fedora_url.to_string()
                 + "40/Cloud/x86_64/images/Fedora-Cloud-Base-Generic.x86_64-40-1.14.qcow2",
         });
-        images.push(Image{
+        images.push(Image {
             vendor: "fedora".to_string(),
             codename: "41".to_string(),
             version: "41".to_string(),
-            url: fedora_url.to_string() + "test/41_Beta/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-41_Beta-1.2.x86_64.qcow2"
+            url: fedora_url.to_string()
+                + "41/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-41-1.4.x86_64.qcow2",
         });
         images.push(Image {
             vendor: "fedora".to_string(),
