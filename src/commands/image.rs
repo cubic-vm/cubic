@@ -7,6 +7,7 @@ use clap::Subcommand;
 #[derive(Subcommand)]
 pub enum ImageCommands {
     /// List images
+    #[clap(alias = "ls")]
     List {
         /// List all images
         #[clap(short, long, default_value_t = false)]
@@ -26,6 +27,7 @@ pub enum ImageCommands {
     },
 
     /// Delete images
+    #[clap(alias = "rm")]
     Del {
         /// List of images to delete
         images: Vec<String>,
