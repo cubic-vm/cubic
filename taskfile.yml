@@ -2,12 +2,12 @@ version: '3'
 
 env:
   DOCKER_CMD: docker run --rm -v .:/usr/local/app
-  IMAGE: cubic
+  IMAGE: cubic:latest
 
 tasks:
   build-image:
     cmds:
-      - docker build -t cubic .
+      - if [ -z "$(docker images -q $IMAGE)" ]; then docker build -t $IMAGE .; fi
 
   clean:
     deps: [build-image]
