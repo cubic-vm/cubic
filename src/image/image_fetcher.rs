@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::image::Image;
 use crate::util;
+use crate::view::transfer_view::TransferView;
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -9,25 +10,13 @@ struct ProgressWriter {
     file: fs::File,
     size: Option<u64>,
     written: u64,
+    view: TransferView,
 }
 
 impl io::Write for ProgressWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        if let Some(size) = self.size {
-            self.written += buf.len() as u64;
-            let percent = format!("{: >3.0}%", self.written as f64 / size as f64 * 100_f64);
-            print!(
-                "\rDownloading image: {:>10} / {:>10} [{percent:>4}]",
-                util::bytes_to_human_readable(self.written),
-                util::bytes_to_human_readable(size)
-            );
-            if self.written >= size {
-                println!();
-            }
-        } else {
-            print!("\rDownloading image");
-        }
-        io::stdout().flush().ok();
+        self.written += buf.len() as u64;
+        self.view.update(self.written, self.size);
         self.file.write(buf)
     }
 
@@ -62,6 +51,7 @@ impl ImageFetcher {
             file,
             size,
             written: 0,
+            view: TransferView::new("Downloading image"),
         };
         resp.copy_to(&mut writer)
             .map_err(|_| Error::ImageDownloadFailed(image.to_id()))?;
