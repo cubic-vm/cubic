@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::instance::InstanceDao;
 use crate::util;
+use crate::view::MapView;
 
 pub fn info(instance_dao: &InstanceDao, instance: String) -> Result<(), Error> {
     if !instance_dao.exists(&instance) {
@@ -8,35 +9,30 @@ pub fn info(instance_dao: &InstanceDao, instance: String) -> Result<(), Error> {
     }
 
     let instance = instance_dao.load(&instance)?;
-    let cpus = &instance.cpus;
-    let mem = util::bytes_to_human_readable(instance.mem);
-    let disk = util::bytes_to_human_readable(instance.disk_capacity);
-    let user = &instance.user;
-    let display = &instance.display;
-    let gpu = &instance.gpu;
-    let port = &instance.ssh_port;
 
-    print!(
-        "\
-        cpus:     {cpus}\n\
-        mem:      {mem}\n\
-        disk:     {disk}\n\
-        user:     {user}\n\
-        display:  {display}\n\
-        gpu:      {gpu}\n\
-        ssh-port: {port}\n\
-        mounts:\n\
-    "
+    let mut view = MapView::new();
+    view.add("CPUs", &instance.cpus.to_string());
+    view.add("Memory", &util::bytes_to_human_readable(instance.mem));
+    view.add(
+        "Disk",
+        &util::bytes_to_human_readable(instance.disk_capacity),
     );
+    view.add("User", &instance.user);
+    view.add("Display", &instance.display.to_string());
+    view.add("GPU", &instance.gpu.to_string());
+    view.add("SSH Port", &instance.ssh_port.to_string());
 
-    for mount in &instance.mounts {
-        println!("  - {} => {}", mount.host, mount.guest);
+    for (index, mount) in instance.mounts.iter().enumerate() {
+        let key = if index == 0 { "Mounts" } else { "" };
+        view.add(key, &format!("{} => {}", mount.host, mount.guest));
     }
 
-    println!("hostfwd:");
-    for rule in &instance.hostfwd {
-        println!("  - {rule}");
+    for (index, rule) in instance.hostfwd.iter().enumerate() {
+        let key = if index == 0 { "Forward" } else { "" };
+        view.add(key, rule);
     }
 
-    Result::Ok(())
+    view.print();
+
+    Ok(())
 }
