@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::instance::{InstanceDao, MountPoint};
 use crate::util;
+use crate::view::{Alignment, TableView};
 use clap::Subcommand;
 use std::path::Path;
 
@@ -38,10 +39,17 @@ impl MountCommands {
         match self {
             MountCommands::List { name } => {
                 let instance = instance_dao.load(name)?;
-                println!("{:30} {:30}", "HOST", "GUEST");
+                let mut view = TableView::new();
+                view.add_row()
+                    .add("Host", Alignment::Left)
+                    .add("Guest", Alignment::Left);
+
                 for mount in instance.mounts {
-                    println!("{:30} {:30}", mount.host, mount.guest);
+                    view.add_row()
+                        .add(&mount.host, Alignment::Left)
+                        .add(&mount.guest, Alignment::Left);
                 }
+                view.print();
                 Ok(())
             }
 
