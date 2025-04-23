@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::image::{Image, ImageDao};
 use crate::util;
+use crate::view::MapView;
 use crate::view::{Alignment, TableView};
 use clap::Subcommand;
 
@@ -78,18 +79,12 @@ impl ImageCommands {
 
             ImageCommands::Info { name } => {
                 let image = image_dao.get(name)?;
-                let vendor = image.vendor;
-                let codename = image.codename;
-                let version = image.version;
-                let url = image.url;
-                print!(
-                    "\
-                    Vendor:   {vendor}\n\
-                    Codename: {codename}\n\
-                    Version:  {version}\n\
-                    URL:      {url}\n\
-                "
-                );
+                let mut view = MapView::new();
+                view.add("Vendor", &image.vendor);
+                view.add("Codename", &image.codename);
+                view.add("Version", &image.version);
+                view.add("URL", &image.url);
+                view.print();
                 Ok(())
             }
 
