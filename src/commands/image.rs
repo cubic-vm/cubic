@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::image::{Image, ImageDao};
+use crate::image::{Image, ImageDao, ImageFetcher};
 use crate::util;
 use crate::view::MapView;
 use crate::view::{Alignment, TableView};
@@ -88,7 +88,19 @@ impl ImageCommands {
                 Ok(())
             }
 
-            ImageCommands::Fetch { image } => image_dao.fetch(&image_dao.get(image)?),
+            ImageCommands::Fetch { image } => {
+                let image = &image_dao.get(image)?;
+
+                if !image_dao.exists(image) {
+                    util::create_dir(&image_dao.image_dir)?;
+                    ImageFetcher::new().fetch(
+                        image,
+                        &format!("{}/{}", image_dao.image_dir, image.to_file_name()),
+                    )?;
+                }
+
+                Ok(())
+            }
 
             ImageCommands::Del {
                 images,

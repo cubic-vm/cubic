@@ -7,6 +7,7 @@ mod qemu;
 mod ssh_cmd;
 mod util;
 mod view;
+mod web;
 
 use crate::commands::CommandDispatcher;
 

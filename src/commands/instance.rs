@@ -1,3 +1,4 @@
+use crate::commands::image::ImageCommands;
 use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::image::ImageDao;
@@ -184,7 +185,10 @@ impl InstanceCommands {
         disk: &Option<String>,
     ) -> Result<(), Error> {
         let image = image_dao.get(image_name)?;
-        image_dao.fetch(&image)?;
+        ImageCommands::Fetch {
+            image: image_name.to_string(),
+        }
+        .dispatch(image_dao)?;
 
         if let Option::Some(instance) = name {
             let instance_dir = format!("{}/{instance}", instance_dao.instance_dir);
