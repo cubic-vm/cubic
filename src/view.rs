@@ -6,3 +6,4 @@ pub mod transfer_view;
 pub use map_view::*;
 pub use table_view::*;
 pub use timer_view::*;
+pub use transfer_view::*;

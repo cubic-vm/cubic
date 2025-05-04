@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::image::{Image, ImageFactory, ImageFetcher};
+use crate::image::{Image, ImageFactory};
 use crate::util;
 
 use std::fs::remove_file;
@@ -64,18 +64,6 @@ impl ImageDao {
 
     pub fn exists(&self, image: &Image) -> bool {
         Path::new(&format!("{}/{}", self.image_dir, image.to_file_name())).exists()
-    }
-
-    pub fn fetch(&self, image: &Image) -> Result<(), Error> {
-        if self.exists(image) {
-            Result::Ok(())
-        } else {
-            util::create_dir(&self.image_dir)?;
-            ImageFetcher::new().fetch(
-                image,
-                &format!("{}/{}", self.image_dir, image.to_file_name()),
-            )
-        }
     }
 
     pub fn delete(&self, image: &Image) -> Result<(), Error> {

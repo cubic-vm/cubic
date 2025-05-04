@@ -20,11 +20,11 @@ pub enum Error {
     UserDataCreationFailed(String),
     CannotParseSize(String),
     CannotShrinkDisk(String),
-    ImageDownloadFailed(String),
     GetCapacityFailed(String),
     CannotOpenTerminal(String),
     HostFwdRuleMalformed(String),
     CommandFailed(String),
+    Web(reqwest::Error),
     SerdeJson(serde_json::Error),
     SerdeYaml(serde_yaml::Error),
     MissingQemuGA,
@@ -63,7 +63,6 @@ pub fn print_error(error: Error) {
         Error::CannotShrinkDisk(name) => {
             println!("Cannot shrink the disk of the instance '{name}'")
         }
-        Error::ImageDownloadFailed(name) => println!("Failed to download image: '{name}'"),
         Error::GetCapacityFailed(path) => println!("Failed to get capacity from image: '{path}'"),
         Error::CannotOpenTerminal(path) => println!("Failed to open terminal from path: '{path}'"),
         Error::HostFwdRuleMalformed(rule) => println!("Host forwarding rule is malformed: {rule}"),
@@ -72,5 +71,6 @@ pub fn print_error(error: Error) {
         Error::SerdeYaml(err) => println!("[YAML] {err}"),
         Error::MissingQemuGA => println!("Cannot access QEMU guest agent. Please install qemu-guest-agent in the virtual machine instance."),
         Error::ExecFailed => println!("Failed to execute command in virtual machine instance."),
+        Error::Web(e) => println!("{e}"),
     }
 }
