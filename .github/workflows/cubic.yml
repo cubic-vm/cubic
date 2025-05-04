@@ -1,6 +1,9 @@
 on: [push, pull_request]
 
 name: Cubic
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   check:
