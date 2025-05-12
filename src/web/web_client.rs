@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::util;
 use crate::view::TransferView;
+use reqwest::blocking::Client;
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -24,11 +25,27 @@ impl io::Write for ProgressWriter {
     }
 }
 
-pub struct WebClient {}
+pub struct WebClient {
+    client: Client,
+}
 
 impl WebClient {
     pub fn new() -> Self {
-        WebClient {}
+        WebClient {
+            client: Client::new(),
+        }
+    }
+
+    pub fn get_file_size(&mut self, url: &str) -> Result<Option<u64>, Error> {
+        Ok(self
+            .client
+            .head(url)
+            .send()
+            .map_err(Error::Web)?
+            .headers()
+            .get("Content-Length")
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.parse().ok()))
     }
 
     pub fn download_file(
@@ -57,5 +74,14 @@ impl WebClient {
         resp.copy_to(&mut writer).map_err(Error::Web)?;
 
         fs::rename(temp_file, file_path).map_err(Error::Io)
+    }
+
+    pub fn download_content(&mut self, url: &str) -> Result<String, Error> {
+        self.client
+            .get(url)
+            .send()
+            .map_err(Error::Web)?
+            .text()
+            .map_err(Error::Web)
     }
 }

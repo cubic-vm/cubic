@@ -59,8 +59,8 @@ impl ImageCommands {
                         continue;
                     }
 
-                    let size = image_dao
-                        .get_disk_size(image)
+                    let size = image
+                        .size
                         .map(util::bytes_to_human_readable)
                         .unwrap_or_default();
 
