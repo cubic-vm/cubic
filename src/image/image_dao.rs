@@ -51,11 +51,6 @@ impl ImageDao {
         util::get_disk_capacity(&path)
     }
 
-    pub fn get_disk_size(&self, image: &Image) -> Result<u64, Error> {
-        let path = format!("{}/{}", self.image_dir, image.to_file_name());
-        util::get_disk_size(&path)
-    }
-
     pub fn copy_image(&self, image: &Image, dir: &str, name: &str) -> Result<(), Error> {
         let path = format!("{}/{}", self.image_dir, image.to_file_name());
         util::create_dir(dir)?;

@@ -12,6 +12,7 @@ pub struct Image {
     pub codename: String,
     pub version: String,
     pub url: String,
+    pub size: Option<u64>,
 }
 
 impl Image {

@@ -43,17 +43,6 @@ pub fn get_disk_capacity(path: &str) -> Result<u64, Error> {
     }
 }
 
-pub fn get_disk_size(path: &str) -> Result<u64, Error> {
-    let json: Value = run_qemu_info(path)?;
-
-    match &json["actual-size"] {
-        Number(number) => number
-            .as_u64()
-            .ok_or(Error::GetCapacityFailed(path.to_string())),
-        _ => Result::Err(Error::GetCapacityFailed(path.to_string())),
-    }
-}
-
 pub fn bytes_to_human_readable(bytes: u64) -> String {
     match bytes.checked_ilog(1024) {
         Some(1) => format!("{:3.1} KiB", bytes as f64 / 1024_f64.powf(1_f64)),
