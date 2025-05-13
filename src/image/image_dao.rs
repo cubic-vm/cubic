@@ -8,7 +8,6 @@ use std::str;
 
 pub struct ImageDao {
     pub image_dir: String,
-    pub images: Vec<Image>,
 }
 
 impl ImageDao {
@@ -16,14 +15,7 @@ impl ImageDao {
         let image_dir = util::get_image_data_dir()?;
         util::setup_directory_access(&image_dir)?;
 
-        Result::Ok(ImageDao {
-            image_dir,
-            images: ImageFactory::create_images(),
-        })
-    }
-
-    pub fn get_images(&self) -> &Vec<Image> {
-        &self.images
+        Result::Ok(ImageDao { image_dir })
     }
 
     pub fn get(&self, id: &str) -> Result<Image, Error> {
@@ -37,11 +29,9 @@ impl ImageDao {
             .ok_or(Error::InvalidImageName(id.to_string()))?
             .to_string();
 
-        self.images
+        ImageFactory::create_images_for_distro(&vendor)
             .iter()
-            .find(|image| {
-                image.vendor == vendor && (image.codename == name || image.version == name)
-            })
+            .find(|image| image.codename == name || image.version == name)
             .cloned()
             .ok_or(Error::UnknownImage(id.to_string()))
     }

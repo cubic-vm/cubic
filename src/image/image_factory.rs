@@ -119,4 +119,14 @@ impl ImageFactory {
             .flat_map(|distro| Self::add_images(web, distro))
             .collect()
     }
+
+    pub fn create_images_for_distro(name: &str) -> Vec<Image> {
+        let web = &mut WebClient::new();
+
+        DISTROS
+            .iter()
+            .filter(|distro| distro.vendor == name)
+            .flat_map(|distro| Self::add_images(web, distro))
+            .collect()
+    }
 }

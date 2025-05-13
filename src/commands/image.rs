@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::image::{Image, ImageDao, ImageFetcher};
+use crate::image::{Image, ImageDao, ImageFactory, ImageFetcher};
 use crate::util;
 use crate::view::MapView;
 use crate::view::{Alignment, TableView};
@@ -54,8 +54,8 @@ impl ImageCommands {
                     .add("Arch", Alignment::Left)
                     .add("Size", Alignment::Right);
 
-                for image in image_dao.get_images() {
-                    if !(*all || image_dao.exists(image)) {
+                for image in ImageFactory::create_images() {
+                    if !(*all || image_dao.exists(&image)) {
                         continue;
                     }
 
@@ -118,7 +118,7 @@ impl ImageCommands {
                 quiet,
             } => {
                 let selected_images = if *all {
-                    image_dao.get_images().clone()
+                    ImageFactory::create_images().clone()
                 } else {
                     images
                         .iter()
