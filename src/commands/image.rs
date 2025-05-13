@@ -50,8 +50,6 @@ impl ImageCommands {
             ImageCommands::List { all } => {
                 let mut view = TableView::new();
                 view.add_row()
-                    .add("Vendor", Alignment::Left)
-                    .add("Version", Alignment::Right)
                     .add("Name", Alignment::Left)
                     .add("Arch", Alignment::Left)
                     .add("Size", Alignment::Right);
@@ -67,11 +65,22 @@ impl ImageCommands {
                         .unwrap_or_default();
 
                     view.add_row()
-                        .add(&image.vendor, Alignment::Left)
-                        .add(&image.version, Alignment::Right)
-                        .add(&image.codename, Alignment::Left)
+                        .add(
+                            &format!("{}:{}", image.vendor, image.version),
+                            Alignment::Left,
+                        )
                         .add("amd64", Alignment::Left)
                         .add(&size, Alignment::Right);
+
+                    if image.version != image.codename {
+                        view.add_row()
+                            .add(
+                                &format!("{}:{}", image.vendor, image.codename),
+                                Alignment::Left,
+                            )
+                            .add("amd64", Alignment::Left)
+                            .add(&size, Alignment::Right);
+                    }
                 }
                 view.print();
                 Ok(())
