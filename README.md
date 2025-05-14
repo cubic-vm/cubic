@@ -13,7 +13,7 @@ Cubic is built on top of `QEMU`, `KVM` and `cloud-init`.
 - Daemon-less design
 - Works without root rights
 - Supports KVM acceleration
-- Supports ArchLinux, Debian, Fedora and Ubuntu guest images
+- Supports ArchLinux, Debian, Fedora, OpenSUSE and Ubuntu guest images
 - Supports file transfers between host and guest
 - Supports directory mounting between host and guest
 - Written in Rust
@@ -64,7 +64,7 @@ cubic@quickstart:~$
 
 The supported images can be listed with:
 ```
-$ cubic image list --all
+$ cubic image ls --all
 Vendor      Version  Name         Arch       Size
 archlinux    latest  latest      amd64
 debian            9  stretch     amd64
@@ -114,13 +114,13 @@ simple, daemon-less and rootless design. All Cubic virtual machines run
 isolated in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
 
 Show all supported images:
-$ cubic image list --all
+$ cubic image ls --all
 
 Create a new virtual machine instance:
-$ cubic instance add --name mymachine --image ubuntu:noble
+$ cubic add --name mymachine --image ubuntu:noble
 
 List all virtual machine instances:
-$ cubic list
+$ cubic ls
 
 Start an instance:
 $ cubic start <instance name>

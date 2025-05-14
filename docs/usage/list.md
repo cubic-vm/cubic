@@ -2,41 +2,34 @@
 
 ## List Virtual Machine Instances
 
-List virtual machines:
+List virtual machine instancess:
 ```
-$ cubic list
+$ cubic ls
 Name             CPUs     Memory       Disk  State
 noble               1    1.0 GiB    2.0 GiB  STOPPED
 ```
 
 ## List Virtual Machine Images
 
-List all images:
+List all virtual machine images:
 ```
-$ cubic image list --all
-Vendor      Version  Name         Arch       Size
-archlinux    latest  latest      amd64
-debian            9  stretch     amd64
-debian           10  buster      amd64
-debian           11  bullseye    amd64
-debian           12  bookworm    amd64
-debian           13  trixie      amd64
-debian           14  forky       amd64
-fedora           39  39          amd64
-fedora           40  40          amd64
-fedora           41  41          amd64
-ubuntu        18.04  bionic      amd64
-ubuntu        18.10  cosmic      amd64
-ubuntu        19.04  disco       amd64
-ubuntu        19.10  eoan        amd64
-ubuntu        20.04  focal       amd64
-ubuntu        20.10  groovy      amd64
-ubuntu        21.04  hirsute     amd64
-ubuntu        21.10  impish      amd64
-ubuntu        22.04  jammy       amd64  284.6 MiB
-ubuntu        22.10  kinetic     amd64
-ubuntu        23.04  lunar       amd64
-ubuntu        23.10  mantic      amd64
-ubuntu        24.04  noble       amd64
-ubuntu        24.10  oracular    amd64
+$ cubic image ls --all
+Name               Arch         Size   
+archlinux:latest   amd64   516.0 MiB   
+debian:12          amd64   424.2 MiB   
+debian:bookworm    amd64   424.2 MiB   
+debian:11          amd64   345.1 MiB   
+debian:bullseye    amd64   345.1 MiB   
+debian:10          amd64   301.7 MiB   
+debian:buster      amd64   301.7 MiB   
+fedora:41          amd64   468.9 MiB   
+fedora:42          amd64   507.6 MiB   
+ubuntu:18.04       amd64   206.0 MiB   
+ubuntu:bionic      amd64   206.0 MiB   
+ubuntu:18.10       amd64   289.7 MiB   
+ubuntu:cosmic      amd64   289.7 MiB   
+ubuntu:19.04       amd64   153.3 MiB   
+ubuntu:disco       amd64   153.3 MiB   
+ubuntu:19.10       amd64   193.1 MiB   
+...
 ```
