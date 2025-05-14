@@ -1,4 +1,7 @@
-use crate::commands::{self, Verbosity};
+use crate::commands::{
+    self, InstanceAddCommand, InstanceCloneCommand, InstanceConfigCommand, InstanceListCommand,
+    InstanceRemoveCommand, InstanceRenameCommand, Verbosity,
+};
 use crate::error::Error;
 use crate::image::ImageDao;
 use crate::instance::InstanceDao;
@@ -31,23 +34,89 @@ pub enum Commands {
         quiet: bool,
     },
 
-    /// List instances
-    #[clap(alias = "ls")]
-    List,
+    /// List virtual machine instances
+    #[clap(alias = "list")]
+    Ls,
 
-    /// Get information about an instance
+    /// Add a virtual machine instance
+    Add {
+        /// Name of the virtual machine image
+        #[clap(short, long)]
+        image: String,
+        /// Name of the virtual machine instance
+        #[clap(short, long)]
+        name: String,
+        /// Number of CPUs for the virtual machine instance
+        #[clap(short, long)]
+        cpus: Option<u16>,
+        /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
+        #[clap(short, long)]
+        mem: Option<String>,
+        /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
+        #[clap(short, long)]
+        disk: Option<String>,
+    },
+
+    /// Delete virtual machine instances
+    #[clap(alias = "del")]
+    Rm {
+        /// Enable verbose logging
+        #[clap(short, long, default_value_t = false)]
+        verbose: bool,
+        /// Reduce logging output
+        #[clap(short, long, default_value_t = false)]
+        quiet: bool,
+        /// Delete the virtual machine instances without confirmation
+        #[clap(short, long, default_value_t = false)]
+        force: bool,
+        /// Name of the virtual machine instances to delete
+        instances: Vec<String>,
+    },
+
+    /// Clone a virtual machine instance
+    Clone {
+        /// Name of the virtual machine instance to clone
+        name: String,
+        /// Name of the copy
+        new_name: String,
+    },
+
+    /// Rename a virtual machine instance
+    Rename {
+        /// Name of the virtual machine instance to rename
+        old_name: String,
+        /// New name of the virutal machine instance
+        new_name: String,
+    },
+
+    /// Get information about an virtual machine instance
     Info {
         /// Name of the virtual machine instance
         instance: String,
     },
 
-    /// Open the console of an instance
+    /// Read and write virtual machine instance configuration parameters
+    Config {
+        /// Name of the virtual machine instance
+        instance: String,
+        /// Number of CPUs for the virtual machine instance
+        #[clap(short, long)]
+        cpus: Option<u16>,
+        /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
+        #[clap(short, long)]
+        mem: Option<String>,
+        /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
+        #[clap(short, long)]
+        disk: Option<String>,
+    },
+
+    /// Open the console of an virtual machine instance
     Console {
         /// Name of the virtual machine instance
         instance: String,
     },
 
-    /// Open a shell in an instance
+    /// Open a shell in a virtual machine instance
     Sh {
         /// Enable verbose logging
         #[clap(short, long, default_value_t = false)]
@@ -59,7 +128,7 @@ pub enum Commands {
         instance: String,
     },
 
-    /// Connect to an instance with SSH
+    /// Connect to a virtual machine instance with SSH
     Ssh {
         /// Name of the virtual machine instance
         instance: String,
@@ -79,7 +148,7 @@ pub enum Commands {
         cmd: Option<String>,
     },
 
-    /// Copy a file from or to an instance with SCP
+    /// Copy a file from or to a virtual machine instance with SCP
     Scp {
         /// Source of the data to copy
         from: String,
@@ -138,19 +207,19 @@ pub enum Commands {
         instances: Vec<String>,
     },
 
-    /// Instance commands
-    #[command(subcommand)]
+    /// Instance subcommands (Deprecated)
+    #[command(subcommand, hide = true)]
     Instance(commands::InstanceCommands),
 
-    /// Image commands
+    /// Image subcommands
     #[command(subcommand)]
     Image(commands::ImageCommands),
 
-    /// Mount commands
+    /// Mount subcommands
     #[command(subcommand)]
     Mount(commands::MountCommands),
 
-    /// Network commands
+    /// Network subcommands
     #[command(subcommand)]
     Net(commands::NetworkCommands),
 }
@@ -192,8 +261,42 @@ impl CommandDispatcher {
                 disk,
                 Verbosity::new(*verbose, *quiet),
             ),
-            Commands::List => commands::InstanceCommands::list_instances(&instance_dao),
+            Commands::Ls => InstanceListCommand::new().run(&instance_dao),
+            Commands::Add {
+                image,
+                name,
+                cpus,
+                mem,
+                disk,
+            } => InstanceAddCommand::new(
+                image.to_string(),
+                name.to_string(),
+                cpus.as_ref().cloned(),
+                mem.as_ref().cloned(),
+                disk.as_ref().cloned(),
+            )
+            .run(&image_dao, &instance_dao),
+            Commands::Rm {
+                verbose,
+                quiet,
+                force,
+                instances,
+            } => InstanceRemoveCommand::new(Verbosity::new(*verbose, *quiet), *force, instances)
+                .run(&instance_dao),
+
+            Commands::Clone { name, new_name } => {
+                InstanceCloneCommand::new(name, new_name).run(&instance_dao)
+            }
+            Commands::Rename { old_name, new_name } => {
+                InstanceRenameCommand::new(old_name, new_name).run(&instance_dao)
+            }
             Commands::Info { instance } => commands::info(&instance_dao, instance.clone()),
+            Commands::Config {
+                instance,
+                cpus,
+                mem,
+                disk,
+            } => InstanceConfigCommand::new(instance, cpus, mem, disk).run(&instance_dao),
             Commands::Start {
                 qemu_args,
                 verbose,
