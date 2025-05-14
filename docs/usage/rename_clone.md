@@ -1,16 +1,16 @@
 # Rename and Clone Virtual Machines
 
-## Rename Command
-Rename a virtual machine:
+## Instance Rename Command
+Rename a virtual machine instance:
 ```
-$ cubic instance rename --help
-Rename an instance
+$ cubic rename --help
+Rename a virtual machine instance
 
-Usage: cubic instance rename <OLD_NAME> <NEW_NAME>
+Usage: cubic rename <OLD_NAME> <NEW_NAME>
 
 Arguments:
-  <OLD_NAME>
-  <NEW_NAME>
+  <OLD_NAME>  Name of the virtual machine instance to rename
+  <NEW_NAME>  New name of the virutal machine instance
 
 Options:
   -h, --help  Print help
@@ -18,20 +18,20 @@ Options:
 
 **Example:**
 ```
-$ cubic instance rename example example_new
+$ cubic rename example example_new
 ```
 
-## Clone Command
-Clone a virtual machine:
+## Instance Clone Command
+Clone a virtual machine instance:
 ```
-$ cubic instance clone --help
-Clone an instane
+$ cubic clone --help
+Clone a virtual machine instance
 
-Usage: cubic instance clone <NAME> <NEW_NAME>
+Usage: cubic clone <NAME> <NEW_NAME>
 
 Arguments:
-  <NAME>
-  <NEW_NAME>
+  <NAME>      Name of the virtual machine instance to clone
+  <NEW_NAME>  Name of the copy
 
 Options:
   -h, --help  Print help
@@ -39,5 +39,5 @@ Options:
 
 **Example:**
 ```
-$ cubic instance clone example example2
+$ cubic clone example example2
 ```

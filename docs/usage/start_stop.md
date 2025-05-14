@@ -3,47 +3,49 @@
 ## Start Command
 ```
 $ cubic start --help
-Start instances
+Start virtual machine instances
 
-Usage: cubic start [OPTIONS] [IDS]...
+Usage: cubic start [OPTIONS] [INSTANCES]...
 
 Arguments:
-  [IDS]...
+  [INSTANCES]...  Name of the virtual machine instances to start
 
 Options:
-      --qemu-args <QEMU_ARGS>
-  -c, --console
-  -v, --verbose
+      --qemu-args <QEMU_ARGS>  Pass additional QEMU arguments
+  -v, --verbose                Enable verbose logging
+  -q, --quiet                  Reduce logging output
   -h, --help                   Print help
 ```
 
 ## Stop Command
 ```
 $ cubic stop --help
-Stop instances
+Stop virtual machine instances
 
-Usage: cubic stop [OPTIONS] [IDS]...
+Usage: cubic stop [OPTIONS] [INSTANCES]...
 
 Arguments:
-  [IDS]...
+  [INSTANCES]...  Name of the virtual machine instances to stop
 
 Options:
-  -a, --all
-  -h, --help  Print help
+  -a, --all      Stop all virtual machine instances
+  -v, --verbose  Enable verbose logging
+  -q, --quiet    Reduce logging output
+  -h, --help     Print help
 ```
 
 ## Restart Command
 ```
 $ cubic restart --help
-Restart instances
+Restart virtual machine instances
 
-Usage: cubic restart [OPTIONS] [IDS]...
+Usage: cubic restart [OPTIONS] [INSTANCES]...
 
 Arguments:
-  [IDS]...
+  [INSTANCES]...  Name of the virtual machine instances to restart
 
 Options:
-  -c, --console
-  -v, --verbose
+  -v, --verbose  Enable verbose logging
+  -q, --quiet    Reduce logging output
   -h, --help     Print help
 ```
