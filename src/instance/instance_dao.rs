@@ -1,6 +1,6 @@
 use crate::emulator::Emulator;
 use crate::error::Error;
-use crate::instance::{Instance, MountPoint};
+use crate::instance::{Instance, InstanceState, InstanceStore, MountPoint};
 use crate::qemu::{GuestAgent, Monitor};
 use crate::ssh_cmd::PortChecker;
 use crate::util;
@@ -11,13 +11,6 @@ use std::process::{Child, Command, Stdio};
 use std::str;
 
 pub const USER: &str = "cubic";
-
-#[derive(PartialEq)]
-pub enum InstanceState {
-    Stopped,
-    Starting,
-    Running,
-}
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Config {
@@ -42,8 +35,10 @@ impl InstanceDao {
             cache_dir,
         })
     }
+}
 
-    pub fn get_instances(&self) -> Vec<String> {
+impl InstanceStore for InstanceDao {
+    fn get_instances(&self) -> Vec<String> {
         fs::read_dir(&self.instance_dir)
             .map_err(|_| ())
             .and_then(|entries| {
@@ -60,11 +55,11 @@ impl InstanceDao {
             .unwrap_or_default()
     }
 
-    pub fn exists(&self, name: &str) -> bool {
+    fn exists(&self, name: &str) -> bool {
         Path::new(&format!("{}/{name}", self.instance_dir)).exists()
     }
 
-    pub fn load(&self, name: &str) -> Result<Instance, Error> {
+    fn load(&self, name: &str) -> Result<Instance, Error> {
         if !self.exists(name) {
             return Result::Err(Error::UnknownInstance(name.to_string()));
         }
@@ -82,7 +77,7 @@ impl InstanceDao {
             }))
     }
 
-    pub fn store(&self, instance: &Instance) -> Result<(), Error> {
+    fn store(&self, instance: &Instance) -> Result<(), Error> {
         let path = format!("{}/{}", self.instance_dir, &instance.name);
         let file_name = format!("{path}/machine.yaml");
         let temp_file_name = format!("{file_name}.tmp");
@@ -92,7 +87,7 @@ impl InstanceDao {
         util::rename_file(&temp_file_name, &file_name)
     }
 
-    pub fn clone(&self, instance: &Instance, new_name: &str) -> Result<(), Error> {
+    fn clone(&self, instance: &Instance, new_name: &str) -> Result<(), Error> {
         if self.exists(new_name) {
             Result::Err(Error::InstanceAlreadyExists(new_name.to_string()))
         } else if self.is_running(instance) {
@@ -105,7 +100,7 @@ impl InstanceDao {
         }
     }
 
-    pub fn rename(&self, instance: &mut Instance, new_name: &str) -> Result<(), Error> {
+    fn rename(&self, instance: &mut Instance, new_name: &str) -> Result<(), Error> {
         if self.exists(new_name) {
             Result::Err(Error::InstanceAlreadyExists(new_name.to_string()))
         } else if self.is_running(instance) {
@@ -121,7 +116,7 @@ impl InstanceDao {
         }
     }
 
-    pub fn resize(&self, instance: &mut Instance, size: u64) -> Result<(), Error> {
+    fn resize(&self, instance: &mut Instance, size: u64) -> Result<(), Error> {
         if self.is_running(instance) {
             Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else if instance.disk_capacity >= size {
@@ -147,7 +142,7 @@ impl InstanceDao {
         }
     }
 
-    pub fn delete(&self, instance: &Instance) -> Result<(), Error> {
+    fn delete(&self, instance: &Instance) -> Result<(), Error> {
         if self.is_running(instance) {
             Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
@@ -157,7 +152,7 @@ impl InstanceDao {
         }
     }
 
-    pub fn start(
+    fn start(
         &self,
         instance: &Instance,
         qemu_args: &Option<String>,
@@ -207,7 +202,7 @@ impl InstanceDao {
         emulator.run()
     }
 
-    pub fn stop(&self, instance: &Instance) -> Result<(), Error> {
+    fn stop(&self, instance: &Instance) -> Result<(), Error> {
         if !self.is_running(instance) {
             return Result::Ok(());
         }
@@ -215,7 +210,7 @@ impl InstanceDao {
         self.get_monitor(instance)?.shutdown()
     }
 
-    pub fn get_state(&self, instance: &Instance) -> InstanceState {
+    fn get_state(&self, instance: &Instance) -> InstanceState {
         if self.is_running(instance) {
             let ga = self.get_guest_agent(instance);
             if ga.and_then(|mut ga| ga.ping()).is_ok()
@@ -230,24 +225,24 @@ impl InstanceDao {
         }
     }
 
-    pub fn is_running(&self, instance: &Instance) -> bool {
+    fn is_running(&self, instance: &Instance) -> bool {
         self.get_pid(instance)
             .map(|pid| Path::new(&format!("/proc/{pid}")).exists())
             .unwrap_or(false)
     }
 
-    pub fn get_pid(&self, instance: &Instance) -> Result<u64, ()> {
+    fn get_pid(&self, instance: &Instance) -> Result<u64, ()> {
         let pid = fs::read_to_string(format!("{}/{}/qemu.pid", self.cache_dir, instance.name))
             .map_err(|_| ())?;
 
         pid.trim().parse::<u64>().map_err(|_| ())
     }
 
-    pub fn get_monitor(&self, instance: &Instance) -> Result<Monitor, Error> {
+    fn get_monitor(&self, instance: &Instance) -> Result<Monitor, Error> {
         Monitor::new(&format!("{}/{}", self.cache_dir, &instance.name))
     }
 
-    pub fn get_guest_agent(&self, instance: &Instance) -> Result<GuestAgent, Error> {
+    fn get_guest_agent(&self, instance: &Instance) -> Result<GuestAgent, Error> {
         GuestAgent::new(&format!(
             "{}/{}/guest-agent.socket",
             self.cache_dir, &instance.name

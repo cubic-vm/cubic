@@ -1,7 +1,7 @@
 use crate::commands::image::ImageCommands;
 use crate::error::Error;
 use crate::image::ImageDao;
-use crate::instance::{Instance, InstanceDao, USER};
+use crate::instance::{Instance, InstanceDao, InstanceStore, USER};
 use crate::util;
 
 pub struct InstanceAddCommand {

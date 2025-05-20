@@ -1,6 +1,6 @@
 use crate::commands::{self, Verbosity};
 use crate::error::Error;
-use crate::instance::InstanceDao;
+use crate::instance::{InstanceDao, InstanceStore};
 use crate::util::Terminal;
 use crate::view::TimerView;
 

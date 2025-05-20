@@ -1,6 +1,6 @@
 use crate::commands::Verbosity;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceState};
+use crate::instance::{InstanceDao, InstanceState, InstanceStore};
 use crate::view::TimerView;
 
 pub fn stop(

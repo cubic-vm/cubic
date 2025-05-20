@@ -1,3 +1,5 @@
+use crate::view::Console;
+
 #[derive(Default)]
 pub struct MapView {
     items: Vec<(String, String)>,
@@ -12,7 +14,7 @@ impl MapView {
         self.items.push((key.to_string(), value.to_string()));
     }
 
-    pub fn print(self) {
+    pub fn print(self, console: &mut dyn Console) {
         let max_key_length = self
             .items
             .iter()
@@ -25,7 +27,7 @@ impl MapView {
             if !key.is_empty() {
                 key += ":";
             }
-            println!("{key:max_key_length$} {value}")
+            console.info(&format!("{key:max_key_length$} {value}"));
         });
     }
 }
