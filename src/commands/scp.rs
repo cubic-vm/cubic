@@ -1,6 +1,6 @@
 use crate::commands::Verbosity;
 use crate::error::Error;
-use crate::instance::InstanceDao;
+use crate::instance::{InstanceDao, InstanceStore};
 use crate::ssh_cmd::{get_ssh_private_key_names, Scp};
 use std::env;
 use std::os::unix::process::CommandExt;

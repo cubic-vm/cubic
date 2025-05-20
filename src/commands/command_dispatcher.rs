@@ -1,10 +1,11 @@
 use crate::commands::{
-    self, InstanceAddCommand, InstanceCloneCommand, InstanceConfigCommand, InstanceListCommand,
-    InstanceRemoveCommand, InstanceRenameCommand, Verbosity,
+    self, InstanceAddCommand, InstanceCloneCommand, InstanceConfigCommand, InstanceInfoCommand,
+    InstanceListCommand, InstanceRemoveCommand, InstanceRenameCommand, Verbosity,
 };
 use crate::error::Error;
 use crate::image::ImageDao;
 use crate::instance::InstanceDao;
+use crate::view::{Console, Stdio};
 use clap::{Parser, Subcommand};
 
 #[derive(Subcommand)]
@@ -239,6 +240,7 @@ impl CommandDispatcher {
     pub fn dispatch(self) -> Result<(), Error> {
         let command = Self::parse().command.ok_or(Error::UnknownCommand)?;
 
+        let console: &mut dyn Console = &mut Stdio::new();
         let image_dao = ImageDao::new()?;
         let instance_dao = InstanceDao::new()?;
 
@@ -290,7 +292,9 @@ impl CommandDispatcher {
             Commands::Rename { old_name, new_name } => {
                 InstanceRenameCommand::new(old_name, new_name).run(&instance_dao)
             }
-            Commands::Info { instance } => commands::info(&instance_dao, instance.clone()),
+            Commands::Info { instance } => {
+                InstanceInfoCommand::new().run(console, &instance_dao, instance)
+            }
             Commands::Config {
                 instance,
                 cpus,

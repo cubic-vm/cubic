@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::instance::{InstanceDao, MountPoint};
+use crate::instance::{InstanceDao, InstanceStore, MountPoint};
 use crate::util;
 use crate::view::{Alignment, TableView};
 use clap::Subcommand;

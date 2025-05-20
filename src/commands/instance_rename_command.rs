@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::instance::InstanceDao;
+use crate::instance::{InstanceDao, InstanceStore};
 
 pub struct InstanceRenameCommand {
     old_name: String,

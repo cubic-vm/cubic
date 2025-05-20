@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceState};
+use crate::instance::{InstanceDao, InstanceState, InstanceStore};
 use crate::util;
 use crate::view::{Alignment, TableView};
 
