@@ -1,7 +1,7 @@
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceState, InstanceStore};
+use crate::instance::{InstanceState, InstanceStore};
 use crate::util;
-use crate::view::{Alignment, TableView};
+use crate::view::{Alignment, Console, TableView};
 
 pub struct InstanceListCommand;
 
@@ -10,8 +10,12 @@ impl InstanceListCommand {
         Self {}
     }
 
-    pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
-        let instance_names = instance_dao.get_instances();
+    pub fn run(
+        &self,
+        console: &mut dyn Console,
+        instance_store: &dyn InstanceStore,
+    ) -> Result<(), Error> {
+        let instance_names = instance_store.get_instances();
 
         let mut view = TableView::new();
         view.add_row()
@@ -23,8 +27,8 @@ impl InstanceListCommand {
             .add("State", Alignment::Left);
 
         for instance_name in &instance_names {
-            let instance = instance_dao.load(instance_name)?;
-            let pid = instance_dao
+            let instance = instance_store.load(instance_name)?;
+            let pid = instance_store
                 .get_pid(&instance)
                 .map(|pid| pid.to_string())
                 .unwrap_or_default();
@@ -42,7 +46,7 @@ impl InstanceListCommand {
                     Alignment::Right,
                 )
                 .add(
-                    match instance_dao.get_state(&instance) {
+                    match instance_store.get_state(&instance) {
                         InstanceState::Stopped => "STOPPED",
                         InstanceState::Starting => "STARTING",
                         InstanceState::Running => "RUNNING",
@@ -50,7 +54,74 @@ impl InstanceListCommand {
                     Alignment::Left,
                 );
         }
-        view.print();
+        view.print(console);
         Result::Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::instance::instance_store_mock::tests::InstanceStoreMock;
+    use crate::instance::Instance;
+    use crate::view::console_mock::tests::ConsoleMock;
+
+    #[test]
+    fn test_instance_list_command() {
+        let console = &mut ConsoleMock::new();
+        let instance_store = &InstanceStoreMock::new(vec![
+            Instance {
+                name: "test".to_string(),
+                user: "cubic".to_string(),
+                cpus: 1,
+                mem: 1024,
+                disk_capacity: 1048576,
+                ssh_port: 9000,
+                display: false,
+                gpu: false,
+                mounts: Vec::new(),
+                hostfwd: Vec::new(),
+            },
+            Instance {
+                name: "test2".to_string(),
+                user: "cubic".to_string(),
+                cpus: 5,
+                mem: 0,
+                disk_capacity: 5000,
+                ssh_port: 9000,
+                display: false,
+                gpu: false,
+                mounts: Vec::new(),
+                hostfwd: Vec::new(),
+            },
+        ]);
+
+        InstanceListCommand::new()
+            .run(console, instance_store)
+            .unwrap();
+
+        assert_eq!(
+            console.get_output(),
+            "\
+PID   Name    CPUs    Memory      Disk   State
+      test       1   1.0 KiB   1.0 MiB   STOPPED
+      test2      5   0.0   B   4.9 KiB   STOPPED
+"
+        );
+    }
+
+    #[test]
+    fn test_instance_list_command_empty() {
+        let console = &mut ConsoleMock::new();
+        let instance_store = &InstanceStoreMock::new(Vec::new());
+
+        InstanceListCommand::new()
+            .run(console, instance_store)
+            .unwrap();
+
+        assert_eq!(
+            console.get_output(),
+            "PID   Name   CPUs   Memory   Disk   State\n"
+        );
     }
 }

@@ -5,6 +5,7 @@ use crate::commands::{
 use crate::error::Error;
 use crate::image::ImageDao;
 use crate::instance::InstanceDao;
+use crate::view::Stdio;
 use clap::Subcommand;
 
 #[derive(Subcommand)]
@@ -82,8 +83,9 @@ pub enum InstanceCommands {
 
 impl InstanceCommands {
     pub fn dispatch(&self, image_dao: &ImageDao, instance_dao: &InstanceDao) -> Result<(), Error> {
+        let console = &mut Stdio::new();
         match self {
-            InstanceCommands::Ls => InstanceListCommand::new().run(instance_dao),
+            InstanceCommands::Ls => InstanceListCommand::new().run(console, instance_dao),
             InstanceCommands::Add {
                 image,
                 name,

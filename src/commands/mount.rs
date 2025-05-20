@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore, MountPoint};
 use crate::util;
-use crate::view::{Alignment, TableView};
+use crate::view::{Alignment, Stdio, TableView};
 use clap::Subcommand;
 use std::path::Path;
 
@@ -36,6 +36,7 @@ pub enum MountCommands {
 
 impl MountCommands {
     pub fn dispatch(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
+        let console = &mut Stdio::new();
         match self {
             MountCommands::List { name } => {
                 let instance = instance_dao.load(name)?;
@@ -49,7 +50,7 @@ impl MountCommands {
                         .add(&mount.host, Alignment::Left)
                         .add(&mount.guest, Alignment::Left);
                 }
-                view.print();
+                view.print(console);
                 Ok(())
             }
 

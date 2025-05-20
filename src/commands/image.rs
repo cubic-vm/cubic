@@ -46,6 +46,8 @@ pub enum ImageCommands {
 
 impl ImageCommands {
     pub fn dispatch(&self, image_dao: &ImageDao) -> Result<(), Error> {
+        let console = &mut Stdio::new();
+
         match self {
             ImageCommands::List { all } => {
                 let mut view = TableView::new();
@@ -82,12 +84,11 @@ impl ImageCommands {
                             .add(&size, Alignment::Right);
                     }
                 }
-                view.print();
+                view.print(console);
                 Ok(())
             }
 
             ImageCommands::Info { name } => {
-                let console = &mut Stdio::new();
                 let image = image_dao.get(name)?;
                 let mut view = MapView::new();
                 view.add("Vendor", &image.vendor);
