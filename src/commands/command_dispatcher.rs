@@ -263,7 +263,7 @@ impl CommandDispatcher {
                 disk,
                 Verbosity::new(*verbose, *quiet),
             ),
-            Commands::Ls => InstanceListCommand::new().run(&instance_dao),
+            Commands::Ls => InstanceListCommand::new().run(console, &instance_dao),
             Commands::Add {
                 image,
                 name,

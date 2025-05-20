@@ -1,3 +1,5 @@
+use crate::view::Console;
+
 pub enum Alignment {
     Left,
     Right,
@@ -31,7 +33,7 @@ impl TableView {
         self.rows.last_mut().unwrap()
     }
 
-    pub fn print(&self) {
+    pub fn print(&self, console: &mut dyn Console) {
         let mut column_size = Vec::new();
         for row in &self.rows {
             for (index, (entry, _)) in row.entries.iter().enumerate() {
@@ -44,13 +46,17 @@ impl TableView {
         }
 
         for row in &self.rows {
-            for (index, (entry, alignment)) in row.entries.iter().enumerate() {
-                match alignment {
-                    Alignment::Left => print!("{entry:<width$}   ", width = column_size[index]),
-                    Alignment::Right => print!("{entry:>width$}   ", width = column_size[index]),
-                }
-            }
-            println!();
+            let line = row
+                .entries
+                .iter()
+                .enumerate()
+                .map(|(index, (entry, alignment))| match alignment {
+                    Alignment::Left => format!("{entry:<width$}", width = column_size[index]),
+                    Alignment::Right => format!("{entry:>width$}", width = column_size[index]),
+                })
+                .collect::<Vec<_>>()
+                .join("   ");
+            console.info(line.trim_end());
         }
     }
 }

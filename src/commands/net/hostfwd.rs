@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore};
-use crate::view::{Alignment, TableView};
+use crate::view::{Alignment, Stdio, TableView};
 use clap::Subcommand;
 use regex::Regex;
 
@@ -40,6 +40,7 @@ pub enum HostfwdCommands {
 
 impl HostfwdCommands {
     pub fn dispatch(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
+        let console = &mut Stdio::new();
         match self {
             HostfwdCommands::List => {
                 let instance_names = instance_dao.get_instances();
@@ -56,7 +57,7 @@ impl HostfwdCommands {
                             .add(&hostfwd, Alignment::Left);
                     }
                 }
-                view.print();
+                view.print(console);
                 Ok(())
             }
             HostfwdCommands::Add { instance, rule } => {
