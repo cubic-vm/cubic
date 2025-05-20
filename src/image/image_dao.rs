@@ -29,7 +29,7 @@ impl ImageDao {
             .ok_or(Error::InvalidImageName(id.to_string()))?
             .to_string();
 
-        ImageFactory::create_images_for_distro(&vendor)
+        ImageFactory::create_images_for_distro(&vendor)?
             .iter()
             .find(|image| image.codename == name || image.version == name)
             .cloned()

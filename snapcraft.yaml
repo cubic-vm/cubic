@@ -18,11 +18,6 @@ parts:
   cubic:
     plugin: rust
     source: .
-    stage-packages:
-      - openssl
-      - libssl-dev
-      - ca-certificates
-      - pkg-config
   runtime-dependencies:
     plugin: nil
     stage-packages:

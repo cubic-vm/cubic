@@ -56,7 +56,7 @@ impl ImageCommands {
                     .add("Arch", Alignment::Left)
                     .add("Size", Alignment::Right);
 
-                for image in ImageFactory::create_images() {
+                for image in ImageFactory::create_images()? {
                     if !(*all || image_dao.exists(&image)) {
                         continue;
                     }
@@ -120,7 +120,7 @@ impl ImageCommands {
                 quiet,
             } => {
                 let selected_images = if *all {
-                    ImageFactory::create_images().clone()
+                    ImageFactory::create_images()?.clone()
                 } else {
                     images
                         .iter()
