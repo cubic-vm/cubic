@@ -5,6 +5,7 @@ use reqwest::blocking::Client;
 use std::fs;
 use std::io;
 use std::path::Path;
+use std::time::Duration;
 
 struct ProgressWriter {
     file: fs::File,
@@ -30,10 +31,15 @@ pub struct WebClient {
 }
 
 impl WebClient {
-    pub fn new() -> Self {
-        WebClient {
-            client: Client::new(),
-        }
+    pub fn new() -> Result<Self, Error> {
+        Ok(WebClient {
+            client: reqwest::blocking::Client::builder()
+                .timeout(Duration::from_secs(5))
+                .gzip(true)
+                .brotli(true)
+                .build()
+                .map_err(Error::Web)?,
+        })
     }
 
     pub fn get_file_size(&mut self, url: &str) -> Result<Option<u64>, Error> {

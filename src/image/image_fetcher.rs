@@ -11,7 +11,7 @@ impl ImageFetcher {
     }
 
     pub fn fetch(&self, image: &Image, target_file: &str) -> Result<(), Error> {
-        WebClient::new().download_file(
+        WebClient::new()?.download_file(
             &image.url,
             target_file,
             TransferView::new("Downloading image"),

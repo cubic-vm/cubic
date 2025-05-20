@@ -1,3 +1,4 @@
+use crate::error::Error;
 use crate::image::Image;
 use crate::web::WebClient;
 use regex::Regex;
@@ -123,22 +124,22 @@ impl ImageFactory {
             .collect()
     }
 
-    pub fn create_images() -> Vec<Image> {
-        let web = &mut WebClient::new();
+    pub fn create_images() -> Result<Vec<Image>, Error> {
+        let web = &mut WebClient::new()?;
 
-        DISTROS
+        Ok(DISTROS
             .iter()
             .flat_map(|distro| Self::add_images(web, distro))
-            .collect()
+            .collect())
     }
 
-    pub fn create_images_for_distro(name: &str) -> Vec<Image> {
-        let web = &mut WebClient::new();
+    pub fn create_images_for_distro(name: &str) -> Result<Vec<Image>, Error> {
+        let web = &mut WebClient::new()?;
 
-        DISTROS
+        Ok(DISTROS
             .iter()
             .filter(|distro| distro.vendor == name)
             .flat_map(|distro| Self::add_images(web, distro))
-            .collect()
+            .collect())
     }
 }
