@@ -13,7 +13,7 @@ noble               1    1.0 GiB    2.0 GiB  STOPPED
 
 List all virtual machine images:
 ```
-$ cubic image ls --all
+$ cubic image ls
 Name               Arch         Size   
 archlinux:latest   amd64   516.0 MiB   
 debian:12          amd64   424.2 MiB   
