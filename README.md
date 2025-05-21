@@ -64,7 +64,7 @@ cubic@quickstart:~$
 
 The supported images can be listed with:
 ```
-$ cubic image ls --all
+$ cubic image ls
 Vendor      Version  Name         Arch       Size
 archlinux    latest  latest      amd64
 debian            9  stretch     amd64
@@ -114,7 +114,7 @@ simple, daemon-less and rootless design. All Cubic virtual machines run
 isolated in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
 
 Show all supported images:
-$ cubic image ls --all
+$ cubic image ls
 
 Create a new virtual machine instance:
 $ cubic add --name mymachine --image ubuntu:noble

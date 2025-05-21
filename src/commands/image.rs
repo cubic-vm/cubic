@@ -9,17 +9,11 @@ use clap::Subcommand;
 #[derive(Subcommand)]
 pub enum ImageCommands {
     /// List images
-    #[clap(alias = "ls")]
-    List {
+    #[clap(alias = "list")]
+    Ls {
         /// List all images
-        #[clap(short, long, default_value_t = false)]
+        #[clap(short, long, hide = true)]
         all: bool,
-    },
-
-    /// Show image information
-    Info {
-        /// Name of the virtual machine image
-        name: String,
     },
 
     /// Fetch an image
@@ -28,9 +22,18 @@ pub enum ImageCommands {
         image: String,
     },
 
-    /// Delete images
-    #[clap(alias = "rm")]
-    Del {
+    /// Show image information
+    Info {
+        /// Name of the virtual machine image
+        name: String,
+    },
+
+    /// Clear local image cache
+    Prune,
+
+    /// Delete images (Deprecated)
+    #[clap(alias = "del", hide = true)]
+    Rm {
         /// List of images to delete
         images: Vec<String>,
         #[clap(short, long, default_value_t = false)]
@@ -50,11 +53,12 @@ impl ImageCommands {
         let console = &mut Stdio::new();
 
         match self {
-            ImageCommands::List { all } => {
+            ImageCommands::Ls { .. } => {
                 let images: Vec<Image> = SpinnerView::new("Fetching image list")
                     .run(ImageFactory::create_images)
                     .and_then(|v| v.ok())
                     .unwrap_or_default();
+
                 let mut view = TableView::new();
                 view.add_row()
                     .add("Name", Alignment::Left)
@@ -62,10 +66,6 @@ impl ImageCommands {
                     .add("Size", Alignment::Right);
 
                 for image in images {
-                    if !(*all || image_dao.exists(&image)) {
-                        continue;
-                    }
-
                     let size = image
                         .size
                         .map(util::bytes_to_human_readable)
@@ -118,7 +118,7 @@ impl ImageCommands {
                 Ok(())
             }
 
-            ImageCommands::Del {
+            ImageCommands::Rm {
                 images,
                 all,
                 force,
@@ -157,6 +157,8 @@ impl ImageCommands {
 
                 Ok(())
             }
+
+            ImageCommands::Prune => image_dao.prune(),
         }
     }
 }

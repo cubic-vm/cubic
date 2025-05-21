@@ -2,7 +2,7 @@ use crate::error::Error;
 use crate::image::{Image, ImageFactory};
 use crate::util;
 
-use std::fs::remove_file;
+use std::fs::{remove_dir_all, remove_file};
 use std::path::Path;
 use std::str;
 
@@ -53,5 +53,9 @@ impl ImageDao {
 
     pub fn delete(&self, image: &Image) -> Result<(), Error> {
         remove_file(format!("{}/{}", self.image_dir, image.to_file_name())).map_err(Error::Io)
+    }
+
+    pub fn prune(&self) -> Result<(), Error> {
+        remove_dir_all(&self.image_dir).map_err(Error::Io)
     }
 }
