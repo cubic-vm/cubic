@@ -1,3 +1,4 @@
+mod arch;
 mod commands;
 mod emulator;
 mod error;

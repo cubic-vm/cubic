@@ -21,6 +21,7 @@ impl InstanceListCommand {
         view.add_row()
             .add("PID", Alignment::Left)
             .add("Name", Alignment::Left)
+            .add("Arch", Alignment::Left)
             .add("CPUs", Alignment::Right)
             .add("Memory", Alignment::Right)
             .add("Disk", Alignment::Right)
@@ -36,6 +37,7 @@ impl InstanceListCommand {
             view.add_row()
                 .add(&pid, Alignment::Left)
                 .add(instance_name, Alignment::Left)
+                .add(&instance.arch.to_string(), Alignment::Left)
                 .add(&instance.cpus.to_string(), Alignment::Right)
                 .add(
                     &util::bytes_to_human_readable(instance.mem),
@@ -62,6 +64,7 @@ impl InstanceListCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::arch::Arch;
     use crate::instance::instance_store_mock::tests::InstanceStoreMock;
     use crate::instance::Instance;
     use crate::view::console_mock::tests::ConsoleMock;
@@ -72,6 +75,7 @@ mod tests {
         let instance_store = &InstanceStoreMock::new(vec![
             Instance {
                 name: "test".to_string(),
+                arch: Arch::AMD64,
                 user: "cubic".to_string(),
                 cpus: 1,
                 mem: 1024,
@@ -84,6 +88,7 @@ mod tests {
             },
             Instance {
                 name: "test2".to_string(),
+                arch: Arch::AMD64,
                 user: "cubic".to_string(),
                 cpus: 5,
                 mem: 0,
@@ -103,9 +108,9 @@ mod tests {
         assert_eq!(
             console.get_output(),
             "\
-PID   Name    CPUs    Memory      Disk   State
-      test       1   1.0 KiB   1.0 MiB   STOPPED
-      test2      5   0.0   B   4.9 KiB   STOPPED
+PID   Name    Arch    CPUs    Memory      Disk   State
+      test    amd64      1   1.0 KiB   1.0 MiB   STOPPED
+      test2   amd64      5   0.0   B   4.9 KiB   STOPPED
 "
         );
     }
@@ -121,7 +126,7 @@ PID   Name    CPUs    Memory      Disk   State
 
         assert_eq!(
             console.get_output(),
-            "PID   Name   CPUs   Memory   Disk   State\n"
+            "PID   Name   Arch   CPUs   Memory   Disk   State\n"
         );
     }
 }

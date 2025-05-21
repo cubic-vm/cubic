@@ -76,7 +76,7 @@ impl ImageCommands {
                             &format!("{}:{}", image.vendor, image.version),
                             Alignment::Left,
                         )
-                        .add("amd64", Alignment::Left)
+                        .add(&image.arch.to_string(), Alignment::Left)
                         .add(&size, Alignment::Right);
 
                     if image.version != image.codename {
@@ -85,7 +85,7 @@ impl ImageCommands {
                                 &format!("{}:{}", image.vendor, image.codename),
                                 Alignment::Left,
                             )
-                            .add("amd64", Alignment::Left)
+                            .add(&image.arch.to_string(), Alignment::Left)
                             .add(&size, Alignment::Right);
                     }
                 }
