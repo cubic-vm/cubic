@@ -1,6 +1,7 @@
 use crate::error::Error;
 use crate::image::{Image, ImageDao, ImageFactory, ImageFetcher};
 use crate::util;
+use crate::view::SpinnerView;
 use crate::view::{Alignment, TableView};
 use crate::view::{MapView, Stdio};
 use clap::Subcommand;
@@ -50,13 +51,17 @@ impl ImageCommands {
 
         match self {
             ImageCommands::List { all } => {
+                let images: Vec<Image> = SpinnerView::new("Fetching image list")
+                    .run(ImageFactory::create_images)
+                    .and_then(|v| v.ok())
+                    .unwrap_or_default();
                 let mut view = TableView::new();
                 view.add_row()
                     .add("Name", Alignment::Left)
                     .add("Arch", Alignment::Left)
                     .add("Size", Alignment::Right);
 
-                for image in ImageFactory::create_images()? {
+                for image in images {
                     if !(*all || image_dao.exists(&image)) {
                         continue;
                     }
