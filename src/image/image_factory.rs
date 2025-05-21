@@ -53,17 +53,6 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
     },
 
     Distro {
-        vendor: "ubuntu",
-        name_pattern: "(name)",
-        version_pattern:  "(version)",
-        overview_url: "https://cloud-images.ubuntu.com/minimal/releases/",
-        overview_pattern: LazyLock::new(|| Regex::new(r">([a-z]+)/<").unwrap()),
-        image_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/",
-        image_pattern: LazyLock::new(|| Regex::new(r">ubuntu-([0-9]+\.[0-9]+)-minimal-cloudimg-amd64.img<").unwrap()),
-        download_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/ubuntu-(version)-minimal-cloudimg-amd64.img",
-    },
-
-    Distro {
         vendor: "opensuse",
         name_pattern: "(name)",
         version_pattern:  "(name)",
@@ -74,6 +63,16 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
         download_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/(version)",
     },
 
+    Distro {
+        vendor: "ubuntu",
+        name_pattern: "(name)",
+        version_pattern:  "(version)",
+        overview_url: "https://cloud-images.ubuntu.com/minimal/releases/",
+        overview_pattern: LazyLock::new(|| Regex::new(r">([a-z]+)/<").unwrap()),
+        image_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/",
+        image_pattern: LazyLock::new(|| Regex::new(r">ubuntu-([0-9]+\.[0-9]+)-minimal-cloudimg-amd64.img<").unwrap()),
+        download_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/ubuntu-(version)-minimal-cloudimg-amd64.img",
+    },
 ]
 });
 
