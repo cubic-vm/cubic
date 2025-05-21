@@ -11,7 +11,33 @@ pub struct Emulator {
 
 impl Emulator {
     pub fn from(name: String) -> Result<Emulator, Error> {
-        let command = Command::new("qemu-system-x86_64");
+        let mut command = Command::new("qemu-system-x86_64");
+        if !util::has_kvm() {
+            println!("WARNING: No KVM support detected");
+        }
+        // Set machine type
+        command.arg("-machine").arg("q35");
+        // Set CPU type
+        command.arg("-cpu").arg("max");
+        // Enable accelerators
+        command
+            .arg("-accel")
+            .arg("kvm")
+            .arg("-accel")
+            .arg("xen")
+            .arg("-accel")
+            .arg("hvf")
+            .arg("-accel")
+            .arg("nvmm")
+            .arg("-accel")
+            .arg("whpx")
+            .arg("-accel")
+            .arg("tcg");
+        // Only boot disk
+        command.arg("-boot").arg("c");
+        // Enable sandbox
+        command.arg("-sandbox").arg("on");
+
         Ok(Emulator {
             name,
             command,
@@ -33,18 +59,6 @@ impl Emulator {
 
     pub fn set_memory(&mut self, memory: u64) {
         self.command.arg("-m").arg(format!("{}B", memory));
-    }
-
-    pub fn enable_kvm(&mut self) {
-        if util::has_kvm() {
-            self.command.arg("-accel").arg("kvm");
-        } else {
-            println!("WARNING: No KVM support detected");
-        }
-    }
-
-    pub fn enable_sandbox(&mut self) {
-        self.command.arg("-sandbox").arg("on");
     }
 
     pub fn add_virtio_serial(&mut self, name: &str) {

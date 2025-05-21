@@ -169,8 +169,6 @@ impl InstanceStore for InstanceDao {
         let mut emulator = Emulator::from(instance.name.clone())?;
         emulator.set_cpus(instance.cpus);
         emulator.set_memory(instance.mem);
-        emulator.enable_kvm();
-        emulator.enable_sandbox();
         emulator.set_console(&format!("{cache_dir}/console"));
         emulator.add_drive(&format!("{instance_dir}/machine.img"), "qcow2");
         emulator.add_drive(&format!("{cache_dir}/user-data.img"), "raw");
