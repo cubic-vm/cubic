@@ -46,7 +46,7 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
         name_pattern: "(name)",
         version_pattern: "(name)",
         overview_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/",
-        overview_pattern: LazyLock::new(|| Regex::new(r">([0-9]+)/<").unwrap()),
+        overview_pattern: LazyLock::new(|| Regex::new(r">([4-9][0-9]+)/<").unwrap()),
         image_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/x86_64/images/",
         image_pattern: LazyLock::new(|| Regex::new(r"Fedora-Cloud-Base-Generic-([0-9]+-[0-9]+.[0-9]+).x86_64.qcow2").unwrap()),
         download_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-(version).x86_64.qcow2",
