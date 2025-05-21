@@ -3,6 +3,7 @@ pub mod instance_state;
 pub mod instance_store;
 pub mod instance_store_mock;
 
+use crate::arch::Arch;
 pub use crate::error::Error;
 pub use instance_dao::*;
 pub use instance_state::*;
@@ -24,6 +25,8 @@ pub struct MountPoint {
 pub struct Instance {
     #[serde(skip)]
     pub name: String,
+    #[serde(default)]
+    pub arch: Arch,
     #[serde(default = "default_user")]
     pub user: String,
     pub cpus: u16,
@@ -180,6 +183,7 @@ machine:
 
         Instance {
             name: "test".to_string(),
+            arch: Arch::AMD64,
             user: "tux".to_string(),
             cpus: 1,
             mem: 1000,
@@ -197,6 +201,7 @@ machine:
         assert_eq!(
             config,
             r#"machine:
+  arch: AMD64
   user: tux
   cpus: 1
   mem: 1000

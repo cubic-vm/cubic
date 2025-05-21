@@ -23,6 +23,7 @@ impl InstanceInfoCommand {
         let instance = instance_store.load(instance)?;
 
         let mut view = MapView::new();
+        view.add("Arch", &instance.arch.to_string());
         view.add("CPUs", &instance.cpus.to_string());
         view.add("Memory", &util::bytes_to_human_readable(instance.mem));
         view.add(
@@ -53,6 +54,7 @@ impl InstanceInfoCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::arch::Arch;
     use crate::instance::instance_store_mock::tests::InstanceStoreMock;
     use crate::instance::{Instance, MountPoint};
     use crate::view::console_mock::tests::ConsoleMock;
@@ -62,6 +64,7 @@ mod tests {
         let console = &mut ConsoleMock::new();
         let instance_store = &InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
+            arch: Arch::AMD64,
             user: "cubic".to_string(),
             cpus: 1,
             mem: 1024,
@@ -89,6 +92,7 @@ mod tests {
         assert_eq!(
             console.get_output(),
             "\
+Arch:     amd64
 CPUs:     1
 Memory:   1.0 KiB
 Disk:     1.0 MiB

@@ -1,3 +1,4 @@
+use crate::arch::Arch;
 use crate::error::Error;
 use crate::image::Image;
 use crate::web::WebClient;
@@ -114,6 +115,7 @@ impl ImageFactory {
                             vendor: distro.vendor.to_string(),
                             codename: Self::replace_vars(distro.name_pattern, name, version),
                             version: Self::replace_vars(distro.version_pattern, name, version),
+                            arch: Arch::AMD64,
                             url,
                             size,
                         }
