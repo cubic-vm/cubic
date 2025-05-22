@@ -3,8 +3,15 @@ use crate::error::Error;
 use crate::image::Image;
 use crate::web::WebClient;
 use regex::Regex;
+use std::collections::HashMap;
 
 use std::sync::LazyLock;
+
+struct ImageLocation {
+    url: &'static str,
+    pattern: LazyLock<Regex>,
+    download_url: &'static str,
+}
 
 struct Distro {
     vendor: &'static str,
@@ -12,9 +19,7 @@ struct Distro {
     version_pattern: &'static str,
     overview_url: &'static str,
     overview_pattern: LazyLock<Regex>,
-    image_url: &'static str,
-    image_pattern: LazyLock<Regex>,
-    download_url: &'static str,
+    images: HashMap<Arch, ImageLocation>,
 }
 
 static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
@@ -25,9 +30,18 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
         version_pattern: "(name)",
         overview_url: "https://geo.mirror.pkgbuild.com/images/",
         overview_pattern: LazyLock::new(|| Regex::new(r">([a-z]+)/<").unwrap()),
-        image_url: "https://geo.mirror.pkgbuild.com/images/latest/",
-        image_pattern: LazyLock::new(|| Regex::new(r">(Arch-Linux-x86_64-cloudimg.qcow2)<").unwrap()),
-        download_url: "https://geo.mirror.pkgbuild.com/images/(name)/Arch-Linux-x86_64-cloudimg.qcow2",
+        images: HashMap::from([
+            (Arch::AMD64, ImageLocation {
+                url: "https://geo.mirror.pkgbuild.com/images/latest/",
+                pattern: LazyLock::new(|| Regex::new(r">(Arch-Linux-x86_64-cloudimg.qcow2)<").unwrap()),
+                download_url: "https://geo.mirror.pkgbuild.com/images/(name)/Arch-Linux-x86_64-cloudimg.qcow2",
+            }),
+            (Arch::ARM64, ImageLocation {
+                url: "https://geo.mirror.pkgbuild.com/images/latest/",
+                pattern: LazyLock::new(|| Regex::new(r">(Arch-Linux-arm64-cloudimg.qcow2)<").unwrap()),
+                download_url: "https://geo.mirror.pkgbuild.com/images/(name)/Arch-Linux-arm64-cloudimg.qcow2",
+            })
+        ]),
     },
 
 
@@ -37,9 +51,18 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
         version_pattern: "(version)",
         overview_url: "https://cloud.debian.org/images/cloud/",
         overview_pattern: LazyLock::new(|| Regex::new(r">([a-z]+)/<").unwrap()),
-        image_url: "https://cloud.debian.org/images/cloud/(name)/latest/",
-        image_pattern: LazyLock::new(|| Regex::new(r">debian-([0-9]+)-generic-amd64.qcow2<").unwrap()),
-        download_url: "https://cloud.debian.org/images/cloud/(name)/latest/debian-(version)-generic-amd64.qcow2",
+        images: HashMap::from([
+            (Arch::AMD64, ImageLocation {
+                url: "https://cloud.debian.org/images/cloud/(name)/latest/",
+                pattern: LazyLock::new(|| Regex::new(r">debian-([0-9]+)-generic-amd64.qcow2<").unwrap()),
+                download_url: "https://cloud.debian.org/images/cloud/(name)/latest/debian-(version)-generic-amd64.qcow2",
+            }),
+            (Arch::ARM64, ImageLocation {
+                url: "https://cloud.debian.org/images/cloud/(name)/latest/",
+                pattern: LazyLock::new(|| Regex::new(r">debian-([0-9]+)-generic-arm64.qcow2<").unwrap()),
+                download_url: "https://cloud.debian.org/images/cloud/(name)/latest/debian-(version)-generic-arm64.qcow2",
+            })
+        ]),
     },
 
     Distro {
@@ -48,9 +71,18 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
         version_pattern: "(name)",
         overview_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/",
         overview_pattern: LazyLock::new(|| Regex::new(r">([4-9][0-9]+)/<").unwrap()),
-        image_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/x86_64/images/",
-        image_pattern: LazyLock::new(|| Regex::new(r"Fedora-Cloud-Base-Generic-([0-9]+-[0-9]+.[0-9]+).x86_64.qcow2").unwrap()),
-        download_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-(version).x86_64.qcow2",
+        images: HashMap::from([
+            (Arch::AMD64, ImageLocation {
+                url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/x86_64/images/",
+                pattern: LazyLock::new(|| Regex::new(r"Fedora-Cloud-Base-Generic-([0-9]+-[0-9]+.[0-9]+).x86_64.qcow2").unwrap()),
+                download_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-(version).x86_64.qcow2",
+            }),
+            (Arch::ARM64, ImageLocation {
+                url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/aarch64/images/",
+                pattern: LazyLock::new(|| Regex::new(r"Fedora-Cloud-Base-Generic-([0-9]+-[0-9]+.[0-9]+).aarch64.qcow2").unwrap()),
+                download_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/aarch64/images/Fedora-Cloud-Base-Generic-(version).aarch64.qcow2",
+            })
+        ]),
     },
 
     Distro {
@@ -59,9 +91,18 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
         version_pattern:  "(name)",
         overview_url: "https://download.opensuse.org/repositories/Cloud:/Images:/",
         overview_pattern: LazyLock::new(|| Regex::new(r">Leap_([0-9]+\.[0-9]+)/<").unwrap()),
-        image_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/",
-        image_pattern: LazyLock::new(|| Regex::new(r">(openSUSE-Leap-[0-9]+.[0-9]+.x86_64-NoCloud.qcow2)<").unwrap()),
-        download_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/(version)",
+        images: HashMap::from([
+            (Arch::AMD64, ImageLocation {
+                url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/",
+                pattern: LazyLock::new(|| Regex::new(r">(openSUSE-Leap-[0-9]+.[0-9]+.x86_64-NoCloud.qcow2)<").unwrap()),
+                download_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/(version)",
+            }),
+            (Arch::ARM64, ImageLocation {
+                url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/",
+                pattern: LazyLock::new(|| Regex::new(r">(openSUSE-Leap-[0-9]+.[0-9]+.aarch64-NoCloud.qcow2)<").unwrap()),
+                download_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/(version)",
+            })
+        ]),
     },
 
     Distro {
@@ -70,9 +111,18 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
         version_pattern:  "(version)",
         overview_url: "https://cloud-images.ubuntu.com/minimal/releases/",
         overview_pattern: LazyLock::new(|| Regex::new(r">([a-z]+)/<").unwrap()),
-        image_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/",
-        image_pattern: LazyLock::new(|| Regex::new(r">ubuntu-([0-9]+\.[0-9]+)-minimal-cloudimg-amd64.img<").unwrap()),
-        download_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/ubuntu-(version)-minimal-cloudimg-amd64.img",
+        images: HashMap::from([
+            (Arch::AMD64, ImageLocation {
+                url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/",
+                pattern: LazyLock::new(|| Regex::new(r">ubuntu-([0-9]+\.[0-9]+)-minimal-cloudimg-amd64.img<").unwrap()),
+                download_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/ubuntu-(version)-minimal-cloudimg-amd64.img",
+            }),
+            (Arch::ARM64, ImageLocation {
+                url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/",
+                pattern: LazyLock::new(|| Regex::new(r">ubuntu-([0-9]+\.[0-9]+)-minimal-cloudimg-arm64.img<").unwrap()),
+                download_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/ubuntu-(version)-minimal-cloudimg-arm64.img",
+            })
+        ]),
     },
 ]
 });
@@ -97,32 +147,27 @@ impl ImageFactory {
     }
 
     fn add_images(web: &mut WebClient, distro: &Distro) -> Vec<Image> {
-        let names = Self::match_content(web, distro.overview_url, &distro.overview_pattern);
-        names
-            .iter()
-            .flat_map(|name| {
-                let versions = Self::match_content(
-                    web,
-                    &distro.image_url.replace("(name)", name),
-                    &distro.image_pattern,
-                );
-                versions
-                    .iter()
-                    .map(|version| {
-                        let url = Self::replace_vars(distro.download_url, name, version);
-                        let size = web.get_file_size(&url).unwrap_or_default();
-                        Image {
-                            vendor: distro.vendor.to_string(),
-                            codename: Self::replace_vars(distro.name_pattern, name, version),
-                            version: Self::replace_vars(distro.version_pattern, name, version),
-                            arch: Arch::AMD64,
-                            url,
-                            size,
-                        }
+        let mut images = Vec::new();
+        for name in Self::match_content(web, distro.overview_url, &distro.overview_pattern) {
+            for (arch, loc) in &distro.images {
+                for version in
+                    Self::match_content(web, &loc.url.replace("(name)", &name), &loc.pattern)
+                {
+                    let url = Self::replace_vars(loc.download_url, &name, &version);
+                    let size = web.get_file_size(&url).unwrap_or_default();
+                    images.push(Image {
+                        vendor: distro.vendor.to_string(),
+                        codename: Self::replace_vars(distro.name_pattern, &name, &version),
+                        version: Self::replace_vars(distro.version_pattern, &name, &version),
+                        arch: arch.clone(),
+                        url,
+                        size,
                     })
-                    .collect::<Vec<Image>>()
-            })
-            .collect()
+                }
+            }
+        }
+
+        images
     }
 
     pub fn create_images() -> Result<Vec<Image>, Error> {
