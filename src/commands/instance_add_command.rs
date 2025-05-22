@@ -55,6 +55,7 @@ impl InstanceAddCommand {
 
         let mut instance = Instance {
             name: self.name.clone(),
+            arch: image.arch,
             user: USER.to_string(),
             cpus: self.cpus.unwrap_or(1),
             mem: util::human_readable_to_bytes(self.mem.as_deref().unwrap_or("1G"))?,

@@ -1,3 +1,4 @@
+use crate::arch::Arch;
 use crate::error::Error;
 use crate::util;
 
@@ -10,13 +11,22 @@ pub struct Emulator {
 }
 
 impl Emulator {
-    pub fn from(name: String) -> Result<Emulator, Error> {
-        let mut command = Command::new("qemu-system-x86_64");
-        if !util::has_kvm() {
-            println!("WARNING: No KVM support detected");
-        }
-        // Set machine type
-        command.arg("-machine").arg("q35");
+    pub fn from(name: String, arch: Arch) -> Result<Emulator, Error> {
+        let mut command = match arch {
+            Arch::AMD64 => {
+                let mut command = Command::new("qemu-system-x86_64");
+                // Set machine type
+                command.arg("-machine").arg("q35");
+                command
+            }
+            Arch::ARM64 => {
+                let mut command = Command::new("qemu-system-aarch64");
+                // Set machine type
+                command.arg("-machine").arg("virt");
+                command
+            }
+        };
+
         // Set CPU type
         command.arg("-cpu").arg("max");
         // Enable accelerators

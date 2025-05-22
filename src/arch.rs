@@ -1,11 +1,22 @@
+use crate::error::Error;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Eq, Hash, PartialEq, Default, Debug, Clone, Serialize, Deserialize)]
+#[derive(Eq, Hash, PartialEq, Default, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Arch {
     #[default]
     AMD64,
     ARM64,
+}
+
+impl Arch {
+    pub fn from_str(arch: &str) -> Result<Arch, Error> {
+        match arch {
+            "amd64" => Ok(Arch::AMD64),
+            "arm64" => Ok(Arch::ARM64),
+            _ => Result::Err(Error::UnknownArch(arch.to_string())),
+        }
+    }
 }
 
 impl fmt::Display for Arch {

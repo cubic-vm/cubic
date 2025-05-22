@@ -3,18 +3,9 @@ use crate::instance::{Instance, MountPoint};
 use crate::ssh_cmd::get_ssh_pub_keys;
 use crate::util;
 use serde_json::Value::{self, Number};
-use std::fs::File;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::str;
-
-pub fn has_kvm() -> bool {
-    File::options()
-        .read(true)
-        .write(true)
-        .open("/dev/kvm")
-        .is_ok()
-}
 
 fn run_qemu_info(path: &str) -> Result<Value, Error> {
     let out = Command::new("qemu-img")

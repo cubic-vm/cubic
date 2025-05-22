@@ -24,8 +24,10 @@ parts:
       - cloud-image-utils
       - openssh-client
       - qemu-system-x86
+      - qemu-system-arm
       - qemu-system-gui
       - qemu-system-modules-spice
+      - qemu-efi-aarch64
       - seabios
       - libvirglrenderer1
     override-build: |

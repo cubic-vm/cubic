@@ -1,3 +1,4 @@
+use crate::arch::Arch;
 use crate::error::Error;
 use crate::image::{Image, ImageFactory};
 use crate::util;
@@ -8,6 +9,16 @@ use std::str;
 
 pub struct ImageDao {
     pub image_dir: String,
+}
+
+#[cfg(target_arch = "aarch64")]
+fn get_default_arch() -> Arch {
+    Arch::ARM64
+}
+
+#[cfg(not(target_arch = "aarch64"))]
+fn get_default_arch() -> Arch {
+    Arch::AMD64
 }
 
 impl ImageDao {
@@ -28,10 +39,14 @@ impl ImageDao {
             .next()
             .ok_or(Error::InvalidImageName(id.to_string()))?
             .to_string();
+        let arch = tokens
+            .next()
+            .map(Arch::from_str)
+            .unwrap_or(Ok(get_default_arch()))?;
 
         ImageFactory::create_images_for_distro(&vendor)?
             .iter()
-            .find(|image| image.codename == name || image.version == name)
+            .find(|image| (image.arch == arch) && (image.codename == name || image.version == name))
             .cloned()
             .ok_or(Error::UnknownImage(id.to_string()))
     }

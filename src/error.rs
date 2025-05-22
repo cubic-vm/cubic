@@ -3,6 +3,7 @@ use std::io;
 #[derive(Debug)]
 pub enum Error {
     UnknownCommand,
+    UnknownArch(String),
     UnknownInstance(String),
     InstanceIsRunning(String),
     InstanceNotStopped(String),
@@ -35,6 +36,7 @@ pub fn print_error(error: Error) {
     print!("ERROR: ");
     match error {
         Error::UnknownCommand => println!("Unknown command"),
+        Error::UnknownArch(name) => println!("Unknown architecture: '{name}'"),
         Error::UnknownInstance(instance) => println!("Unknown instance '{instance}'"),
         Error::InstanceIsRunning(name) => println!("Instance '{name}' is already runing"),
         Error::InstanceNotStopped(name) => println!("Instance '{name}' is not stopped"),
