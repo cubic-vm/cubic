@@ -154,15 +154,16 @@ impl ImageFactory {
                     Self::match_content(web, &loc.url.replace("(name)", &name), &loc.pattern)
                 {
                     let url = Self::replace_vars(loc.download_url, &name, &version);
-                    let size = web.get_file_size(&url).unwrap_or_default();
-                    images.push(Image {
-                        vendor: distro.vendor.to_string(),
-                        codename: Self::replace_vars(distro.name_pattern, &name, &version),
-                        version: Self::replace_vars(distro.version_pattern, &name, &version),
-                        arch: arch.clone(),
-                        url,
-                        size,
-                    })
+                    if let Ok(size) = web.get_file_size(&url) {
+                        images.push(Image {
+                            vendor: distro.vendor.to_string(),
+                            codename: Self::replace_vars(distro.name_pattern, &name, &version),
+                            version: Self::replace_vars(distro.version_pattern, &name, &version),
+                            arch: *arch,
+                            url,
+                            size,
+                        })
+                    }
                 }
             }
         }

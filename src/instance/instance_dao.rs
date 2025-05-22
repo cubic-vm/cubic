@@ -166,7 +166,7 @@ impl InstanceStore for InstanceDao {
         let cache_dir = format!("{}/{}", &self.cache_dir, &instance.name);
         util::setup_cloud_init(instance, &cache_dir, false)?;
 
-        let mut emulator = Emulator::from(instance.name.clone())?;
+        let mut emulator = Emulator::from(instance.name.clone(), instance.arch)?;
         emulator.set_cpus(instance.cpus);
         emulator.set_memory(instance.mem);
         emulator.set_console(&format!("{cache_dir}/console"));
@@ -189,6 +189,7 @@ impl InstanceStore for InstanceDao {
                 "/snap/cubic/current/usr/lib/x86_64-linux-gnu/qemu",
             );
             emulator.add_search_path(&format!("{qemu_root}/usr/share/qemu"));
+            emulator.add_search_path(&format!("{qemu_root}/usr/share/qemu-efi-aarch64"));
             emulator.add_search_path(&format!("{qemu_root}/usr/share/seabios"));
             emulator.add_search_path(&format!("{qemu_root}/usr/lib/ipxe/qemu"));
         }
