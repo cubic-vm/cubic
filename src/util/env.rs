@@ -22,3 +22,7 @@ pub fn get_image_data_dir() -> Result<String, Error> {
 pub fn get_xdg_runtime_dir() -> Result<String, Error> {
     env::var(XDG_RUNTIME_DIR_ENV).map_err(|_| Error::UnsetEnvVar(XDG_RUNTIME_DIR_ENV.to_string()))
 }
+
+pub fn get_image_cache_file() -> Result<String, Error> {
+    get_xdg_runtime_dir().map(|dir| format!("{dir}/cubic/images.cache"))
+}

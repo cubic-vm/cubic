@@ -1,11 +1,16 @@
 use crate::arch::Arch;
 use crate::error::Error;
 use crate::image::Image;
+use crate::image::ImageCache;
+use crate::util;
 use crate::web::WebClient;
 use regex::Regex;
 use std::collections::HashMap;
-
+use std::fs::File;
 use std::sync::LazyLock;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+const IMAGE_CACHE_LIFETIME_SEC: u64 = 24 * 60 * 60; // = 1 day
 
 struct ImageLocation {
     url: &'static str,
@@ -171,22 +176,79 @@ impl ImageFactory {
         images
     }
 
-    pub fn create_images() -> Result<Vec<Image>, Error> {
-        let web = &mut WebClient::new()?;
+    fn read_image_cache() -> Option<Vec<Image>> {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|time| time.as_secs())
+            .unwrap_or_default();
 
-        Ok(DISTROS
+        util::get_image_cache_file()
+            .and_then(|path| File::open(path).map_err(Error::Io))
+            .and_then(|ref mut reader| ImageCache::deserialize(reader))
+            .ok()
+            .and_then(|cache| {
+                if now - cache.timestamp < IMAGE_CACHE_LIFETIME_SEC {
+                    Some(cache.images)
+                } else {
+                    None
+                }
+            })
+    }
+
+    fn write_image_cache(images: &[Image]) {
+        let cache = ImageCache {
+            images: images.to_vec(),
+            timestamp: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|time| time.as_secs())
+                .unwrap_or_default(),
+        };
+
+        // Write cache
+        util::get_image_cache_file()
+            .and_then(|path| File::create(path).map_err(Error::Io))
+            .and_then(|mut file| cache.serialize(&mut file))
+            .ok();
+    }
+
+    pub fn create_images() -> Result<Vec<Image>, Error> {
+        // Read cache
+        if let Some(images) = Self::read_image_cache() {
+            return Ok(images);
+        }
+
+        let web = &mut WebClient::new()?;
+        let images: Vec<Image> = DISTROS
             .iter()
             .flat_map(|distro| Self::add_images(web, distro))
-            .collect())
+            .collect();
+
+        // Write cache
+        Self::write_image_cache(&images);
+
+        Ok(images)
     }
 
     pub fn create_images_for_distro(name: &str) -> Result<Vec<Image>, Error> {
         let web = &mut WebClient::new()?;
 
-        Ok(DISTROS
+        // Read cache
+        if let Some(images) = Self::read_image_cache() {
+            return Ok(images
+                .into_iter()
+                .filter(|image| image.vendor == name)
+                .collect());
+        }
+
+        let images: Vec<Image> = DISTROS
             .iter()
             .filter(|distro| distro.vendor == name)
             .flat_map(|distro| Self::add_images(web, distro))
-            .collect())
+            .collect();
+
+        // Write cache
+        Self::write_image_cache(&images);
+
+        Ok(images)
     }
 }
