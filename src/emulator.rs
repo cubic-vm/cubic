@@ -23,6 +23,7 @@ impl Emulator {
                 let mut command = Command::new("qemu-system-aarch64");
                 // Set machine type
                 command.arg("-machine").arg("virt");
+                command.arg("-bios").arg("QEMU_EFI.fd");
                 command
             }
         };
