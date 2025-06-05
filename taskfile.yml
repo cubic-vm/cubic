@@ -69,3 +69,10 @@ tasks:
     deps: [build-image]
     cmds:
       - $DOCKER_CMD $IMAGE cargo build
+
+  release:
+    deps: [build-image]
+    cmds:
+      - sed 's/^\(version =\).*$/\1 "{{.version}}"/g' -i Cargo.toml
+      - "sed \"s/^\\(version:\\).*$/\\1 '{{.version}}'/g\" -i snapcraft.yaml"
+      - task: build
