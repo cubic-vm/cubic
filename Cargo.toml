@@ -1,6 +1,6 @@
 [package]
 name = "cubic"
-version = "0.8.0"
+version = "0.9.0"
 authors = ["Roger Knecht <rknecht@pm.me>"]
 license = "GPL-2.0-only"
 description = """\
