@@ -72,14 +72,14 @@ pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(
     let user_data_img_path = format!("{dir}/user-data.img");
 
     if force || !Path::new(&user_data_img_path).exists() {
-        let metadata_path = format!("{dir}/metadata.yaml");
-        let user_data_path = format!("{dir}/user-data.yaml");
+        let meta_data_path = format!("{dir}/meta-data");
+        let user_data_path = format!("{dir}/user-data");
 
         util::create_dir(dir)?;
 
-        if force || !Path::new(&metadata_path).exists() {
+        if force || !Path::new(&meta_data_path).exists() {
             util::write_file(
-                &metadata_path,
+                &meta_data_path,
                 format!("instance-id: {name}\nlocal-hostname: {name}\n").as_bytes(),
             )?;
         }
@@ -133,10 +133,15 @@ pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(
             )?;
         }
 
-        Command::new("cloud-localds")
+        Command::new("mkisofs")
+            .arg("-RJlL")
+            .arg("-V")
+            .arg("cidata")
+            .arg("-o")
             .arg(&user_data_img_path)
-            .arg(user_data_path)
-            .arg(metadata_path)
+            .arg("-graft-points")
+            .arg(format!("/={user_data_path}"))
+            .arg(format!("/={meta_data_path}"))
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()

@@ -21,8 +21,9 @@ parts:
   runtime-dependencies:
     plugin: nil
     stage-packages:
-      - cloud-image-utils
+      - genisoimage
       - openssh-client
+      - qemu-utils
       - qemu-system-x86
       - qemu-system-arm
       - qemu-system-gui
