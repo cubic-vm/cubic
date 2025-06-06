@@ -3,12 +3,12 @@
 Cubic requires the following dependencies:
   - Cargo
   - QEMU
-  - Cloud Utils
   - OpenSSH Client
+  - mkisofs
 
 The dependencies can be installed for Debian and Ubuntu with the following command:
 ```
-$ sudo apt install cargo openssl libssl-dev pkg-config ca-certificates qemu-system-x86 cloud-image-utils openssh-client
+$ sudo apt install cargo qemu-system-x86 qemu-system-arm qemu-utils genisoimage openssh-client
 ```
 
 Build the Rust project with the Cargo package manager:
