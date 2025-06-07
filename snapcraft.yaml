@@ -18,6 +18,7 @@ parts:
   cubic:
     plugin: rust
     source: .
+    rust-cargo-parameters: ["--features", "qemu-sandbox"]
   runtime-dependencies:
     plugin: nil
     stage-packages:

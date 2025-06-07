@@ -39,6 +39,9 @@ keywords = ["cli", "vm"]
 categories = ["command-line-utilities"]
 edition = "2021"
 
+[features]
+qemu-sandbox = []
+
 [dependencies]
 clap = { version = "^4", features = ["derive"] }
 reqwest = { version = "^0", default-features = false, features = ["rustls-tls", "blocking", "gzip", "brotli"] }

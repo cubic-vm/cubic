@@ -46,7 +46,9 @@ impl Emulator {
             .arg("tcg");
         // Only boot disk
         command.arg("-boot").arg("c");
-        // Enable sandbox
+
+        // Sandbox
+        #[cfg(feature = "qemu-sandbox")]
         command.arg("-sandbox").arg("on");
 
         Ok(Emulator {
