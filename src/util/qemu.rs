@@ -134,7 +134,7 @@ pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(
         }
 
         Command::new("mkisofs")
-            .arg("-RJlL")
+            .arg("-RJ")
             .arg("-V")
             .arg("cidata")
             .arg("-o")
