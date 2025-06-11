@@ -1,14 +1,14 @@
 use crate::error::Error;
-use crate::util;
+use crate::fs::FS;
 use crate::view::TransferView;
 use reqwest::blocking::Client;
-use std::fs;
+use std::fs::File;
 use std::io;
 use std::path::Path;
 use std::time::Duration;
 
 struct ProgressWriter {
-    file: fs::File,
+    file: File,
     size: Option<u64>,
     written: u64,
     view: TransferView,
@@ -60,9 +60,11 @@ impl WebClient {
         file_path: &str,
         view: TransferView,
     ) -> Result<(), Error> {
+        let fs = FS::new();
+
         let temp_file = format!("{file_path}.tmp");
         if Path::new(&temp_file).exists() {
-            util::remove_file(&temp_file)?;
+            fs.remove_file(&temp_file)?;
         }
 
         if Path::new(&file_path).exists() {
@@ -72,14 +74,14 @@ impl WebClient {
         let mut resp = reqwest::blocking::get(url).map_err(Error::Web)?;
 
         let mut writer = ProgressWriter {
-            file: util::create_file(&temp_file)?,
+            file: fs.create_file(&temp_file)?,
             size: resp.content_length(),
             written: 0,
             view,
         };
         resp.copy_to(&mut writer).map_err(Error::Web)?;
 
-        fs::rename(temp_file, file_path).map_err(Error::Io)
+        fs.rename_file(&temp_file, file_path)
     }
 
     pub fn download_content(&mut self, url: &str) -> Result<String, Error> {

@@ -1,4 +1,4 @@
-use crate::util;
+use crate::fs::FS;
 use std::env;
 use std::path::Path;
 
@@ -9,7 +9,7 @@ pub fn migrate() {
             let from = format!("{user_data}/.local/share/cubic");
             let to = format!("{user_common}/cubic");
             if Path::new(&from).exists() && !Path::new(&to).exists() {
-                util::move_dir(&from, &to).ok();
+                FS::new().move_dir(&from, &to).ok();
             }
         }
     }

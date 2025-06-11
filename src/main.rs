@@ -2,6 +2,7 @@ mod arch;
 mod commands;
 mod emulator;
 mod error;
+mod fs;
 mod image;
 mod instance;
 mod qemu;

@@ -1,13 +1,13 @@
 use crate::arch::Arch;
 use crate::error::Error;
+use crate::fs::FS;
 use crate::image::{Image, ImageFactory};
 use crate::util;
-
-use std::fs::{remove_dir_all, remove_file};
 use std::path::Path;
 use std::str;
 
 pub struct ImageDao {
+    fs: FS,
     pub image_dir: String,
 }
 
@@ -23,10 +23,11 @@ fn get_default_arch() -> Arch {
 
 impl ImageDao {
     pub fn new() -> Result<Self, Error> {
+        let fs = FS::new();
         let image_dir = util::get_image_data_dir()?;
-        util::setup_directory_access(&image_dir)?;
+        fs.setup_directory_access(&image_dir)?;
 
-        Result::Ok(ImageDao { image_dir })
+        Result::Ok(ImageDao { fs, image_dir })
     }
 
     pub fn get(&self, id: &str) -> Result<Image, Error> {
@@ -58,8 +59,8 @@ impl ImageDao {
 
     pub fn copy_image(&self, image: &Image, dir: &str, name: &str) -> Result<(), Error> {
         let path = format!("{}/{}", self.image_dir, image.to_file_name());
-        util::create_dir(dir)?;
-        util::copy_file(&path, &format!("{dir}/{name}"))
+        self.fs.create_dir(dir)?;
+        self.fs.copy_file(&path, &format!("{dir}/{name}"))
     }
 
     pub fn exists(&self, image: &Image) -> bool {
@@ -67,10 +68,11 @@ impl ImageDao {
     }
 
     pub fn delete(&self, image: &Image) -> Result<(), Error> {
-        remove_file(format!("{}/{}", self.image_dir, image.to_file_name())).map_err(Error::Io)
+        self.fs
+            .remove_file(&format!("{}/{}", self.image_dir, image.to_file_name()))
     }
 
     pub fn prune(&self) -> Result<(), Error> {
-        remove_dir_all(&self.image_dir).map_err(Error::Io)
+        self.fs.remove_dir(&self.image_dir)
     }
 }

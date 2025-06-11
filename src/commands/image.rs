@@ -1,4 +1,5 @@
 use crate::error::Error;
+use crate::fs::FS;
 use crate::image::{Image, ImageDao, ImageFactory, ImageFetcher};
 use crate::util;
 use crate::view::SpinnerView;
@@ -108,7 +109,7 @@ impl ImageCommands {
                 let image = &image_dao.get(image)?;
 
                 if !image_dao.exists(image) {
-                    util::create_dir(&image_dao.image_dir)?;
+                    FS::new().create_dir(&image_dao.image_dir)?;
                     ImageFetcher::new().fetch(
                         image,
                         &format!("{}/{}", image_dao.image_dir, image.to_file_name()),
