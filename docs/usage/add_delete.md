@@ -6,11 +6,13 @@ Create a virtual machine instance:
 $ cubic add --help
 Add a virtual machine instance
 
-Usage: cubic add [OPTIONS] --image <IMAGE> --name <NAME>
+Usage: cubic add [OPTIONS] --image <IMAGE> [INSTANCE_NAME]
+
+Arguments:
+  [INSTANCE_NAME]  Name of the virtual machine instance
 
 Options:
   -i, --image <IMAGE>  Name of the virtual machine image
-  -n, --name <NAME>    Name of the virtual machine instance
   -c, --cpus <CPUS>    Number of CPUs for the virtual machine instance
   -m, --mem <MEM>      Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
   -d, --disk <DISK>    Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
@@ -18,7 +20,7 @@ Options:
 ```
 **Example**:
 ```
-$ cubic add --name example --image ubuntu:noble:amd64 --cpus 4 --mem 4G --disk 5G
+$ cubic add example --image ubuntu:noble:amd64 --cpus 4 --mem 4G --disk 5G
 ```
 
 ## Instance Delete Command

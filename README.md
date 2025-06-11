@@ -117,7 +117,7 @@ Show all supported images:
 $ cubic image ls
 
 Create a new virtual machine instance:
-$ cubic add --name mymachine --image ubuntu:noble
+$ cubic add mymachine --image ubuntu:noble
 
 List all virtual machine instances:
 $ cubic ls

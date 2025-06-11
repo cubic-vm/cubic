@@ -41,12 +41,15 @@ pub enum Commands {
 
     /// Add a virtual machine instance
     Add {
+        /// Name of the virtual machine instance
+        #[clap(conflicts_with = "name")]
+        instance_name: Option<String>,
         /// Name of the virtual machine image
         #[clap(short, long)]
         image: String,
         /// Name of the virtual machine instance
-        #[clap(short, long)]
-        name: String,
+        #[clap(short, long, conflicts_with = "instance_name", hide = true)]
+        name: Option<String>,
         /// Number of CPUs for the virtual machine instance
         #[clap(short, long)]
         cpus: Option<u16>,
@@ -265,6 +268,7 @@ impl CommandDispatcher {
             ),
             Commands::Ls => InstanceListCommand::new().run(console, &instance_dao),
             Commands::Add {
+                instance_name,
                 image,
                 name,
                 cpus,
@@ -272,7 +276,11 @@ impl CommandDispatcher {
                 disk,
             } => InstanceAddCommand::new(
                 image.to_string(),
-                name.to_string(),
+                instance_name
+                    .as_ref()
+                    .or(name.as_ref())
+                    .ok_or(Error::InvalidArgument("Missing instance name".to_string()))?
+                    .to_string(),
                 cpus.as_ref().cloned(),
                 mem.as_ref().cloned(),
                 disk.as_ref().cloned(),
