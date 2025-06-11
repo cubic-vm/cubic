@@ -1,11 +1,12 @@
 use crate::emulator::Emulator;
 use crate::error::Error;
+use crate::fs::FS;
 use crate::instance::{Instance, InstanceState, InstanceStore, MountPoint};
 use crate::qemu::{GuestAgent, Monitor};
 use crate::ssh_cmd::PortChecker;
 use crate::util;
 use serde::{Deserialize, Serialize};
-use std::fs;
+use std::fs::DirEntry;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::str;
@@ -18,19 +19,22 @@ pub struct Config {
 }
 
 pub struct InstanceDao {
+    fs: FS,
     pub instance_dir: String,
     pub cache_dir: String,
 }
 
 impl InstanceDao {
     pub fn new() -> Result<Self, Error> {
+        let fs = FS::new();
         let instance_dir = util::get_instance_data_dir()?;
         let xdg_runtime_dir = util::get_xdg_runtime_dir()?;
         let cache_dir = format!("{xdg_runtime_dir}/cubic/instances");
-        util::setup_directory_access(&instance_dir)?;
-        util::setup_directory_access(&cache_dir)?;
+        fs.setup_directory_access(&instance_dir)?;
+        fs.setup_directory_access(&cache_dir)?;
 
         Result::Ok(InstanceDao {
+            fs,
             instance_dir,
             cache_dir,
         })
@@ -39,11 +43,12 @@ impl InstanceDao {
 
 impl InstanceStore for InstanceDao {
     fn get_instances(&self) -> Vec<String> {
-        fs::read_dir(&self.instance_dir)
+        self.fs
+            .read_dir(&self.instance_dir)
             .map_err(|_| ())
             .and_then(|entries| {
                 entries
-                    .collect::<Result<Vec<fs::DirEntry>, _>>()
+                    .collect::<Result<Vec<DirEntry>, _>>()
                     .map_err(|_| ())
             })
             .and_then(|entries| {
@@ -64,7 +69,8 @@ impl InstanceStore for InstanceDao {
             return Result::Err(Error::UnknownInstance(name.to_string()));
         }
 
-        util::open_file(&format!("{}/{name}/machine.yaml", self.instance_dir))
+        self.fs
+            .open_file(&format!("{}/{name}/machine.yaml", self.instance_dir))
             .and_then(|mut file| Instance::deserialize(name, &mut file))
             .or(Ok(Instance {
                 name: name.to_string(),
@@ -82,9 +88,9 @@ impl InstanceStore for InstanceDao {
         let file_name = format!("{path}/machine.yaml");
         let temp_file_name = format!("{file_name}.tmp");
 
-        let mut file = util::create_file(&temp_file_name)?;
+        let mut file = self.fs.create_file(&temp_file_name)?;
         instance.serialize(&mut file)?;
-        util::rename_file(&temp_file_name, &file_name)
+        self.fs.rename_file(&temp_file_name, &file_name)
     }
 
     fn clone(&self, instance: &Instance, new_name: &str) -> Result<(), Error> {
@@ -93,7 +99,7 @@ impl InstanceStore for InstanceDao {
         } else if self.is_running(instance) {
             Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
-            util::copy_dir(
+            self.fs.copy_dir(
                 &format!("{}/{}", self.instance_dir, instance.name),
                 &format!("{}/{new_name}", self.instance_dir),
             )
@@ -106,11 +112,10 @@ impl InstanceStore for InstanceDao {
         } else if self.is_running(instance) {
             Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
-            fs::rename(
-                format!("{}/{}", self.instance_dir, instance.name),
-                format!("{}/{new_name}", self.instance_dir),
-            )
-            .map_err(Error::Io)?;
+            self.fs.rename_file(
+                &format!("{}/{}", self.instance_dir, instance.name),
+                &format!("{}/{new_name}", self.instance_dir),
+            )?;
             instance.name = new_name.to_string();
             Result::Ok(())
         }
@@ -146,8 +151,12 @@ impl InstanceStore for InstanceDao {
         if self.is_running(instance) {
             Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
-            fs::remove_dir_all(format!("{}/{}", self.cache_dir, instance.name)).ok();
-            fs::remove_dir_all(format!("{}/{}", self.instance_dir, instance.name)).ok();
+            self.fs
+                .remove_dir(&format!("{}/{}", self.cache_dir, instance.name))
+                .ok();
+            self.fs
+                .remove_dir(&format!("{}/{}", self.instance_dir, instance.name))
+                .ok();
             Ok(())
         }
     }
@@ -231,7 +240,9 @@ impl InstanceStore for InstanceDao {
     }
 
     fn get_pid(&self, instance: &Instance) -> Result<u64, ()> {
-        let pid = fs::read_to_string(format!("{}/{}/qemu.pid", self.cache_dir, instance.name))
+        let pid = self
+            .fs
+            .read_file_to_string(&format!("{}/{}/qemu.pid", self.cache_dir, instance.name))
             .map_err(|_| ())?;
 
         pid.trim().parse::<u64>().map_err(|_| ())

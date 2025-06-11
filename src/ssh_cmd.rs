@@ -3,12 +3,12 @@ mod scp;
 mod ssh;
 
 use crate::error::Error;
-use std::env;
-use std::fs::{read_dir, read_to_string, DirEntry};
-
+use crate::fs::FS;
 pub use port_checker::PortChecker;
 pub use scp::Scp;
 pub use ssh::Ssh;
+use std::env;
+use std::fs::DirEntry;
 
 fn get_ssh_key_dirs() -> Vec<String> {
     ["SNAP_REAL_HOME", "HOME"]
@@ -21,7 +21,7 @@ fn get_ssh_key_dirs() -> Vec<String> {
 fn get_ssh_keys() -> Vec<DirEntry> {
     get_ssh_key_dirs()
         .iter()
-        .filter_map(|dir| read_dir(dir).ok())
+        .filter_map(|dir| FS::new().read_dir(dir).ok())
         .flatten()
         .filter_map(|item| item.ok())
         .filter(|item| {
@@ -58,7 +58,7 @@ pub fn get_ssh_private_key_names() -> Result<Vec<String>, Error> {
 pub fn get_ssh_pub_keys() -> Result<Vec<String>, Error> {
     get_ssh_private_key_names().map(|key| {
         key.iter()
-            .filter_map(|path| read_to_string(format!("{path}.pub")).ok())
+            .filter_map(|path| FS::new().read_file_to_string(&format!("{path}.pub")).ok())
             .map(|content| content.trim().to_string())
             .collect()
     })

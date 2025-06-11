@@ -11,12 +11,12 @@ pub enum Error {
     Start(String),
     InstanceAlreadyExists(String),
     Io(io::Error),
+    FS(String),
     UnknownImage(String),
     MissingSshKey,
     InvalidImageName(String),
     UnsetEnvVar(String),
     CannotAccessDir(String),
-    CannotWriteDir(String),
     CannotParseFile(String),
     InvalidSshTarget(String),
     UserDataCreationFailed(String),
@@ -45,6 +45,7 @@ pub fn print_error(error: Error) {
         Error::Start(instance) => println!("Failed to start instance '{instance}'"),
         Error::InstanceAlreadyExists(id) => println!("Instance with name '{id}' already exists"),
         Error::Io(e) => println!("{}", e),
+        Error::FS(e) => println!("{}", e),
         Error::UnknownImage(name) => println!("Unknown image name {name}"),
         Error::MissingSshKey => print!(
             "No SSH keys found. Please try the following:\n\
@@ -57,7 +58,6 @@ pub fn print_error(error: Error) {
         Error::InvalidImageName(name) => println!("Invalid image name: {name}"),
         Error::UnsetEnvVar(var) => println!("Environment variable '{var}' is not set"),
         Error::CannotAccessDir(path) => println!("Cannot access directory '{path}'"),
-        Error::CannotWriteDir(path) => println!("Cannot write directory '{path}'"),
         Error::CannotParseFile(path) => println!("Cannot parse file '{path}'"),
         Error::InvalidSshTarget(name) => println!("Invalid SSH target '{name}'"),
         Error::UserDataCreationFailed(name) => {

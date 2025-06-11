@@ -1,3 +1,4 @@
+use crate::fs::FS;
 use crate::util;
 use std::path::Path;
 use std::process::Command;
@@ -48,7 +49,7 @@ impl Scp {
             Path::new(known_hosts_file)
                 .parent()
                 .and_then(|dir| dir.to_str())
-                .map(util::create_dir);
+                .map(|dir| FS::new().create_dir(dir));
 
             command.arg(format!("-oUserKnownHostsFile={known_hosts_file}"));
         }

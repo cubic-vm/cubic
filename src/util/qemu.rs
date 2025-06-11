@@ -1,7 +1,7 @@
 use crate::error::Error;
+use crate::fs::FS;
 use crate::instance::{Instance, MountPoint};
 use crate::ssh_cmd::get_ssh_pub_keys;
-use crate::util;
 use serde_json::Value::{self, Number};
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -66,6 +66,7 @@ pub fn human_readable_to_bytes(size: &str) -> Result<u64, Error> {
 }
 
 pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(), Error> {
+    let fs = FS::new();
     let name = &instance.name;
     let user = &instance.user;
 
@@ -75,10 +76,10 @@ pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(
         let meta_data_path = format!("{dir}/meta-data");
         let user_data_path = format!("{dir}/user-data");
 
-        util::create_dir(dir)?;
+        fs.create_dir(dir)?;
 
         if force || !Path::new(&meta_data_path).exists() {
-            util::write_file(
+            fs.write_file(
                 &meta_data_path,
                 format!("instance-id: {name}\nlocal-hostname: {name}\n").as_bytes(),
             )?;
@@ -106,7 +107,7 @@ pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(
                 String::new()
             };
 
-            util::write_file(
+            fs.write_file(
                 &user_data_path,
                 format!(
                     "\
