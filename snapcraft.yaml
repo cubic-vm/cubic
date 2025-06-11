@@ -88,3 +88,5 @@ apps:
       - network-bind
       - home
       - ssh-keys
+    environment:
+        LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libproxy
