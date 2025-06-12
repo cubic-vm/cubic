@@ -1,4 +1,4 @@
-[![Cubic](https://github.com/cubic-vm/cubic/blob/docs-update/cubic.svg)](https://github.com/cubic-vm/cubic)
+[![Cubic](https://github.com/cubic-vm/cubic/blob/main/cubic.svg)](https://github.com/cubic-vm/cubic)
 :star: Please star us on [Github](https://github.com/cubic-vm/cubic) to promote the project!
 
 [![github.com](https://github.com/cubic-vm/cubic/actions/workflows/cubic.yml/badge.svg)](https://github.com/cubic-vm/cubic/actions/workflows/cubic.yml)
