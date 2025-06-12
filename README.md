@@ -1,24 +1,28 @@
-# Cubic
+[![Cubic](https://github.com/cubic-vm/cubic/blob/docs-update/cubic.svg)](https://github.com/cubic-vm/cubic)
+:star: Please star us on [Github](https://github.com/cubic-vm/cubic) to promote the project!
 
-Cubic is a lightweight command line manager for virtual machines with focus on simplicity and security.
+[![github.com](https://github.com/cubic-vm/cubic/actions/workflows/cubic.yml/badge.svg)](https://github.com/cubic-vm/cubic/actions/workflows/cubic.yml)
+![crates.io](https://img.shields.io/crates/v/cubic.svg)
+[![snapcraft.io](https://snapcraft.io/cubic/badge.svg)](https://snapcraft.io/cubic)
+
+
+Cubic is a lightweight command-line manager for virtual machines with focus on simplicity and security.
 
 It has a simple, daemon-less and rootless design. All Cubic virtual machines run isolated in the user context.
 Cubic is built on top of `QEMU`, `KVM` and `cloud-init`.
 
-**Official website**: https://github.com/cubic-vm/cubic
+[![Get it from the Snap Store](https://snapcraft.io/en/dark/install.svg)](https://snapcraft.io/cubic)
 
-## Features
+# :fire: Features
 
-- Simple command line interface
-- Daemon-less design
-- Works without root rights
-- Supports KVM acceleration
+- Simple command-line interface
 - Supports ArchLinux, Debian, Fedora, OpenSUSE and Ubuntu guest images
-- Supports file transfers between host and guest
-- Supports directory mounting between host and guest
+- Supports Linux, macOS and Window hosts with amd64 and arm64 architecture
+- Supports hardware acceleration with KVM (Linux), Hypervisoer (macOS) and Hyper-V (Windows)
+- Daemon-less design which does not require root rights
 - Written in Rust
 
-## Quick Start
+# :rocket: Quick Start
 
 A virtual machine instance can be created with a single command:
 ```
@@ -62,49 +66,40 @@ applicable law.
 cubic@quickstart:~$
 ```
 
-The supported images can be listed with:
-```
-$ cubic image ls
-Vendor      Version  Name         Arch       Size
-archlinux    latest  latest      amd64
-debian            9  stretch     amd64
-debian           10  buster      amd64
-debian           11  bullseye    amd64
-debian           12  bookworm    amd64
-debian           13  trixie      amd64
-debian           14  forky       amd64
-fedora           39  39          amd64
-fedora           40  40          amd64
-fedora           41  41          amd64
-ubuntu        18.04  bionic      amd64
-ubuntu        18.10  cosmic      amd64
-ubuntu        19.04  disco       amd64
-ubuntu        19.10  eoan        amd64
-ubuntu        20.04  focal       amd64
-ubuntu        20.10  groovy      amd64
-ubuntu        21.04  hirsute     amd64
-ubuntu        21.10  impish      amd64
-ubuntu        22.04  jammy       amd64  284.6 MiB
-ubuntu        22.10  kinetic     amd64
-ubuntu        23.04  lunar       amd64
-ubuntu        23.10  mantic      amd64
-ubuntu        24.04  noble       amd64
-ubuntu        24.10  oracular    amd64
+# :dizzy: How to install Cubic?
+
+### Linux
+
+Install Cubic on Linux as [Snap](https://snapcraft.io) with the following command:
+```bash
+sudo sh -c "snap install cubic && snap connect cubic:kvm && snap connect cubic:ssh-keys"
 ```
 
-A virtual machine instance can be started, stopped and restarted by:
-- `cubic start <instance name>`
-- `cubic stop <instance name>`
-- `cubic restart <instance name>`
+### macOS
 
-In order to open a shell in the virtual machine instance use:
-```cubic ssh <machine name>```
+Install Cubic on macOS via [Homebrew](https://brew.sh) with the following command:
+```bash
+brew install cubic-vm/cubic/cubic
+```
 
-## How to install Cubic?
-- [Install Cubic as Snap](docs/install/snap.md)
-- [Install Cubic from source](docs/install/source.md)
+### Windows
 
-## How to use Cubic?
+Install Cubic on Windows in [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) as [Snap](https://snapcraft.io) with the following command:
+```bash
+sudo sh -c "snap install cubic && snap connect cubic:kvm && snap connect cubic:ssh-keys"
+```
+
+### Others
+
+> [!NOTE]  
+> Cubic requires the following dependencies: `QEMU`, `OpenSSH` and either `cdrtools` or `cdrkit`.
+
+Install Cubic from [crates.io](https://crates.io/crates/cubic):
+```bash
+cargo install cubic
+```
+
+# :bulb: How to use Cubic?
 
 Cubic has a simple CLI:
 ```
@@ -137,30 +132,35 @@ $ cubic scp <path/to/host/file> <machine>:<path/to/guest/file>
 Copy a file from the instance to the hots:
 $ cubic scp <machine>:<path/to/guest/file> <path/to/host/file>
 
-
 Usage: cubic [COMMAND]
 
 Commands:
-  run       Setup and run a new instance
-  list      List instances
-  info      Get information about an instance
-  sh        Open a shell in an instance
-  ssh       Connect to an instance with SSH
-  scp       Copy a file from or to an instance with SCP
-  start     Start instances
-  stop      Stop instances
-  restart   Restart instances
-  instance  Instance commands
-  image     Image commands
-  mount     Mount commands
-  help      Print this message or the help of the given subcommand(s)
+  run      Setup and run a new instance
+  ls       List virtual machine instances
+  add      Add a virtual machine instance
+  rm       Delete virtual machine instances
+  clone    Clone a virtual machine instance
+  rename   Rename a virtual machine instance
+  info     Get information about an virtual machine instance
+  config   Read and write virtual machine instance configuration parameters
+  console  Open the console of an virtual machine instance
+  sh       Open a shell in a virtual machine instance
+  ssh      Connect to a virtual machine instance with SSH
+  scp      Copy a file from or to a virtual machine instance with SCP
+  start    Start virtual machine instances
+  stop     Stop virtual machine instances
+  restart  Restart virtual machine instances
+  image    Image subcommands
+  mount    Mount subcommands
+  net      Network subcommands
+  help     Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help
   -V, --version  Print version
 ```
 
-## Usage:
+**Reference**:
 - [Add and Delete Virtual Machines](docs/usage/add_delete.md)
 - [Start, Stop and Restart Virtual Machines](docs/usage/start_stop.md)
 - [List Images and Virtual Machines](docs/usage/list.md)
@@ -170,6 +170,15 @@ Options:
 - [Rename and Clone Virtual Machines](docs/usage/rename_clone.md)
 - [Guest to Host Port Forwarding](docs/usage/hostfwd.md)
 
-## How to contribute to Cubic?
+# :speech_balloon: How to contribute to Cubic?
 
-See: [Contribute to Cubic](CONTRIBUTING.md)
+We are actievely looking for help to improve Cubic.
+You can help in various ways:
+- :girl: Increase Cubic's user base by installing and using it!
+- :star: Star us on [Github](https://github.com/cubic-vm/cubic) to promote the project!
+- :beetle: If you found a bug or you are interested in a feature please create an [issue on Github](https://github.com/cubic-vm/cubic/issues)!
+- :construction_worker: If you are a developer and you want to submit a change please have a look at the [contribution page](CONTRIBUTING.md)!
+
+# 📃 License
+
+Cubic is licensed under GPL 2.0.

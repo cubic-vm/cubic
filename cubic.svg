@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="720mm"
+   height="240mm"
+   viewBox="0 0 720 240"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="cubic_banner.svg"
+   inkscape:export-filename="cubic_banner.png"
+   inkscape:export-xdpi="25.4"
+   inkscape:export-ydpi="25.4"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.260041"
+     inkscape:cx="1830.4806"
+     inkscape:cy="565.29547"
+     inkscape:window-width="1916"
+     inkscape:window-height="1143"
+     inkscape:window-x="2562"
+     inkscape:window-y="55"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-50.924213,-98.360069)">
+    <rect
+       style="fill:#ffffff;stroke-width:1.02397"
+       id="rect338-3"
+       width="702.91553"
+       height="191.2915"
+       x="58.074955"
+       y="121.54177" />
+    <rect
+       style="fill:#000000;stroke-width:0.985964"
+       id="rect338"
+       width="690.74756"
+       height="180.48178"
+       x="64.612495"
+       y="126.69915" />
+    <g
+       id="g395"
+       transform="matrix(1.9928772,0,0,2.0237325,-31.532803,-66.5578)">
+      <rect
+         style="fill:#ffffff;stroke-width:0.264583"
+         id="rect111"
+         width="51.230911"
+         height="5.9339032"
+         x="-59.410904"
+         y="138.76782"
+         transform="rotate(-45)" />
+      <rect
+         style="fill:#ffffff;stroke-width:0.264583"
+         id="rect111-3"
+         width="51.230911"
+         height="5.9339032"
+         x="138.78452"
+         y="53.48288"
+         transform="rotate(45)" />
+      <rect
+         style="fill:#ffffff;stroke-width:0.264583"
+         id="rect111-6"
+         width="51.230911"
+         height="5.9339032"
+         x="-59.406784"
+         y="184.0824"
+         transform="rotate(-45)" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:157.957px;letter-spacing:9.87234px;fill:#ffffff;stroke-width:0.197446"
+       x="273.91476"
+       y="273.64267"
+       id="text302"
+       transform="scale(0.99234732,1.0077117)"><tspan
+         sodipodi:role="line"
+         id="tspan300"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:157.957px;font-family:sans-serif;-inkscape-font-specification:sans-serif;stroke-width:0.197446"
+         x="273.91476"
+         y="273.64267">Cubic</tspan></text>
+  </g>
+</svg>
