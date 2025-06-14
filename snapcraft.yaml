@@ -1,7 +1,7 @@
 name: cubic
 version: '0.10.0'
 license: GPL-2.0-only
-website: https://github.com/cubic-vm/cubic
+website: https://cubic-vm.org
 source-code: https://github.com/cubic-vm/cubic
 issues: https://github.com/cubic-vm/cubic/issues
 summary: Cubic is a lightweight command line manager for virtual machines.
