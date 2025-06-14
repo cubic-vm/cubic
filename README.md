@@ -160,16 +160,6 @@ Options:
   -V, --version  Print version
 ```
 
-**Reference**:
-- [Add and Delete Virtual Machines](docs/usage/add_delete.md)
-- [Start, Stop and Restart Virtual Machines](docs/usage/start_stop.md)
-- [List Images and Virtual Machines](docs/usage/list.md)
-- [Open Shell in Virtual Machines](docs/usage/sh.md)
-- [Transfer Directories and Files](docs/usage/copy_mount.md)
-- [Configure Virtual Machines](docs/usage/configure.md)
-- [Rename and Clone Virtual Machines](docs/usage/rename_clone.md)
-- [Guest to Host Port Forwarding](docs/usage/hostfwd.md)
-
 # :speech_balloon: How to contribute to Cubic?
 
 We are actievely looking for help to improve Cubic.
