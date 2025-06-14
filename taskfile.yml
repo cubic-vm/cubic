@@ -70,6 +70,11 @@ tasks:
     cmds:
       - $DOCKER_CMD $IMAGE cargo build
 
+  doc:
+    deps: [build-image]
+    cmds:
+      - $DOCKER_CMD $IMAGE sphinx-build docs target/doc && python3 -m http.server -d target/doc 4000
+
   release:
     deps: [build-image]
     cmds:
