@@ -22,7 +22,6 @@ pub enum Error {
     UserDataCreationFailed(String),
     CannotParseSize(String),
     CannotShrinkDisk(String),
-    GetCapacityFailed(String),
     CannotOpenTerminal(String),
     HostFwdRuleMalformed(String),
     CommandFailed(String),
@@ -67,7 +66,6 @@ pub fn print_error(error: Error) {
         Error::CannotShrinkDisk(name) => {
             println!("Cannot shrink the disk of the instance '{name}'")
         }
-        Error::GetCapacityFailed(path) => println!("Failed to get capacity from image: '{path}'"),
         Error::CannotOpenTerminal(path) => println!("Failed to open terminal from path: '{path}'"),
         Error::HostFwdRuleMalformed(rule) => println!("Host forwarding rule is malformed: {rule}"),
         Error::CommandFailed(message) => println!("{message}"),
