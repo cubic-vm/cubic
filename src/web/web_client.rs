@@ -7,6 +7,8 @@ use std::io;
 use std::path::Path;
 use std::time::Duration;
 
+const REQUEST_TIMEOUT_SEC: u64 = 10;
+
 struct ProgressWriter {
     file: File,
     size: Option<u64>,
@@ -34,7 +36,7 @@ impl WebClient {
     pub fn new() -> Result<Self, Error> {
         Ok(WebClient {
             client: reqwest::blocking::Client::builder()
-                .timeout(Duration::from_secs(5))
+                .timeout(Duration::from_secs(REQUEST_TIMEOUT_SEC))
                 .gzip(true)
                 .brotli(true)
                 .build()
