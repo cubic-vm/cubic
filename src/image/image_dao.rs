@@ -68,6 +68,9 @@ impl ImageDao {
     }
 
     pub fn prune(&self) -> Result<(), Error> {
+        util::get_image_cache_file()
+            .map(|path| self.fs.remove_file(&path))
+            .ok();
         self.fs.remove_dir(&self.image_dir)
     }
 }
