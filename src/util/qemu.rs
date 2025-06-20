@@ -2,37 +2,9 @@ use crate::error::Error;
 use crate::fs::FS;
 use crate::instance::{Instance, MountPoint};
 use crate::ssh_cmd::get_ssh_pub_keys;
-use serde_json::Value::{self, Number};
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::str;
-
-fn run_qemu_info(path: &str) -> Result<Value, Error> {
-    let out = Command::new("qemu-img")
-        .arg("info")
-        .arg("--output=json")
-        .arg(path)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .output()
-        .map_err(|_| Error::GetCapacityFailed(path.to_string()))?
-        .stdout;
-
-    let out_str = str::from_utf8(&out).map_err(|_| Error::GetCapacityFailed(path.to_string()))?;
-
-    serde_json::from_str(out_str).map_err(|_| Error::GetCapacityFailed(path.to_string()))
-}
-
-pub fn get_disk_capacity(path: &str) -> Result<u64, Error> {
-    let json: Value = run_qemu_info(path)?;
-
-    match &json["virtual-size"] {
-        Number(number) => number
-            .as_u64()
-            .ok_or(Error::GetCapacityFailed(path.to_string())),
-        _ => Result::Err(Error::GetCapacityFailed(path.to_string())),
-    }
-}
 
 pub fn bytes_to_human_readable(bytes: u64) -> String {
     match bytes.checked_ilog(1024) {

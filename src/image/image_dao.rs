@@ -52,11 +52,6 @@ impl ImageDao {
             .ok_or(Error::UnknownImage(id.to_string()))
     }
 
-    pub fn get_disk_capacity(&self, image: &Image) -> Result<u64, Error> {
-        let path = format!("{}/{}", self.image_dir, image.to_file_name());
-        util::get_disk_capacity(&path)
-    }
-
     pub fn copy_image(&self, image: &Image, dir: &str, name: &str) -> Result<(), Error> {
         let path = format!("{}/{}", self.image_dir, image.to_file_name());
         self.fs.create_dir(dir)?;
