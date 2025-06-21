@@ -2,8 +2,7 @@ use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore};
 use crate::util::Terminal;
-use crate::view::TimerView;
-
+use crate::view::SpinnerView;
 use std::str;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -20,9 +19,11 @@ pub fn sh(instance_dao: &InstanceDao, verbosity: Verbosity, name: &str) -> Resul
     // Check if QEMU guest agent is present
     let ga_start = Instant::now();
     if let Ok(mut ga) = instance_dao.get_guest_agent(&instance) {
-        TimerView::new("Connecting to guest").run(&mut || {
-            ga.ping().is_ok() || ga_start.elapsed() > Duration::from_secs(QEMU_GA_TIMEOUT_SECS)
-        });
+        let mut spinner = SpinnerView::new("Connecting to guest");
+        while ga.ping().is_ok() || ga_start.elapsed() > Duration::from_secs(QEMU_GA_TIMEOUT_SECS) {
+            thread::sleep(Duration::from_secs(1))
+        }
+        spinner.stop();
     }
 
     if ga_start.elapsed() > Duration::from_secs(QEMU_GA_TIMEOUT_SECS) {

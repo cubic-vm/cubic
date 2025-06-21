@@ -1,8 +1,10 @@
 use crate::commands::Verbosity;
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceState, InstanceStore};
-use crate::view::TimerView;
+use crate::view::SpinnerView;
 use std::io::Read;
+use std::thread;
+use std::time::Duration;
 
 pub fn start(
     instance_dao: &InstanceDao,
@@ -28,11 +30,16 @@ pub fn start(
     }
 
     if !verbosity.is_quiet() {
-        TimerView::new("Starting instance(s)").run(&mut || {
-            let all_running = instances
+        let mut spinner = SpinnerView::new("Starting instance(s)");
+        let mut all_running: bool = true;
+        let mut any_fails: bool = true;
+        while all_running || any_fails {
+            thread::sleep(Duration::from_secs(1));
+
+            all_running = instances
                 .iter()
                 .all(|instance| instance_dao.get_state(instance) == InstanceState::Running);
-            let any_fails = children.iter_mut().any(|child| {
+            any_fails = children.iter_mut().any(|child| {
                 child
                     .try_wait()
                     .ok()
@@ -41,9 +48,8 @@ pub fn start(
                     .map(|exit_code| exit_code != 0)
                     .unwrap_or_default()
             });
-
-            all_running || any_fails
-        });
+        }
+        spinner.stop();
 
         for mut child in children {
             let exit_code = child
