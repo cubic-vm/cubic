@@ -55,10 +55,9 @@ impl ImageCommands {
 
         match self {
             ImageCommands::Ls { .. } => {
-                let images: Vec<Image> = SpinnerView::new("Fetching image list")
-                    .run(ImageFactory::create_images)
-                    .and_then(|v| v.ok())
-                    .unwrap_or_default();
+                let mut spinner = SpinnerView::new("Fetching image list");
+                let images: Vec<Image> = ImageFactory::create_images().unwrap_or_default();
+                spinner.stop();
 
                 let mut view = TableView::new();
                 view.add_row()

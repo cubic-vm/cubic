@@ -1,7 +1,9 @@
 use crate::commands::Verbosity;
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceState, InstanceStore};
-use crate::view::TimerView;
+use crate::view::SpinnerView;
+use std::thread;
+use std::time::Duration;
 
 pub fn stop(
     instance_dao: &InstanceDao,
@@ -29,11 +31,14 @@ pub fn stop(
     }
 
     if !verbosity.is_quiet() {
-        TimerView::new("Stopping instance(s)").run(&mut || {
-            instances
-                .iter()
-                .all(|instance| instance_dao.get_state(instance) == InstanceState::Stopped)
-        });
+        let mut spinner = SpinnerView::new("Stopping instance(s)");
+        while instances
+            .iter()
+            .any(|instance| instance_dao.get_state(instance) != InstanceState::Stopped)
+        {
+            thread::sleep(Duration::from_secs(1))
+        }
+        spinner.stop();
     }
 
     Result::Ok(())
