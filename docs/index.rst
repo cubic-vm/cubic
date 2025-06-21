@@ -45,12 +45,10 @@ Reference
   * :ref:`ref_cubic_info`
   * :ref:`ref_cubic_config`
   * :ref:`ref_cubic_console`
-  * :ref:`ref_cubic_sh`
   * :ref:`ref_cubic_ssh`
   * :ref:`ref_cubic_scp`
   * :ref:`ref_cubic_start`
   * :ref:`ref_cubic_stop`
   * :ref:`ref_cubic_restart`
   * :ref:`ref_cubic_image`
-  * :ref:`ref_cubic_mount`
   * :ref:`ref_cubic_net`

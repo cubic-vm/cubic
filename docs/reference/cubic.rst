@@ -38,23 +38,21 @@ cubic
     Usage: cubic [COMMAND]
 
     Commands:
-      run      Setup and run a new instance
-      ls       List virtual machine instances
-      add      Add a virtual machine instance
+      run      Create, start and open a shell in a new virtual machine instance
+      add      Create a new virtual machine instance
+      ls       List all virtual machine instances
       rm       Delete virtual machine instances
-      clone    Clone a virtual machine instance
-      rename   Rename a virtual machine instance
       info     Get information about an virtual machine instance
-      config   Read and write virtual machine instance configuration parameters
       console  Open the console of an virtual machine instance
-      sh       Open a shell in a virtual machine instance
       ssh      Connect to a virtual machine instance with SSH
       scp      Copy a file from or to a virtual machine instance with SCP
       start    Start virtual machine instances
       stop     Stop virtual machine instances
       restart  Restart virtual machine instances
+      config   Modify virtual machine instance configuration
+      rename   Rename a virtual machine instance
+      clone    Clone a virtual machine instance
       image    Image subcommands
-      mount    Mount subcommands
       net      Network subcommands
       help     Print this message or the help of the given subcommand(s)
 
