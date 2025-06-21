@@ -120,7 +120,8 @@ pub enum Commands {
         instance: String,
     },
 
-    /// Open a shell in a virtual machine instance
+    /// Open a shell in a virtual machine instance (Deprecated)
+    #[clap(hide = true)]
     Sh {
         /// Enable verbose logging
         #[clap(short, long, default_value_t = false)]
@@ -219,8 +220,8 @@ pub enum Commands {
     #[command(subcommand)]
     Image(commands::ImageCommands),
 
-    /// Mount subcommands
-    #[command(subcommand)]
+    /// Mount subcommands (Deprecated)
+    #[command(subcommand, hide = true)]
     Mount(commands::MountCommands),
 
     /// Network subcommands
