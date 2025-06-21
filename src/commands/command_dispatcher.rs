@@ -10,7 +10,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Setup and run a new instance
+    /// Create, start and open a shell in a new virtual machine instance
     Run {
         /// Name of the virtual machine image
         #[clap(short, long)]
@@ -35,11 +35,7 @@ pub enum Commands {
         quiet: bool,
     },
 
-    /// List virtual machine instances
-    #[clap(alias = "list")]
-    Ls,
-
-    /// Add a virtual machine instance
+    /// Create a new virtual machine instance
     Add {
         /// Name of the virtual machine instance
         #[clap(conflicts_with = "name")]
@@ -61,6 +57,10 @@ pub enum Commands {
         disk: Option<String>,
     },
 
+    /// List all virtual machine instances
+    #[clap(alias = "list")]
+    Ls,
+
     /// Delete virtual machine instances
     #[clap(alias = "del")]
     Rm {
@@ -77,41 +77,10 @@ pub enum Commands {
         instances: Vec<String>,
     },
 
-    /// Clone a virtual machine instance
-    Clone {
-        /// Name of the virtual machine instance to clone
-        name: String,
-        /// Name of the copy
-        new_name: String,
-    },
-
-    /// Rename a virtual machine instance
-    Rename {
-        /// Name of the virtual machine instance to rename
-        old_name: String,
-        /// New name of the virutal machine instance
-        new_name: String,
-    },
-
     /// Get information about an virtual machine instance
     Info {
         /// Name of the virtual machine instance
         instance: String,
-    },
-
-    /// Read and write virtual machine instance configuration parameters
-    Config {
-        /// Name of the virtual machine instance
-        instance: String,
-        /// Number of CPUs for the virtual machine instance
-        #[clap(short, long)]
-        cpus: Option<u16>,
-        /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
-        #[clap(short, long)]
-        mem: Option<String>,
-        /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
-        #[clap(short, long)]
-        disk: Option<String>,
     },
 
     /// Open the console of an virtual machine instance
@@ -210,6 +179,37 @@ pub enum Commands {
         quiet: bool,
         /// Name of the virtual machine instances to restart
         instances: Vec<String>,
+    },
+
+    /// Modify virtual machine instance configuration
+    Config {
+        /// Name of the virtual machine instance
+        instance: String,
+        /// Number of CPUs for the virtual machine instance
+        #[clap(short, long)]
+        cpus: Option<u16>,
+        /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
+        #[clap(short, long)]
+        mem: Option<String>,
+        /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
+        #[clap(short, long)]
+        disk: Option<String>,
+    },
+
+    /// Rename a virtual machine instance
+    Rename {
+        /// Name of the virtual machine instance to rename
+        old_name: String,
+        /// New name of the virutal machine instance
+        new_name: String,
+    },
+
+    /// Clone a virtual machine instance
+    Clone {
+        /// Name of the virtual machine instance to clone
+        name: String,
+        /// Name of the copy
+        new_name: String,
     },
 
     /// Instance subcommands (Deprecated)
