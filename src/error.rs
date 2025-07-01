@@ -13,7 +13,6 @@ pub enum Error {
     Io(io::Error),
     FS(String),
     UnknownImage(String),
-    MissingSshKey,
     InvalidImageName(String),
     UnsetEnvVar(String),
     CannotAccessDir(String),
@@ -46,14 +45,6 @@ pub fn print_error(error: Error) {
         Error::Io(e) => println!("{}", e),
         Error::FS(e) => println!("{}", e),
         Error::UnknownImage(name) => println!("Unknown image name {name}"),
-        Error::MissingSshKey => print!(
-            "No SSH keys found. Please try the following:\n\
-- Check if cubic has read access to $HOME/.ssh
-  - Snap users must grant access with: `sudo snap connect cubic:ssh-keys`\n\
-- Check if you have a ssh key in $HOME/.ssh
-  - You can generate one with `ssh-keygen`\n\
-- Use `cubic sh myinstance` instead\n"
-        ),
         Error::InvalidImageName(name) => println!("Invalid image name: {name}"),
         Error::UnsetEnvVar(var) => println!("Environment variable '{var}' is not set"),
         Error::CannotAccessDir(path) => println!("Cannot access directory '{path}'"),

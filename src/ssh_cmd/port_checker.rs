@@ -14,7 +14,7 @@ impl PortChecker {
         let mut buf = [0];
         TcpStream::connect(format!("127.0.0.1:{}", &self.port))
             .and_then(|stream| {
-                stream.set_read_timeout(Some(Duration::new(0, 100000000)))?;
+                stream.set_read_timeout(Some(Duration::from_secs(1)))?;
                 stream.peek(&mut buf)
             })
             .is_ok()

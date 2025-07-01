@@ -1,10 +1,8 @@
 use crate::commands::Verbosity;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceState, InstanceStore};
+use crate::instance::{InstanceDao, InstanceStore};
+use crate::ssh_cmd::PortChecker;
 use crate::view::SpinnerView;
-use std::io::Read;
-use std::thread;
-use std::time::Duration;
 
 pub fn start(
     instance_dao: &InstanceDao,
@@ -31,45 +29,24 @@ pub fn start(
 
     if !verbosity.is_quiet() {
         let mut spinner = SpinnerView::new("Starting instance(s)");
-        let mut all_running: bool = true;
-        let mut any_fails: bool = true;
-        while all_running || any_fails {
-            thread::sleep(Duration::from_secs(1));
-
-            all_running = instances
-                .iter()
-                .all(|instance| instance_dao.get_state(instance) == InstanceState::Running);
-            any_fails = children.iter_mut().any(|child| {
-                child
+        while !instances
+            .iter()
+            .all(|instance| PortChecker::new(instance.ssh_port).try_connect())
+        {
+            for ref mut child in children.iter_mut() {
+                if child
                     .try_wait()
                     .ok()
                     .and_then(|result| result)
-                    .and_then(|exit| exit.code())
-                    .map(|exit_code| exit_code != 0)
+                    .map(|exit| !exit.success())
                     .unwrap_or_default()
-            });
-        }
-        spinner.stop();
-
-        for mut child in children {
-            let exit_code = child
-                .try_wait()
-                .ok()
-                .and_then(|result| result)
-                .and_then(|exit| exit.code());
-
-            if let Some(exit_code) = exit_code {
-                if exit_code != 0 {
-                    let mut stderr = String::new();
-                    if let Some(mut err) = child.stderr.take() {
-                        err.read_to_string(&mut stderr).ok();
-                    }
-
-                    let message = format!("QEMU failed with exit code {exit_code}:\n{stderr}");
-                    return Err(Error::CommandFailed(message));
+                {
+                    spinner.stop();
+                    return Err(Error::CommandFailed("QEMU failed".to_string()));
                 }
             }
         }
+        spinner.stop();
     }
 
     Result::Ok(())
