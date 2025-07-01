@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::io::{stdout, Write};
 use std::sync::mpsc::{self, TryRecvError};
 use std::thread::{self, JoinHandle};
@@ -16,20 +17,24 @@ impl SpinnerView {
 
         let thread = thread::spawn(move || {
             let mut index = 0;
+            let mut line_length = 0;
             let start = time::Instant::now();
             while let Err(TryRecvError::Empty) = rx.try_recv() {
-                print!(
-                    "\r{}.. {} ({:.1?}s)",
+                let text = format!(
+                    "{}{}.. {} ({:.1?}s)",
+                    if index > 0 { "\r" } else { "" },
                     &text,
                     SPINNER_VIEW_CHARS[index % SPINNER_VIEW_CHARS.len()],
                     start.elapsed().as_secs_f32()
                 );
+
+                line_length = max(line_length, text.len());
+                print!("{text}");
                 stdout().flush().ok();
                 index += 1;
                 thread::sleep(time::Duration::from_millis(100));
             }
-            print!("\r");
-            stdout().flush().ok();
+            println!("\r{: ^width$}", "", width = line_length);
         });
 
         SpinnerView {
