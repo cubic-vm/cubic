@@ -23,5 +23,5 @@ pub fn run(
         disk.as_ref().cloned(),
     )
     .run(image_dao, instance_dao)?;
-    commands::sh(instance_dao, verbosity, name)
+    commands::ssh(instance_dao, name, false, verbosity, &None, &None)
 }
