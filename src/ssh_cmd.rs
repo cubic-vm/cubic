@@ -48,10 +48,6 @@ pub fn get_ssh_private_key_names() -> Result<Vec<String>, Error> {
         }
     }
 
-    if keys.is_empty() {
-        return Result::Err(Error::MissingSshKey);
-    }
-
     Ok(keys)
 }
 

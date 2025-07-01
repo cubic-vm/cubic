@@ -1,12 +1,11 @@
 use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore};
-use crate::ssh_cmd::{get_ssh_private_key_names, Ssh};
-
+use crate::ssh_cmd::{get_ssh_private_key_names, PortChecker, Ssh};
+use crate::view::SpinnerView;
 use std::env;
-use std::os::unix::process::CommandExt;
-use std::thread::sleep;
-use std::time::Duration;
+use std::thread;
+use std::time::{Duration, Instant};
 
 fn get_instance_name(target: &str) -> Result<String, Error> {
     if target.contains('@') {
@@ -45,26 +44,64 @@ pub fn ssh(
     let user = get_user_name(target)?.unwrap_or(instance.user.to_string());
     let ssh_port = instance.ssh_port;
 
-    if !instance_dao.is_running(&instance) {
+    if instance_dao.is_running(&instance) {
+        let spinner = (!verbosity.is_quiet()).then(|| SpinnerView::new("Connecting to instance"));
+
+        // Waiting for SSH server to be available
+        while !PortChecker::new(ssh_port).try_connect() {
+            thread::sleep(Duration::from_secs(1));
+        }
+
+        if let Some(mut s) = spinner {
+            s.stop()
+        }
+    } else {
         commands::start(instance_dao, &None, verbosity, &vec![name.to_string()])?;
-        sleep(Duration::from_millis(3000));
     }
 
-    Err(Error::Io(
-        Ssh::new()
-            .set_known_hosts_file(
-                env::var("HOME")
-                    .map(|dir| format!("{dir}/.ssh/known_hosts"))
-                    .ok(),
-            )
-            .set_private_keys(get_ssh_private_key_names()?)
-            .set_port(Some(ssh_port))
-            .set_xforward(xforward)
-            .set_args(ssh_args.clone().unwrap_or_default())
-            .set_user(user.clone())
-            .set_cmd(cmd.clone())
-            .set_verbose(verbosity.is_verbose())
-            .connect()
-            .exec(),
-    ))
+    let mut ssh = None;
+    let mut start_time = Instant::now();
+    loop {
+        if ssh.is_none() {
+            if !verbosity.is_quiet() {
+                println!("Default login user: cubic / password: cubic");
+            }
+
+            ssh = Some(
+                Ssh::new()
+                    .set_known_hosts_file(
+                        env::var("HOME")
+                            .map(|dir| format!("{dir}/.ssh/known_hosts"))
+                            .ok(),
+                    )
+                    .set_private_keys(get_ssh_private_key_names()?)
+                    .set_port(Some(ssh_port))
+                    .set_xforward(xforward)
+                    .set_args(ssh_args.clone().unwrap_or_default())
+                    .set_user(user.clone())
+                    .set_cmd(cmd.clone())
+                    .set_verbose(verbosity.is_verbose())
+                    .connect()
+                    .spawn()
+                    .unwrap(),
+            );
+            start_time = Instant::now();
+        }
+
+        if let Ok(Some(exit)) = ssh.as_mut().unwrap().try_wait() {
+            if exit.success() || cmd.is_some() || start_time.elapsed().as_secs() > 5 {
+                break;
+            }
+            let spinner = (!verbosity.is_quiet()).then(|| SpinnerView::new("Connection retry"));
+            thread::sleep(Duration::from_secs(5));
+            if let Some(mut s) = spinner {
+                s.stop()
+            }
+            ssh = None;
+        } else {
+            thread::sleep(Duration::from_secs(1));
+        }
+    }
+
+    Ok(())
 }

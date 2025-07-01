@@ -220,10 +220,7 @@ impl InstanceStore for InstanceDao {
 
     fn get_state(&self, instance: &Instance) -> InstanceState {
         if self.is_running(instance) {
-            let ga = self.get_guest_agent(instance);
-            if ga.and_then(|mut ga| ga.ping()).is_ok()
-                || PortChecker::new(instance.ssh_port).try_connect()
-            {
+            if PortChecker::new(instance.ssh_port).try_connect() {
                 InstanceState::Running
             } else {
                 InstanceState::Starting
