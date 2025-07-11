@@ -75,6 +75,7 @@ impl Ssh {
         command
             .args(self.port.map(|port| format!("-p{port}")).as_slice())
             .arg("-oPreferredAuthentications=publickey,password")
+            .arg("-oStrictHostKeyChecking=accept-new")
             .args(
                 self.private_keys
                     .iter()
