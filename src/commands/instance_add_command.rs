@@ -34,6 +34,10 @@ impl InstanceAddCommand {
     }
 
     pub fn run(self, image_dao: &ImageDao, instance_dao: &InstanceDao) -> Result<(), Error> {
+        if instance_dao.exists(&self.name) {
+            return Result::Err(Error::InstanceAlreadyExists(self.name.to_string()));
+        }
+
         let image = image_dao.get(&self.image)?;
         ImageCommands::Fetch {
             image: self.image.to_string(),
@@ -41,10 +45,6 @@ impl InstanceAddCommand {
         .dispatch(image_dao)?;
 
         let instance_dir = format!("{}/{}", instance_dao.instance_dir, &self.name);
-
-        if instance_dao.exists(&self.name) {
-            return Result::Err(Error::InstanceAlreadyExists(self.name.to_string()));
-        }
 
         image_dao.copy_image(&image, &instance_dir, "machine.img")?;
 
