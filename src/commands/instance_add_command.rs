@@ -38,11 +38,11 @@ impl InstanceAddCommand {
             return Result::Err(Error::InstanceAlreadyExists(self.name.to_string()));
         }
 
-        let image = image_dao.get(&self.image)?;
         ImageCommands::Fetch {
             image: self.image.to_string(),
         }
         .dispatch(image_dao)?;
+        let image = image_dao.get(&self.image)?;
 
         let instance_dir = format!("{}/{}", instance_dao.instance_dir, &self.name);
 

@@ -7,6 +7,13 @@ use crate::view::{Alignment, TableView};
 use crate::view::{MapView, Stdio};
 use clap::Subcommand;
 
+fn fetch_image_list() -> Vec<Image> {
+    let mut spinner = SpinnerView::new("Fetching image list");
+    let images: Vec<Image> = ImageFactory::create_images().unwrap_or_default();
+    spinner.stop();
+    images
+}
+
 #[derive(Subcommand)]
 pub enum ImageCommands {
     /// List images
@@ -55,9 +62,7 @@ impl ImageCommands {
 
         match self {
             ImageCommands::Ls { .. } => {
-                let mut spinner = SpinnerView::new("Fetching image list");
-                let images: Vec<Image> = ImageFactory::create_images().unwrap_or_default();
-                spinner.stop();
+                let images = fetch_image_list();
 
                 let mut view = TableView::new();
                 view.add_row()
@@ -94,6 +99,7 @@ impl ImageCommands {
             }
 
             ImageCommands::Info { name } => {
+                fetch_image_list();
                 let image = image_dao.get(name)?;
                 let mut view = MapView::new();
                 view.add("Vendor", &image.vendor);
@@ -105,6 +111,7 @@ impl ImageCommands {
             }
 
             ImageCommands::Fetch { image } => {
+                fetch_image_list();
                 let image = &image_dao.get(image)?;
 
                 if !image_dao.exists(image) {
