@@ -228,27 +228,4 @@ impl ImageFactory {
 
         Ok(images)
     }
-
-    pub fn create_images_for_distro(name: &str) -> Result<Vec<Image>, Error> {
-        let web = &mut WebClient::new()?;
-
-        // Read cache
-        if let Some(images) = Self::read_image_cache() {
-            return Ok(images
-                .into_iter()
-                .filter(|image| image.vendor == name)
-                .collect());
-        }
-
-        let images: Vec<Image> = DISTROS
-            .iter()
-            .filter(|distro| distro.vendor == name)
-            .flat_map(|distro| Self::add_images(web, distro))
-            .collect();
-
-        // Write cache
-        Self::write_image_cache(&images);
-
-        Ok(images)
-    }
 }

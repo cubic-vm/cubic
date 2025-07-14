@@ -45,9 +45,13 @@ impl ImageDao {
             .map(Arch::from_str)
             .unwrap_or(Ok(get_default_arch()))?;
 
-        ImageFactory::create_images_for_distro(&vendor)?
+        ImageFactory::create_images()?
             .iter()
-            .find(|image| (image.arch == arch) && (image.codename == name || image.version == name))
+            .find(|image| {
+                (image.vendor == vendor)
+                    && (image.arch == arch)
+                    && (image.codename == name || image.version == name)
+            })
             .cloned()
             .ok_or(Error::UnknownImage(id.to_string()))
     }
