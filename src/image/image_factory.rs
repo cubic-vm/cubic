@@ -132,6 +132,13 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
 ]
 });
 
+fn get_timestamp() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|time| time.as_secs())
+        .unwrap_or_default()
+}
+
 pub struct ImageFactory;
 
 impl ImageFactory {
@@ -176,32 +183,17 @@ impl ImageFactory {
         images
     }
 
-    fn read_image_cache() -> Option<Vec<Image>> {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|time| time.as_secs())
-            .unwrap_or_default();
-
+    fn read_image_cache() -> Option<ImageCache> {
         util::get_image_cache_file()
             .and_then(|path| File::open(path).map_err(Error::Io))
             .and_then(|ref mut reader| ImageCache::deserialize(reader))
             .ok()
-            .and_then(|cache| {
-                if now - cache.timestamp < IMAGE_CACHE_LIFETIME_SEC {
-                    Some(cache.images)
-                } else {
-                    None
-                }
-            })
     }
 
     fn write_image_cache(images: &[Image]) {
         let cache = ImageCache {
             images: images.to_vec(),
-            timestamp: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .map(|time| time.as_secs())
-                .unwrap_or_default(),
+            timestamp: get_timestamp(),
         };
 
         // Write cache
@@ -213,18 +205,31 @@ impl ImageFactory {
 
     pub fn create_images() -> Result<Vec<Image>, Error> {
         // Read cache
-        if let Some(images) = Self::read_image_cache() {
-            return Ok(images);
+        let cache = Self::read_image_cache();
+
+        // Use cache if valid
+        if let Some(cache) = &cache {
+            if get_timestamp() - cache.timestamp < IMAGE_CACHE_LIFETIME_SEC {
+                return Ok(cache.images.clone());
+            }
         }
 
+        // Fetch images
         let web = &mut WebClient::new()?;
         let images: Vec<Image> = DISTROS
             .iter()
             .flat_map(|distro| Self::add_images(web, distro))
             .collect();
 
-        // Write cache
-        Self::write_image_cache(&images);
+        // Return cache if fetching failed
+        if images.is_empty() {
+            if let Some(ref cache) = &cache {
+                return Ok(cache.images.clone());
+            }
+        } else {
+            // Write cache
+            Self::write_image_cache(&images);
+        }
 
         Ok(images)
     }
