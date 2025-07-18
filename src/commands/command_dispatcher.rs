@@ -12,12 +12,15 @@ use clap::{Parser, Subcommand};
 pub enum Commands {
     /// Create, start and open a shell in a new virtual machine instance
     Run {
+        /// Name of the virtual machine instance
+        #[clap(conflicts_with = "name")]
+        instance_name: Option<String>,
         /// Name of the virtual machine image
         #[clap(short, long)]
         image: String,
         /// Name of the virtual machine instance
-        #[clap(short, long)]
-        name: String,
+        #[clap(short, long, conflicts_with = "instance_name", hide = true)]
+        name: Option<String>,
         /// Number of CPUs for the virtual machine instance
         #[clap(short, long)]
         cpus: Option<u16>,
@@ -232,6 +235,7 @@ impl CommandDispatcher {
 
         match &command {
             Commands::Run {
+                instance_name,
                 image,
                 name,
                 cpus,
@@ -243,7 +247,11 @@ impl CommandDispatcher {
                 &image_dao,
                 &instance_dao,
                 image,
-                name,
+                &instance_name
+                    .as_ref()
+                    .or(name.as_ref())
+                    .ok_or(Error::InvalidArgument("Missing instance name".to_string()))?
+                    .to_string(),
                 cpus,
                 mem,
                 disk,
