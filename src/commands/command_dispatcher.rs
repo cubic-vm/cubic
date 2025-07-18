@@ -70,9 +70,12 @@ pub enum Commands {
         /// Reduce logging output
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
-        /// Delete the virtual machine instances without confirmation
+        /// Delete the virtual machine instances even when running
         #[clap(short, long, default_value_t = false)]
         force: bool,
+        /// Delete the virtual machine instances without confirmation
+        #[clap(short, long, default_value_t = false)]
+        yes: bool,
         /// Name of the virtual machine instances to delete
         instances: Vec<String>,
     },
@@ -291,9 +294,15 @@ impl CommandDispatcher {
                 verbose,
                 quiet,
                 force,
+                yes,
                 instances,
-            } => InstanceRemoveCommand::new(Verbosity::new(*verbose, *quiet), *force, instances)
-                .run(&instance_dao),
+            } => InstanceRemoveCommand::new(
+                Verbosity::new(*verbose, *quiet),
+                *force,
+                *yes,
+                instances,
+            )
+            .run(&instance_dao),
 
             Commands::Clone { name, new_name } => {
                 InstanceCloneCommand::new(name, new_name).run(&instance_dao)

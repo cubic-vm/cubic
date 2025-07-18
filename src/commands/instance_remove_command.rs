@@ -6,14 +6,16 @@ use crate::util;
 pub struct InstanceRemoveCommand {
     verbosity: Verbosity,
     force: bool,
+    yes: bool,
     instances: Vec<String>,
 }
 
 impl InstanceRemoveCommand {
-    pub fn new(verbosity: Verbosity, force: bool, instances: &[String]) -> Self {
+    pub fn new(verbosity: Verbosity, force: bool, yes: bool, instances: &[String]) -> Self {
         Self {
             verbosity,
             force,
+            yes,
             instances: instances.to_vec(),
         }
     }
@@ -34,9 +36,11 @@ impl InstanceRemoveCommand {
         }
 
         for instance in &self.instances {
-            if util::confirm(&format!(
-                "Do you really want delete the instance '{instance}'? [y/n]: "
-            )) {
+            if self.yes
+                || util::confirm(&format!(
+                    "Do you really want delete the instance '{instance}'? [y/n]: "
+                ))
+            {
                 instance_dao.delete(&instance_dao.load(instance)?)?;
                 println!("Deleted instance {instance}");
             }
