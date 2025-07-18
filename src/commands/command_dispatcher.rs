@@ -92,19 +92,6 @@ pub enum Commands {
         instance: String,
     },
 
-    /// Open a shell in a virtual machine instance (Deprecated)
-    #[clap(hide = true)]
-    Sh {
-        /// Enable verbose logging
-        #[clap(short, long, default_value_t = false)]
-        verbose: bool,
-        /// Reduce logging output
-        #[clap(short, long, default_value_t = false)]
-        quiet: bool,
-        /// Name of the virtual machine instance
-        instance: String,
-    },
-
     /// Connect to a virtual machine instance with SSH
     Ssh {
         /// Name of the virtual machine instance
@@ -215,17 +202,9 @@ pub enum Commands {
         new_name: String,
     },
 
-    /// Instance subcommands (Deprecated)
-    #[command(subcommand, hide = true)]
-    Instance(commands::InstanceCommands),
-
     /// Image subcommands
     #[command(subcommand)]
     Image(commands::ImageCommands),
-
-    /// Mount subcommands (Deprecated)
-    #[command(subcommand, hide = true)]
-    Mount(commands::MountCommands),
 
     /// Network subcommands
     #[command(subcommand)]
@@ -347,11 +326,6 @@ impl CommandDispatcher {
                 instances,
             } => commands::restart(&instance_dao, Verbosity::new(*verbose, *quiet), instances),
             Commands::Console { instance } => commands::console(&instance_dao, instance),
-            Commands::Sh {
-                verbose,
-                quiet,
-                instance,
-            } => commands::sh(&instance_dao, Verbosity::new(*verbose, *quiet), instance),
             Commands::Ssh {
                 instance,
                 xforward,
@@ -380,9 +354,7 @@ impl CommandDispatcher {
                 Verbosity::new(*verbose, *quiet),
                 scp_args,
             ),
-            Commands::Instance(command) => command.dispatch(&image_dao, &instance_dao),
             Commands::Image(command) => command.dispatch(&image_dao),
-            Commands::Mount(command) => command.dispatch(&instance_dao),
             Commands::Net(command) => command.dispatch(&instance_dao),
         }
     }

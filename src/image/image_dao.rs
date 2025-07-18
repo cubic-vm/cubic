@@ -66,11 +66,6 @@ impl ImageDao {
         Path::new(&format!("{}/{}", self.image_dir, image.to_file_name())).exists()
     }
 
-    pub fn delete(&self, image: &Image) -> Result<(), Error> {
-        self.fs
-            .remove_file(&format!("{}/{}", self.image_dir, image.to_file_name()))
-    }
-
     pub fn prune(&self) -> Result<(), Error> {
         util::get_image_cache_file()
             .map(|path| self.fs.remove_file(&path))

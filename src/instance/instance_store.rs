@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::instance::{Instance, InstanceState};
-use crate::qemu::{GuestAgent, Monitor};
+use crate::qemu::Monitor;
 use std::process::Child;
 use std::str;
 
@@ -26,5 +26,4 @@ pub trait InstanceStore {
     fn is_running(&self, instance: &Instance) -> bool;
     fn get_pid(&self, instance: &Instance) -> Result<u64, ()>;
     fn get_monitor(&self, instance: &Instance) -> Result<Monitor, Error>;
-    fn get_guest_agent(&self, instance: &Instance) -> Result<GuestAgent, Error>;
 }

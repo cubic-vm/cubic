@@ -38,22 +38,6 @@ pub enum ImageCommands {
 
     /// Clear local image cache
     Prune,
-
-    /// Delete images (Deprecated)
-    #[clap(alias = "del", hide = true)]
-    Rm {
-        /// List of images to delete
-        images: Vec<String>,
-        #[clap(short, long, default_value_t = false)]
-        /// Delete all images
-        all: bool,
-        /// Force delete images without asking for confirmation
-        #[clap(short, long, default_value_t = false)]
-        force: bool,
-        /// Silence command output
-        #[clap(short, long, default_value_t = false)]
-        quiet: bool,
-    },
 }
 
 impl ImageCommands {
@@ -120,46 +104,6 @@ impl ImageCommands {
                         image,
                         &format!("{}/{}", image_dao.image_dir, image.to_file_name()),
                     )?;
-                }
-
-                Ok(())
-            }
-
-            ImageCommands::Rm {
-                images,
-                all,
-                force,
-                quiet,
-            } => {
-                let selected_images = if *all {
-                    ImageFactory::create_images()?.clone()
-                } else {
-                    images
-                        .iter()
-                        .map(|name| image_dao.get(name))
-                        .collect::<Result<Vec<Image>, Error>>()?
-                };
-
-                for image in &selected_images {
-                    let name = image.to_id();
-
-                    if !image_dao.exists(image) {
-                        if !*all && !*quiet {
-                            println!("Image '{name}' does not exists");
-                        }
-                        continue;
-                    }
-
-                    if *force
-                        || util::confirm(&format!(
-                            "Do you really want delete the image '{name}'? [y/n]: "
-                        ))
-                    {
-                        image_dao.delete(image)?;
-                        if !*quiet {
-                            println!("Deleted image {name}");
-                        }
-                    }
                 }
 
                 Ok(())
