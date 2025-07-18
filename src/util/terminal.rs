@@ -15,11 +15,8 @@ use std::sync::{
 use std::thread;
 use std::time::Duration;
 
-const TIOCGWINSZ: libc::c_ulong = 0x5413;
-
 pub struct Terminal {
     threads: Vec<thread::JoinHandle<()>>,
-    running: Arc<AtomicBool>,
 }
 
 fn spawn_stdin_thread(sender: Sender<u8>, running: Arc<AtomicBool>) -> thread::JoinHandle<()> {
@@ -96,35 +93,9 @@ impl Terminal {
                         spawn_stdin_thread(tx, running.clone()),
                         spawn_stream_thread(stream, rx, running.clone()),
                     ],
-                    running,
                 }
             })
             .map_err(|_| Error::CannotOpenTerminal(path.to_string()))
-    }
-
-    pub fn is_running(&mut self) -> bool {
-        self.running.load(Ordering::Relaxed)
-    }
-
-    pub fn stop(&mut self) {
-        self.running.store(false, Ordering::SeqCst)
-    }
-
-    pub fn get_term_size(&self) -> Option<(isize, isize)> {
-        let winsize = libc::winsize {
-            ws_row: 0,
-            ws_col: 0,
-            ws_xpixel: 0,
-            ws_ypixel: 0,
-        };
-
-        unsafe {
-            if libc::ioctl(libc::STDOUT_FILENO, TIOCGWINSZ, &winsize) == 0 {
-                Some((winsize.ws_col as isize, winsize.ws_row as isize))
-            } else {
-                None
-            }
-        }
     }
 
     pub fn wait(&mut self) {

@@ -3,7 +3,7 @@ pub mod tests {
 
     use crate::error::Error;
     use crate::instance::{Instance, InstanceState, InstanceStore};
-    use crate::qemu::{GuestAgent, Monitor};
+    use crate::qemu::Monitor;
     use std::process::Child;
 
     pub struct InstanceStoreMock {
@@ -79,10 +79,6 @@ pub mod tests {
         }
 
         fn get_monitor(&self, _instance: &Instance) -> Result<Monitor, Error> {
-            Result::Err(Error::UnknownCommand)
-        }
-
-        fn get_guest_agent(&self, _instance: &Instance) -> Result<GuestAgent, Error> {
             Result::Err(Error::UnknownCommand)
         }
     }

@@ -15,7 +15,6 @@ pub enum Error {
     UnknownImage(String),
     InvalidImageName(String),
     UnsetEnvVar(String),
-    CannotAccessDir(String),
     CannotParseFile(String),
     InvalidSshTarget(String),
     UserDataCreationFailed(String),
@@ -27,8 +26,6 @@ pub enum Error {
     Web(reqwest::Error),
     SerdeJson(serde_json::Error),
     SerdeYaml(serde_yaml::Error),
-    MissingQemuGA,
-    ExecFailed,
 }
 
 pub fn print_error(error: Error) {
@@ -47,7 +44,6 @@ pub fn print_error(error: Error) {
         Error::UnknownImage(name) => println!("Unknown image name {name}"),
         Error::InvalidImageName(name) => println!("Invalid image name: {name}"),
         Error::UnsetEnvVar(var) => println!("Environment variable '{var}' is not set"),
-        Error::CannotAccessDir(path) => println!("Cannot access directory '{path}'"),
         Error::CannotParseFile(path) => println!("Cannot parse file '{path}'"),
         Error::InvalidSshTarget(name) => println!("Invalid SSH target '{name}'"),
         Error::UserDataCreationFailed(name) => {
@@ -62,8 +58,6 @@ pub fn print_error(error: Error) {
         Error::CommandFailed(message) => println!("{message}"),
         Error::SerdeJson(err) => println!("[JSON] {err}"),
         Error::SerdeYaml(err) => println!("[YAML] {err}"),
-        Error::MissingQemuGA => println!("Cannot access QEMU guest agent. Please install qemu-guest-agent in the virtual machine instance."),
-        Error::ExecFailed => println!("Failed to execute command in virtual machine instance."),
         Error::Web(e) => println!("{e}"),
     }
 }

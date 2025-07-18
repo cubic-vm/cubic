@@ -2,7 +2,7 @@ use crate::emulator::Emulator;
 use crate::error::Error;
 use crate::fs::FS;
 use crate::instance::{Instance, InstanceState, InstanceStore, MountPoint};
-use crate::qemu::{GuestAgent, Monitor};
+use crate::qemu::Monitor;
 use crate::ssh_cmd::PortChecker;
 use crate::util;
 use serde::{Deserialize, Serialize};
@@ -247,12 +247,5 @@ impl InstanceStore for InstanceDao {
 
     fn get_monitor(&self, instance: &Instance) -> Result<Monitor, Error> {
         Monitor::new(&format!("{}/{}", self.cache_dir, &instance.name))
-    }
-
-    fn get_guest_agent(&self, instance: &Instance) -> Result<GuestAgent, Error> {
-        GuestAgent::new(&format!(
-            "{}/{}/guest-agent.socket",
-            self.cache_dir, &instance.name
-        ))
     }
 }

@@ -38,23 +38,6 @@ impl FS {
             })
     }
 
-    pub fn move_dir(&self, from: &str, to: &str) -> Result<(), Error> {
-        Command::new("mv")
-            .arg(from)
-            .arg(to)
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
-            .map_err(Error::Io)?
-            .wait()
-            .map(|_| ())
-            .map_err(|e| {
-                Error::FS(format!(
-                    "Cannot move directory from '{from}' to '{to}' ({e})"
-                ))
-            })
-    }
-
     pub fn read_dir(&self, path: &str) -> Result<fs::ReadDir, Error> {
         fs::read_dir(path).map_err(|e| Error::FS(format!("Cannot read directory '{path}' ({e})")))
     }

@@ -14,8 +14,6 @@ mod web;
 use crate::commands::CommandDispatcher;
 
 fn main() {
-    util::migrate();
-
     CommandDispatcher::new()
         .dispatch()
         .map_err(error::print_error)
