@@ -61,12 +61,13 @@ pub fn ssh(
 
     let mut ssh = None;
     let mut start_time = Instant::now();
+
+    if !verbosity.is_quiet() {
+        println!("Default login user: cubic / password: cubic");
+    }
+
     loop {
         if ssh.is_none() {
-            if !verbosity.is_quiet() {
-                println!("Default login user: cubic / password: cubic");
-            }
-
             ssh = Some(
                 Ssh::new()
                     .set_known_hosts_file(
@@ -82,8 +83,7 @@ pub fn ssh(
                     .set_cmd(cmd.clone())
                     .set_verbose(verbosity.is_verbose())
                     .connect()
-                    .spawn()
-                    .unwrap(),
+                    .spawn()?,
             );
             start_time = Instant::now();
         }
@@ -92,7 +92,7 @@ pub fn ssh(
             if exit.success() || cmd.is_some() || start_time.elapsed().as_secs() > 5 {
                 break;
             }
-            let spinner = (!verbosity.is_quiet()).then(|| SpinnerView::new("Connection retry"));
+            let spinner = (!verbosity.is_quiet()).then(|| SpinnerView::new("Try to connect"));
             thread::sleep(Duration::from_secs(5));
             if let Some(mut s) = spinner {
                 s.stop()

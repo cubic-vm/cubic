@@ -5,10 +5,10 @@ use crate::instance::{Instance, InstanceState, InstanceStore, MountPoint};
 use crate::qemu::Monitor;
 use crate::ssh_cmd::PortChecker;
 use crate::util;
+use crate::util::SystemCommand;
 use serde::{Deserialize, Serialize};
 use std::fs::DirEntry;
 use std::path::Path;
-use std::process::{Child, Command, Stdio};
 use std::str;
 
 pub const USER: &str = "cubic";
@@ -127,21 +127,14 @@ impl InstanceStore for InstanceDao {
         } else if instance.disk_capacity >= size {
             Result::Err(Error::CannotShrinkDisk(instance.name.to_string()))
         } else {
-            Command::new("qemu-img")
+            SystemCommand::new("qemu-img")
                 .arg("resize")
                 .arg(format!(
                     "{}/{}/machine.img",
                     self.instance_dir, instance.name
                 ))
                 .arg(size.to_string())
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .spawn()
-                .map_err(Error::Io)?
-                .wait()
-                .map(|_| ())
-                .map_err(Error::Io)?;
+                .run()?;
             instance.disk_capacity = size;
             Result::Ok(())
         }
@@ -166,7 +159,7 @@ impl InstanceStore for InstanceDao {
         instance: &Instance,
         qemu_args: &Option<String>,
         verbose: bool,
-    ) -> Result<Child, Error> {
+    ) -> Result<(), Error> {
         if self.is_running(instance) {
             return Result::Err(Error::InstanceIsRunning(instance.name.to_string()));
         }
@@ -175,7 +168,7 @@ impl InstanceStore for InstanceDao {
         let cache_dir = format!("{}/{}", &self.cache_dir, &instance.name);
         util::setup_cloud_init(instance, &cache_dir, false)?;
 
-        let mut emulator = Emulator::from(instance.name.clone(), instance.arch)?;
+        let mut emulator = Emulator::from(instance.arch)?;
         emulator.set_cpus(instance.cpus);
         emulator.set_memory(instance.mem);
         emulator.set_console(&format!("{cache_dir}/console"));

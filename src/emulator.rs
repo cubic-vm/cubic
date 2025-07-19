@@ -1,26 +1,23 @@
 use crate::arch::Arch;
 use crate::error::Error;
-use crate::util;
-
-use std::process::{Child, Command, Stdio};
+use crate::util::SystemCommand;
 
 pub struct Emulator {
-    name: String,
-    command: Command,
+    command: SystemCommand,
     verbose: bool,
 }
 
 impl Emulator {
-    pub fn from(name: String, arch: Arch) -> Result<Emulator, Error> {
+    pub fn from(arch: Arch) -> Result<Emulator, Error> {
         let mut command = match arch {
             Arch::AMD64 => {
-                let mut command = Command::new("qemu-system-x86_64");
+                let mut command = SystemCommand::new("qemu-system-x86_64");
                 // Set machine type
                 command.arg("-machine").arg("q35");
                 command
             }
             Arch::ARM64 => {
-                let mut command = Command::new("qemu-system-aarch64");
+                let mut command = SystemCommand::new("qemu-system-aarch64");
                 // Set machine type
                 command.arg("-machine").arg("virt");
                 command.arg("-bios").arg("QEMU_EFI.fd");
@@ -52,7 +49,6 @@ impl Emulator {
         command.arg("-sandbox").arg("on");
 
         Ok(Emulator {
-            name,
             command,
             verbose: false,
         })
@@ -173,20 +169,13 @@ impl Emulator {
         self.command.arg("-pidfile").arg(path);
     }
 
-    pub fn run(&mut self) -> Result<Child, Error> {
-        self.command
-            .arg("-daemonize")
-            .stdin(Stdio::null())
-            .stderr(Stdio::piped());
+    pub fn run(&mut self) -> Result<(), Error> {
+        self.command.arg("-daemonize");
 
         if self.verbose {
-            util::print_command(&self.command);
-        } else {
-            self.command.stdout(Stdio::null());
+            println!("{}", self.command.get_command());
         }
 
-        self.command
-            .spawn()
-            .map_err(|_| Error::Start(self.name.clone()))
+        self.command.run()
     }
 }

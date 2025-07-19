@@ -3,7 +3,6 @@ use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore};
 use crate::ssh_cmd::{get_ssh_private_key_names, Scp};
 use std::env;
-use std::os::unix::process::CommandExt;
 
 fn get_scp_address(instance_dao: &InstanceDao, location: &str) -> Result<String, Error> {
     Ok(if location.contains(':') {
@@ -29,18 +28,17 @@ pub fn scp(
     let from = &get_scp_address(instance_dao, from)?;
     let to = &get_scp_address(instance_dao, to)?;
 
-    Err(Error::Io(
-        Scp::new()
-            .set_root_dir(env::var("SNAP").unwrap_or_default().as_str())
-            .set_verbose(verbosity.is_verbose())
-            .set_known_hosts_file(
-                env::var("HOME")
-                    .map(|dir| format!("{dir}/.ssh/known_hosts"))
-                    .ok(),
-            )
-            .set_private_keys(get_ssh_private_key_names()?)
-            .set_args(scp_args.as_ref().unwrap_or(&String::new()))
-            .copy(from, to)
-            .exec(),
-    ))
+    Scp::new()
+        .set_root_dir(env::var("SNAP").unwrap_or_default().as_str())
+        .set_verbose(verbosity.is_verbose())
+        .set_known_hosts_file(
+            env::var("HOME")
+                .map(|dir| format!("{dir}/.ssh/known_hosts"))
+                .ok(),
+        )
+        .set_private_keys(get_ssh_private_key_names()?)
+        .set_args(scp_args.as_ref().unwrap_or(&String::new()))
+        .copy(from, to)
+        .set_stdout(!verbosity.is_quiet())
+        .run()
 }
