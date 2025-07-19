@@ -34,7 +34,8 @@ impl SpinnerView {
                 index += 1;
                 thread::sleep(time::Duration::from_millis(100));
             }
-            println!("\r{: ^width$}", "", width = line_length);
+            print!("\r{: ^width$}\r", "", width = line_length);
+            stdout().flush().ok();
         });
 
         SpinnerView {
