@@ -1,7 +1,6 @@
 use crate::error::Error;
 use crate::instance::{Instance, InstanceState};
 use crate::qemu::Monitor;
-use std::process::Child;
 use std::str;
 
 pub trait InstanceStore {
@@ -20,7 +19,7 @@ pub trait InstanceStore {
         instance: &Instance,
         qemu_args: &Option<String>,
         verbose: bool,
-    ) -> Result<Child, Error>;
+    ) -> Result<(), Error>;
     fn stop(&self, instance: &Instance) -> Result<(), Error>;
     fn get_state(&self, instance: &Instance) -> InstanceState;
     fn is_running(&self, instance: &Instance) -> bool;

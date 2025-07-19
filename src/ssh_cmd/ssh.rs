@@ -1,7 +1,6 @@
 use crate::fs::FS;
-use crate::util;
+use crate::util::SystemCommand;
 use std::path::Path;
-use std::process::Command;
 
 #[derive(Default)]
 pub struct Ssh {
@@ -60,8 +59,8 @@ impl Ssh {
         self
     }
 
-    pub fn connect(&self) -> Command {
-        let mut command = Command::new("ssh");
+    pub fn connect(&self) -> SystemCommand {
+        let mut command = SystemCommand::new("ssh");
 
         if let Some(ref known_hosts_file) = self.known_hosts_file {
             Path::new(known_hosts_file)
@@ -88,7 +87,7 @@ impl Ssh {
             .args(self.cmd.as_slice());
 
         if self.verbose {
-            util::print_command(&command);
+            println!("{}", command.get_command());
         }
 
         command

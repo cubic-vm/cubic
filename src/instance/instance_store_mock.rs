@@ -4,7 +4,6 @@ pub mod tests {
     use crate::error::Error;
     use crate::instance::{Instance, InstanceState, InstanceStore};
     use crate::qemu::Monitor;
-    use std::process::Child;
 
     pub struct InstanceStoreMock {
         instances: Vec<Instance>,
@@ -58,7 +57,7 @@ pub mod tests {
             _instance: &Instance,
             _qemu_args: &Option<String>,
             _verbose: bool,
-        ) -> Result<Child, Error> {
+        ) -> Result<(), Error> {
             Result::Err(Error::UnknownCommand)
         }
 

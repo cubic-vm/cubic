@@ -2,8 +2,8 @@ use crate::error::Error;
 use crate::fs::FS;
 use crate::instance::{Instance, MountPoint};
 use crate::ssh_cmd::get_ssh_pub_keys;
+use crate::util::SystemCommand;
 use std::path::Path;
-use std::process::{Command, Stdio};
 use std::str;
 
 pub fn bytes_to_human_readable(bytes: u64) -> String {
@@ -107,7 +107,7 @@ pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(
             )?;
         }
 
-        Command::new("mkisofs")
+        SystemCommand::new("mkisofs")
             .arg("-RJ")
             .arg("-V")
             .arg("cidata")
@@ -116,13 +116,7 @@ pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(
             .arg("-graft-points")
             .arg(format!("/={user_data_path}"))
             .arg(format!("/={meta_data_path}"))
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
-            .map_err(|_| Error::UserDataCreationFailed(name.to_string()))?
-            .wait()
-            .map(|_| ())
-            .map_err(|_| Error::UserDataCreationFailed(name.to_string()))?;
+            .run()?;
     }
 
     Result::Ok(())

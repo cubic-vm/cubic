@@ -1,7 +1,6 @@
 use crate::fs::FS;
-use crate::util;
+use crate::util::SystemCommand;
 use std::path::Path;
-use std::process::Command;
 
 #[derive(Default)]
 pub struct Scp {
@@ -42,8 +41,8 @@ impl Scp {
         self
     }
 
-    pub fn copy(&self, from: &str, to: &str) -> Command {
-        let mut command = Command::new(format!("{}/usr/bin/scp", self.root_dir));
+    pub fn copy(&self, from: &str, to: &str) -> SystemCommand {
+        let mut command = SystemCommand::new(&format!("{}/usr/bin/scp", self.root_dir));
 
         if let Some(ref known_hosts_file) = self.known_hosts_file {
             Path::new(known_hosts_file)
@@ -58,18 +57,13 @@ impl Scp {
             .arg("-3")
             .arg("-r")
             .arg(format!("-S{}/usr/bin/ssh", self.root_dir))
-            .args(
-                self.private_keys
-                    .iter()
-                    .map(|key| format!("-i{key}"))
-                    .collect::<Vec<_>>(),
-            )
+            .args(self.private_keys.iter().map(|key| format!("-i{key}")))
             .args(self.args.split(' ').filter(|item| !item.is_empty()))
             .arg(from)
             .arg(to);
 
         if self.verbose {
-            util::print_command(&command);
+            println!("{}", command.get_command());
         }
 
         command
@@ -79,17 +73,13 @@ impl Scp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::ffi::OsStr;
 
     #[test]
     fn test_scp_minimal() {
         let cmd = Scp::new().copy("/from/file", "/to/file");
-        let args: Vec<&OsStr> = cmd.get_args().collect();
-
-        assert_eq!(cmd.get_program(), "/usr/bin/scp");
         assert_eq!(
-            args,
-            &["-3", "-r", "-S/usr/bin/ssh", "/from/file", "/to/file"]
+            cmd.get_command(),
+            "/usr/bin/scp -3 -r -S/usr/bin/ssh /from/file /to/file"
         );
     }
 
@@ -98,19 +88,7 @@ mod tests {
         let cmd = Scp::new()
             .set_root_dir("/snap/cubic/current")
             .copy("/from/file", "/to/file");
-        let args: Vec<&OsStr> = cmd.get_args().collect();
-
-        assert_eq!(cmd.get_program(), "/snap/cubic/current/usr/bin/scp");
-        assert_eq!(
-            args,
-            &[
-                "-3",
-                "-r",
-                "-S/snap/cubic/current/usr/bin/ssh",
-                "/from/file",
-                "/to/file"
-            ]
-        );
+        assert_eq!(cmd.get_command(), "/snap/cubic/current/usr/bin/scp -3 -r -S/snap/cubic/current/usr/bin/ssh /from/file /to/file");
     }
 
     #[test]
@@ -125,24 +103,8 @@ mod tests {
             ])
             .set_args("-myarg1 -myarg2 -myarg3")
             .copy("/from/file", "/to/file");
-        let args: Vec<&OsStr> = cmd.get_args().collect();
 
-        assert_eq!(cmd.get_program(), "/snap/cubic/current/usr/bin/scp");
-        assert_eq!(
-            args,
-            &[
-                "-oUserKnownHostsFile=/home/test/.ssh/known_hosts",
-                "-3",
-                "-r",
-                "-S/snap/cubic/current/usr/bin/ssh",
-                "-i/home/cubic/.ssh/id_rsa",
-                "-i/home/cubic/.ssh/id_ed25519",
-                "-myarg1",
-                "-myarg2",
-                "-myarg3",
-                "/from/file",
-                "/to/file"
-            ]
+        assert_eq!(cmd.get_command(), "/snap/cubic/current/usr/bin/scp -oUserKnownHostsFile=/home/test/.ssh/known_hosts -3 -r -S/snap/cubic/current/usr/bin/ssh -i/home/cubic/.ssh/id_rsa -i/home/cubic/.ssh/id_ed25519 -myarg1 -myarg2 -myarg3 /from/file /to/file"
         );
     }
 }
