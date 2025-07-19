@@ -52,15 +52,6 @@ pub mod tests {
             Result::Err(Error::UnknownCommand)
         }
 
-        fn start(
-            &self,
-            _instance: &Instance,
-            _qemu_args: &Option<String>,
-            _verbose: bool,
-        ) -> Result<(), Error> {
-            Result::Err(Error::UnknownCommand)
-        }
-
         fn stop(&self, _instance: &Instance) -> Result<(), Error> {
             Result::Err(Error::UnknownCommand)
         }

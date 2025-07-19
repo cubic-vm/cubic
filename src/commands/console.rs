@@ -1,6 +1,6 @@
 use crate::commands::{self, Verbosity};
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore};
+use crate::instance::InstanceDao;
 use crate::util::Terminal;
 
 use std::path::Path;
@@ -9,16 +9,12 @@ use std::thread;
 use std::time::Duration;
 
 pub fn console(instance_dao: &InstanceDao, name: &str) -> Result<(), Error> {
-    let instance = instance_dao.load(name)?;
-
-    if !instance_dao.is_running(&instance) {
-        commands::start(
-            instance_dao,
-            &None,
-            Verbosity::Quiet,
-            &vec![name.to_string()],
-        )?;
-    }
+    commands::start(
+        instance_dao,
+        &None,
+        Verbosity::Quiet,
+        &vec![name.to_string()],
+    )?;
 
     let console_path = format!("{}/{}/console", instance_dao.cache_dir, name);
     while !Path::new(&console_path).exists() {

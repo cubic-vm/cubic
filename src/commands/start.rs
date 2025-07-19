@@ -1,7 +1,7 @@
+use crate::actions::StartInstanceAction;
 use crate::commands::Verbosity;
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore};
-use crate::ssh_cmd::PortChecker;
 use crate::view::SpinnerView;
 use std::thread::sleep;
 use std::time::Duration;
@@ -12,42 +12,30 @@ pub fn start(
     verbosity: Verbosity,
     instance_names: &Vec<String>,
 ) -> Result<(), Error> {
-    let mut spinner = (!verbosity.is_quiet()).then(|| SpinnerView::new("Starting instance(s)"));
-
+    // Launch virtual machine instances
+    let mut actions = Vec::new();
     for name in instance_names {
-        if !instance_dao.exists(name) {
-            if let Some(ref mut spinner) = &mut spinner {
-                spinner.stop()
-            }
-            return Result::Err(Error::UnknownInstance(name.clone()));
+        let instance = &instance_dao.load(name)?;
+        if !instance_dao.is_running(instance) {
+            let mut action = StartInstanceAction::new(instance);
+            action.run(
+                instance_dao,
+                &instance_dao.instance_dir,
+                &instance_dao.cache_dir,
+                qemu_args,
+                verbosity.is_verbose(),
+            )?;
+
+            actions.push(action);
         }
     }
 
-    let mut instances = Vec::new();
-    for name in instance_names {
-        let instance = instance_dao.load(name)?;
-        if !instance_dao.is_running(&instance) {
-            let result = instance_dao.start(&instance, qemu_args, verbosity.is_verbose());
-            if result.is_err() {
-                if let Some(ref mut spinner) = &mut spinner {
-                    spinner.stop()
-                }
-            }
-            result?;
-        }
-        instances.push(instance);
-    }
-
+    // Wait for virtual machine instances to be started
     if !verbosity.is_quiet() {
-        while !instances
-            .iter()
-            .all(|instance| PortChecker::new(instance.ssh_port).try_connect())
-        {
+        let mut spinner = SpinnerView::new("Starting instance(s)");
+        while actions.iter().any(|a| !a.is_done()) {
             sleep(Duration::from_secs(1));
         }
-    }
-
-    if let Some(ref mut spinner) = &mut spinner {
         spinner.stop()
     }
 
