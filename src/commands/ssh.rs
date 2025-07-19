@@ -1,7 +1,7 @@
 use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore};
-use crate::ssh_cmd::{get_ssh_private_key_names, PortChecker, Ssh};
+use crate::ssh_cmd::{get_ssh_private_key_names, Ssh};
 use crate::view::SpinnerView;
 use std::env;
 use std::thread;
@@ -44,20 +44,7 @@ pub fn ssh(
     let user = get_user_name(target)?.unwrap_or(instance.user.to_string());
     let ssh_port = instance.ssh_port;
 
-    if instance_dao.is_running(&instance) {
-        let spinner = (!verbosity.is_quiet()).then(|| SpinnerView::new("Connecting to instance"));
-
-        // Waiting for SSH server to be available
-        while !PortChecker::new(ssh_port).try_connect() {
-            thread::sleep(Duration::from_secs(1));
-        }
-
-        if let Some(mut s) = spinner {
-            s.stop()
-        }
-    } else {
-        commands::start(instance_dao, &None, verbosity, &vec![name.to_string()])?;
-    }
+    commands::start(instance_dao, &None, verbosity, &vec![name.to_string()])?;
 
     let mut ssh = None;
     let mut start_time = Instant::now();

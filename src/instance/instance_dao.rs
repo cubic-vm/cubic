@@ -1,4 +1,3 @@
-use crate::emulator::Emulator;
 use crate::error::Error;
 use crate::fs::FS;
 use crate::instance::{Instance, InstanceState, InstanceStore};
@@ -152,49 +151,6 @@ impl InstanceStore for InstanceDao {
                 .ok();
             Ok(())
         }
-    }
-
-    fn start(
-        &self,
-        instance: &Instance,
-        qemu_args: &Option<String>,
-        verbose: bool,
-    ) -> Result<(), Error> {
-        if self.is_running(instance) {
-            return Result::Err(Error::InstanceIsRunning(instance.name.to_string()));
-        }
-
-        let instance_dir = format!("{}/{}", &self.instance_dir, &instance.name);
-        let cache_dir = format!("{}/{}", &self.cache_dir, &instance.name);
-        util::setup_cloud_init(instance, &cache_dir, false)?;
-
-        let mut emulator = Emulator::from(instance.arch)?;
-        emulator.set_cpus(instance.cpus);
-        emulator.set_memory(instance.mem);
-        emulator.set_console(&format!("{cache_dir}/console"));
-        emulator.add_drive(&format!("{instance_dir}/machine.img"), "qcow2");
-        emulator.add_drive(&format!("{cache_dir}/user-data.img"), "raw");
-        emulator.set_network(&instance.hostfwd, instance.ssh_port);
-        if let Some(ref args) = qemu_args {
-            emulator.set_qemu_args(args);
-        }
-        emulator.set_verbose(verbose);
-        emulator.set_pid_file(&format!("{cache_dir}/qemu.pid"));
-
-        if let Ok(qemu_root) = std::env::var("SNAP") {
-            emulator.add_env(
-                "QEMU_MODULE_DIR",
-                "/snap/cubic/current/usr/lib/x86_64-linux-gnu/qemu",
-            );
-            emulator.add_search_path(&format!("{qemu_root}/usr/share/qemu"));
-            emulator.add_search_path(&format!("{qemu_root}/usr/share/qemu-efi-aarch64"));
-            emulator.add_search_path(&format!("{qemu_root}/usr/share/seabios"));
-            emulator.add_search_path(&format!("{qemu_root}/usr/lib/ipxe/qemu"));
-        }
-
-        emulator.add_qmp("qmp", &format!("{cache_dir}/monitor.socket"));
-        emulator.add_guest_agent("guest-agent", &format!("{cache_dir}/guest-agent.socket"));
-        emulator.run()
     }
 
     fn stop(&self, instance: &Instance) -> Result<(), Error> {
