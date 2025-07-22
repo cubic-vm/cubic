@@ -1,6 +1,7 @@
+use crate::actions::StopInstanceAction;
 use crate::commands::Verbosity;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceState, InstanceStore};
+use crate::instance::{InstanceDao, InstanceStore};
 use crate::view::SpinnerView;
 use std::thread;
 use std::time::Duration;
@@ -9,37 +10,28 @@ pub fn stop(
     instance_dao: &InstanceDao,
     all: bool,
     verbosity: Verbosity,
-    instances: &Vec<String>,
+    instances: &[String],
 ) -> Result<(), Error> {
-    for instance in instances {
-        if !instance_dao.exists(instance) {
-            return Result::Err(Error::UnknownInstance(instance.clone()));
-        }
-    }
-
     let stop_instances = if all {
         instance_dao.get_instances()
     } else {
-        instances.clone()
+        instances.to_vec()
     };
 
-    let mut instances = Vec::new();
+    let mut actions = Vec::new();
     for instance in stop_instances {
-        let instance = instance_dao.load(&instance)?;
-        instance_dao.stop(&instance)?;
-        instances.push(instance);
+        let mut action = StopInstanceAction::new(&instance_dao.load(&instance)?);
+        action.run(instance_dao)?;
+        actions.push(action);
     }
 
     if !verbosity.is_quiet() {
         let mut spinner = SpinnerView::new("Stopping instance(s)");
-        while instances
-            .iter()
-            .any(|instance| instance_dao.get_state(instance) != InstanceState::Stopped)
-        {
+        while actions.iter().any(|action| !action.is_done(instance_dao)) {
             thread::sleep(Duration::from_secs(1))
         }
         spinner.stop();
     }
 
-    Result::Ok(())
+    Ok(())
 }

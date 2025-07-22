@@ -52,10 +52,6 @@ pub mod tests {
             Result::Err(Error::UnknownCommand)
         }
 
-        fn stop(&self, _instance: &Instance) -> Result<(), Error> {
-            Result::Err(Error::UnknownCommand)
-        }
-
         fn get_state(&self, _instance: &Instance) -> InstanceState {
             InstanceState::Stopped
         }
