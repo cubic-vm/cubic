@@ -153,14 +153,6 @@ impl InstanceStore for InstanceDao {
         }
     }
 
-    fn stop(&self, instance: &Instance) -> Result<(), Error> {
-        if !self.is_running(instance) {
-            return Result::Ok(());
-        }
-
-        self.get_monitor(instance)?.shutdown()
-    }
-
     fn get_state(&self, instance: &Instance) -> InstanceState {
         if self.is_running(instance) {
             if PortChecker::new(instance.ssh_port).try_connect() {
