@@ -46,7 +46,6 @@ impl Emulator {
         // Disable display
         command.arg("-display").arg("none");
 
-
         // Sandbox
         #[cfg(feature = "qemu-sandbox")]
         command.arg("-sandbox").arg("on");
@@ -71,12 +70,6 @@ impl Emulator {
 
     pub fn set_memory(&mut self, memory: u64) {
         self.command.arg("-m").arg(format!("{}B", memory));
-    }
-
-    pub fn add_virtio_serial(&mut self, name: &str) {
-        self.command
-            .arg("-device")
-            .arg(format!("virtio-serial,id={name},max_ports=32"));
     }
 
     pub fn add_qmp(&mut self, name: &str, path: &str) {
