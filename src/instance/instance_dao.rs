@@ -194,8 +194,6 @@ impl InstanceStore for InstanceDao {
 
         emulator.add_qmp("qmp", &format!("{cache_dir}/monitor.socket"));
         emulator.add_guest_agent("guest-agent", &format!("{cache_dir}/guest-agent.socket"));
-
-        emulator.add_virtio_serial("sh_serial");
         emulator.run()
     }
 
