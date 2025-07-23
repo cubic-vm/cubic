@@ -31,8 +31,6 @@ impl InstanceInfoCommand {
             &util::bytes_to_human_readable(instance.disk_capacity),
         );
         view.add("User", &instance.user);
-        view.add("Display", &instance.display.to_string());
-        view.add("GPU", &instance.gpu.to_string());
         view.add("SSH Port", &instance.ssh_port.to_string());
 
         for (index, rule) in instance.hostfwd.iter().enumerate() {
@@ -65,8 +63,6 @@ mod tests {
             mem: 1024,
             disk_capacity: 1048576,
             ssh_port: 9000,
-            display: false,
-            gpu: false,
             hostfwd: Vec::new(),
         }]);
 
@@ -82,8 +78,6 @@ CPUs:     1
 Memory:   1.0 KiB
 Disk:     1.0 MiB
 User:     cubic
-Display:  false
-GPU:      false
 SSH Port: 9000
 "
         );
