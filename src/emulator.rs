@@ -43,6 +43,9 @@ impl Emulator {
             .arg("tcg");
         // Only boot disk
         command.arg("-boot").arg("c");
+        // Disable display
+        command.arg("-display").arg("none");
+
 
         // Sandbox
         #[cfg(feature = "qemu-sandbox")]
@@ -126,21 +129,6 @@ impl Emulator {
         self.command
             .arg("-drive")
             .arg(format!("if=virtio,format={format},file={path}"));
-    }
-
-    pub fn set_display(&mut self, display: bool, gpu: bool) {
-        self.command.arg("-display");
-        if display {
-            self.command.arg("gtk,gl=on");
-            self.command.arg("-device");
-            if gpu {
-                self.command.arg("virtio-gpu-gl");
-            } else {
-                self.command.arg("virtio-gpu");
-            }
-        } else {
-            self.command.arg("none");
-        }
     }
 
     pub fn set_qemu_args(&mut self, args: &str) {

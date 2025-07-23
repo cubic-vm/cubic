@@ -28,10 +28,6 @@ pub struct Instance {
     pub disk_capacity: u64,
     pub ssh_port: u16,
     #[serde(default)]
-    pub display: bool,
-    #[serde(default)]
-    pub gpu: bool,
-    #[serde(default)]
     pub hostfwd: Vec<String>,
 }
 
@@ -90,8 +86,6 @@ machine:
         assert_eq!(instance.mem, 1073741824);
         assert_eq!(instance.disk_capacity, 2361393152);
         assert_eq!(instance.ssh_port, 14357);
-        assert!(!instance.display);
-        assert!(!instance.gpu);
         assert!(instance.hostfwd.is_empty());
     }
 
@@ -105,8 +99,6 @@ machine:
   mem: 1073741824
   disk_capacity: 2361393152
   ssh_port: 14357
-  display: false
-  gpu: false
   hostfwd: ["tcp:127.0.0.1:8000-:8000", "tcp:127.0.0.1:9000-:10000"]
 "#
             .as_bytes(),
@@ -119,8 +111,6 @@ machine:
         assert_eq!(instance.mem, 1073741824);
         assert_eq!(instance.disk_capacity, 2361393152);
         assert_eq!(instance.ssh_port, 14357);
-        assert!(!instance.display);
-        assert!(!instance.gpu);
         assert_eq!(
             instance.hostfwd,
             ["tcp:127.0.0.1:8000-:8000", "tcp:127.0.0.1:9000-:10000"]
@@ -137,8 +127,6 @@ machine:
   mem: 1073741824
   disk_capacity: 2361393152
   ssh_port: 14357
-  display: true
-  gpu: true
   hostfwd:
 "#
             .as_bytes(),
@@ -151,8 +139,6 @@ machine:
         assert_eq!(instance.mem, 1073741824);
         assert_eq!(instance.disk_capacity, 2361393152);
         assert_eq!(instance.ssh_port, 14357);
-        assert!(instance.display);
-        assert!(instance.gpu);
         assert!(instance.hostfwd.is_empty());
     }
 
@@ -168,8 +154,6 @@ machine:
             mem: 1000,
             disk_capacity: 1000,
             ssh_port: 10000,
-            display: false,
-            gpu: false,
             hostfwd: Vec::new(),
         }
         .serialize(&mut writer)
@@ -185,8 +169,6 @@ machine:
   mem: 1000
   disk_capacity: 1000
   ssh_port: 10000
-  display: false
-  gpu: false
   hostfwd: []
 "#
         );

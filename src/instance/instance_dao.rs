@@ -175,7 +175,6 @@ impl InstanceStore for InstanceDao {
         emulator.add_drive(&format!("{instance_dir}/machine.img"), "qcow2");
         emulator.add_drive(&format!("{cache_dir}/user-data.img"), "raw");
         emulator.set_network(&instance.hostfwd, instance.ssh_port);
-        emulator.set_display(instance.display, instance.gpu);
         if let Some(ref args) = qemu_args {
             emulator.set_qemu_args(args);
         }

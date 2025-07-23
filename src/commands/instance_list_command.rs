@@ -81,8 +81,6 @@ mod tests {
                 mem: 1024,
                 disk_capacity: 1048576,
                 ssh_port: 9000,
-                display: false,
-                gpu: false,
                 hostfwd: Vec::new(),
             },
             Instance {
@@ -93,8 +91,6 @@ mod tests {
                 mem: 0,
                 disk_capacity: 5000,
                 ssh_port: 9000,
-                display: false,
-                gpu: false,
                 hostfwd: Vec::new(),
             },
         ]);
