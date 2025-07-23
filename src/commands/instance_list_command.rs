@@ -83,7 +83,6 @@ mod tests {
                 ssh_port: 9000,
                 display: false,
                 gpu: false,
-                mounts: Vec::new(),
                 hostfwd: Vec::new(),
             },
             Instance {
@@ -96,7 +95,6 @@ mod tests {
                 ssh_port: 9000,
                 display: false,
                 gpu: false,
-                mounts: Vec::new(),
                 hostfwd: Vec::new(),
             },
         ]);

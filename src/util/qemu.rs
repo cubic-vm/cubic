@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::fs::FS;
-use crate::instance::{Instance, MountPoint};
+use crate::instance::Instance;
 use crate::ssh_cmd::get_ssh_pub_keys;
 use crate::util::SystemCommand;
 use std::path::Path;
@@ -57,14 +57,6 @@ pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(
             )?;
         }
 
-        let mut bootcmds = String::new();
-        if !instance.mounts.is_empty() {
-            bootcmds += "bootcmd:\n";
-            for (index, MountPoint { guest, .. }) in instance.mounts.iter().enumerate() {
-                bootcmds += &format!("  - mount -t 9p cubic{index} {guest}\n");
-            }
-        }
-
         if force || !Path::new(&user_data_path).exists() {
             let ssh_pk = if let Ok(ssh_keys) = get_ssh_pub_keys() {
                 format!(
@@ -94,7 +86,6 @@ pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(
                     ssh_pwauth: True\n\
                     packages:\n\
                     \u{20}\u{20}- openssh\n\
-                    {bootcmds}\n\
                     runcmd:\n\
                     \u{20}\u{20}- \
                         apt update; apt install -y qemu-guest-agent socat; \

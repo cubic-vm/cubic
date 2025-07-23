@@ -128,18 +128,6 @@ impl Emulator {
             .arg(format!("if=virtio,format={format},file={path}"));
     }
 
-    pub fn add_mount(&mut self, name: &str, path: &str) {
-        self.command
-            .arg("-fsdev")
-            .arg(format!(
-                "local,security_model=mapped,id={name}_dev,multidevs=remap,path={path}"
-            ))
-            .arg("-device")
-            .arg(format!(
-                "virtio-9p-pci,id={name},fsdev={name}_dev,mount_tag=cubic{name}"
-            ));
-    }
-
     pub fn set_display(&mut self, display: bool, gpu: bool) {
         self.command.arg("-display");
         if display {
