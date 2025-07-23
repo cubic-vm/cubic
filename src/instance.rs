@@ -15,12 +15,6 @@ fn default_user() -> String {
     USER.to_string()
 }
 
-#[derive(PartialEq, Default, Debug, Clone, Serialize, Deserialize)]
-pub struct MountPoint {
-    pub host: String,
-    pub guest: String,
-}
-
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Instance {
     #[serde(skip)]
@@ -37,8 +31,6 @@ pub struct Instance {
     pub display: bool,
     #[serde(default)]
     pub gpu: bool,
-    #[serde(default)]
-    pub mounts: Vec<MountPoint>,
     #[serde(default)]
     pub hostfwd: Vec<String>,
 }
@@ -100,7 +92,6 @@ machine:
         assert_eq!(instance.ssh_port, 14357);
         assert!(!instance.display);
         assert!(!instance.gpu);
-        assert!(instance.mounts.is_empty());
         assert!(instance.hostfwd.is_empty());
     }
 
@@ -116,9 +107,6 @@ machine:
   ssh_port: 14357
   display: false
   gpu: false
-  mounts:
-    - host: /home/tux/guest
-      guest: /home/tux
   hostfwd: ["tcp:127.0.0.1:8000-:8000", "tcp:127.0.0.1:9000-:10000"]
 "#
             .as_bytes(),
@@ -133,13 +121,6 @@ machine:
         assert_eq!(instance.ssh_port, 14357);
         assert!(!instance.display);
         assert!(!instance.gpu);
-        assert_eq!(
-            instance.mounts,
-            [MountPoint {
-                host: "/home/tux/guest".to_string(),
-                guest: "/home/tux".to_string()
-            }]
-        );
         assert_eq!(
             instance.hostfwd,
             ["tcp:127.0.0.1:8000-:8000", "tcp:127.0.0.1:9000-:10000"]
@@ -158,7 +139,6 @@ machine:
   ssh_port: 14357
   display: true
   gpu: true
-  mounts:
   hostfwd:
 "#
             .as_bytes(),
@@ -173,7 +153,6 @@ machine:
         assert_eq!(instance.ssh_port, 14357);
         assert!(instance.display);
         assert!(instance.gpu);
-        assert!(instance.mounts.is_empty());
         assert!(instance.hostfwd.is_empty());
     }
 
@@ -191,7 +170,6 @@ machine:
             ssh_port: 10000,
             display: false,
             gpu: false,
-            mounts: Vec::new(),
             hostfwd: Vec::new(),
         }
         .serialize(&mut writer)
@@ -209,7 +187,6 @@ machine:
   ssh_port: 10000
   display: false
   gpu: false
-  mounts: []
   hostfwd: []
 "#
         );

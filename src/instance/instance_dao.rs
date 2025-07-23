@@ -1,7 +1,7 @@
 use crate::emulator::Emulator;
 use crate::error::Error;
 use crate::fs::FS;
-use crate::instance::{Instance, InstanceState, InstanceStore, MountPoint};
+use crate::instance::{Instance, InstanceState, InstanceStore};
 use crate::qemu::Monitor;
 use crate::ssh_cmd::PortChecker;
 use crate::util;
@@ -175,9 +175,6 @@ impl InstanceStore for InstanceDao {
         emulator.add_drive(&format!("{instance_dir}/machine.img"), "qcow2");
         emulator.add_drive(&format!("{cache_dir}/user-data.img"), "raw");
         emulator.set_network(&instance.hostfwd, instance.ssh_port);
-        for (index, MountPoint { ref host, .. }) in instance.mounts.iter().enumerate() {
-            emulator.add_mount(&format!("cubicdev{index}"), host);
-        }
         emulator.set_display(instance.display, instance.gpu);
         if let Some(ref args) = qemu_args {
             emulator.set_qemu_args(args);

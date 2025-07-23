@@ -35,11 +35,6 @@ impl InstanceInfoCommand {
         view.add("GPU", &instance.gpu.to_string());
         view.add("SSH Port", &instance.ssh_port.to_string());
 
-        for (index, mount) in instance.mounts.iter().enumerate() {
-            let key = if index == 0 { "Mounts" } else { "" };
-            view.add(key, &format!("{} => {}", mount.host, mount.guest));
-        }
-
         for (index, rule) in instance.hostfwd.iter().enumerate() {
             let key = if index == 0 { "Forward" } else { "" };
             view.add(key, rule);
@@ -56,7 +51,7 @@ mod tests {
     use super::*;
     use crate::arch::Arch;
     use crate::instance::instance_store_mock::tests::InstanceStoreMock;
-    use crate::instance::{Instance, MountPoint};
+    use crate::instance::Instance;
     use crate::view::console_mock::tests::ConsoleMock;
 
     #[test]
@@ -72,16 +67,6 @@ mod tests {
             ssh_port: 9000,
             display: false,
             gpu: false,
-            mounts: vec![
-                MountPoint {
-                    host: "/host/path".to_string(),
-                    guest: "/guest/path".to_string(),
-                },
-                MountPoint {
-                    host: "/host/path2".to_string(),
-                    guest: "/guest/path2".to_string(),
-                },
-            ],
             hostfwd: Vec::new(),
         }]);
 
@@ -100,8 +85,6 @@ User:     cubic
 Display:  false
 GPU:      false
 SSH Port: 9000
-Mounts:   /host/path => /guest/path
-          /host/path2 => /guest/path2
 "
         );
     }
