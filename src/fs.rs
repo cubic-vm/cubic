@@ -74,6 +74,10 @@ impl FS {
         fs::File::open(path).map_err(|e| Error::FS(format!("Cannot open file '{path}' ({e})")))
     }
 
+    pub fn path_exists(&self, path: &str) -> bool {
+        Path::new(path).exists()
+    }
+
     pub fn copy_file(&self, from: &str, to: &str) -> Result<(), Error> {
         fs::copy(from, to)
             .map(|_| ())

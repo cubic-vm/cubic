@@ -166,9 +166,8 @@ impl InstanceStore for InstanceDao {
     }
 
     fn is_running(&self, instance: &Instance) -> bool {
-        self.get_pid(instance)
-            .map(|pid| Path::new(&format!("/proc/{pid}")).exists())
-            .unwrap_or(false)
+        self.fs
+            .path_exists(&format!("{}/{}/qemu.pid", self.cache_dir, instance.name))
     }
 
     fn get_pid(&self, instance: &Instance) -> Result<u64, ()> {
