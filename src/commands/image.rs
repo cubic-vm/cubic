@@ -1,3 +1,4 @@
+use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
 use crate::image::{Image, ImageDao, ImageFactory, ImageFetcher};
@@ -7,9 +8,9 @@ use crate::view::{Alignment, TableView};
 use crate::view::{MapView, Stdio};
 use clap::Subcommand;
 
-fn fetch_image_list() -> Vec<Image> {
+fn fetch_image_list(env: &Environment) -> Vec<Image> {
     let mut spinner = SpinnerView::new("Fetching image list");
-    let images: Vec<Image> = ImageFactory::create_images().unwrap_or_default();
+    let images: Vec<Image> = ImageFactory::new(env).create_images().unwrap_or_default();
     spinner.stop();
     images
 }
@@ -46,7 +47,7 @@ impl ImageCommands {
 
         match self {
             ImageCommands::Ls { .. } => {
-                let images = fetch_image_list();
+                let images = fetch_image_list(&image_dao.env);
 
                 let mut view = TableView::new();
                 view.add_row()
@@ -83,7 +84,7 @@ impl ImageCommands {
             }
 
             ImageCommands::Info { name } => {
-                fetch_image_list();
+                fetch_image_list(&image_dao.env);
                 let image = image_dao.get(name)?;
                 let mut view = MapView::new();
                 view.add("Vendor", &image.vendor);
@@ -95,14 +96,14 @@ impl ImageCommands {
             }
 
             ImageCommands::Fetch { image } => {
-                fetch_image_list();
+                fetch_image_list(&image_dao.env);
                 let image = &image_dao.get(image)?;
 
                 if !image_dao.exists(image) {
-                    FS::new().create_dir(&image_dao.image_dir)?;
+                    FS::new().create_dir(&image_dao.env.get_image_dir())?;
                     ImageFetcher::new().fetch(
                         image,
-                        &format!("{}/{}", image_dao.image_dir, image.to_file_name()),
+                        &format!("{}/{}", image_dao.env.get_image_dir(), image.to_file_name()),
                     )?;
                 }
 

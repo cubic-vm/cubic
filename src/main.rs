@@ -2,6 +2,7 @@ mod actions;
 mod arch;
 mod commands;
 mod emulator;
+mod env;
 mod error;
 mod fs;
 mod image;

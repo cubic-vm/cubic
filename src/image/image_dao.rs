@@ -1,14 +1,14 @@
 use crate::arch::Arch;
+use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
 use crate::image::{Image, ImageFactory};
-use crate::util;
 use std::path::Path;
 use std::str;
 
 pub struct ImageDao {
     fs: FS,
-    pub image_dir: String,
+    pub env: Environment,
 }
 
 #[cfg(target_arch = "aarch64")]
@@ -22,12 +22,13 @@ fn get_default_arch() -> Arch {
 }
 
 impl ImageDao {
-    pub fn new() -> Result<Self, Error> {
+    pub fn new(env: &Environment) -> Result<Self, Error> {
         let fs = FS::new();
-        let image_dir = util::get_image_data_dir()?;
-        fs.setup_directory_access(&image_dir)?;
-
-        Result::Ok(ImageDao { fs, image_dir })
+        fs.setup_directory_access(&env.get_image_dir())?;
+        Result::Ok(ImageDao {
+            fs,
+            env: env.clone(),
+        })
     }
 
     pub fn get(&self, id: &str) -> Result<Image, Error> {
@@ -45,7 +46,8 @@ impl ImageDao {
             .map(Arch::from_str)
             .unwrap_or(Ok(get_default_arch()))?;
 
-        ImageFactory::create_images()?
+        ImageFactory::new(&self.env)
+            .create_images()?
             .iter()
             .find(|image| {
                 (image.vendor == vendor)
@@ -56,20 +58,25 @@ impl ImageDao {
             .ok_or(Error::UnknownImage(id.to_string()))
     }
 
-    pub fn copy_image(&self, image: &Image, dir: &str, name: &str) -> Result<(), Error> {
-        let path = format!("{}/{}", self.image_dir, image.to_file_name());
-        self.fs.create_dir(dir)?;
-        self.fs.copy_file(&path, &format!("{dir}/{name}"))
+    pub fn copy_image(&self, image: &Image, name: &str) -> Result<(), Error> {
+        self.fs.create_dir(&self.env.get_instance_dir2(name))?;
+        self.fs.copy_file(
+            &self.env.get_image_file(&image.to_file_name()),
+            &self.env.get_instance_image_file(name),
+        )
     }
 
     pub fn exists(&self, image: &Image) -> bool {
-        Path::new(&format!("{}/{}", self.image_dir, image.to_file_name())).exists()
+        Path::new(&format!(
+            "{}/{}",
+            self.env.get_image_dir(),
+            image.to_file_name()
+        ))
+        .exists()
     }
 
     pub fn prune(&self) -> Result<(), Error> {
-        util::get_image_cache_file()
-            .map(|path| self.fs.remove_file(&path))
-            .ok();
-        self.fs.remove_dir(&self.image_dir)
+        self.fs.remove_file(&self.env.get_image_cache_file()).ok();
+        self.fs.remove_dir(&self.env.get_image_dir())
     }
 }

@@ -43,10 +43,7 @@ impl InstanceAddCommand {
         }
         .dispatch(image_dao)?;
         let image = image_dao.get(&self.image)?;
-
-        let instance_dir = format!("{}/{}", instance_dao.instance_dir, &self.name);
-
-        image_dao.copy_image(&image, &instance_dir, "machine.img")?;
+        image_dao.copy_image(&image, &self.name)?;
 
         let disk_capacity =
             util::human_readable_to_bytes(self.disk.as_deref().unwrap_or(DEFAULT_DISK_SIZE))?;

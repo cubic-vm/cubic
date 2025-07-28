@@ -2,6 +2,7 @@ use crate::commands::{
     self, InstanceAddCommand, InstanceCloneCommand, InstanceConfigCommand, InstanceInfoCommand,
     InstanceListCommand, InstanceRemoveCommand, InstanceRenameCommand, Verbosity,
 };
+use crate::env::EnvironmentFactory;
 use crate::error::Error;
 use crate::image::ImageDao;
 use crate::instance::InstanceDao;
@@ -230,8 +231,9 @@ impl CommandDispatcher {
         let command = Self::parse().command.ok_or(Error::UnknownCommand)?;
 
         let console: &mut dyn Console = &mut Stdio::new();
-        let image_dao = ImageDao::new()?;
-        let instance_dao = InstanceDao::new()?;
+        let env = EnvironmentFactory::create_env()?;
+        let image_dao = ImageDao::new(&env)?;
+        let instance_dao = InstanceDao::new(&env)?;
 
         match &command {
             Commands::Run {

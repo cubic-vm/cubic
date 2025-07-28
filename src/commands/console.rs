@@ -16,7 +16,7 @@ pub fn console(instance_dao: &InstanceDao, name: &str) -> Result<(), Error> {
         &vec![name.to_string()],
     )?;
 
-    let console_path = format!("{}/{}/console", instance_dao.cache_dir, name);
+    let console_path = instance_dao.env.get_console_file(name);
     while !Path::new(&console_path).exists() {
         thread::sleep(Duration::new(1, 0));
     }

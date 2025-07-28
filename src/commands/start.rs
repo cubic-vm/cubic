@@ -20,8 +20,7 @@ pub fn start(
             let mut action = StartInstanceAction::new(instance);
             action.run(
                 instance_dao,
-                &instance_dao.instance_dir,
-                &instance_dao.cache_dir,
+                &instance_dao.env,
                 qemu_args,
                 verbosity.is_verbose(),
             )?;

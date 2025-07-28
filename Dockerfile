@@ -4,7 +4,9 @@ WORKDIR /usr/local/app
 COPY . .
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV XDG_RUNTIME_DIR=/tmp
+ENV XDG_DATA_HOME=/tmp/data
+ENV XDG_CACHE_HOME=/tmp/cache
+ENV XDG_RUNTIME_DIR=/tmp/runtime
 RUN apt update && \
     apt install -y \
         qemu-utils \
