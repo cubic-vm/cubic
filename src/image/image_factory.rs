@@ -1,8 +1,8 @@
 use crate::arch::Arch;
+use crate::env::Environment;
 use crate::error::Error;
 use crate::image::Image;
 use crate::image::ImageCache;
-use crate::util;
 use crate::web::WebClient;
 use regex::Regex;
 use std::collections::HashMap;
@@ -139,9 +139,15 @@ fn get_timestamp() -> u64 {
         .unwrap_or_default()
 }
 
-pub struct ImageFactory;
+pub struct ImageFactory {
+    env: Environment,
+}
 
 impl ImageFactory {
+    pub fn new(env: &Environment) -> Self {
+        Self { env: env.clone() }
+    }
+
     fn match_content(web: &mut WebClient, url: &str, pattern: &LazyLock<Regex>) -> Vec<String> {
         web.download_content(url)
             .map(|content| {
@@ -183,29 +189,29 @@ impl ImageFactory {
         images
     }
 
-    fn read_image_cache() -> Option<ImageCache> {
-        util::get_image_cache_file()
-            .and_then(|path| File::open(path).map_err(Error::Io))
+    fn read_image_cache(&self) -> Option<ImageCache> {
+        File::open(self.env.get_image_cache_file())
+            .map_err(Error::Io)
             .and_then(|ref mut reader| ImageCache::deserialize(reader))
             .ok()
     }
 
-    fn write_image_cache(images: &[Image]) {
+    fn write_image_cache(&self, images: &[Image]) {
         let cache = ImageCache {
             images: images.to_vec(),
             timestamp: get_timestamp(),
         };
 
         // Write cache
-        util::get_image_cache_file()
-            .and_then(|path| File::create(path).map_err(Error::Io))
+        File::create(self.env.get_image_cache_file())
+            .map_err(Error::Io)
             .and_then(|mut file| cache.serialize(&mut file))
             .ok();
     }
 
-    pub fn create_images() -> Result<Vec<Image>, Error> {
+    pub fn create_images(&self) -> Result<Vec<Image>, Error> {
         // Read cache
-        let cache = Self::read_image_cache();
+        let cache = self.read_image_cache();
 
         // Use cache if valid
         if let Some(cache) = &cache {
@@ -228,7 +234,7 @@ impl ImageFactory {
             }
         } else {
             // Write cache
-            Self::write_image_cache(&images);
+            self.write_image_cache(&images);
         }
 
         Ok(images)

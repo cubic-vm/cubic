@@ -1,4 +1,5 @@
 use crate::commands::Verbosity;
+use crate::env::Environment;
 use crate::error::Error;
 use crate::qemu::Qmp;
 
@@ -7,9 +8,9 @@ pub struct Monitor {
 }
 
 impl Monitor {
-    pub fn new(path: &str) -> Result<Self, Error> {
+    pub fn new(env: &Environment, instance: &str) -> Result<Self, Error> {
         let mut monitor = Monitor {
-            qmp: Qmp::new(&format!("{path}/monitor.socket"), Verbosity::Normal)?,
+            qmp: Qmp::new(&env.get_monitor_file(instance), Verbosity::Normal)?,
         };
         monitor.init()?;
         Ok(monitor)

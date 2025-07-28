@@ -1,3 +1,4 @@
+use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
 use crate::instance::Instance;
@@ -37,27 +38,27 @@ pub fn human_readable_to_bytes(size: &str) -> Result<u64, Error> {
         .map_err(|_| Error::CannotParseSize(size.to_string()))
 }
 
-pub fn setup_cloud_init(instance: &Instance, dir: &str, force: bool) -> Result<(), Error> {
+pub fn setup_cloud_init(env: &Environment, instance: &Instance) -> Result<(), Error> {
     let fs = FS::new();
     let name = &instance.name;
     let user = &instance.user;
 
-    let user_data_img_path = format!("{dir}/user-data.img");
+    let user_data_img_path = env.get_user_data_image_file(&instance.name);
 
-    if force || !Path::new(&user_data_img_path).exists() {
-        let meta_data_path = format!("{dir}/meta-data");
-        let user_data_path = format!("{dir}/user-data");
+    if !Path::new(&user_data_img_path).exists() {
+        let meta_data_path = env.get_meta_data_file(&instance.name);
+        let user_data_path = env.get_user_data_file(&instance.name);
 
-        fs.create_dir(dir)?;
+        fs.create_dir(&env.get_instance_cache_dir(&instance.name))?;
 
-        if force || !Path::new(&meta_data_path).exists() {
+        if !Path::new(&meta_data_path).exists() {
             fs.write_file(
                 &meta_data_path,
                 format!("instance-id: {name}\nlocal-hostname: {name}\n").as_bytes(),
             )?;
         }
 
-        if force || !Path::new(&user_data_path).exists() {
+        if !Path::new(&user_data_path).exists() {
             let ssh_pk = if let Ok(ssh_keys) = get_ssh_pub_keys() {
                 format!(
                     "\u{20}\u{20}\u{20}\u{20}ssh-authorized-keys:\n{}",
