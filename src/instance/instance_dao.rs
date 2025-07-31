@@ -39,7 +39,8 @@ impl InstanceDao {
 
 impl InstanceStore for InstanceDao {
     fn get_instances(&self) -> Vec<String> {
-        self.fs
+        let mut instances: Vec<_> = self
+            .fs
             .read_dir(&self.env.get_instance_dir())
             .map_err(|_| ())
             .and_then(|entries| {
@@ -53,7 +54,9 @@ impl InstanceStore for InstanceDao {
                     .map(|entry| entry.file_name().to_str().map(|x| x.to_string()).ok_or(()))
                     .collect()
             })
-            .unwrap_or_default()
+            .unwrap_or_default();
+        instances.sort_by_key(|a| a.to_lowercase());
+        instances
     }
 
     fn exists(&self, name: &str) -> bool {
