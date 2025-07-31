@@ -13,6 +13,7 @@ pub fn console(instance_dao: &InstanceDao, name: &str) -> Result<(), Error> {
         instance_dao,
         &None,
         Verbosity::Quiet,
+        true,
         &vec![name.to_string()],
     )?;
 

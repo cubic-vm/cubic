@@ -7,6 +7,6 @@ pub fn restart(
     verbosity: Verbosity,
     instances: &Vec<String>,
 ) -> Result<(), Error> {
-    commands::stop(instance_dao, false, verbosity, instances)?;
-    commands::start(instance_dao, &None, verbosity, instances)
+    commands::stop(instance_dao, false, verbosity, true, instances)?;
+    commands::start(instance_dao, &None, verbosity, true, instances)
 }
