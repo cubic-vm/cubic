@@ -144,6 +144,9 @@ pub enum Commands {
         /// Reduce logging output
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
+        /// Wait for the virtual machine instance to be started
+        #[clap(short, long, default_value_t = false)]
+        wait: bool,
         /// Name of the virtual machine instances to start
         instances: Vec<String>,
     },
@@ -159,6 +162,9 @@ pub enum Commands {
         /// Reduce logging output
         #[clap(short, long, default_value_t = false)]
         quiet: bool,
+        /// Wait for the virtual machine instance to be stopped
+        #[clap(short, long, default_value_t = false)]
+        wait: bool,
         /// Name of the virtual machine instances to stop
         instances: Vec<String>,
     },
@@ -312,22 +318,26 @@ impl CommandDispatcher {
                 qemu_args,
                 verbose,
                 quiet,
+                wait,
                 instances,
             } => commands::start(
                 &instance_dao,
                 qemu_args,
                 Verbosity::new(*verbose, *quiet),
+                *wait,
                 instances,
             ),
             Commands::Stop {
                 instances,
                 verbose,
                 quiet,
+                wait,
                 all,
             } => commands::stop(
                 &instance_dao,
                 *all,
                 Verbosity::new(*verbose, *quiet),
+                *wait,
                 instances,
             ),
             Commands::Restart {

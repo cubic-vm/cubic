@@ -22,7 +22,7 @@ impl InstanceRemoveCommand {
 
     pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
         if self.force {
-            commands::stop(instance_dao, false, self.verbosity, &self.instances)?;
+            commands::stop(instance_dao, false, self.verbosity, true, &self.instances)?;
         }
 
         for instance in &self.instances {

@@ -10,6 +10,7 @@ pub fn stop(
     instance_dao: &InstanceDao,
     all: bool,
     verbosity: Verbosity,
+    wait: bool,
     instances: &[String],
 ) -> Result<(), Error> {
     let stop_instances = if all {
@@ -25,7 +26,7 @@ pub fn stop(
         actions.push(action);
     }
 
-    if !verbosity.is_quiet() {
+    if wait && !verbosity.is_quiet() {
         let mut spinner = SpinnerView::new("Stopping instance(s)");
         while actions.iter().any(|action| !action.is_done(instance_dao)) {
             thread::sleep(Duration::from_secs(1))

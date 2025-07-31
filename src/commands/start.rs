@@ -10,6 +10,7 @@ pub fn start(
     instance_dao: &InstanceDao,
     qemu_args: &Option<String>,
     verbosity: Verbosity,
+    wait: bool,
     instance_names: &Vec<String>,
 ) -> Result<(), Error> {
     // Launch virtual machine instances
@@ -30,7 +31,7 @@ pub fn start(
     }
 
     // Wait for virtual machine instances to be started
-    if !verbosity.is_quiet() {
+    if wait && !verbosity.is_quiet() {
         let mut spinner = SpinnerView::new("Starting instance(s)");
         while actions.iter().any(|a| !a.is_done()) {
             sleep(Duration::from_secs(1));
