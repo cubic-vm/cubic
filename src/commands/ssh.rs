@@ -44,7 +44,13 @@ pub fn ssh(
     let user = get_user_name(target)?.unwrap_or(instance.user.to_string());
     let ssh_port = instance.ssh_port;
 
-    commands::start(instance_dao, &None, verbosity, &vec![name.to_string()])?;
+    commands::start(
+        instance_dao,
+        &None,
+        verbosity,
+        true,
+        &vec![name.to_string()],
+    )?;
 
     let mut ssh = None;
     let mut start_time = Instant::now();
