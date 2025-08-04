@@ -64,11 +64,7 @@ pub enum Commands {
         instances: Vec<String>,
     },
 
-    /// Get information about an virtual machine instance
-    Info {
-        /// Name of the virtual machine instance
-        instance: String,
-    },
+    Info(InstanceInfoCommand),
 
     /// Open the console of an virtual machine instance
     Console {
@@ -246,9 +242,7 @@ impl CommandDispatcher {
             Commands::Rename { old_name, new_name } => {
                 InstanceRenameCommand::new(old_name, new_name).run(&instance_dao)
             }
-            Commands::Info { instance } => {
-                InstanceInfoCommand::new().run(console, &instance_dao, instance)
-            }
+            Commands::Info(cmd) => cmd.run(console, &instance_dao),
             Commands::Config(cmd) => cmd.run(&instance_dao),
             Commands::Start {
                 qemu_args,

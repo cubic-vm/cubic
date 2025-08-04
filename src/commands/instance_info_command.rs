@@ -2,25 +2,26 @@ use crate::error::Error;
 use crate::instance::InstanceStore;
 use crate::util;
 use crate::view::{Console, MapView};
+use clap::Parser;
 
-pub struct InstanceInfoCommand;
+/// Get information about an virtual machine instance
+#[derive(Parser)]
+pub struct InstanceInfoCommand {
+    /// Name of the virtual machine instance
+    instance: String,
+}
 
 impl InstanceInfoCommand {
-    pub fn new() -> Self {
-        Self {}
-    }
-
     pub fn run(
         &self,
         console: &mut dyn Console,
         instance_store: &dyn InstanceStore,
-        instance: &str,
     ) -> Result<(), Error> {
-        if !instance_store.exists(instance) {
-            return Result::Err(Error::UnknownInstance(instance.to_string()));
+        if !instance_store.exists(&self.instance) {
+            return Result::Err(Error::UnknownInstance(self.instance.to_string()));
         }
 
-        let instance = instance_store.load(instance)?;
+        let instance = instance_store.load(&self.instance)?;
 
         let mut view = MapView::new();
         view.add("Arch", &instance.arch.to_string());
@@ -66,9 +67,11 @@ mod tests {
             hostfwd: Vec::new(),
         }]);
 
-        InstanceInfoCommand::new()
-            .run(console, instance_store, "test")
-            .unwrap();
+        InstanceInfoCommand {
+            instance: "test".to_string(),
+        }
+        .run(console, instance_store)
+        .unwrap();
 
         assert_eq!(
             console.get_output(),
@@ -89,7 +92,10 @@ SSH Port: 9000
         let instance_store = &InstanceStoreMock::new(Vec::new());
 
         assert!(matches!(
-            InstanceInfoCommand::new().run(console, instance_store, "test"),
+            InstanceInfoCommand {
+                instance: "test".to_string()
+            }
+            .run(console, instance_store),
             Result::Err(Error::UnknownInstance(_))
         ));
     }
