@@ -1,4 +1,4 @@
-use crate::commands::{self, Verbosity};
+use crate::commands;
 use crate::error::Error;
 use crate::instance::InstanceDao;
 use crate::util::Terminal;
@@ -16,13 +16,14 @@ pub struct InstanceConsoleCommand {
 
 impl InstanceConsoleCommand {
     pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
-        commands::start(
-            instance_dao,
-            &None,
-            Verbosity::Quiet,
-            true,
-            &vec![self.instance.to_string()],
-        )?;
+        commands::InstanceStartCommand {
+            qemu_args: None,
+            verbose: false,
+            quiet: true,
+            wait: false,
+            instances: vec![self.instance.to_string()],
+        }
+        .run(instance_dao)?;
 
         let console_path = instance_dao.env.get_console_file(&self.instance);
         while !Path::new(&console_path).exists() {

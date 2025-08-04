@@ -61,13 +61,14 @@ impl InstanceSshCommand {
         let ssh_port = instance.ssh_port;
         let verbosity = Verbosity::new(self.verbose, self.quiet);
 
-        commands::start(
-            instance_dao,
-            &None,
-            verbosity,
-            true,
-            &vec![name.to_string()],
-        )?;
+        commands::InstanceStartCommand {
+            qemu_args: None,
+            verbose: self.verbose,
+            quiet: self.quiet,
+            wait: true,
+            instances: vec![name.to_string()],
+        }
+        .run(instance_dao)?;
 
         let mut ssh = None;
         let mut start_time = Instant::now();

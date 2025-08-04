@@ -21,24 +21,7 @@ pub enum Commands {
     Console(commands::InstanceConsoleCommand),
     Ssh(commands::InstanceSshCommand),
     Scp(commands::InstanceScpCommand),
-
-    /// Start virtual machine instances
-    Start {
-        /// Pass additional QEMU arguments
-        #[clap(long)]
-        qemu_args: Option<String>,
-        /// Enable verbose logging
-        #[clap(short, long, default_value_t = false)]
-        verbose: bool,
-        /// Reduce logging output
-        #[clap(short, long, default_value_t = false)]
-        quiet: bool,
-        /// Wait for the virtual machine instance to be started
-        #[clap(short, long, default_value_t = false)]
-        wait: bool,
-        /// Name of the virtual machine instances to start
-        instances: Vec<String>,
-    },
+    Start(commands::InstanceStartCommand),
 
     /// Stop virtual machine instances
     Stop {
@@ -112,19 +95,7 @@ impl CommandDispatcher {
             Commands::Rename(cmd) => cmd.run(&instance_dao),
             Commands::Info(cmd) => cmd.run(console, &instance_dao),
             Commands::Config(cmd) => cmd.run(&instance_dao),
-            Commands::Start {
-                qemu_args,
-                verbose,
-                quiet,
-                wait,
-                instances,
-            } => commands::start(
-                &instance_dao,
-                qemu_args,
-                Verbosity::new(*verbose, *quiet),
-                *wait,
-                instances,
-            ),
+            Commands::Start(cmd) => cmd.run(&instance_dao),
             Commands::Stop {
                 instances,
                 verbose,
