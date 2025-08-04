@@ -1,4 +1,4 @@
-use crate::commands::{self, Verbosity};
+use crate::commands::{self};
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore};
 use crate::util;
@@ -25,9 +25,15 @@ pub struct InstanceRemoveCommand {
 
 impl InstanceRemoveCommand {
     pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
-        let verbosity = Verbosity::new(self.verbose, self.quiet);
         if self.force {
-            commands::stop(instance_dao, false, verbosity, true, &self.instances)?;
+            commands::InstanceStopCommand {
+                all: false,
+                verbose: self.verbose,
+                quiet: self.quiet,
+                wait: true,
+                instances: self.instances.clone(),
+            }
+            .run(instance_dao)?;
         }
 
         for instance in &self.instances {
