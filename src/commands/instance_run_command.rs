@@ -1,5 +1,5 @@
+use crate::commands;
 use crate::commands::instance_add_command::InstanceAddCommand;
-use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::image::ImageDao;
 use crate::instance::InstanceDao;
@@ -51,7 +51,14 @@ impl InstanceRunCommand {
             self.disk.as_ref().cloned(),
         )
         .run(image_dao, instance_dao)?;
-        let verbosity = Verbosity::new(self.verbose, self.quiet);
-        commands::ssh(instance_dao, &instance_name, false, verbosity, &None, &None)
+        commands::InstanceSshCommand {
+            instance: instance_name.clone(),
+            xforward: false,
+            verbose: self.verbose,
+            quiet: self.quiet,
+            ssh_args: None,
+            cmd: None,
+        }
+        .run(instance_dao)
     }
 }

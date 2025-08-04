@@ -19,26 +19,7 @@ pub enum Commands {
     Rm(InstanceRemoveCommand),
     Info(InstanceInfoCommand),
     Console(commands::InstanceConsoleCommand),
-
-    /// Connect to a virtual machine instance with SSH
-    Ssh {
-        /// Name of the virtual machine instance
-        instance: String,
-        /// Forward X over SSH
-        #[clap(short = 'X', default_value_t = false)]
-        xforward: bool,
-        /// Enable verbose logging
-        #[clap(short, long, default_value_t = false)]
-        verbose: bool,
-        /// Reduce logging output
-        #[clap(short, long, default_value_t = false)]
-        quiet: bool,
-        /// Pass additional SSH arguments
-        #[clap(long)]
-        ssh_args: Option<String>,
-        /// Execute a command in the virtual machine
-        cmd: Option<String>,
-    },
+    Ssh(commands::InstanceSshCommand),
 
     /// Copy a file from or to a virtual machine instance with SCP
     Scp {
@@ -179,21 +160,7 @@ impl CommandDispatcher {
                 instances,
             } => commands::restart(&instance_dao, Verbosity::new(*verbose, *quiet), instances),
             Commands::Console(cmd) => cmd.run(&instance_dao),
-            Commands::Ssh {
-                instance,
-                xforward,
-                verbose,
-                quiet,
-                ssh_args,
-                cmd,
-            } => commands::ssh(
-                &instance_dao,
-                instance,
-                *xforward,
-                Verbosity::new(*verbose, *quiet),
-                ssh_args,
-                cmd,
-            ),
+            Commands::Ssh(cmd) => cmd.run(&instance_dao),
             Commands::Scp {
                 from,
                 to,
