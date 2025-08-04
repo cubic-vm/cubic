@@ -161,20 +161,7 @@ pub enum Commands {
         instances: Vec<String>,
     },
 
-    /// Modify virtual machine instance configuration
-    Config {
-        /// Name of the virtual machine instance
-        instance: String,
-        /// Number of CPUs for the virtual machine instance
-        #[clap(short, long)]
-        cpus: Option<u16>,
-        /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
-        #[clap(short, long)]
-        mem: Option<String>,
-        /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
-        #[clap(short, long)]
-        disk: Option<String>,
-    },
+    Config(InstanceConfigCommand),
 
     /// Rename a virtual machine instance
     Rename {
@@ -262,12 +249,7 @@ impl CommandDispatcher {
             Commands::Info { instance } => {
                 InstanceInfoCommand::new().run(console, &instance_dao, instance)
             }
-            Commands::Config {
-                instance,
-                cpus,
-                mem,
-                disk,
-            } => InstanceConfigCommand::new(instance, cpus, mem, disk).run(&instance_dao),
+            Commands::Config(cmd) => cmd.run(&instance_dao),
             Commands::Start {
                 qemu_args,
                 verbose,
