@@ -40,10 +40,8 @@ pub enum Commands {
     },
 
     Add(InstanceAddCommand),
-
-    /// List all virtual machine instances
     #[clap(alias = "list")]
-    Ls,
+    Ls(InstanceListCommand),
 
     /// Delete virtual machine instances
     #[clap(alias = "del")]
@@ -222,7 +220,7 @@ impl CommandDispatcher {
                 disk,
                 Verbosity::new(*verbose, *quiet),
             ),
-            Commands::Ls => InstanceListCommand::new().run(console, &instance_dao),
+            Commands::Ls(cmd) => cmd.run(console, &instance_dao),
             Commands::Add(cmd) => cmd.run(&image_dao, &instance_dao),
             Commands::Rm {
                 verbose,

@@ -2,14 +2,13 @@ use crate::error::Error;
 use crate::instance::{InstanceState, InstanceStore};
 use crate::util;
 use crate::view::{Alignment, Console, TableView};
+use clap::Parser;
 
+/// List all virtual machine instances
+#[derive(Parser)]
 pub struct InstanceListCommand;
 
 impl InstanceListCommand {
-    pub fn new() -> Self {
-        Self {}
-    }
-
     pub fn run(
         &self,
         console: &mut dyn Console,
@@ -95,9 +94,7 @@ mod tests {
             },
         ]);
 
-        InstanceListCommand::new()
-            .run(console, instance_store)
-            .unwrap();
+        InstanceListCommand {}.run(console, instance_store).unwrap();
 
         assert_eq!(
             console.get_output(),
@@ -114,9 +111,7 @@ PID   Name    Arch    CPUs    Memory      Disk   State
         let console = &mut ConsoleMock::new();
         let instance_store = &InstanceStoreMock::new(Vec::new());
 
-        InstanceListCommand::new()
-            .run(console, instance_store)
-            .unwrap();
+        InstanceListCommand {}.run(console, instance_store).unwrap();
 
         assert_eq!(
             console.get_output(),
