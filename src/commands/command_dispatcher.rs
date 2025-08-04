@@ -39,27 +39,7 @@ pub enum Commands {
         quiet: bool,
     },
 
-    /// Create a new virtual machine instance
-    Add {
-        /// Name of the virtual machine instance
-        #[clap(conflicts_with = "name")]
-        instance_name: Option<String>,
-        /// Name of the virtual machine image
-        #[clap(short, long)]
-        image: String,
-        /// Name of the virtual machine instance
-        #[clap(short, long, conflicts_with = "instance_name", hide = true)]
-        name: Option<String>,
-        /// Number of CPUs for the virtual machine instance
-        #[clap(short, long)]
-        cpus: Option<u16>,
-        /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
-        #[clap(short, long)]
-        mem: Option<String>,
-        /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
-        #[clap(short, long)]
-        disk: Option<String>,
-    },
+    Add(InstanceAddCommand),
 
     /// List all virtual machine instances
     #[clap(alias = "list")]
@@ -266,25 +246,7 @@ impl CommandDispatcher {
                 Verbosity::new(*verbose, *quiet),
             ),
             Commands::Ls => InstanceListCommand::new().run(console, &instance_dao),
-            Commands::Add {
-                instance_name,
-                image,
-                name,
-                cpus,
-                mem,
-                disk,
-            } => InstanceAddCommand::new(
-                image.to_string(),
-                instance_name
-                    .as_ref()
-                    .or(name.as_ref())
-                    .ok_or(Error::InvalidArgument("Missing instance name".to_string()))?
-                    .to_string(),
-                cpus.as_ref().cloned(),
-                mem.as_ref().cloned(),
-                disk.as_ref().cloned(),
-            )
-            .run(&image_dao, &instance_dao),
+            Commands::Add(cmd) => cmd.run(&image_dao, &instance_dao),
             Commands::Rm {
                 verbose,
                 quiet,
