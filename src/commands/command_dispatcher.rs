@@ -138,15 +138,7 @@ pub enum Commands {
     },
 
     Config(InstanceConfigCommand),
-
-    /// Rename a virtual machine instance
-    Rename {
-        /// Name of the virtual machine instance to rename
-        old_name: String,
-        /// New name of the virutal machine instance
-        new_name: String,
-    },
-
+    Rename(InstanceRenameCommand),
     Clone(InstanceCloneCommand),
 
     /// Image subcommands
@@ -206,9 +198,7 @@ impl CommandDispatcher {
             Commands::Add(cmd) => cmd.run(&image_dao, &instance_dao),
             Commands::Rm(cmd) => cmd.run(&instance_dao),
             Commands::Clone(cmd) => cmd.run(&instance_dao),
-            Commands::Rename { old_name, new_name } => {
-                InstanceRenameCommand::new(old_name, new_name).run(&instance_dao)
-            }
+            Commands::Rename(cmd) => cmd.run(&instance_dao),
             Commands::Info(cmd) => cmd.run(console, &instance_dao),
             Commands::Config(cmd) => cmd.run(&instance_dao),
             Commands::Start {
