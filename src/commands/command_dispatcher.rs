@@ -184,13 +184,7 @@ pub enum Commands {
         new_name: String,
     },
 
-    /// Clone a virtual machine instance
-    Clone {
-        /// Name of the virtual machine instance to clone
-        name: String,
-        /// Name of the copy
-        new_name: String,
-    },
+    Clone(InstanceCloneCommand),
 
     /// Image subcommands
     #[command(subcommand)]
@@ -261,9 +255,7 @@ impl CommandDispatcher {
             )
             .run(&instance_dao),
 
-            Commands::Clone { name, new_name } => {
-                InstanceCloneCommand::new(name, new_name).run(&instance_dao)
-            }
+            Commands::Clone(cmd) => cmd.run(&instance_dao),
             Commands::Rename { old_name, new_name } => {
                 InstanceRenameCommand::new(old_name, new_name).run(&instance_dao)
             }
