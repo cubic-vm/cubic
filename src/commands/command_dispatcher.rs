@@ -18,12 +18,7 @@ pub enum Commands {
     #[clap(alias = "del")]
     Rm(InstanceRemoveCommand),
     Info(InstanceInfoCommand),
-
-    /// Open the console of an virtual machine instance
-    Console {
-        /// Name of the virtual machine instance
-        instance: String,
-    },
+    Console(commands::InstanceConsoleCommand),
 
     /// Connect to a virtual machine instance with SSH
     Ssh {
@@ -183,7 +178,7 @@ impl CommandDispatcher {
                 quiet,
                 instances,
             } => commands::restart(&instance_dao, Verbosity::new(*verbose, *quiet), instances),
-            Commands::Console { instance } => commands::console(&instance_dao, instance),
+            Commands::Console(cmd) => cmd.run(&instance_dao),
             Commands::Ssh {
                 instance,
                 xforward,
