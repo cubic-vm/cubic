@@ -1,6 +1,6 @@
 use crate::commands::{
     self, InstanceAddCommand, InstanceCloneCommand, InstanceConfigCommand, InstanceInfoCommand,
-    InstanceListCommand, InstanceRemoveCommand, InstanceRenameCommand, Verbosity,
+    InstanceListCommand, InstanceRemoveCommand, InstanceRenameCommand,
 };
 use crate::env::EnvironmentFactory;
 use crate::error::Error;
@@ -23,19 +23,7 @@ pub enum Commands {
     Scp(commands::InstanceScpCommand),
     Start(commands::InstanceStartCommand),
     Stop(commands::InstanceStopCommand),
-
-    /// Restart virtual machine instances
-    Restart {
-        /// Enable verbose logging
-        #[clap(short, long, default_value_t = false)]
-        verbose: bool,
-        /// Reduce logging output
-        #[clap(short, long, default_value_t = false)]
-        quiet: bool,
-        /// Name of the virtual machine instances to restart
-        instances: Vec<String>,
-    },
-
+    Restart(commands::InstanceRestartCommand),
     Config(InstanceConfigCommand),
     Rename(InstanceRenameCommand),
     Clone(InstanceCloneCommand),
@@ -80,11 +68,7 @@ impl CommandDispatcher {
             Commands::Config(cmd) => cmd.run(&instance_dao),
             Commands::Start(cmd) => cmd.run(&instance_dao),
             Commands::Stop(cmd) => cmd.run(&instance_dao),
-            Commands::Restart {
-                verbose,
-                quiet,
-                instances,
-            } => commands::restart(&instance_dao, Verbosity::new(*verbose, *quiet), instances),
+            Commands::Restart(cmd) => cmd.run(&instance_dao),
             Commands::Console(cmd) => cmd.run(&instance_dao),
             Commands::Ssh(cmd) => cmd.run(&instance_dao),
             Commands::Scp(cmd) => cmd.run(&instance_dao),
