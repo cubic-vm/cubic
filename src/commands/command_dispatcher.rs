@@ -11,34 +11,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Create, start and open a shell in a new virtual machine instance
-    Run {
-        /// Name of the virtual machine instance
-        #[clap(conflicts_with = "name")]
-        instance_name: Option<String>,
-        /// Name of the virtual machine image
-        #[clap(short, long)]
-        image: String,
-        /// Name of the virtual machine instance
-        #[clap(short, long, conflicts_with = "instance_name", hide = true)]
-        name: Option<String>,
-        /// Number of CPUs for the virtual machine instance
-        #[clap(short, long)]
-        cpus: Option<u16>,
-        /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
-        #[clap(short, long)]
-        mem: Option<String>,
-        /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
-        #[clap(short, long)]
-        disk: Option<String>,
-        /// Enable verbose logging
-        #[clap(short, long, default_value_t = false)]
-        verbose: bool,
-        /// Reduce logging output
-        #[clap(short, long, default_value_t = false)]
-        quiet: bool,
-    },
-
+    Run(commands::InstanceRunCommand),
     Add(InstanceAddCommand),
     #[clap(alias = "list")]
     Ls(InstanceListCommand),
@@ -171,29 +144,7 @@ impl CommandDispatcher {
         let instance_dao = InstanceDao::new(&env)?;
 
         match &command {
-            Commands::Run {
-                instance_name,
-                image,
-                name,
-                cpus,
-                mem,
-                disk,
-                verbose,
-                quiet,
-            } => commands::run(
-                &image_dao,
-                &instance_dao,
-                image,
-                &instance_name
-                    .as_ref()
-                    .or(name.as_ref())
-                    .ok_or(Error::InvalidArgument("Missing instance name".to_string()))?
-                    .to_string(),
-                cpus,
-                mem,
-                disk,
-                Verbosity::new(*verbose, *quiet),
-            ),
+            Commands::Run(cmd) => cmd.run(&image_dao, &instance_dao),
             Commands::Ls(cmd) => cmd.run(console, &instance_dao),
             Commands::Add(cmd) => cmd.run(&image_dao, &instance_dao),
             Commands::Rm(cmd) => cmd.run(&instance_dao),
