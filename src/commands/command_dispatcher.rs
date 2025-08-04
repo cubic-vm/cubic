@@ -20,23 +20,7 @@ pub enum Commands {
     Info(InstanceInfoCommand),
     Console(commands::InstanceConsoleCommand),
     Ssh(commands::InstanceSshCommand),
-
-    /// Copy a file from or to a virtual machine instance with SCP
-    Scp {
-        /// Source of the data to copy
-        from: String,
-        /// Target of the data to copy
-        to: String,
-        /// Enable verbose logging
-        #[clap(short, long, default_value_t = false)]
-        verbose: bool,
-        /// Reduce logging output
-        #[clap(short, long, default_value_t = false)]
-        quiet: bool,
-        /// Pass additional SCP arguments
-        #[clap(long)]
-        scp_args: Option<String>,
-    },
+    Scp(commands::InstanceScpCommand),
 
     /// Start virtual machine instances
     Start {
@@ -161,19 +145,7 @@ impl CommandDispatcher {
             } => commands::restart(&instance_dao, Verbosity::new(*verbose, *quiet), instances),
             Commands::Console(cmd) => cmd.run(&instance_dao),
             Commands::Ssh(cmd) => cmd.run(&instance_dao),
-            Commands::Scp {
-                from,
-                to,
-                verbose,
-                quiet,
-                scp_args,
-            } => commands::scp(
-                &instance_dao,
-                from,
-                to,
-                Verbosity::new(*verbose, *quiet),
-                scp_args,
-            ),
+            Commands::Scp(cmd) => cmd.run(&instance_dao),
             Commands::Image(command) => command.dispatch(&image_dao),
             Commands::Net(command) => command.dispatch(&instance_dao),
         }
