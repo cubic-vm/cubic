@@ -42,26 +42,8 @@ pub enum Commands {
     Add(InstanceAddCommand),
     #[clap(alias = "list")]
     Ls(InstanceListCommand),
-
-    /// Delete virtual machine instances
     #[clap(alias = "del")]
-    Rm {
-        /// Enable verbose logging
-        #[clap(short, long, default_value_t = false)]
-        verbose: bool,
-        /// Reduce logging output
-        #[clap(short, long, default_value_t = false)]
-        quiet: bool,
-        /// Delete the virtual machine instances even when running
-        #[clap(short, long, default_value_t = false)]
-        force: bool,
-        /// Delete the virtual machine instances without confirmation
-        #[clap(short, long, default_value_t = false)]
-        yes: bool,
-        /// Name of the virtual machine instances to delete
-        instances: Vec<String>,
-    },
-
+    Rm(InstanceRemoveCommand),
     Info(InstanceInfoCommand),
 
     /// Open the console of an virtual machine instance
@@ -222,20 +204,7 @@ impl CommandDispatcher {
             ),
             Commands::Ls(cmd) => cmd.run(console, &instance_dao),
             Commands::Add(cmd) => cmd.run(&image_dao, &instance_dao),
-            Commands::Rm {
-                verbose,
-                quiet,
-                force,
-                yes,
-                instances,
-            } => InstanceRemoveCommand::new(
-                Verbosity::new(*verbose, *quiet),
-                *force,
-                *yes,
-                instances,
-            )
-            .run(&instance_dao),
-
+            Commands::Rm(cmd) => cmd.run(&instance_dao),
             Commands::Clone(cmd) => cmd.run(&instance_dao),
             Commands::Rename { old_name, new_name } => {
                 InstanceRenameCommand::new(old_name, new_name).run(&instance_dao)

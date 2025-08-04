@@ -2,27 +2,32 @@ use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore};
 use crate::util;
+use clap::Parser;
 
+/// Delete virtual machine instances
+#[derive(Parser)]
 pub struct InstanceRemoveCommand {
-    verbosity: Verbosity,
+    /// Enable verbose logging
+    #[clap(short, long, default_value_t = false)]
+    verbose: bool,
+    /// Reduce logging output
+    #[clap(short, long, default_value_t = false)]
+    quiet: bool,
+    /// Delete the virtual machine instances even when running
+    #[clap(short, long, default_value_t = false)]
     force: bool,
+    /// Delete the virtual machine instances without confirmation
+    #[clap(short, long, default_value_t = false)]
     yes: bool,
+    /// Name of the virtual machine instances to delete
     instances: Vec<String>,
 }
 
 impl InstanceRemoveCommand {
-    pub fn new(verbosity: Verbosity, force: bool, yes: bool, instances: &[String]) -> Self {
-        Self {
-            verbosity,
-            force,
-            yes,
-            instances: instances.to_vec(),
-        }
-    }
-
     pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
+        let verbosity = Verbosity::new(self.verbose, self.quiet);
         if self.force {
-            commands::stop(instance_dao, false, self.verbosity, true, &self.instances)?;
+            commands::stop(instance_dao, false, verbosity, true, &self.instances)?;
         }
 
         for instance in &self.instances {
