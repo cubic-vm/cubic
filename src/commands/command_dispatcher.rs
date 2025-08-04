@@ -22,24 +22,7 @@ pub enum Commands {
     Ssh(commands::InstanceSshCommand),
     Scp(commands::InstanceScpCommand),
     Start(commands::InstanceStartCommand),
-
-    /// Stop virtual machine instances
-    Stop {
-        /// Stop all virtual machine instances
-        #[clap(short, long, default_value_t = false)]
-        all: bool,
-        /// Enable verbose logging
-        #[clap(short, long, default_value_t = false)]
-        verbose: bool,
-        /// Reduce logging output
-        #[clap(short, long, default_value_t = false)]
-        quiet: bool,
-        /// Wait for the virtual machine instance to be stopped
-        #[clap(short, long, default_value_t = false)]
-        wait: bool,
-        /// Name of the virtual machine instances to stop
-        instances: Vec<String>,
-    },
+    Stop(commands::InstanceStopCommand),
 
     /// Restart virtual machine instances
     Restart {
@@ -96,19 +79,7 @@ impl CommandDispatcher {
             Commands::Info(cmd) => cmd.run(console, &instance_dao),
             Commands::Config(cmd) => cmd.run(&instance_dao),
             Commands::Start(cmd) => cmd.run(&instance_dao),
-            Commands::Stop {
-                instances,
-                verbose,
-                quiet,
-                wait,
-                all,
-            } => commands::stop(
-                &instance_dao,
-                *all,
-                Verbosity::new(*verbose, *quiet),
-                *wait,
-                instances,
-            ),
+            Commands::Stop(cmd) => cmd.run(&instance_dao),
             Commands::Restart {
                 verbose,
                 quiet,

@@ -7,7 +7,14 @@ pub fn restart(
     verbosity: Verbosity,
     instances: &[String],
 ) -> Result<(), Error> {
-    commands::stop(instance_dao, false, verbosity, true, instances)?;
+    commands::InstanceStopCommand {
+        all: false,
+        verbose: verbosity.is_verbose(),
+        quiet: verbosity.is_quiet(),
+        wait: true,
+        instances: instances.to_vec(),
+    }
+    .run(instance_dao)?;
     commands::InstanceStartCommand {
         qemu_args: None,
         verbose: verbosity.is_verbose(),
