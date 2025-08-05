@@ -1,7 +1,7 @@
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
-use crate::image::{Image, ImageDao, ImageFactory, ImageFetcher};
+use crate::image::{Image, ImageDao, ImageFactory, ImageFetcher, ImageStore};
 use crate::util;
 use crate::view::SpinnerView;
 use crate::view::{Alignment, TableView};
