@@ -2,6 +2,7 @@ pub mod image_dao;
 pub mod image_factory;
 pub mod image_fetcher;
 pub mod image_store;
+pub mod image_store_mock;
 
 use crate::arch::Arch;
 use crate::error::Error;
