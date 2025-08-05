@@ -1,6 +1,6 @@
 use crate::commands::image::ImageCommands;
 use crate::error::Error;
-use crate::image::ImageDao;
+use crate::image::{ImageDao, ImageStore};
 use crate::instance::{Instance, InstanceDao, InstanceStore, USER};
 use crate::util;
 use clap::Parser;

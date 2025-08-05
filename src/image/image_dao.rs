@@ -2,7 +2,7 @@ use crate::arch::Arch;
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
-use crate::image::{Image, ImageFactory};
+use crate::image::{Image, ImageFactory, ImageStore};
 use std::path::Path;
 use std::str;
 
@@ -30,8 +30,10 @@ impl ImageDao {
             env: env.clone(),
         })
     }
+}
 
-    pub fn get(&self, id: &str) -> Result<Image, Error> {
+impl ImageStore for ImageDao {
+    fn get(&self, id: &str) -> Result<Image, Error> {
         let mut tokens = id.split(':');
         let vendor = tokens
             .next()
@@ -58,7 +60,7 @@ impl ImageDao {
             .ok_or(Error::UnknownImage(id.to_string()))
     }
 
-    pub fn copy_image(&self, image: &Image, name: &str) -> Result<(), Error> {
+    fn copy_image(&self, image: &Image, name: &str) -> Result<(), Error> {
         self.fs.create_dir(&self.env.get_instance_dir2(name))?;
         self.fs.copy_file(
             &self.env.get_image_file(&image.to_file_name()),
@@ -66,7 +68,7 @@ impl ImageDao {
         )
     }
 
-    pub fn exists(&self, image: &Image) -> bool {
+    fn exists(&self, image: &Image) -> bool {
         Path::new(&format!(
             "{}/{}",
             self.env.get_image_dir(),
@@ -75,7 +77,7 @@ impl ImageDao {
         .exists()
     }
 
-    pub fn prune(&self) -> Result<(), Error> {
+    fn prune(&self) -> Result<(), Error> {
         self.fs.remove_file(&self.env.get_image_cache_file()).ok();
         self.fs.remove_dir(&self.env.get_image_dir())
     }

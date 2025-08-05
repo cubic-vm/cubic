@@ -1,12 +1,14 @@
 pub mod image_dao;
 pub mod image_factory;
 pub mod image_fetcher;
+pub mod image_store;
 
 use crate::arch::Arch;
 use crate::error::Error;
 pub use image_dao::*;
 pub use image_factory::*;
 pub use image_fetcher::*;
+pub use image_store::*;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 
