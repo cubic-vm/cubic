@@ -25,6 +25,7 @@ impl InstanceConsoleCommand {
         }
         .run(instance_dao)?;
 
+        println!("Press CTRL+W to exit the console.");
         let console_path = instance_dao.env.get_console_file(&self.instance);
         while !Path::new(&console_path).exists() {
             thread::sleep(Duration::new(1, 0));
