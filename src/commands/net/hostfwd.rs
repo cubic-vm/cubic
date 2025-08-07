@@ -53,25 +53,28 @@ impl HostfwdCommands {
                     for hostfwd in instance_dao.load(&instance_name)?.hostfwd {
                         view.add_row()
                             .add(&instance_name, Alignment::Left)
-                            .add(&hostfwd, Alignment::Left);
+                            .add(&hostfwd.to_qemu(), Alignment::Left);
                     }
                 }
                 view.print(console);
                 Ok(())
             }
-            HostfwdCommands::Add { instance, rule } => {
-                if let Err(msg) = PortForward::from_qemu(rule) {
-                    return Err(Error::HostFwdRuleMalformed(msg));
+            HostfwdCommands::Add { instance, rule } => match PortForward::from_qemu(rule) {
+                Ok(rule) => {
+                    let mut instance = instance_dao.load(instance)?;
+                    instance.hostfwd.push(rule);
+                    instance_dao.store(&instance)
                 }
-                let mut instance = instance_dao.load(instance)?;
-                instance.hostfwd.push(rule.to_string());
-                instance_dao.store(&instance)
-            }
-            HostfwdCommands::Del { instance, rule } => {
-                let mut instance = instance_dao.load(instance)?;
-                instance.hostfwd.retain(|item| item != rule);
-                instance_dao.store(&instance)
-            }
+                Err(msg) => Err(Error::HostFwdRuleMalformed(msg)),
+            },
+            HostfwdCommands::Del { instance, rule } => match PortForward::from_qemu(rule) {
+                Ok(rule) => {
+                    let mut instance = instance_dao.load(instance)?;
+                    instance.hostfwd.retain(|item| item != &rule);
+                    instance_dao.store(&instance)
+                }
+                Err(msg) => Err(Error::HostFwdRuleMalformed(msg)),
+            },
         }
     }
 }

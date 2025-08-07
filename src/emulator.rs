@@ -1,5 +1,6 @@
 use crate::arch::Arch;
 use crate::error::Error;
+use crate::instance::PortForward;
 use crate::util::SystemCommand;
 
 pub struct Emulator {
@@ -102,11 +103,11 @@ impl Emulator {
             .arg("chardev:console");
     }
 
-    pub fn set_network(&mut self, hostfwd: &[String], ssh_port: u16) {
+    pub fn set_network(&mut self, hostfwd: &[PortForward], ssh_port: u16) {
         let mut hostfwd_options = String::new();
         for fwd in hostfwd {
             hostfwd_options.push_str(",hostfwd=");
-            hostfwd_options.push_str(fwd);
+            hostfwd_options.push_str(&fwd.to_qemu());
         }
 
         self.command

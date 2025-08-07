@@ -41,11 +41,8 @@ impl InstanceModifyCommand {
             instance_dao.resize(&mut instance, util::human_readable_to_bytes(disk)?)?;
         }
 
-        let add_ports = &mut self.port.iter().map(|p| p.to_qemu()).collect::<Vec<_>>();
-        instance.hostfwd.append(add_ports);
-
-        let remove_ports = &mut self.rm_port.iter().map(|p| p.to_qemu()).collect::<Vec<_>>();
-        instance.hostfwd.retain(|p| !remove_ports.contains(p));
+        instance.hostfwd.append(&mut self.port.clone());
+        instance.hostfwd.retain(|p| !self.rm_port.contains(p));
 
         instance_dao.store(&instance)?;
         Result::Ok(())
