@@ -19,4 +19,5 @@ cubic add
       -c, --cpus <CPUS>    Number of CPUs for the virtual machine instance [default: 4]
       -m, --mem <MEM>      Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte) [default: 4G]
       -d, --disk <DISK>    Disk size of the virtual machine instance (e.g. 10G for 10 gigabytes) [default: 100G]
+      -p, --port <PORT>    Forward ports from guest to host (e.g. -p 8000:80 or -p 127.0.0.1:9000:90/tcp)
       -h, --help           Print help
