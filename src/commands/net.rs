@@ -8,7 +8,7 @@ use hostfwd::HostfwdCommands;
 
 #[derive(Subcommand)]
 pub enum NetworkCommands {
-    /// Guest to host port forwarding commands
+    /// Guest to host port forwarding commands (Deprecated)
     ///
     /// List forwarded ports for all instances:
     /// $ cubic net hostfwd list

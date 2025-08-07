@@ -5,14 +5,14 @@ use clap::Subcommand;
 
 #[derive(Subcommand)]
 pub enum HostfwdCommands {
-    /// List forwarded host ports
+    /// List forwarded host ports (Deprecated)
     ///
     /// List forwarded ports for all instances:
     /// $ cubic net hostfwd list
     #[clap(verbatim_doc_comment, alias = "ls")]
     List,
 
-    /// Add host port forwarding rule
+    /// Add host port forwarding rule (Deprecated)
     ///
     /// Forward guest SSH port (TCP port 22) to host on port 8000:
     /// $ cubic net hostfwd add myinstance tcp:127.0.0.1:8000-:22
@@ -24,7 +24,7 @@ pub enum HostfwdCommands {
         rule: String,
     },
 
-    /// Delete host port forwarding rule
+    /// Delete host port forwarding rule (Deprecated)
     ///
     /// Remove port forwarding:
     /// $ cubic net hostfwd del myinstance tcp:127.0.0.1:8000-:22
