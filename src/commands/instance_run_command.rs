@@ -1,5 +1,7 @@
 use crate::commands;
-use crate::commands::instance_add_command::InstanceAddCommand;
+use crate::commands::instance_add_command::{
+    InstanceAddCommand, DEFAULT_CPU_COUNT, DEFAULT_DISK_SIZE, DEFAULT_MEM_SIZE,
+};
 use crate::error::Error;
 use crate::image::ImageDao;
 use crate::instance::InstanceDao;
@@ -21,14 +23,14 @@ pub struct InstanceRunCommand {
     #[clap(short, long, default_value = "cubic")]
     user: String,
     /// Number of CPUs for the virtual machine instance
-    #[clap(short, long)]
-    cpus: Option<u16>,
+    #[clap(short, long, default_value_t = DEFAULT_CPU_COUNT)]
+    cpus: u16,
     /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
-    #[clap(short, long)]
-    mem: Option<String>,
-    /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
-    #[clap(short, long)]
-    disk: Option<String>,
+    #[clap(short, long, default_value = DEFAULT_MEM_SIZE)]
+    mem: String,
+    /// Disk size of the virtual machine instance (e.g. 10G for 10 gigabytes)
+    #[clap(short, long, default_value = DEFAULT_DISK_SIZE)]
+    disk: String,
     /// Enable verbose logging
     #[clap(short, long, default_value_t = false)]
     verbose: bool,
@@ -50,9 +52,9 @@ impl InstanceRunCommand {
             instance_name.clone(),
             self.image.to_string(),
             self.user.clone(),
-            self.cpus.as_ref().cloned(),
-            self.mem.as_ref().cloned(),
-            self.disk.as_ref().cloned(),
+            self.cpus,
+            self.mem.clone(),
+            self.disk.clone(),
         )
         .run(image_dao, instance_dao)?;
         commands::InstanceSshCommand {

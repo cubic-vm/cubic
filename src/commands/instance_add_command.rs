@@ -5,9 +5,9 @@ use crate::instance::{Instance, InstanceDao, InstanceStore};
 use crate::util;
 use clap::Parser;
 
-const DEFAULT_CPU_COUNT: u16 = 4;
-const DEFAULT_MEM_SIZE: &str = "4G";
-const DEFAULT_DISK_SIZE: &str = "100G";
+pub const DEFAULT_CPU_COUNT: u16 = 4;
+pub const DEFAULT_MEM_SIZE: &str = "4G";
+pub const DEFAULT_DISK_SIZE: &str = "100G";
 
 /// Create a new virtual machine instance
 #[derive(Parser)]
@@ -25,14 +25,14 @@ pub struct InstanceAddCommand {
     #[clap(short, long, default_value = "cubic")]
     user: String,
     /// Number of CPUs for the virtual machine instance
-    #[clap(short, long)]
-    cpus: Option<u16>,
+    #[clap(short, long, default_value_t = DEFAULT_CPU_COUNT)]
+    cpus: u16,
     /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
-    #[clap(short, long)]
-    mem: Option<String>,
-    /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
-    #[clap(short, long)]
-    disk: Option<String>,
+    #[clap(short, long, default_value = DEFAULT_MEM_SIZE)]
+    mem: String,
+    /// Disk size of the virtual machine instance (e.g. 10G for 10 gigabytes)
+    #[clap(short, long, default_value = DEFAULT_DISK_SIZE)]
+    disk: String,
 }
 
 impl InstanceAddCommand {
@@ -40,9 +40,9 @@ impl InstanceAddCommand {
         instance_name: String,
         image: String,
         user: String,
-        cpus: Option<u16>,
-        mem: Option<String>,
-        disk: Option<String>,
+        cpus: u16,
+        mem: String,
+        disk: String,
     ) -> Self {
         Self {
             instance_name: Some(instance_name),
@@ -74,16 +74,15 @@ impl InstanceAddCommand {
         let image = image_dao.get(&self.image)?;
         image_dao.copy_image(&image, &name)?;
 
-        let disk_capacity =
-            util::human_readable_to_bytes(self.disk.as_deref().unwrap_or(DEFAULT_DISK_SIZE))?;
+        let disk_capacity = util::human_readable_to_bytes(&self.disk)?;
         let ssh_port = util::generate_random_ssh_port();
 
         let mut instance = Instance {
             name: name.clone(),
             arch: image.arch,
             user: self.user.to_string(),
-            cpus: self.cpus.unwrap_or(DEFAULT_CPU_COUNT),
-            mem: util::human_readable_to_bytes(self.mem.as_deref().unwrap_or(DEFAULT_MEM_SIZE))?,
+            cpus: self.cpus,
+            mem: util::human_readable_to_bytes(&self.mem)?,
             disk_capacity: 0, // Will be overwritten by resize operation below
             ssh_port,
             ..Instance::default()
