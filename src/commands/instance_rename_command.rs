@@ -7,7 +7,7 @@ use clap::Parser;
 pub struct InstanceRenameCommand {
     /// Name of the virtual machine instance to rename
     old_name: String,
-    /// New name of the virutal machine instance
+    /// New name of the virtual machine instance
     new_name: String,
 }
 

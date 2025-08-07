@@ -7,7 +7,7 @@ Select a Linux Distribution
 ---------------------------
 
 Cubic can create a virtual machine for you from a common Linux distribution.
-First of all, you need to decide which distrbution you want to use.
+First of all, you need to decide which distribution you want to use.
 You can list all supported distributions with:
 
 .. code-block::
