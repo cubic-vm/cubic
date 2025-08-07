@@ -1,8 +1,7 @@
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore};
+use crate::instance::{InstanceDao, InstanceStore, PortForward};
 use crate::view::{Alignment, Stdio, TableView};
 use clap::Subcommand;
-use regex::Regex;
 
 #[derive(Subcommand)]
 pub enum HostfwdCommands {
@@ -61,13 +60,8 @@ impl HostfwdCommands {
                 Ok(())
             }
             HostfwdCommands::Add { instance, rule } => {
-                if !Regex::new(
-                    r"^(udp|tcp):([0-9]+\.){3}[0-9]+:[0-9]{1,5}\-([0-9]+.[0-9])?:[0-9]{1,5}$",
-                )
-                .unwrap()
-                .is_match(rule)
-                {
-                    return Err(Error::HostFwdRuleMalformed(rule.to_string()));
+                if let Err(msg) = PortForward::from_qemu(rule) {
+                    return Err(Error::HostFwdRuleMalformed(msg));
                 }
                 let mut instance = instance_dao.load(instance)?;
                 instance.hostfwd.push(rule.to_string());
