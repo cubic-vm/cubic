@@ -17,6 +17,9 @@ pub struct InstanceRunCommand {
     /// Name of the virtual machine instance
     #[clap(short, long, conflicts_with = "instance_name", hide = true)]
     name: Option<String>,
+    /// Name of the user
+    #[clap(short, long, default_value = "cubic")]
+    user: String,
     /// Number of CPUs for the virtual machine instance
     #[clap(short, long)]
     cpus: Option<u16>,
@@ -46,6 +49,7 @@ impl InstanceRunCommand {
         InstanceAddCommand::new(
             instance_name.clone(),
             self.image.to_string(),
+            self.user.clone(),
             self.cpus.as_ref().cloned(),
             self.mem.as_ref().cloned(),
             self.disk.as_ref().cloned(),

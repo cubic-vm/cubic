@@ -1,7 +1,7 @@
 use crate::commands::image::ImageCommands;
 use crate::error::Error;
 use crate::image::{ImageDao, ImageStore};
-use crate::instance::{Instance, InstanceDao, InstanceStore, USER};
+use crate::instance::{Instance, InstanceDao, InstanceStore};
 use crate::util;
 use clap::Parser;
 
@@ -21,6 +21,9 @@ pub struct InstanceAddCommand {
     /// Name of the virtual machine instance
     #[clap(short, long, conflicts_with = "instance_name", hide = true)]
     name: Option<String>,
+    /// Name of the user
+    #[clap(short, long, default_value = "cubic")]
+    user: String,
     /// Number of CPUs for the virtual machine instance
     #[clap(short, long)]
     cpus: Option<u16>,
@@ -36,6 +39,7 @@ impl InstanceAddCommand {
     pub fn new(
         instance_name: String,
         image: String,
+        user: String,
         cpus: Option<u16>,
         mem: Option<String>,
         disk: Option<String>,
@@ -44,6 +48,7 @@ impl InstanceAddCommand {
             instance_name: Some(instance_name),
             image,
             name: None,
+            user,
             cpus,
             mem,
             disk,
@@ -76,7 +81,7 @@ impl InstanceAddCommand {
         let mut instance = Instance {
             name: name.clone(),
             arch: image.arch,
-            user: USER.to_string(),
+            user: self.user.to_string(),
             cpus: self.cpus.unwrap_or(DEFAULT_CPU_COUNT),
             mem: util::human_readable_to_bytes(self.mem.as_deref().unwrap_or(DEFAULT_MEM_SIZE))?,
             disk_capacity: 0, // Will be overwritten by resize operation below
