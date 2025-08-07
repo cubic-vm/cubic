@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore};
+use crate::instance::{InstanceDao, InstanceStore, PortForward};
 use crate::util;
 use clap::Parser;
 
@@ -17,6 +17,12 @@ pub struct InstanceConfigCommand {
     /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
     #[clap(short, long)]
     disk: Option<String>,
+    /// Add port forwarding rule (e.g. -p 8000:80)
+    #[clap(short, long)]
+    port: Vec<PortForward>,
+    /// Remove port forwarding rule (e.g. -P 8000:80)
+    #[clap(short = 'P', long)]
+    rm_port: Vec<PortForward>,
 }
 
 impl InstanceConfigCommand {
@@ -34,6 +40,12 @@ impl InstanceConfigCommand {
         if let Some(disk) = &self.disk {
             instance_dao.resize(&mut instance, util::human_readable_to_bytes(disk)?)?;
         }
+
+        let add_ports = &mut self.port.iter().map(|p| p.to_qemu()).collect::<Vec<_>>();
+        instance.hostfwd.append(add_ports);
+
+        let remove_ports = &mut self.rm_port.iter().map(|p| p.to_qemu()).collect::<Vec<_>>();
+        instance.hostfwd.retain(|p| !remove_ports.contains(p));
 
         instance_dao.store(&instance)?;
         Result::Ok(())
