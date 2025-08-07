@@ -1,7 +1,7 @@
 use crate::commands::image::ImageCommands;
 use crate::error::Error;
 use crate::image::{ImageDao, ImageStore};
-use crate::instance::{Instance, InstanceDao, InstanceStore};
+use crate::instance::{Instance, InstanceDao, InstanceStore, PortForward};
 use crate::util;
 use clap::Parser;
 
@@ -33,6 +33,9 @@ pub struct InstanceAddCommand {
     /// Disk size of the virtual machine instance (e.g. 10G for 10 gigabytes)
     #[clap(short, long, default_value = DEFAULT_DISK_SIZE)]
     disk: String,
+    /// Forward ports from guest to host (e.g. -p 8000:80 or -p 127.0.0.1:9000:90/tcp)
+    #[clap(short, long)]
+    port: Vec<PortForward>,
 }
 
 impl InstanceAddCommand {
@@ -43,6 +46,7 @@ impl InstanceAddCommand {
         cpus: u16,
         mem: String,
         disk: String,
+        port: Vec<PortForward>,
     ) -> Self {
         Self {
             instance_name: Some(instance_name),
@@ -52,6 +56,7 @@ impl InstanceAddCommand {
             cpus,
             mem,
             disk,
+            port,
         }
     }
 
@@ -85,7 +90,7 @@ impl InstanceAddCommand {
             mem: util::human_readable_to_bytes(&self.mem)?,
             disk_capacity: 0, // Will be overwritten by resize operation below
             ssh_port,
-            ..Instance::default()
+            hostfwd: self.port.iter().map(|p| p.to_qemu()).collect(),
         };
         instance_dao.resize(&mut instance, disk_capacity)?;
         instance_dao.store(&instance)?;

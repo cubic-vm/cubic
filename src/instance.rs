@@ -2,12 +2,14 @@ pub mod instance_dao;
 pub mod instance_state;
 pub mod instance_store;
 pub mod instance_store_mock;
+pub mod port_forward;
 
 use crate::arch::Arch;
 pub use crate::error::Error;
 pub use instance_dao::*;
 pub use instance_state::*;
 pub use instance_store::*;
+pub use port_forward::*;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 

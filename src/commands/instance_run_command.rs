@@ -4,7 +4,7 @@ use crate::commands::instance_add_command::{
 };
 use crate::error::Error;
 use crate::image::ImageDao;
-use crate::instance::InstanceDao;
+use crate::instance::{InstanceDao, PortForward};
 use clap::Parser;
 
 /// Create, start and open a shell in a new virtual machine instance
@@ -31,6 +31,9 @@ pub struct InstanceRunCommand {
     /// Disk size of the virtual machine instance (e.g. 10G for 10 gigabytes)
     #[clap(short, long, default_value = DEFAULT_DISK_SIZE)]
     disk: String,
+    /// Forward ports from guest to host (e.g. -p 8000:80 or -p 127.0.0.1:9000:90/tcp)
+    #[clap(short, long)]
+    port: Vec<PortForward>,
     /// Enable verbose logging
     #[clap(short, long, default_value_t = false)]
     verbose: bool,
@@ -55,6 +58,7 @@ impl InstanceRunCommand {
             self.cpus,
             self.mem.clone(),
             self.disk.clone(),
+            self.port.clone(),
         )
         .run(image_dao, instance_dao)?;
         commands::InstanceSshCommand {
