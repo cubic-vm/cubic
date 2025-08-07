@@ -1,14 +1,14 @@
-.. _ref_cubic_config:
+.. _ref_cubic_modify:
 
-cubic config
+cubic modify
 ============
 
 .. code-block::
 
-    $ cubic config --help
-    Modify virtual machine instance configuration
+    $ cubic modify --help
+    Modify a virtual machine instance configuration
 
-    Usage: cubic config [OPTIONS] <INSTANCE>
+    Usage: cubic modify [OPTIONS] <INSTANCE>
 
     Arguments:
       <INSTANCE>  Name of the virtual machine instance

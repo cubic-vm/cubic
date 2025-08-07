@@ -41,6 +41,7 @@ cubic
       run      Create, start and open a shell in a new virtual machine instance
       add      Create a new virtual machine instance
       ls       List all virtual machine instances
+      modify   Modify a virtual machine instance configuration
       rm       Delete virtual machine instances
       info     Get information about an virtual machine instance
       console  Open the console of an virtual machine instance
@@ -49,7 +50,6 @@ cubic
       start    Start virtual machine instances
       stop     Stop virtual machine instances
       restart  Restart virtual machine instances
-      config   Modify virtual machine instance configuration
       rename   Rename a virtual machine instance
       clone    Clone a virtual machine instance
       image    Image subcommands

@@ -3,9 +3,9 @@ use crate::instance::{InstanceDao, InstanceStore, PortForward};
 use crate::util;
 use clap::Parser;
 
-/// Modify virtual machine instance configuration
+/// Modify a virtual machine instance configuration
 #[derive(Parser)]
-pub struct InstanceConfigCommand {
+pub struct InstanceModifyCommand {
     /// Name of the virtual machine instance
     instance: String,
     /// Number of CPUs for the virtual machine instance
@@ -25,7 +25,7 @@ pub struct InstanceConfigCommand {
     rm_port: Vec<PortForward>,
 }
 
-impl InstanceConfigCommand {
+impl InstanceModifyCommand {
     pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
         let mut instance = instance_dao.load(&self.instance)?;
 
