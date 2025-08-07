@@ -90,7 +90,7 @@ impl InstanceAddCommand {
             mem: util::human_readable_to_bytes(&self.mem)?,
             disk_capacity: 0, // Will be overwritten by resize operation below
             ssh_port,
-            hostfwd: self.port.iter().map(|p| p.to_qemu()).collect(),
+            hostfwd: self.port.clone(),
         };
         instance_dao.resize(&mut instance, disk_capacity)?;
         instance_dao.store(&instance)?;

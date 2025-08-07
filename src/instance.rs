@@ -30,7 +30,7 @@ pub struct Instance {
     pub disk_capacity: u64,
     pub ssh_port: u16,
     #[serde(default)]
-    pub hostfwd: Vec<String>,
+    pub hostfwd: Vec<PortForward>,
 }
 
 impl Instance {
@@ -114,7 +114,11 @@ machine:
         assert_eq!(instance.disk_capacity, 2361393152);
         assert_eq!(instance.ssh_port, 14357);
         assert_eq!(
-            instance.hostfwd,
+            instance
+                .hostfwd
+                .iter()
+                .map(|rule| rule.to_qemu())
+                .collect::<Vec<_>>(),
             ["tcp:127.0.0.1:8000-:8000", "tcp:127.0.0.1:9000-:10000"]
         );
     }
