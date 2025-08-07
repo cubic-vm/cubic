@@ -32,8 +32,8 @@ pub enum Commands {
     #[command(subcommand)]
     Image(commands::ImageCommands),
 
-    /// Network subcommands
-    #[command(subcommand)]
+    /// Network subcommands (Deprecated)
+    #[command(subcommand, hide = true)]
     Net(commands::NetworkCommands),
 }
 
