@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::instance::InstanceStore;
+use crate::instance::{InstanceStore, PortForward};
 use crate::util;
 use crate::view::{Console, MapView};
 use clap::Parser;
@@ -36,7 +36,7 @@ impl InstanceInfoCommand {
 
         for (index, rule) in instance.hostfwd.iter().enumerate() {
             let key = if index == 0 { "Forward" } else { "" };
-            view.add(key, rule);
+            view.add(key, &PortForward::from_qemu(rule).unwrap().to_string());
         }
 
         view.print(console);
