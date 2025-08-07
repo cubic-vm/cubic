@@ -12,7 +12,7 @@ cubic rename
 
     Arguments:
       <OLD_NAME>  Name of the virtual machine instance to rename
-      <NEW_NAME>  New name of the virutal machine instance
+      <NEW_NAME>  New name of the virtual machine instance
 
     Options:
       -h, --help  Print help
