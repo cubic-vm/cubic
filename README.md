@@ -170,4 +170,4 @@ You can help in various ways:
 
 # 📃 License
 
-Cubic is licensed under GPL 2.0.
+Cubic is dual-licensed under [Apache 2.0](LICENSE-APACHE) or [MIT](LICENSE-MIT).

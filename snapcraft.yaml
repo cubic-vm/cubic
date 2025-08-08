@@ -1,6 +1,6 @@
 name: cubic
 version: '0.12.0'
-license: GPL-2.0-only
+license: MIT OR Apache-2.0
 website: https://cubic-vm.org
 source-code: https://github.com/cubic-vm/cubic
 issues: https://github.com/cubic-vm/cubic/issues

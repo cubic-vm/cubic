@@ -2,7 +2,7 @@
 name = "cubic"
 version = "0.12.0"
 authors = ["Roger Knecht <rknecht@pm.me>"]
-license = "GPL-2.0-only"
+license = "MIT OR Apache-2.0"
 description = """\
 Cubic is a lightweight command line manager for virtual machines. It has a
 simple, daemon-less and rootless design. All Cubic virtual machines run
