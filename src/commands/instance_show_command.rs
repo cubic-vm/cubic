@@ -4,14 +4,14 @@ use crate::util;
 use crate::view::{Console, MapView};
 use clap::Parser;
 
-/// Get information about an virtual machine instance
+/// Show a virtual machine instance
 #[derive(Parser)]
-pub struct InstanceInfoCommand {
+pub struct InstanceShowCommand {
     /// Name of the virtual machine instance
     instance: String,
 }
 
-impl InstanceInfoCommand {
+impl InstanceShowCommand {
     pub fn run(
         &self,
         console: &mut dyn Console,
@@ -54,7 +54,7 @@ mod tests {
     use crate::view::console_mock::tests::ConsoleMock;
 
     #[test]
-    fn test_info_command() {
+    fn test_show_command() {
         let console = &mut ConsoleMock::new();
         let instance_store = &InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
@@ -67,7 +67,7 @@ mod tests {
             hostfwd: Vec::new(),
         }]);
 
-        InstanceInfoCommand {
+        InstanceShowCommand {
             instance: "test".to_string(),
         }
         .run(console, instance_store)
@@ -87,12 +87,12 @@ SSH Port: 9000
     }
 
     #[test]
-    fn test_info_command_failed() {
+    fn test_show_command_failed() {
         let console = &mut ConsoleMock::new();
         let instance_store = &InstanceStoreMock::new(Vec::new());
 
         assert!(matches!(
-            InstanceInfoCommand {
+            InstanceShowCommand {
                 instance: "test".to_string()
             }
             .run(console, instance_store),

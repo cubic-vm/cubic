@@ -1,14 +1,14 @@
-.. _ref_cubic_info:
+.. _ref_cubic_show:
 
-cubic info
+cubic show
 ==========
 
 .. code-block::
 
-    $ cubic info --help
-    Get information about an virtual machine instance
+    $ cubic show --help
+    Show a virtual machine instance
 
-    Usage: cubic info <INSTANCE>
+    Usage: cubic show <INSTANCE>
 
     Arguments:
       <INSTANCE>  Name of the virtual machine instance

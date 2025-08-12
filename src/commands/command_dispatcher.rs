@@ -1,6 +1,6 @@
 use crate::commands::{
-    self, InstanceAddCommand, InstanceCloneCommand, InstanceInfoCommand, InstanceListCommand,
-    InstanceModifyCommand, InstanceRemoveCommand, InstanceRenameCommand,
+    self, InstanceAddCommand, InstanceCloneCommand, InstanceListCommand, InstanceModifyCommand,
+    InstanceRemoveCommand, InstanceRenameCommand,
 };
 use crate::env::EnvironmentFactory;
 use crate::error::Error;
@@ -15,11 +15,12 @@ pub enum Commands {
     Add(InstanceAddCommand),
     #[clap(alias = "list")]
     Ls(InstanceListCommand),
+    #[clap(alias = "info")]
+    Show(commands::InstanceShowCommand),
     #[clap(alias = "config")]
     Modify(InstanceModifyCommand),
     #[clap(alias = "del")]
     Rm(InstanceRemoveCommand),
-    Info(InstanceInfoCommand),
     Console(commands::InstanceConsoleCommand),
     Ssh(commands::InstanceSshCommand),
     Scp(commands::InstanceScpCommand),
@@ -66,7 +67,7 @@ impl CommandDispatcher {
             Commands::Rm(cmd) => cmd.run(&instance_dao),
             Commands::Clone(cmd) => cmd.run(&instance_dao),
             Commands::Rename(cmd) => cmd.run(&instance_dao),
-            Commands::Info(cmd) => cmd.run(console, &instance_dao),
+            Commands::Show(cmd) => cmd.run(console, &instance_dao),
             Commands::Start(cmd) => cmd.run(&instance_dao),
             Commands::Stop(cmd) => cmd.run(&instance_dao),
             Commands::Restart(cmd) => cmd.run(&instance_dao),

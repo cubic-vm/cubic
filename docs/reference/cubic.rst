@@ -41,9 +41,9 @@ cubic
       run      Create, start and open a shell in a new virtual machine instance
       add      Create a new virtual machine instance
       ls       List all virtual machine instances
+      show     Show a virtual machine instance
       modify   Modify a virtual machine instance configuration
       rm       Delete virtual machine instances
-      info     Get information about an virtual machine instance
       console  Open the console of an virtual machine instance
       ssh      Connect to a virtual machine instance with SSH
       scp      Copy a file from or to a virtual machine instance with SCP
