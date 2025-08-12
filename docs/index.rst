@@ -39,11 +39,11 @@ Reference
   * :ref:`ref_cubic_run`
   * :ref:`ref_cubic_ls`
   * :ref:`ref_cubic_add`
+  * :ref:`ref_cubic_show`
   * :ref:`ref_cubic_modify`
   * :ref:`ref_cubic_rm`
   * :ref:`ref_cubic_clone`
   * :ref:`ref_cubic_rename`
-  * :ref:`ref_cubic_info`
   * :ref:`ref_cubic_console`
   * :ref:`ref_cubic_ssh`
   * :ref:`ref_cubic_scp`
