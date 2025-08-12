@@ -11,9 +11,13 @@ impl EnvironmentFactory {
 
     #[cfg(target_os = "linux")]
     pub fn create_env() -> Result<Environment, Error> {
-        let data_dir = Self::read_env("SNAP_USER_COMMON").or(Self::read_env("XDG_DATA_HOME"))?;
-        let cache_dir = Self::read_env("XDG_CACHE_HOME")?;
-        let runtime_dir = Self::read_env("XDG_RUNTIME_DIR")?;
+        let data_dir = Self::read_env("SNAP_USER_COMMON")
+            .or(Self::read_env("XDG_DATA_HOME"))
+            .or_else(|_| Self::read_env("HOME").map(|home| format!("{home}/.local/share")))?;
+        let cache_dir = Self::read_env("XDG_CACHE_HOME")
+            .or_else(|_| Self::read_env("HOME").map(|home| format!("{home}/.cache")))?;
+        let runtime_dir = Self::read_env("XDG_RUNTIME_DIR")
+            .or_else(|_| Self::read_env("UID").map(|uid| format!("/run/user/{uid}")))?;
 
         Ok(Environment::new(
             format!("{data_dir}/cubic"),
