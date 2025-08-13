@@ -8,11 +8,11 @@ cubic ssh
     $ cubic ssh --help
     Connect to a virtual machine instance with SSH
 
-    Usage: cubic ssh [OPTIONS] <INSTANCE> [CMD]
+    Usage: cubic ssh [OPTIONS] <TARGET> [CMD]
 
     Arguments:
-      <INSTANCE>  Name of the virtual machine instance
-      [CMD]       Execute a command in the virtual machine
+      <TARGET>  Target instance (format: [username@]instance, e.g. 'cubic@mymachine' or 'mymachine')
+      [CMD]     Execute a command in the virtual machine
 
     Options:
       -X                         Forward X over SSH
