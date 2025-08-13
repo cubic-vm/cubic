@@ -1,31 +1,17 @@
 use crate::commands::Verbosity;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore};
+use crate::instance::{InstanceStore, TargetPath};
 use crate::ssh_cmd::{get_ssh_private_key_names, Scp};
 use clap::Parser;
 use std::env;
-
-fn get_scp_address(instance_dao: &InstanceDao, location: &str) -> Result<String, Error> {
-    Ok(if location.contains(':') {
-        let mut location_token = location.split(':');
-        let name = location_token.next().unwrap();
-        let path = location_token.next().unwrap();
-        let instance = instance_dao.load(name)?;
-        let port = instance.ssh_port;
-        let user = instance.user;
-        format!("scp://{user}@127.0.0.1:{port}/{path}")
-    } else {
-        location.to_string()
-    })
-}
 
 /// Copy a file from or to a virtual machine instance with SCP
 #[derive(Parser)]
 pub struct InstanceScpCommand {
     /// Source of the data to copy
-    from: String,
+    from: TargetPath,
     /// Target of the data to copy
-    to: String,
+    to: TargetPath,
     /// Enable verbose logging
     #[clap(short, long, default_value_t = false)]
     verbose: bool,
@@ -38,9 +24,9 @@ pub struct InstanceScpCommand {
 }
 
 impl InstanceScpCommand {
-    pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
-        let from = &get_scp_address(instance_dao, &self.from)?;
-        let to = &get_scp_address(instance_dao, &self.to)?;
+    pub fn run(&self, instance_store: &dyn InstanceStore) -> Result<(), Error> {
+        let from = &self.from.to_scp(instance_store)?;
+        let to = &self.to.to_scp(instance_store)?;
         let verbosity = Verbosity::new(self.verbose, self.quiet);
 
         Scp::new()
