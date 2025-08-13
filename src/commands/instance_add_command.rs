@@ -1,7 +1,7 @@
 use crate::commands::image::ImageCommands;
 use crate::error::Error;
 use crate::image::{ImageDao, ImageStore};
-use crate::instance::{Instance, InstanceDao, InstanceStore, PortForward};
+use crate::instance::{Instance, InstanceDao, InstanceName, InstanceStore, PortForward};
 use crate::util;
 use clap::Parser;
 
@@ -14,13 +14,13 @@ pub const DEFAULT_DISK_SIZE: &str = "100G";
 pub struct InstanceAddCommand {
     /// Name of the virtual machine instance
     #[clap(conflicts_with = "name")]
-    instance_name: Option<String>,
+    instance_name: Option<InstanceName>,
     /// Name of the virtual machine image
     #[clap(short, long)]
     image: String,
     /// Name of the virtual machine instance
     #[clap(short, long, conflicts_with = "instance_name", hide = true)]
-    name: Option<String>,
+    name: Option<InstanceName>,
     /// Name of the user
     #[clap(short, long, default_value = "cubic")]
     user: String,
@@ -40,7 +40,7 @@ pub struct InstanceAddCommand {
 
 impl InstanceAddCommand {
     pub fn new(
-        instance_name: String,
+        instance_name: InstanceName,
         image: String,
         user: String,
         cpus: u16,

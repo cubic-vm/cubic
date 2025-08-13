@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::instance::InstanceStore;
+use crate::instance::{InstanceName, InstanceStore};
 use crate::util;
 use crate::view::{Console, MapView};
 use clap::Parser;
@@ -8,7 +8,7 @@ use clap::Parser;
 #[derive(Parser)]
 pub struct InstanceShowCommand {
     /// Name of the virtual machine instance
-    instance: String,
+    instance: InstanceName,
 }
 
 impl InstanceShowCommand {
@@ -17,11 +17,11 @@ impl InstanceShowCommand {
         console: &mut dyn Console,
         instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
-        if !instance_store.exists(&self.instance) {
+        if !instance_store.exists(self.instance.as_str()) {
             return Result::Err(Error::UnknownInstance(self.instance.to_string()));
         }
 
-        let instance = instance_store.load(&self.instance)?;
+        let instance = instance_store.load(self.instance.as_str())?;
 
         let mut view = MapView::new();
         view.add("Arch", &instance.arch.to_string());
@@ -52,6 +52,7 @@ mod tests {
     use crate::instance::instance_store_mock::tests::InstanceStoreMock;
     use crate::instance::Instance;
     use crate::view::console_mock::tests::ConsoleMock;
+    use std::str::FromStr;
 
     #[test]
     fn test_show_command() {
@@ -68,7 +69,7 @@ mod tests {
         }]);
 
         InstanceShowCommand {
-            instance: "test".to_string(),
+            instance: InstanceName::from_str("test").unwrap(),
         }
         .run(console, instance_store)
         .unwrap();
@@ -93,7 +94,7 @@ SSH Port: 9000
 
         assert!(matches!(
             InstanceShowCommand {
-                instance: "test".to_string()
+                instance: InstanceName::from_str("test").unwrap()
             }
             .run(console, instance_store),
             Result::Err(Error::UnknownInstance(_))

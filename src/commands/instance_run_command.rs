@@ -4,7 +4,7 @@ use crate::commands::instance_add_command::{
 };
 use crate::error::Error;
 use crate::image::ImageDao;
-use crate::instance::{InstanceDao, PortForward};
+use crate::instance::{InstanceDao, InstanceName, PortForward};
 use clap::Parser;
 
 /// Create, start and open a shell in a new virtual machine instance
@@ -12,13 +12,13 @@ use clap::Parser;
 pub struct InstanceRunCommand {
     /// Name of the virtual machine instance
     #[clap(conflicts_with = "name")]
-    instance_name: Option<String>,
+    instance_name: Option<InstanceName>,
     /// Name of the virtual machine image
     #[clap(short, long)]
     image: String,
     /// Name of the virtual machine instance
     #[clap(short, long, conflicts_with = "instance_name", hide = true)]
-    name: Option<String>,
+    name: Option<InstanceName>,
     /// Name of the user
     #[clap(short, long, default_value = "cubic")]
     user: String,
@@ -48,8 +48,7 @@ impl InstanceRunCommand {
             .instance_name
             .as_ref()
             .or(self.name.as_ref())
-            .ok_or(Error::InvalidArgument("Missing instance name".to_string()))?
-            .to_string();
+            .ok_or(Error::InvalidArgument("Missing instance name".to_string()))?;
 
         InstanceAddCommand::new(
             instance_name.clone(),
@@ -62,7 +61,7 @@ impl InstanceRunCommand {
         )
         .run(image_dao, instance_dao)?;
         commands::InstanceSshCommand {
-            instance: instance_name.clone(),
+            instance: instance_name.to_string(),
             xforward: false,
             verbose: self.verbose,
             quiet: self.quiet,
