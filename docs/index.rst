@@ -51,3 +51,4 @@ Reference
   * :ref:`ref_cubic_stop`
   * :ref:`ref_cubic_restart`
   * :ref:`ref_cubic_image`
+  * :ref:`ref_cubic_prune`

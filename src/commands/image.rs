@@ -1,3 +1,4 @@
+use crate::commands;
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
@@ -37,8 +38,7 @@ pub enum ImageCommands {
         name: String,
     },
 
-    /// Clear local image cache
-    Prune,
+    Prune(commands::PruneCommand),
 }
 
 impl ImageCommands {
@@ -110,7 +110,7 @@ impl ImageCommands {
                 Ok(())
             }
 
-            ImageCommands::Prune => image_dao.prune(),
+            ImageCommands::Prune(cmd) => cmd.run(image_dao),
         }
     }
 }

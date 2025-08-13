@@ -53,6 +53,7 @@ cubic
       rename   Rename a virtual machine instance
       clone    Clone a virtual machine instance
       image    Image subcommands
+      prune    Clear cache and free space
       help     Print this message or the help of the given subcommand(s)
 
     Options:

@@ -29,10 +29,10 @@ pub enum Commands {
     Restart(commands::InstanceRestartCommand),
     Rename(InstanceRenameCommand),
     Clone(InstanceCloneCommand),
-
     /// Image subcommands
     #[command(subcommand)]
     Image(commands::ImageCommands),
+    Prune(commands::PruneCommand),
 
     /// Network subcommands (Deprecated)
     #[command(subcommand, hide = true)]
@@ -75,6 +75,7 @@ impl CommandDispatcher {
             Commands::Ssh(cmd) => cmd.run(&instance_dao),
             Commands::Scp(cmd) => cmd.run(&instance_dao),
             Commands::Image(command) => command.dispatch(&image_dao),
+            Commands::Prune(cmd) => cmd.run(&image_dao),
             Commands::Net(command) => command.dispatch(&instance_dao),
         }
     }

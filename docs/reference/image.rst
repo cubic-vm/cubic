@@ -14,7 +14,7 @@ cubic image
       ls     List images
       fetch  Fetch an image
       info   Show image information
-      prune  Clear local image cache
+      prune  Clear cache and free space
       help   Print this message or the help of the given subcommand(s)
 
     Options:

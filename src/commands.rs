@@ -15,6 +15,7 @@ pub mod instance_ssh_command;
 pub mod instance_start_command;
 pub mod instance_stop_command;
 pub mod net;
+pub mod prune_command;
 pub mod verbosity;
 
 pub use command_dispatcher::*;
@@ -34,4 +35,5 @@ pub use instance_ssh_command::*;
 pub use instance_start_command::*;
 pub use instance_stop_command::*;
 pub use net::*;
+pub use prune_command::*;
 pub use verbosity::*;
