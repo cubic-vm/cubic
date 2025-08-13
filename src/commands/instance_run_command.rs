@@ -4,7 +4,7 @@ use crate::commands::instance_add_command::{
 };
 use crate::error::Error;
 use crate::image::ImageDao;
-use crate::instance::{InstanceDao, InstanceName, PortForward};
+use crate::instance::{InstanceDao, InstanceName, PortForward, Target};
 use clap::Parser;
 
 /// Create, start and open a shell in a new virtual machine instance
@@ -61,7 +61,7 @@ impl InstanceRunCommand {
         )
         .run(image_dao, instance_dao)?;
         commands::InstanceSshCommand {
-            instance: instance_name.to_string(),
+            target: Target::from_instance_name(instance_name.clone()),
             xforward: false,
             verbose: self.verbose,
             quiet: self.quiet,

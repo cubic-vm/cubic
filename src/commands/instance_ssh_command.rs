@@ -1,6 +1,6 @@
 use crate::commands::{self, Verbosity};
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore};
+use crate::instance::{InstanceDao, InstanceStore, Target};
 use crate::ssh_cmd::{get_ssh_private_key_names, Ssh};
 use crate::view::SpinnerView;
 use clap::Parser;
@@ -8,35 +8,11 @@ use std::env;
 use std::thread;
 use std::time::{Duration, Instant};
 
-fn get_instance_name(target: &str) -> Result<String, Error> {
-    if target.contains('@') {
-        target
-            .split('@')
-            .nth(1)
-            .map(|instance| instance.to_string())
-            .ok_or(Error::InvalidSshTarget(target.to_string()))
-    } else {
-        Ok(target.to_string())
-    }
-}
-
-fn get_user_name(target: &str) -> Result<Option<String>, Error> {
-    if target.contains('@') {
-        target
-            .split('@')
-            .next()
-            .map(|instance| Some(instance.to_string()))
-            .ok_or(Error::InvalidSshTarget(target.to_string()))
-    } else {
-        Ok(None)
-    }
-}
-
 /// Connect to a virtual machine instance with SSH
 #[derive(Parser)]
 pub struct InstanceSshCommand {
-    /// Name of the virtual machine instance
-    pub instance: String,
+    /// Target instance (format: [username@]instance, e.g. 'cubic@mymachine' or 'mymachine')
+    pub target: Target,
     /// Forward X over SSH
     #[clap(short = 'X', default_value_t = false)]
     pub xforward: bool,
@@ -55,9 +31,13 @@ pub struct InstanceSshCommand {
 
 impl InstanceSshCommand {
     pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
-        let name = get_instance_name(&self.instance)?;
-        let instance = instance_dao.load(&name)?;
-        let user = get_user_name(&self.instance)?.unwrap_or(instance.user.to_string());
+        let name = self.target.get_instance();
+        let instance = instance_dao.load(name.as_str())?;
+        let user = self
+            .target
+            .get_user()
+            .map(|user| user.to_string())
+            .unwrap_or(instance.user.to_string());
         let ssh_port = instance.ssh_port;
         let verbosity = Verbosity::new(self.verbose, self.quiet);
 

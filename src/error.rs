@@ -14,7 +14,6 @@ pub enum Error {
     InvalidImageName(String),
     UnsetEnvVar(String),
     CannotParseFile(String),
-    InvalidSshTarget(String),
     CannotParseSize(String),
     CannotShrinkDisk(String),
     CannotOpenTerminal(String),
@@ -40,7 +39,6 @@ pub fn print_error(error: Error) {
         Error::InvalidImageName(name) => println!("Invalid image name: {name}"),
         Error::UnsetEnvVar(var) => println!("Environment variable '{var}' is not set"),
         Error::CannotParseFile(path) => println!("Cannot parse file '{path}'"),
-        Error::InvalidSshTarget(name) => println!("Invalid SSH target '{name}'"),
         Error::CannotParseSize(size) => println!("Invalid data size format '{size}'"),
         Error::CannotShrinkDisk(name) => {
             println!("Cannot shrink the disk of the instance '{name}'")
