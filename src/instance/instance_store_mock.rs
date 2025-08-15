@@ -33,23 +33,23 @@ pub mod tests {
         }
 
         fn store(&self, _instance: &Instance) -> Result<(), Error> {
-            Result::Err(Error::UnknownCommand)
+            Result::Ok(())
         }
 
         fn clone(&self, _instance: &Instance, _new_name: &str) -> Result<(), Error> {
-            Result::Err(Error::UnknownCommand)
+            Result::Ok(())
         }
 
         fn rename(&self, _instance: &mut Instance, _new_name: &str) -> Result<(), Error> {
-            Result::Err(Error::UnknownCommand)
+            Result::Ok(())
         }
 
         fn resize(&self, _instance: &mut Instance, _size: u64) -> Result<(), Error> {
-            Result::Err(Error::UnknownCommand)
+            Result::Ok(())
         }
 
         fn delete(&self, _instance: &Instance) -> Result<(), Error> {
-            Result::Err(Error::UnknownCommand)
+            Result::Ok(())
         }
 
         fn get_state(&self, _instance: &Instance) -> InstanceState {
@@ -65,7 +65,7 @@ pub mod tests {
         }
 
         fn get_monitor(&self, _instance: &Instance) -> Result<Monitor, Error> {
-            Result::Err(Error::UnknownCommand)
+            Result::Err(Error::InvalidArgument("not supported".to_string()))
         }
     }
 }

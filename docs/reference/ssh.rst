@@ -16,7 +16,7 @@ cubic ssh
 
     Options:
       -X                         Forward X over SSH
-      -v, --verbose              Enable verbose logging
-      -q, --quiet                Reduce logging output
           --ssh-args <SSH_ARGS>  Pass additional SSH arguments
+      -v, --verbose              Increase logging output
+      -q, --quiet                Reduce logging output
       -h, --help                 Print help

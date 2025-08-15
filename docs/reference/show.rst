@@ -8,10 +8,12 @@ cubic show
     $ cubic show --help
     Show a virtual machine instance
 
-    Usage: cubic show <INSTANCE>
+    Usage: cubic show [OPTIONS] <INSTANCE>
 
     Arguments:
       <INSTANCE>  Name of the virtual machine instance
 
     Options:
-      -h, --help  Print help
+      -v, --verbose  Increase logging output
+      -q, --quiet    Reduce logging output
+      -h, --help     Print help

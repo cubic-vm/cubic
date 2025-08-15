@@ -8,7 +8,9 @@ cubic prune
     $ cubic prune --help
     Clear cache and free space
 
-    Usage: cubic prune
+    Usage: cubic prune [OPTIONS]
 
     Options:
-      -h, --help  Print help
+      -v, --verbose  Increase logging output
+      -q, --quiet    Reduce logging output
+      -h, --help     Print help

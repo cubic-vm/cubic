@@ -14,8 +14,8 @@ cubic rm
       [INSTANCES]...  Name of the virtual machine instances to delete
 
     Options:
-      -v, --verbose  Enable verbose logging
-      -q, --quiet    Reduce logging output
       -f, --force    Delete the virtual machine instances even when running
       -y, --yes      Delete the virtual machine instances without confirmation
+      -v, --verbose  Increase logging output
+      -q, --quiet    Reduce logging output
       -h, --help     Print help

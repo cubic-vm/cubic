@@ -35,7 +35,7 @@ cubic
     $ cubic scp <machine>:<path/to/guest/file> <path/to/host/file>
 
 
-    Usage: cubic [COMMAND]
+    Usage: cubic [OPTIONS] [COMMAND]
 
     Commands:
       run      Create, start and open a shell in a new virtual machine instance
@@ -57,5 +57,7 @@ cubic
       help     Print this message or the help of the given subcommand(s)
 
     Options:
+      -v, --verbose  Increase logging output
+      -q, --quiet    Reduce logging output
       -h, --help     Print help
       -V, --version  Print version

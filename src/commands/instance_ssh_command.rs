@@ -16,12 +16,6 @@ pub struct InstanceSshCommand {
     /// Forward X over SSH
     #[clap(short = 'X', default_value_t = false)]
     pub xforward: bool,
-    /// Enable verbose logging
-    #[clap(short, long, default_value_t = false)]
-    pub verbose: bool,
-    /// Reduce logging output
-    #[clap(short, long, default_value_t = false)]
-    pub quiet: bool,
     /// Pass additional SSH arguments
     #[clap(long)]
     pub ssh_args: Option<String>,
@@ -30,7 +24,7 @@ pub struct InstanceSshCommand {
 }
 
 impl InstanceSshCommand {
-    pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
+    pub fn run(&self, instance_dao: &InstanceDao, verbosity: Verbosity) -> Result<(), Error> {
         let name = self.target.get_instance();
         let instance = instance_dao.load(name.as_str())?;
         let user = self
@@ -39,16 +33,13 @@ impl InstanceSshCommand {
             .map(|user| user.to_string())
             .unwrap_or(instance.user.to_string());
         let ssh_port = instance.ssh_port;
-        let verbosity = Verbosity::new(self.verbose, self.quiet);
 
         commands::InstanceStartCommand {
             qemu_args: None,
-            verbose: self.verbose,
-            quiet: self.quiet,
             wait: true,
             instances: vec![name.to_string()],
         }
-        .run(instance_dao)?;
+        .run(instance_dao, verbosity)?;
 
         let mut ssh = None;
         let mut start_time = Instant::now();

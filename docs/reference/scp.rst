@@ -15,7 +15,7 @@ cubic scp
       <TO>    Target of the data to copy
 
     Options:
-      -v, --verbose              Enable verbose logging
-      -q, --quiet                Reduce logging output
           --scp-args <SCP_ARGS>  Pass additional SCP arguments
+      -v, --verbose              Increase logging output
+      -q, --quiet                Reduce logging output
       -h, --help                 Print help

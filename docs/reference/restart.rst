@@ -14,6 +14,6 @@ cubic restart
       [INSTANCES]...  Name of the virtual machine instances to restart
 
     Options:
-      -v, --verbose  Enable verbose logging
+      -v, --verbose  Increase logging output
       -q, --quiet    Reduce logging output
       -h, --help     Print help
