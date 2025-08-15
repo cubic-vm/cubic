@@ -1,4 +1,4 @@
-use crate::commands::Verbosity;
+use crate::commands;
 use crate::error::Error;
 use crate::instance::{InstanceStore, TargetPath};
 use crate::ssh_cmd::{get_ssh_private_key_names, Scp};
@@ -12,22 +12,19 @@ pub struct InstanceScpCommand {
     from: TargetPath,
     /// Target of the data to copy
     to: TargetPath,
-    /// Enable verbose logging
-    #[clap(short, long, default_value_t = false)]
-    verbose: bool,
-    /// Reduce logging output
-    #[clap(short, long, default_value_t = false)]
-    quiet: bool,
     /// Pass additional SCP arguments
     #[clap(long)]
     scp_args: Option<String>,
 }
 
 impl InstanceScpCommand {
-    pub fn run(&self, instance_store: &dyn InstanceStore) -> Result<(), Error> {
+    pub fn run(
+        &self,
+        instance_store: &dyn InstanceStore,
+        verbosity: commands::Verbosity,
+    ) -> Result<(), Error> {
         let from = &self.from.to_scp(instance_store)?;
         let to = &self.to.to_scp(instance_store)?;
-        let verbosity = Verbosity::new(self.verbose, self.quiet);
 
         Scp::new()
             .set_root_dir(env::var("SNAP").unwrap_or_default().as_str())

@@ -15,15 +15,17 @@ pub struct InstanceConsoleCommand {
 }
 
 impl InstanceConsoleCommand {
-    pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
+    pub fn run(
+        &self,
+        instance_dao: &InstanceDao,
+        verbosity: commands::Verbosity,
+    ) -> Result<(), Error> {
         commands::InstanceStartCommand {
             qemu_args: None,
-            verbose: false,
-            quiet: true,
             wait: false,
             instances: vec![self.instance.to_string()],
         }
-        .run(instance_dao)?;
+        .run(instance_dao, verbosity)?;
 
         println!("Press CTRL+W to exit the console.");
         let console_path = instance_dao.env.get_console_file(&self.instance);

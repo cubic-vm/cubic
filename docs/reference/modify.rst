@@ -19,4 +19,6 @@ cubic modify
       -d, --disk <DISK>        Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
       -p, --port <PORT>        Add port forwarding rule (e.g. -p 8000:80)
       -P, --rm-port <RM_PORT>  Remove port forwarding rule (e.g. -P 8000:80)
+      -v, --verbose            Increase logging output
+      -q, --quiet              Reduce logging output
       -h, --help               Print help

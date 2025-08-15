@@ -8,7 +8,7 @@ cubic image
     $ cubic image --help
     Image subcommands
 
-    Usage: cubic image <COMMAND>
+    Usage: cubic image [OPTIONS] <COMMAND>
 
     Commands:
       ls     List images
@@ -18,4 +18,6 @@ cubic image
       help   Print this message or the help of the given subcommand(s)
 
     Options:
-      -h, --help  Print help
+      -v, --verbose  Increase logging output
+      -q, --quiet    Reduce logging output
+      -h, --help     Print help

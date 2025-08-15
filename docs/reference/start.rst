@@ -15,7 +15,7 @@ cubic start
 
     Options:
           --qemu-args <QEMU_ARGS>  Pass additional QEMU arguments
-      -v, --verbose                Enable verbose logging
-      -q, --quiet                  Reduce logging output
       -w, --wait                   Wait for the virtual machine instance to be started
+      -v, --verbose                Increase logging output
+      -q, --quiet                  Reduce logging output
       -h, --help                   Print help

@@ -1,5 +1,5 @@
 use crate::actions::StopInstanceAction;
-use crate::commands::Verbosity;
+use crate::commands;
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore};
 use crate::view::SpinnerView;
@@ -13,12 +13,6 @@ pub struct InstanceStopCommand {
     /// Stop all virtual machine instances
     #[clap(short, long, default_value_t = false)]
     pub all: bool,
-    /// Enable verbose logging
-    #[clap(short, long, default_value_t = false)]
-    pub verbose: bool,
-    /// Reduce logging output
-    #[clap(short, long, default_value_t = false)]
-    pub quiet: bool,
     /// Wait for the virtual machine instance to be stopped
     #[clap(short, long, default_value_t = false)]
     pub wait: bool,
@@ -27,7 +21,11 @@ pub struct InstanceStopCommand {
 }
 
 impl InstanceStopCommand {
-    pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
+    pub fn run(
+        &self,
+        instance_dao: &InstanceDao,
+        verbosity: commands::Verbosity,
+    ) -> Result<(), Error> {
         let stop_instances = if self.all {
             instance_dao.get_instances()
         } else {
@@ -41,7 +39,6 @@ impl InstanceStopCommand {
             actions.push(action);
         }
 
-        let verbosity = Verbosity::new(self.verbose, self.quiet);
         if self.wait && !verbosity.is_quiet() {
             let mut spinner = SpinnerView::new("Stopping instance(s)");
             while actions.iter().any(|action| !action.is_done(instance_dao)) {

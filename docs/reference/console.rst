@@ -8,10 +8,12 @@ cubic console
     $ cubic console --help
     Open the console of an virtual machine instance
 
-    Usage: cubic console <INSTANCE>
+    Usage: cubic console [OPTIONS] <INSTANCE>
 
     Arguments:
       <INSTANCE>  Name of the virtual machine instance
 
     Options:
-      -h, --help  Print help
+      -v, --verbose  Increase logging output
+      -q, --quiet    Reduce logging output
+      -h, --help     Print help

@@ -15,7 +15,7 @@ cubic stop
 
     Options:
       -a, --all      Stop all virtual machine instances
-      -v, --verbose  Enable verbose logging
-      -q, --quiet    Reduce logging output
       -w, --wait     Wait for the virtual machine instance to be stopped
+      -v, --verbose  Increase logging output
+      -q, --quiet    Reduce logging output
       -h, --help     Print help

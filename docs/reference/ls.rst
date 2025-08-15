@@ -6,9 +6,11 @@ cubic ls
 .. code-block::
 
     $ cubic ls --help
-    List virtual machine instances
+    List all virtual machine instances
 
-    Usage: cubic ls
+    Usage: cubic ls [OPTIONS]
 
     Options:
-      -h, --help  Print help
+      -v, --verbose  Increase logging output
+      -q, --quiet    Reduce logging output
+      -h, --help     Print help

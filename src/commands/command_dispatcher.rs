@@ -39,41 +39,49 @@ pub enum Commands {
     Net(commands::NetworkCommands),
 }
 
-#[derive(Default, Parser)]
+#[derive(Parser, Default)]
+pub struct GlobalOptions {
+    /// Increase logging output
+    #[clap(short, long, action, global = true)]
+    verbose: bool,
+    /// Reduce logging output
+    #[clap(short, long, action, global = true)]
+    quiet: bool,
+}
+
+#[derive(Parser)]
 #[command(author, version, about, long_about = None, arg_required_else_help = true)]
 pub struct CommandDispatcher {
     #[command(subcommand)]
-    pub command: Option<Commands>,
+    pub command: Commands,
+
+    #[clap(flatten)]
+    global: GlobalOptions,
 }
 
 impl CommandDispatcher {
-    pub fn new() -> Self {
-        CommandDispatcher::default()
-    }
-
     pub fn dispatch(self) -> Result<(), Error> {
-        let command = Self::parse().command.ok_or(Error::UnknownCommand)?;
-
+        let verbosity = commands::Verbosity::new(self.global.verbose, self.global.quiet);
         let console: &mut dyn Console = &mut Stdio::new();
         let env = EnvironmentFactory::create_env()?;
         let image_dao = ImageDao::new(&env)?;
         let instance_dao = InstanceDao::new(&env)?;
 
-        match &command {
-            Commands::Run(cmd) => cmd.run(&image_dao, &instance_dao),
+        match &self.command {
+            Commands::Run(cmd) => cmd.run(&image_dao, &instance_dao, verbosity),
             Commands::Ls(cmd) => cmd.run(console, &instance_dao),
             Commands::Add(cmd) => cmd.run(&image_dao, &instance_dao),
             Commands::Modify(cmd) => cmd.run(&instance_dao),
-            Commands::Rm(cmd) => cmd.run(&instance_dao),
+            Commands::Rm(cmd) => cmd.run(&instance_dao, verbosity),
             Commands::Clone(cmd) => cmd.run(&instance_dao),
             Commands::Rename(cmd) => cmd.run(&instance_dao),
             Commands::Show(cmd) => cmd.run(console, &instance_dao),
-            Commands::Start(cmd) => cmd.run(&instance_dao),
-            Commands::Stop(cmd) => cmd.run(&instance_dao),
-            Commands::Restart(cmd) => cmd.run(&instance_dao),
-            Commands::Console(cmd) => cmd.run(&instance_dao),
-            Commands::Ssh(cmd) => cmd.run(&instance_dao),
-            Commands::Scp(cmd) => cmd.run(&instance_dao),
+            Commands::Start(cmd) => cmd.run(&instance_dao, verbosity),
+            Commands::Stop(cmd) => cmd.run(&instance_dao, verbosity),
+            Commands::Restart(cmd) => cmd.run(&instance_dao, verbosity),
+            Commands::Console(cmd) => cmd.run(&instance_dao, verbosity),
+            Commands::Ssh(cmd) => cmd.run(&instance_dao, verbosity),
+            Commands::Scp(cmd) => cmd.run(&instance_dao, verbosity),
             Commands::Image(command) => command.dispatch(&image_dao),
             Commands::Prune(cmd) => cmd.run(&image_dao),
             Commands::Net(command) => command.dispatch(&instance_dao),

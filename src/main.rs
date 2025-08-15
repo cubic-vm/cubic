@@ -14,9 +14,10 @@ mod view;
 mod web;
 
 use crate::commands::CommandDispatcher;
+use clap::Parser;
 
 fn main() {
-    CommandDispatcher::new()
+    CommandDispatcher::parse()
         .dispatch()
         .map_err(error::print_error)
         .ok();

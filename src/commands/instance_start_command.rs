@@ -13,12 +13,6 @@ pub struct InstanceStartCommand {
     /// Pass additional QEMU arguments
     #[clap(long)]
     pub qemu_args: Option<String>,
-    /// Enable verbose logging
-    #[clap(short, long, default_value_t = false)]
-    pub verbose: bool,
-    /// Reduce logging output
-    #[clap(short, long, default_value_t = false)]
-    pub quiet: bool,
     /// Wait for the virtual machine instance to be started
     #[clap(short, long, default_value_t = false)]
     pub wait: bool,
@@ -27,8 +21,7 @@ pub struct InstanceStartCommand {
 }
 
 impl InstanceStartCommand {
-    pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
-        let verbosity = Verbosity::new(self.verbose, self.quiet);
+    pub fn run(&self, instance_dao: &InstanceDao, verbosity: Verbosity) -> Result<(), Error> {
         // Launch virtual machine instances
         let mut actions = Vec::new();
         for name in &self.instances {
