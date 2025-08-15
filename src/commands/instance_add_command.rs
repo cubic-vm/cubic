@@ -39,36 +39,17 @@ pub struct InstanceAddCommand {
 }
 
 impl InstanceAddCommand {
-    pub fn new(
-        instance_name: InstanceName,
-        image: String,
-        user: String,
-        cpus: u16,
-        mem: String,
-        disk: String,
-        port: Vec<PortForward>,
-    ) -> Self {
-        Self {
-            instance_name: Some(instance_name),
-            image,
-            name: None,
-            user,
-            cpus,
-            mem,
-            disk,
-            port,
-        }
+    pub fn get_name(&self) -> Result<InstanceName, Error> {
+        self.instance_name
+            .clone()
+            .or(self.name.clone())
+            .ok_or(Error::InvalidArgument("Missing instance name".to_string()))
     }
 
     pub fn run(&self, image_dao: &ImageDao, instance_dao: &InstanceDao) -> Result<(), Error> {
-        let name = self
-            .instance_name
-            .as_ref()
-            .or(self.name.as_ref())
-            .ok_or(Error::InvalidArgument("Missing instance name".to_string()))?
-            .to_string();
+        let name = self.get_name()?;
 
-        if instance_dao.exists(&name) {
+        if instance_dao.exists(name.as_str()) {
             return Result::Err(Error::InstanceAlreadyExists(name.to_string()));
         }
 
@@ -77,13 +58,13 @@ impl InstanceAddCommand {
         }
         .dispatch(image_dao)?;
         let image = image_dao.get(&self.image)?;
-        image_dao.copy_image(&image, &name)?;
+        image_dao.copy_image(&image, name.as_str())?;
 
         let disk_capacity = util::human_readable_to_bytes(&self.disk)?;
         let ssh_port = util::generate_random_ssh_port();
 
         let mut instance = Instance {
-            name: name.clone(),
+            name: name.to_string(),
             arch: image.arch,
             user: self.user.to_string(),
             cpus: self.cpus,
