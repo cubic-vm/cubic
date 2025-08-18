@@ -2,6 +2,7 @@ mod hostfwd;
 
 use crate::error::Error;
 use crate::instance::InstanceDao;
+use crate::view::Console;
 
 use clap::Subcommand;
 use hostfwd::HostfwdCommands;
@@ -23,9 +24,13 @@ pub enum NetworkCommands {
 }
 
 impl NetworkCommands {
-    pub fn dispatch(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
+    pub fn dispatch(
+        &self,
+        console: &mut dyn Console,
+        instance_dao: &InstanceDao,
+    ) -> Result<(), Error> {
         match self {
-            NetworkCommands::Hostfwd(command) => command.dispatch(instance_dao),
+            NetworkCommands::Hostfwd(command) => command.dispatch(console, instance_dao),
         }
     }
 }

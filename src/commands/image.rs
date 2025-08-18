@@ -6,7 +6,7 @@ use crate::image::{Image, ImageDao, ImageFactory, ImageFetcher, ImageStore};
 use crate::util;
 use crate::view::SpinnerView;
 use crate::view::{Alignment, TableView};
-use crate::view::{MapView, Stdio};
+use crate::view::{Console, MapView};
 use clap::Subcommand;
 
 fn fetch_image_list(env: &Environment) -> Vec<Image> {
@@ -42,9 +42,7 @@ pub enum ImageCommands {
 }
 
 impl ImageCommands {
-    pub fn dispatch(&self, image_dao: &ImageDao) -> Result<(), Error> {
-        let console = &mut Stdio::new();
-
+    pub fn dispatch(&self, console: &mut dyn Console, image_dao: &ImageDao) -> Result<(), Error> {
         match self {
             ImageCommands::Ls { .. } => {
                 let images = fetch_image_list(&image_dao.env);

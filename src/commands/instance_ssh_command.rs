@@ -2,7 +2,7 @@ use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore, Target};
 use crate::ssh_cmd::{get_ssh_private_key_names, Ssh};
-use crate::view::SpinnerView;
+use crate::view::{Console, SpinnerView};
 use clap::Parser;
 use std::env;
 use std::thread;
@@ -24,7 +24,12 @@ pub struct InstanceSshCommand {
 }
 
 impl InstanceSshCommand {
-    pub fn run(&self, instance_dao: &InstanceDao, verbosity: Verbosity) -> Result<(), Error> {
+    pub fn run(
+        &self,
+        console: &mut dyn Console,
+        instance_dao: &InstanceDao,
+        verbosity: Verbosity,
+    ) -> Result<(), Error> {
         let name = self.target.get_instance();
         let instance = instance_dao.load(name.as_str())?;
         let user = self
@@ -44,29 +49,25 @@ impl InstanceSshCommand {
         let mut ssh = None;
         let mut start_time = Instant::now();
 
-        if !verbosity.is_quiet() {
-            println!("Default login user: cubic / password: cubic");
-        }
+        console.info("Default login user: cubic / password: cubic");
 
         loop {
             if ssh.is_none() {
-                ssh = Some(
-                    Ssh::new()
-                        .set_known_hosts_file(
-                            env::var("HOME")
-                                .map(|dir| format!("{dir}/.ssh/known_hosts"))
-                                .ok(),
-                        )
-                        .set_private_keys(get_ssh_private_key_names()?)
-                        .set_port(Some(ssh_port))
-                        .set_xforward(self.xforward)
-                        .set_args(self.ssh_args.clone().unwrap_or_default())
-                        .set_user(user.clone())
-                        .set_cmd(self.cmd.clone())
-                        .set_verbose(verbosity.is_verbose())
-                        .connect()
-                        .spawn()?,
-                );
+                let mut cmd = Ssh::new()
+                    .set_known_hosts_file(
+                        env::var("HOME")
+                            .map(|dir| format!("{dir}/.ssh/known_hosts"))
+                            .ok(),
+                    )
+                    .set_private_keys(get_ssh_private_key_names()?)
+                    .set_port(Some(ssh_port))
+                    .set_xforward(self.xforward)
+                    .set_args(self.ssh_args.clone().unwrap_or_default())
+                    .set_user(user.clone())
+                    .set_cmd(self.cmd.clone())
+                    .connect();
+                console.debug(&cmd.get_command());
+                ssh = Some(cmd.spawn()?);
                 start_time = Instant::now();
             }
 

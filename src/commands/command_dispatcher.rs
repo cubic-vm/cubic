@@ -6,7 +6,7 @@ use crate::env::EnvironmentFactory;
 use crate::error::Error;
 use crate::image::ImageDao;
 use crate::instance::InstanceDao;
-use crate::view::{Console, Stdio};
+use crate::view::Console;
 use clap::{Parser, Subcommand};
 
 #[derive(Subcommand)]
@@ -60,17 +60,17 @@ pub struct CommandDispatcher {
 }
 
 impl CommandDispatcher {
-    pub fn dispatch(self) -> Result<(), Error> {
+    pub fn dispatch(self, console: &mut dyn Console) -> Result<(), Error> {
         let verbosity = commands::Verbosity::new(self.global.verbose, self.global.quiet);
-        let console: &mut dyn Console = &mut Stdio::new();
+        console.set_verbosity(verbosity);
         let env = EnvironmentFactory::create_env()?;
         let image_dao = ImageDao::new(&env)?;
         let instance_dao = InstanceDao::new(&env)?;
 
         match &self.command {
-            Commands::Run(cmd) => cmd.run(&image_dao, &instance_dao, verbosity),
+            Commands::Run(cmd) => cmd.run(console, &image_dao, &instance_dao, verbosity),
             Commands::Ls(cmd) => cmd.run(console, &instance_dao),
-            Commands::Add(cmd) => cmd.run(&image_dao, &instance_dao),
+            Commands::Add(cmd) => cmd.run(console, &image_dao, &instance_dao),
             Commands::Modify(cmd) => cmd.run(&instance_dao),
             Commands::Rm(cmd) => cmd.run(&instance_dao, verbosity),
             Commands::Clone(cmd) => cmd.run(&instance_dao),
@@ -80,11 +80,11 @@ impl CommandDispatcher {
             Commands::Stop(cmd) => cmd.run(&instance_dao, verbosity),
             Commands::Restart(cmd) => cmd.run(&instance_dao, verbosity),
             Commands::Console(cmd) => cmd.run(&instance_dao, verbosity),
-            Commands::Ssh(cmd) => cmd.run(&instance_dao, verbosity),
+            Commands::Ssh(cmd) => cmd.run(console, &instance_dao, verbosity),
             Commands::Scp(cmd) => cmd.run(&instance_dao, verbosity),
-            Commands::Image(command) => command.dispatch(&image_dao),
+            Commands::Image(command) => command.dispatch(console, &image_dao),
             Commands::Prune(cmd) => cmd.run(&image_dao),
-            Commands::Net(command) => command.dispatch(&instance_dao),
+            Commands::Net(command) => command.dispatch(console, &instance_dao),
         }
     }
 }

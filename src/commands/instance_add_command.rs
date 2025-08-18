@@ -3,6 +3,7 @@ use crate::error::Error;
 use crate::image::{ImageDao, ImageStore};
 use crate::instance::{Instance, InstanceDao, InstanceName, InstanceStore, PortForward};
 use crate::util;
+use crate::view::Console;
 use clap::Parser;
 
 pub const DEFAULT_CPU_COUNT: u16 = 4;
@@ -46,7 +47,12 @@ impl InstanceAddCommand {
             .ok_or(Error::InvalidArgument("Missing instance name".to_string()))
     }
 
-    pub fn run(&self, image_dao: &ImageDao, instance_dao: &InstanceDao) -> Result<(), Error> {
+    pub fn run(
+        &self,
+        console: &mut dyn Console,
+        image_dao: &ImageDao,
+        instance_dao: &InstanceDao,
+    ) -> Result<(), Error> {
         let name = self.get_name()?;
 
         if instance_dao.exists(name.as_str()) {
@@ -56,7 +62,7 @@ impl InstanceAddCommand {
         ImageCommands::Fetch {
             image: self.image.to_string(),
         }
-        .dispatch(image_dao)?;
+        .dispatch(console, image_dao)?;
         let image = image_dao.get(&self.image)?;
         image_dao.copy_image(&image, name.as_str())?;
 
