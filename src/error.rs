@@ -1,3 +1,4 @@
+use crate::view::Console;
 use std::io;
 
 #[derive(Debug)]
@@ -23,34 +24,41 @@ pub enum Error {
     SerdeYaml(serde_yaml::Error),
 }
 
-pub fn print_error(error: Error) {
-    print!("ERROR: ");
-    match error {
-        Error::InvalidArgument(err) => println!("Argument error: {err}"),
-        Error::UnknownArch(name) => println!("Unknown architecture: '{name}'"),
-        Error::UnknownInstance(instance) => println!("Unknown instance '{instance}'"),
-        Error::InstanceNotStopped(name) => println!("Instance '{name}' is not stopped"),
-        Error::InstanceAlreadyExists(id) => println!("Instance with name '{id}' already exists"),
-        Error::Io(e) => println!("{}", e),
-        Error::FS(e) => println!("{}", e),
-        Error::UnknownImage(name) => println!("Unknown image name {name}"),
-        Error::InvalidImageName(name) => println!("Invalid image name: {name}"),
-        Error::UnsetEnvVar(var) => println!("Environment variable '{var}' is not set"),
-        Error::CannotParseFile(path) => println!("Cannot parse file '{path}'"),
-        Error::CannotParseSize(size) => println!("Invalid data size format '{size}'"),
-        Error::CannotShrinkDisk(name) => {
-            println!("Cannot shrink the disk of the instance '{name}'")
-        }
-        Error::CannotOpenTerminal(path) => println!("Failed to open terminal from path: '{path}'"),
-        Error::HostFwdRuleMalformed(rule) => println!("Host forwarding rule is malformed: {rule}"),
-        Error::SystemCommandFailed(cmd, stderr) => {
-            println!(
-                "System command execution failed\n{cmd}\n\nReason: {}",
-                stderr.trim()
-            )
-        }
-        Error::SerdeJson(err) => println!("[JSON] {err}"),
-        Error::SerdeYaml(err) => println!("[YAML] {err}"),
-        Error::Web(e) => println!("{e}"),
+impl Error {
+    pub fn print(&self, console: &mut dyn Console) {
+        console.error(&format!(
+            "ERROR: {}",
+            match self {
+                Error::InvalidArgument(err) => format!("Argument error: {err}"),
+                Error::UnknownArch(name) => format!("Unknown architecture: '{name}'"),
+                Error::UnknownInstance(instance) => format!("Unknown instance '{instance}'"),
+                Error::InstanceNotStopped(name) => format!("Instance '{name}' is not stopped"),
+                Error::InstanceAlreadyExists(id) =>
+                    format!("Instance with name '{id}' already exists"),
+                Error::Io(e) => format!("{}", e),
+                Error::FS(e) => e.to_string(),
+                Error::UnknownImage(name) => format!("Unknown image name {name}"),
+                Error::InvalidImageName(name) => format!("Invalid image name: {name}"),
+                Error::UnsetEnvVar(var) => format!("Environment variable '{var}' is not set"),
+                Error::CannotParseFile(path) => format!("Cannot parse file '{path}'"),
+                Error::CannotParseSize(size) => format!("Invalid data size format '{size}'"),
+                Error::CannotShrinkDisk(name) => {
+                    format!("Cannot shrink the disk of the instance '{name}'")
+                }
+                Error::CannotOpenTerminal(path) =>
+                    format!("Failed to open terminal from path: '{path}'"),
+                Error::HostFwdRuleMalformed(rule) =>
+                    format!("Host forwarding rule is malformed: {rule}"),
+                Error::SystemCommandFailed(cmd, stderr) => {
+                    format!(
+                        "System command execution failed\n{cmd}\n\nReason: {}",
+                        stderr.trim()
+                    )
+                }
+                Error::SerdeJson(err) => format!("[JSON] {err}"),
+                Error::SerdeYaml(err) => format!("[YAML] {err}"),
+                Error::Web(e) => format!("{e}"),
+            }
+        ))
     }
 }

@@ -17,8 +17,9 @@ use crate::commands::CommandDispatcher;
 use clap::Parser;
 
 fn main() {
+    let console = &mut view::Stdio::new();
     CommandDispatcher::parse()
-        .dispatch()
-        .map_err(error::print_error)
+        .dispatch(console)
+        .map_err(|e| e.print(console))
         .ok();
 }

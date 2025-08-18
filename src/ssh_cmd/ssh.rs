@@ -9,7 +9,6 @@ pub struct Ssh {
     user: String,
     port: Option<u16>,
     args: String,
-    verbose: bool,
     xforward: bool,
     cmd: Option<String>,
 }
@@ -41,11 +40,6 @@ impl Ssh {
 
     pub fn set_args(&mut self, args: String) -> &mut Self {
         self.args = args;
-        self
-    }
-
-    pub fn set_verbose(&mut self, verbose: bool) -> &mut Self {
-        self.verbose = verbose;
         self
     }
 
@@ -85,10 +79,6 @@ impl Ssh {
             .args(self.args.split(' ').filter(|item| !item.is_empty()))
             .arg(format!("{}@127.0.0.1", self.user))
             .args(self.cmd.as_slice());
-
-        if self.verbose {
-            println!("{}", command.get_command());
-        }
 
         command
     }

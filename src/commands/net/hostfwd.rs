@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore, PortForward};
-use crate::view::{Alignment, Stdio, TableView};
+use crate::view::{Alignment, Console, TableView};
 use clap::Subcommand;
 
 #[derive(Subcommand)]
@@ -38,8 +38,11 @@ pub enum HostfwdCommands {
 }
 
 impl HostfwdCommands {
-    pub fn dispatch(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
-        let console = &mut Stdio::new();
+    pub fn dispatch(
+        &self,
+        console: &mut dyn Console,
+        instance_dao: &InstanceDao,
+    ) -> Result<(), Error> {
         match self {
             HostfwdCommands::List => {
                 let instance_names = instance_dao.get_instances();
