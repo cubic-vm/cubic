@@ -11,7 +11,7 @@ cubic image
     Usage: cubic image [OPTIONS] <COMMAND>
 
     Commands:
-      ls     List images
+      ls     List all supported virtual machine images
       fetch  Fetch an image
       info   Show image information
       prune  Clear cache and free space
