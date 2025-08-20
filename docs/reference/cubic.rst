@@ -41,6 +41,7 @@ cubic
       run      Create, start and open a shell in a new virtual machine instance
       add      Create a new virtual machine instance
       ls       List all virtual machine instances
+      images   List all supported virtual machine images
       ports    List forwarded ports for all virtual machine instances
       show     Show a virtual machine instance
       modify   Modify a virtual machine instance configuration
