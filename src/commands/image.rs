@@ -3,8 +3,7 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
 use crate::image::{Image, ImageDao, ImageFactory, ImageFetcher, ImageStore};
-use crate::view::SpinnerView;
-use crate::view::{Console, MapView};
+use crate::view::{Console, MapView, SpinnerView};
 use clap::Subcommand;
 
 pub fn fetch_image_list(env: &Environment) -> Vec<Image> {
@@ -49,7 +48,6 @@ impl ImageCommands {
                 view.print(console);
                 Ok(())
             }
-
             ImageCommands::Fetch { image } => {
                 fetch_image_list(&image_dao.env);
                 let image = &image_dao.get(image)?;
