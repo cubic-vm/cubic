@@ -37,20 +37,20 @@ Reference
 * :ref:`ref_cubic`
 
   * :ref:`ref_cubic_run`
+  * :ref:`ref_cubic_add`
   * :ref:`ref_cubic_ls`
   * :ref:`ref_cubic_images`
   * :ref:`ref_cubic_ports`
-  * :ref:`ref_cubic_add`
   * :ref:`ref_cubic_show`
   * :ref:`ref_cubic_modify`
-  * :ref:`ref_cubic_rm`
-  * :ref:`ref_cubic_clone`
-  * :ref:`ref_cubic_rename`
   * :ref:`ref_cubic_console`
   * :ref:`ref_cubic_ssh`
   * :ref:`ref_cubic_scp`
   * :ref:`ref_cubic_start`
   * :ref:`ref_cubic_stop`
   * :ref:`ref_cubic_restart`
+  * :ref:`ref_cubic_rename`
+  * :ref:`ref_cubic_clone`
+  * :ref:`ref_cubic_delete`
   * :ref:`ref_cubic_image`
   * :ref:`ref_cubic_prune`
