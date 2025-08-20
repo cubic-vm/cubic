@@ -1,6 +1,7 @@
+use crate::commands;
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore, PortForward};
-use crate::view::{Alignment, Console, TableView};
+use crate::view::Console;
 use clap::Subcommand;
 
 #[derive(Subcommand)]
@@ -10,7 +11,7 @@ pub enum HostfwdCommands {
     /// List forwarded ports for all instances:
     /// $ cubic net hostfwd list
     #[clap(verbatim_doc_comment, alias = "ls")]
-    List,
+    List(commands::ListPortCommand),
 
     /// Add host port forwarding rule (Deprecated)
     ///
@@ -44,24 +45,7 @@ impl HostfwdCommands {
         instance_dao: &InstanceDao,
     ) -> Result<(), Error> {
         match self {
-            HostfwdCommands::List => {
-                let instance_names = instance_dao.get_instances();
-
-                let mut view = TableView::new();
-                view.add_row()
-                    .add("INSTANCE", Alignment::Left)
-                    .add("RULE", Alignment::Left);
-
-                for instance_name in instance_names {
-                    for hostfwd in instance_dao.load(&instance_name)?.hostfwd {
-                        view.add_row()
-                            .add(&instance_name, Alignment::Left)
-                            .add(&hostfwd.to_qemu(), Alignment::Left);
-                    }
-                }
-                view.print(console);
-                Ok(())
-            }
+            HostfwdCommands::List(cmd) => cmd.run(console, instance_dao),
             HostfwdCommands::Add { instance, rule } => match PortForward::from_qemu(rule) {
                 Ok(rule) => {
                     let mut instance = instance_dao.load(instance)?;
