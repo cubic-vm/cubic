@@ -15,6 +15,7 @@ pub enum Commands {
     Add(InstanceAddCommand),
     #[clap(alias = "list")]
     Ls(InstanceListCommand),
+    Ports(commands::ListPortCommand),
     #[clap(alias = "info")]
     Show(commands::InstanceShowCommand),
     #[clap(alias = "config")]
@@ -70,6 +71,7 @@ impl CommandDispatcher {
         match &self.command {
             Commands::Run(cmd) => cmd.run(console, &image_dao, &instance_dao, verbosity),
             Commands::Ls(cmd) => cmd.run(console, &instance_dao),
+            Commands::Ports(cmd) => cmd.run(console, &instance_dao),
             Commands::Add(cmd) => cmd.run(console, &image_dao, &instance_dao),
             Commands::Modify(cmd) => cmd.run(&instance_dao),
             Commands::Rm(cmd) => cmd.run(&instance_dao, verbosity),

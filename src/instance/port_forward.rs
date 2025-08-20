@@ -26,6 +26,19 @@ impl FromStr for Protocol {
     }
 }
 
+impl Display for Protocol {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "{}",
+            match self {
+                Protocol::Udp => "udp",
+                Protocol::Tcp => "tcp",
+            },
+        )
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct PortForward {
     host_ip: IpAddr,
@@ -42,6 +55,22 @@ impl PortForward {
             guest_port,
             protocol,
         }
+    }
+
+    pub fn get_host_ip(&self) -> IpAddr {
+        self.host_ip
+    }
+
+    pub fn get_host_port(&self) -> u16 {
+        self.host_port
+    }
+
+    pub fn get_guest_port(&self) -> u16 {
+        self.guest_port
+    }
+
+    pub fn get_protocol(&self) -> Protocol {
+        self.protocol.clone()
     }
 
     fn from_value(
@@ -90,13 +119,7 @@ impl PortForward {
     pub fn to_qemu(&self) -> String {
         format!(
             "{}:{}:{}-:{}",
-            match self.protocol {
-                Protocol::Udp => "udp",
-                Protocol::Tcp => "tcp",
-            },
-            self.host_ip,
-            self.host_port,
-            self.guest_port
+            self.protocol, self.host_ip, self.host_port, self.guest_port
         )
     }
 }
@@ -106,13 +129,7 @@ impl Display for PortForward {
         write!(
             f,
             "{}:{}:{}/{}",
-            self.host_ip,
-            self.host_port,
-            self.guest_port,
-            match self.protocol {
-                Protocol::Udp => "udp",
-                Protocol::Tcp => "tcp",
-            },
+            self.host_ip, self.host_port, self.guest_port, self.protocol,
         )
     }
 }

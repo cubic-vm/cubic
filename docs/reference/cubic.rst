@@ -35,12 +35,13 @@ cubic
     $ cubic scp <machine>:<path/to/guest/file> <path/to/host/file>
 
 
-    Usage: cubic [OPTIONS] [COMMAND]
+    Usage: cubic [OPTIONS] <COMMAND>
 
     Commands:
       run      Create, start and open a shell in a new virtual machine instance
       add      Create a new virtual machine instance
       ls       List all virtual machine instances
+      ports    List forwarded ports for all virtual machine instances
       show     Show a virtual machine instance
       modify   Modify a virtual machine instance configuration
       rm       Delete virtual machine instances

@@ -38,6 +38,7 @@ Reference
 
   * :ref:`ref_cubic_run`
   * :ref:`ref_cubic_ls`
+  * :ref:`ref_cubic_ports`
   * :ref:`ref_cubic_add`
   * :ref:`ref_cubic_show`
   * :ref:`ref_cubic_modify`
