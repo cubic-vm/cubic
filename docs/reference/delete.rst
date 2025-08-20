@@ -1,14 +1,14 @@
-.. _ref_cubic_rm:
+.. _ref_cubic_delete:
 
-cubic rm
-=========
+cubic delete
+============
 
 .. code-block::
 
-    $ cubic rm --help
-    Delete virtual machine instances
+    $ cubic delete --help
+    Delete one or more virtual machine instances
 
-    Usage: cubic rm [OPTIONS] [INSTANCES]...
+    Usage: cubic delete [OPTIONS] [INSTANCES]...
 
     Arguments:
       [INSTANCES]...  Name of the virtual machine instances to delete

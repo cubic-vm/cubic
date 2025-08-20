@@ -1,6 +1,6 @@
 use crate::commands::{
     self, InstanceAddCommand, InstanceCloneCommand, InstanceListCommand, InstanceModifyCommand,
-    InstanceRemoveCommand, InstanceRenameCommand,
+    InstanceRenameCommand,
 };
 use crate::env::EnvironmentFactory;
 use crate::error::Error;
@@ -21,8 +21,6 @@ pub enum Commands {
     Show(commands::InstanceShowCommand),
     #[clap(alias = "config")]
     Modify(InstanceModifyCommand),
-    #[clap(alias = "del")]
-    Rm(InstanceRemoveCommand),
     Console(commands::InstanceConsoleCommand),
     Ssh(commands::InstanceSshCommand),
     Scp(commands::InstanceScpCommand),
@@ -31,6 +29,8 @@ pub enum Commands {
     Restart(commands::InstanceRestartCommand),
     Rename(InstanceRenameCommand),
     Clone(InstanceCloneCommand),
+    #[clap(alias = "rm", alias = "del")]
+    Delete(commands::DeleteInstanceCommand),
     /// Image subcommands
     #[command(subcommand)]
     Image(commands::ImageCommands),
@@ -76,7 +76,6 @@ impl CommandDispatcher {
             Commands::Ports(cmd) => cmd.run(console, &instance_dao),
             Commands::Add(cmd) => cmd.run(console, &image_dao, &instance_dao),
             Commands::Modify(cmd) => cmd.run(&instance_dao),
-            Commands::Rm(cmd) => cmd.run(&instance_dao, verbosity),
             Commands::Clone(cmd) => cmd.run(&instance_dao),
             Commands::Rename(cmd) => cmd.run(&instance_dao),
             Commands::Show(cmd) => cmd.run(console, &instance_dao),
@@ -86,6 +85,7 @@ impl CommandDispatcher {
             Commands::Console(cmd) => cmd.run(&instance_dao, verbosity),
             Commands::Ssh(cmd) => cmd.run(console, &instance_dao, verbosity),
             Commands::Scp(cmd) => cmd.run(&instance_dao, verbosity),
+            Commands::Delete(cmd) => cmd.run(&instance_dao, verbosity),
             Commands::Image(command) => command.dispatch(console, &image_dao),
             Commands::Prune(cmd) => cmd.run(&image_dao),
             Commands::Net(command) => command.dispatch(console, &instance_dao),
