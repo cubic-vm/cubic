@@ -45,7 +45,6 @@ cubic
       ports    List forwarded ports for all virtual machine instances
       show     Show a virtual machine instance
       modify   Modify a virtual machine instance configuration
-      rm       Delete virtual machine instances
       console  Open the console of an virtual machine instance
       ssh      Connect to a virtual machine instance with SSH
       scp      Copy a file from or to a virtual machine instance with SCP
@@ -54,6 +53,7 @@ cubic
       restart  Restart virtual machine instances
       rename   Rename a virtual machine instance
       clone    Clone a virtual machine instance
+      delete   Delete one or more virtual machine instances
       image    Image subcommands
       prune    Clear cache and free space
       help     Print this message or the help of the given subcommand(s)

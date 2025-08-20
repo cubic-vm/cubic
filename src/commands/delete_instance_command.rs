@@ -4,9 +4,9 @@ use crate::instance::{InstanceDao, InstanceStore};
 use crate::util;
 use clap::Parser;
 
-/// Delete virtual machine instances
+/// Delete one or more virtual machine instances
 #[derive(Parser)]
-pub struct InstanceRemoveCommand {
+pub struct DeleteInstanceCommand {
     /// Delete the virtual machine instances even when running
     #[clap(short, long, default_value_t = false)]
     force: bool,
@@ -17,7 +17,7 @@ pub struct InstanceRemoveCommand {
     instances: Vec<String>,
 }
 
-impl InstanceRemoveCommand {
+impl DeleteInstanceCommand {
     pub fn run(
         &self,
         instance_dao: &InstanceDao,
