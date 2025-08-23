@@ -115,7 +115,7 @@ Create a new virtual machine instance:
 $ cubic create mymachine --image ubuntu:noble
 
 List all virtual machine instances:
-$ cubic ls
+$ cubic instances
 
 Start an instance:
 $ cubic start <instance name>
@@ -136,19 +136,19 @@ $ cubic scp <machine>:<path/to/guest/file> <path/to/host/file>
 Usage: cubic [COMMAND]
 
 Commands:
-  run      Create, start and open a shell in a new virtual machine instance
-  create   Create a new virtual machine instance
-  ls       List all virtual machine instances
-  rm       Delete virtual machine instances
-  info     Get information about an virtual machine instance
-  console  Open the console of an virtual machine instance
-  ssh      Connect to a virtual machine instance with SSH
-  scp      Copy a file from or to a virtual machine instance with SCP
-  start    Start virtual machine instances
-  stop     Stop virtual machine instances
-  restart  Restart virtual machine instances
-  config   Modify virtual machine instance configuration
-  rename   Rename a virtual machine instance
+  run        Create, start and open a shell in a new virtual machine instance
+  create     Create a new virtual machine instance
+  instances  List all virtual machine instances
+  rm         Delete virtual machine instances
+  info       Get information about an virtual machine instance
+  console    Open the console of an virtual machine instance
+  ssh        Connect to a virtual machine instance with SSH
+  scp        Copy a file from or to a virtual machine instance with SCP
+  start      Start virtual machine instances
+  stop       Stop virtual machine instances
+  restart    Restart virtual machine instances
+  config     Modify virtual machine instance configuration
+  rename     Rename a virtual machine instance
   clone    Clone a virtual machine instance
   image    Image subcommands
   net      Network subcommands

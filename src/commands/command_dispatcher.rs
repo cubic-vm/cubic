@@ -1,6 +1,4 @@
-use crate::commands::{
-    self, InstanceCloneCommand, InstanceListCommand, InstanceModifyCommand, InstanceRenameCommand,
-};
+use crate::commands::{self, InstanceCloneCommand, InstanceModifyCommand, InstanceRenameCommand};
 use crate::env::EnvironmentFactory;
 use crate::error::Error;
 use crate::image::ImageDao;
@@ -13,8 +11,8 @@ pub enum Commands {
     Run(commands::InstanceRunCommand),
     #[clap(alias = "add")]
     Create(commands::CreateInstanceCommand),
-    #[clap(alias = "list")]
-    Ls(InstanceListCommand),
+    #[clap(alias = "ls", alias = "list")]
+    Instances(commands::ListInstanceCommand),
     Images(commands::ListImageCommand),
     Ports(commands::ListPortCommand),
     #[clap(alias = "info")]
@@ -71,7 +69,7 @@ impl CommandDispatcher {
 
         match &self.command {
             Commands::Run(cmd) => cmd.run(console, &image_dao, &instance_dao, verbosity),
-            Commands::Ls(cmd) => cmd.run(console, &instance_dao),
+            Commands::Instances(cmd) => cmd.run(console, &instance_dao),
             Commands::Images(cmd) => cmd.run(console, &env),
             Commands::Ports(cmd) => cmd.run(console, &instance_dao),
             Commands::Create(cmd) => cmd.run(console, &image_dao, &instance_dao),
