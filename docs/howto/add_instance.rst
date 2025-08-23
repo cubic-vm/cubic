@@ -39,7 +39,7 @@ In the next step you can create the virtual machine with a single command:
 
 .. code-block::
 
-    $ cubic add example --image debian:bookworm
+    $ cubic create example --image debian:bookworm
 
 List all Virtual Machine
 ------------------------
@@ -60,7 +60,7 @@ For example to create a virtual machine with 4 CPU cores, 4 GiB of memory and 10
 
 .. code-block::
 
-    $ cubic add example --image debian:bookworm --cpus 4 --mem 4G  --disk 10G
+    $ cubic create example --image debian:bookworm --cpus 4 --mem 4G  --disk 10G
 
 
 Start the virtual machine

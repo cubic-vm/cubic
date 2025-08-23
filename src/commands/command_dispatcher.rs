@@ -1,6 +1,5 @@
 use crate::commands::{
-    self, InstanceAddCommand, InstanceCloneCommand, InstanceListCommand, InstanceModifyCommand,
-    InstanceRenameCommand,
+    self, InstanceCloneCommand, InstanceListCommand, InstanceModifyCommand, InstanceRenameCommand,
 };
 use crate::env::EnvironmentFactory;
 use crate::error::Error;
@@ -12,7 +11,8 @@ use clap::{Parser, Subcommand};
 #[derive(Subcommand)]
 pub enum Commands {
     Run(commands::InstanceRunCommand),
-    Add(InstanceAddCommand),
+    #[clap(alias = "add")]
+    Create(commands::CreateInstanceCommand),
     #[clap(alias = "list")]
     Ls(InstanceListCommand),
     Images(commands::ListImageCommand),
@@ -74,7 +74,7 @@ impl CommandDispatcher {
             Commands::Ls(cmd) => cmd.run(console, &instance_dao),
             Commands::Images(cmd) => cmd.run(console, &env),
             Commands::Ports(cmd) => cmd.run(console, &instance_dao),
-            Commands::Add(cmd) => cmd.run(console, &image_dao, &instance_dao),
+            Commands::Create(cmd) => cmd.run(console, &image_dao, &instance_dao),
             Commands::Modify(cmd) => cmd.run(&instance_dao),
             Commands::Clone(cmd) => cmd.run(&instance_dao),
             Commands::Rename(cmd) => cmd.run(&instance_dao),

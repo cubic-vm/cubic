@@ -9,7 +9,7 @@ use clap::Parser;
 #[derive(Parser)]
 pub struct InstanceRunCommand {
     #[clap(flatten)]
-    add_cmd: commands::InstanceAddCommand,
+    create_cmd: commands::CreateInstanceCommand,
 }
 
 impl InstanceRunCommand {
@@ -20,9 +20,9 @@ impl InstanceRunCommand {
         instance_dao: &InstanceDao,
         verbosity: commands::Verbosity,
     ) -> Result<(), Error> {
-        let instance_name = self.add_cmd.get_name()?;
+        let instance_name = self.create_cmd.get_name()?;
 
-        self.add_cmd.run(console, image_dao, instance_dao)?;
+        self.create_cmd.run(console, image_dao, instance_dao)?;
         commands::InstanceSshCommand {
             target: Target::from_instance_name(instance_name.clone()),
             xforward: false,

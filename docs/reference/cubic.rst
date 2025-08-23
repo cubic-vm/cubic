@@ -14,7 +14,7 @@ cubic
     $ cubic image ls
 
     Create a new virtual machine instance:
-    $ cubic add mymachine --image ubuntu:noble
+    $ cubic create mymachine --image ubuntu:noble
 
     List all virtual machine instances:
     $ cubic ls
@@ -39,7 +39,7 @@ cubic
 
     Commands:
       run      Create, start and open a shell in a new virtual machine instance
-      add      Create a new virtual machine instance
+      create   Create a new virtual machine instance
       ls       List all virtual machine instances
       images   List all supported virtual machine images
       ports    List forwarded ports for all virtual machine instances

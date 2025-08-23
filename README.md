@@ -112,7 +112,7 @@ Show all supported images:
 $ cubic image ls
 
 Create a new virtual machine instance:
-$ cubic add mymachine --image ubuntu:noble
+$ cubic create mymachine --image ubuntu:noble
 
 List all virtual machine instances:
 $ cubic ls
@@ -137,7 +137,7 @@ Usage: cubic [COMMAND]
 
 Commands:
   run      Create, start and open a shell in a new virtual machine instance
-  add      Create a new virtual machine instance
+  create   Create a new virtual machine instance
   ls       List all virtual machine instances
   rm       Delete virtual machine instances
   info     Get information about an virtual machine instance
