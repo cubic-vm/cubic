@@ -17,7 +17,7 @@ cubic
     $ cubic create mymachine --image ubuntu:noble
 
     List all virtual machine instances:
-    $ cubic ls
+    $ cubic instances
 
     Start an instance:
     $ cubic start <instance name>
@@ -38,25 +38,25 @@ cubic
     Usage: cubic [OPTIONS] <COMMAND>
 
     Commands:
-      run      Create, start and open a shell in a new virtual machine instance
-      create   Create a new virtual machine instance
-      ls       List all virtual machine instances
-      images   List all supported virtual machine images
-      ports    List forwarded ports for all virtual machine instances
-      show     Show a virtual machine instance
-      modify   Modify a virtual machine instance configuration
-      console  Open the console of an virtual machine instance
-      ssh      Connect to a virtual machine instance with SSH
-      scp      Copy a file from or to a virtual machine instance with SCP
-      start    Start virtual machine instances
-      stop     Stop virtual machine instances
-      restart  Restart virtual machine instances
-      rename   Rename a virtual machine instance
-      clone    Clone a virtual machine instance
-      delete   Delete one or more virtual machine instances
-      image    Image subcommands
-      prune    Clear cache and free space
-      help     Print this message or the help of the given subcommand(s)
+      run        Create, start and open a shell in a new virtual machine instance
+      create     Create a new virtual machine instance
+      instances  List all virtual machine instances
+      images     List all supported virtual machine images
+      ports      List forwarded ports for all virtual machine instances
+      show       Show a virtual machine instance
+      modify     Modify a virtual machine instance configuration
+      console    Open the console of an virtual machine instance
+      ssh        Connect to a virtual machine instance with SSH
+      scp        Copy a file from or to a virtual machine instance with SCP
+      start      Start virtual machine instances
+      stop       Stop virtual machine instances
+      restart    Restart virtual machine instances
+      rename     Rename a virtual machine instance
+      clone      Clone a virtual machine instance
+      delete     Delete one or more virtual machine instances
+      image      Image subcommands
+      prune      Clear cache and free space
+      help       Print this message or the help of the given subcommand(s)
 
     Options:
       -v, --verbose  Increase logging output

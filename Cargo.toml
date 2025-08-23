@@ -15,7 +15,7 @@ Create a new virtual machine instance:
 $ cubic create mymachine --image ubuntu:noble
 
 List all virtual machine instances:
-$ cubic ls
+$ cubic instances
 
 Start an instance:
 $ cubic start <instance name>

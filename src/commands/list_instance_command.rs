@@ -6,9 +6,9 @@ use clap::Parser;
 
 /// List all virtual machine instances
 #[derive(Parser)]
-pub struct InstanceListCommand;
+pub struct ListInstanceCommand;
 
-impl InstanceListCommand {
+impl ListInstanceCommand {
     pub fn run(
         &self,
         console: &mut dyn Console,
@@ -69,7 +69,7 @@ mod tests {
     use crate::view::console_mock::tests::ConsoleMock;
 
     #[test]
-    fn test_instance_list_command() {
+    fn test_list_instance_command() {
         let console = &mut ConsoleMock::new();
         let instance_store = &InstanceStoreMock::new(vec![
             Instance {
@@ -94,7 +94,7 @@ mod tests {
             },
         ]);
 
-        InstanceListCommand {}.run(console, instance_store).unwrap();
+        ListInstanceCommand {}.run(console, instance_store).unwrap();
 
         assert_eq!(
             console.get_output(),
@@ -107,11 +107,11 @@ PID   Name    Arch    CPUs    Memory      Disk   State
     }
 
     #[test]
-    fn test_instance_list_command_empty() {
+    fn test_list_instance_command_empty() {
         let console = &mut ConsoleMock::new();
         let instance_store = &InstanceStoreMock::new(Vec::new());
 
-        InstanceListCommand {}.run(console, instance_store).unwrap();
+        ListInstanceCommand {}.run(console, instance_store).unwrap();
 
         assert_eq!(
             console.get_output(),

@@ -1,14 +1,14 @@
-.. _ref_cubic_ls:
+.. _ref_cubic_instances:
 
-cubic ls
-========
+cubic instances
+===============
 
 .. code-block::
 
-    $ cubic ls --help
+    $ cubic instances --help
     List all virtual machine instances
 
-    Usage: cubic ls [OPTIONS]
+    Usage: cubic instances [OPTIONS]
 
     Options:
       -v, --verbose  Increase logging output
