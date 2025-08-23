@@ -1,7 +1,7 @@
 pub mod command_dispatcher;
+pub mod create_instance_command;
 pub mod delete_instance_command;
 pub mod image;
-pub mod instance_add_command;
 pub mod instance_clone_command;
 pub mod instance_console_command;
 pub mod instance_list_command;
@@ -21,9 +21,9 @@ pub mod prune_command;
 pub mod verbosity;
 
 pub use command_dispatcher::*;
+pub use create_instance_command::*;
 pub use delete_instance_command::*;
 pub use image::*;
-pub use instance_add_command::*;
 pub use instance_clone_command::*;
 pub use instance_console_command::*;
 pub use instance_list_command::*;

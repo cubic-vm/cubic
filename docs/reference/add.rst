@@ -1,14 +1,14 @@
-.. _ref_cubic_add:
+.. _ref_cubic_create:
 
-cubic add
-=========
+cubic create
+============
 
 .. code-block::
 
-    $ cubic add --help
+    $ cubic create --help
     Create a new virtual machine instance
 
-    Usage: cubic add [OPTIONS] --image <IMAGE> [INSTANCE_NAME]
+    Usage: cubic create [OPTIONS] --image <IMAGE> [INSTANCE_NAME]
 
     Arguments:
       [INSTANCE_NAME]  Name of the virtual machine instance

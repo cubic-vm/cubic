@@ -12,7 +12,7 @@ pub const DEFAULT_DISK_SIZE: &str = "100G";
 
 /// Create a new virtual machine instance
 #[derive(Parser)]
-pub struct InstanceAddCommand {
+pub struct CreateInstanceCommand {
     /// Name of the virtual machine instance
     #[clap(conflicts_with = "name")]
     instance_name: Option<InstanceName>,
@@ -39,7 +39,7 @@ pub struct InstanceAddCommand {
     port: Vec<PortForward>,
 }
 
-impl InstanceAddCommand {
+impl CreateInstanceCommand {
     pub fn get_name(&self) -> Result<InstanceName, Error> {
         self.instance_name
             .clone()

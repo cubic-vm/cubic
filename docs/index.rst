@@ -37,7 +37,7 @@ Reference
 * :ref:`ref_cubic`
 
   * :ref:`ref_cubic_run`
-  * :ref:`ref_cubic_add`
+  * :ref:`ref_cubic_create`
   * :ref:`ref_cubic_ls`
   * :ref:`ref_cubic_images`
   * :ref:`ref_cubic_ports`
