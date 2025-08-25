@@ -1,6 +1,6 @@
 use crate::commands::image::ImageCommands;
 use crate::error::Error;
-use crate::image::{ImageDao, ImageStore};
+use crate::image::{ImageDao, ImageName, ImageStore};
 use crate::instance::{Instance, InstanceDao, InstanceName, InstanceStore, PortForward};
 use crate::util;
 use crate::view::Console;
@@ -18,7 +18,7 @@ pub struct CreateInstanceCommand {
     instance_name: Option<InstanceName>,
     /// Name of the virtual machine image
     #[clap(short, long)]
-    image: String,
+    image: ImageName,
     /// Name of the virtual machine instance
     #[clap(short, long, conflicts_with = "instance_name", hide = true)]
     name: Option<InstanceName>,
@@ -60,7 +60,7 @@ impl CreateInstanceCommand {
         }
 
         ImageCommands::Fetch {
-            image: self.image.to_string(),
+            image: self.image.clone(),
         }
         .dispatch(console, image_dao)?;
         let image = image_dao.get(&self.image)?;
