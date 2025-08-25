@@ -1,8 +1,8 @@
 use crate::error::Error;
-use crate::image::Image;
+use crate::image::{Image, ImageName};
 
 pub trait ImageStore {
-    fn get(&self, id: &str) -> Result<Image, Error>;
+    fn get(&self, name: &ImageName) -> Result<Image, Error>;
     fn copy_image(&self, image: &Image, name: &str) -> Result<(), Error>;
     fn exists(&self, image: &Image) -> bool;
     fn prune(&self) -> Result<(), Error>;

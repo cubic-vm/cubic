@@ -1,24 +1,13 @@
-use crate::arch::Arch;
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
-use crate::image::{Image, ImageFactory, ImageStore};
+use crate::image::{Image, ImageFactory, ImageName, ImageStore};
 use std::path::Path;
 use std::str;
 
 pub struct ImageDao {
     fs: FS,
     pub env: Environment,
-}
-
-#[cfg(target_arch = "aarch64")]
-fn get_default_arch() -> Arch {
-    Arch::ARM64
-}
-
-#[cfg(not(target_arch = "aarch64"))]
-fn get_default_arch() -> Arch {
-    Arch::AMD64
 }
 
 impl ImageDao {
@@ -33,31 +22,17 @@ impl ImageDao {
 }
 
 impl ImageStore for ImageDao {
-    fn get(&self, id: &str) -> Result<Image, Error> {
-        let mut tokens = id.split(':');
-        let vendor = tokens
-            .next()
-            .ok_or(Error::InvalidImageName(id.to_string()))?
-            .to_string();
-        let name = tokens
-            .next()
-            .ok_or(Error::InvalidImageName(id.to_string()))?
-            .to_string();
-        let arch = tokens
-            .next()
-            .map(Arch::from_str)
-            .unwrap_or(Ok(get_default_arch()))?;
-
+    fn get(&self, name: &ImageName) -> Result<Image, Error> {
         ImageFactory::new(&self.env)
             .create_images()?
             .iter()
             .find(|image| {
-                (image.vendor == vendor)
-                    && (image.arch == arch)
-                    && (image.codename == name || image.version == name)
+                (image.vendor == name.get_vendor())
+                    && (image.arch == name.get_arch())
+                    && (image.codename == name.get_name() || image.version == name.get_name())
             })
             .cloned()
-            .ok_or(Error::UnknownImage(id.to_string()))
+            .ok_or(Error::UnknownImage(name.to_string()))
     }
 
     fn copy_image(&self, image: &Image, name: &str) -> Result<(), Error> {
