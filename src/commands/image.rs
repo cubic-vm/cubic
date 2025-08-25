@@ -2,7 +2,7 @@ use crate::commands;
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
-use crate::image::{Image, ImageDao, ImageFactory, ImageFetcher, ImageStore};
+use crate::image::{Image, ImageDao, ImageFactory, ImageFetcher, ImageName, ImageStore};
 use crate::view::{Console, SpinnerView};
 use clap::Subcommand;
 
@@ -21,7 +21,7 @@ pub enum ImageCommands {
     /// Fetch an image
     Fetch {
         /// Name of the virtual machine image
-        image: String,
+        image: ImageName,
     },
 
     Info(commands::ShowImageCommand),

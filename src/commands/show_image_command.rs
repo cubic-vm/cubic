@@ -1,7 +1,7 @@
 use crate::commands::image::fetch_image_list;
 use crate::env::Environment;
 use crate::error::Error;
-use crate::image::ImageStore;
+use crate::image::{ImageName, ImageStore};
 use crate::view::{Console, MapView};
 use clap::Parser;
 
@@ -9,7 +9,7 @@ use clap::Parser;
 #[derive(Parser)]
 pub struct ShowImageCommand {
     /// Name of the virtual machine image
-    name: String,
+    name: ImageName,
 }
 
 impl ShowImageCommand {
