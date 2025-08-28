@@ -7,6 +7,7 @@ mod error;
 mod fs;
 mod image;
 mod instance;
+mod model;
 mod qemu;
 mod ssh_cmd;
 mod util;

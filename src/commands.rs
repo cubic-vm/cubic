@@ -18,6 +18,7 @@ pub mod list_instance_command;
 pub mod list_port_command;
 pub mod net;
 pub mod prune_command;
+pub mod show_command;
 pub mod show_image_command;
 pub mod verbosity;
 
@@ -41,5 +42,6 @@ pub use list_instance_command::*;
 pub use list_port_command::*;
 pub use net::*;
 pub use prune_command::*;
+pub use show_command::*;
 pub use show_image_command::*;
 pub use verbosity::*;

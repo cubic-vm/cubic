@@ -8,7 +8,7 @@ use clap::Parser;
 #[derive(Parser)]
 pub struct InstanceShowCommand {
     /// Name of the virtual machine instance
-    instance: InstanceName,
+    pub instance: InstanceName,
 }
 
 impl InstanceShowCommand {
