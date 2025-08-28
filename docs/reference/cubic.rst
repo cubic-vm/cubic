@@ -11,7 +11,7 @@ cubic
     isolated in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
 
     Show all supported images:
-    $ cubic image ls
+    $ cubic images
 
     Create a new virtual machine instance:
     $ cubic create mymachine --image ubuntu:noble

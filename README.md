@@ -109,7 +109,7 @@ simple, daemon-less and rootless design. All Cubic virtual machines run
 isolated in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
 
 Show all supported images:
-$ cubic image ls
+$ cubic images
 
 Create a new virtual machine instance:
 $ cubic create mymachine --image ubuntu:noble
@@ -133,28 +133,31 @@ Copy a file from the instance to the hots:
 $ cubic scp <machine>:<path/to/guest/file> <path/to/host/file>
 
 
-Usage: cubic [COMMAND]
+Usage: cubic [OPTIONS] <COMMAND>
 
 Commands:
   run        Create, start and open a shell in a new virtual machine instance
   create     Create a new virtual machine instance
   instances  List all virtual machine instances
-  rm         Delete virtual machine instances
-  info       Get information about an virtual machine instance
+  images     List all supported virtual machine images
+  ports      List forwarded ports for all virtual machine instances
+  show       Show virtual machine image or instance information
+  modify     Modify a virtual machine instance configuration
   console    Open the console of an virtual machine instance
   ssh        Connect to a virtual machine instance with SSH
   scp        Copy a file from or to a virtual machine instance with SCP
   start      Start virtual machine instances
   stop       Stop virtual machine instances
   restart    Restart virtual machine instances
-  config     Modify virtual machine instance configuration
   rename     Rename a virtual machine instance
-  clone    Clone a virtual machine instance
-  image    Image subcommands
-  net      Network subcommands
-  help     Print this message or the help of the given subcommand(s)
+  clone      Clone a virtual machine instance
+  delete     Delete one or more virtual machine instances
+  prune      Clear cache and free space
+  help       Print this message or the help of the given subcommand(s)
 
 Options:
+  -v, --verbose  Increase logging output
+  -q, --quiet    Reduce logging output
   -h, --help     Print help
   -V, --version  Print version
 ```
