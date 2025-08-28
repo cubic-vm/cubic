@@ -29,11 +29,11 @@ pub enum Commands {
     Clone(InstanceCloneCommand),
     #[clap(alias = "rm", alias = "del")]
     Delete(commands::DeleteInstanceCommand),
-    /// Image subcommands
-    #[command(subcommand)]
-    Image(commands::ImageCommands),
     Prune(commands::PruneCommand),
 
+    /// Image subcommands (Deprecated)
+    #[command(subcommand, hide = true)]
+    Image(commands::ImageCommands),
     /// Network subcommands (Deprecated)
     #[command(subcommand, hide = true)]
     Net(commands::NetworkCommands),

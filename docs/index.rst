@@ -52,5 +52,4 @@ Reference
   * :ref:`ref_cubic_rename`
   * :ref:`ref_cubic_clone`
   * :ref:`ref_cubic_delete`
-  * :ref:`ref_cubic_image`
   * :ref:`ref_cubic_prune`
