@@ -43,7 +43,7 @@ cubic
       instances  List all virtual machine instances
       images     List all supported virtual machine images
       ports      List forwarded ports for all virtual machine instances
-      show       Show a virtual machine instance
+      show       Show virtual machine image or instance information
       modify     Modify a virtual machine instance configuration
       console    Open the console of an virtual machine instance
       ssh        Connect to a virtual machine instance with SSH

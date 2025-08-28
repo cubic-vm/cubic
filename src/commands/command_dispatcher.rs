@@ -16,7 +16,7 @@ pub enum Commands {
     Images(commands::ListImageCommand),
     Ports(commands::ListPortCommand),
     #[clap(alias = "info")]
-    Show(commands::InstanceShowCommand),
+    Show(commands::ShowCommand),
     #[clap(alias = "config")]
     Modify(InstanceModifyCommand),
     Console(commands::InstanceConsoleCommand),
@@ -67,7 +67,7 @@ impl CommandDispatcher {
         let image_dao = ImageDao::new(&env)?;
         let instance_dao = InstanceDao::new(&env)?;
 
-        match &self.command {
+        match self.command {
             Commands::Run(cmd) => cmd.run(console, &image_dao, &instance_dao, verbosity),
             Commands::Instances(cmd) => cmd.run(console, &instance_dao),
             Commands::Images(cmd) => cmd.run(console, &env),
@@ -76,7 +76,7 @@ impl CommandDispatcher {
             Commands::Modify(cmd) => cmd.run(&instance_dao),
             Commands::Clone(cmd) => cmd.run(&instance_dao),
             Commands::Rename(cmd) => cmd.run(&instance_dao),
-            Commands::Show(cmd) => cmd.run(console, &instance_dao),
+            Commands::Show(cmd) => cmd.run(console, &env, &instance_dao, &image_dao),
             Commands::Start(cmd) => cmd.run(&instance_dao, verbosity),
             Commands::Stop(cmd) => cmd.run(&instance_dao, verbosity),
             Commands::Restart(cmd) => cmd.run(&instance_dao, verbosity),

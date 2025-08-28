@@ -9,7 +9,7 @@ use clap::Parser;
 #[derive(Parser)]
 pub struct ShowImageCommand {
     /// Name of the virtual machine image
-    name: ImageName,
+    pub name: ImageName,
 }
 
 impl ShowImageCommand {

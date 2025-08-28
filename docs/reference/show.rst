@@ -6,12 +6,12 @@ cubic show
 .. code-block::
 
     $ cubic show --help
-    Show a virtual machine instance
+    Show virtual machine image or instance information
 
-    Usage: cubic show [OPTIONS] <INSTANCE>
+    Usage: cubic show [OPTIONS] <NAME>
 
     Arguments:
-      <INSTANCE>  Name of the virtual machine instance
+      <NAME>  Name of the virtual machine image or instance
 
     Options:
       -v, --verbose  Increase logging output
