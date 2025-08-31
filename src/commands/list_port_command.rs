@@ -13,11 +13,11 @@ impl ListPortCommand {
 
         let mut view = TableView::new();
         view.add_row()
-            .add("INSTANCE", Alignment::Left)
-            .add("HOST", Alignment::Left)
-            .add("GUEST", Alignment::Left)
-            .add("PROTOCOL", Alignment::Left)
-            .add("STATE", Alignment::Left);
+            .add("Instance", Alignment::Left)
+            .add("Host", Alignment::Left)
+            .add("Guest", Alignment::Left)
+            .add("Protocol", Alignment::Left)
+            .add("State", Alignment::Left);
 
         for instance_name in instance_names {
             let instance = &instance_dao.load(&instance_name)?;
