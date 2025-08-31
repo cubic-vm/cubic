@@ -49,3 +49,9 @@ impl SpinnerView {
         self.thread.take().map(|t| t.join());
     }
 }
+
+impl Drop for SpinnerView {
+    fn drop(&mut self) {
+        self.stop();
+    }
+}

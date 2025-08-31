@@ -68,11 +68,11 @@ impl CommandDispatcher {
         let instance_dao = InstanceDao::new(&env)?;
 
         match self.command {
-            Commands::Run(cmd) => cmd.run(console, &image_dao, &instance_dao, verbosity),
+            Commands::Run(cmd) => cmd.run(console, &env, &image_dao, &instance_dao, verbosity),
             Commands::Instances(cmd) => cmd.run(console, &instance_dao),
             Commands::Images(cmd) => cmd.run(console, &env),
             Commands::Ports(cmd) => cmd.run(console, &instance_dao),
-            Commands::Create(cmd) => cmd.run(console, &image_dao, &instance_dao),
+            Commands::Create(cmd) => cmd.run(console, &env, &image_dao, &instance_dao),
             Commands::Modify(cmd) => cmd.run(&instance_dao),
             Commands::Clone(cmd) => cmd.run(&instance_dao),
             Commands::Rename(cmd) => cmd.run(&instance_dao),

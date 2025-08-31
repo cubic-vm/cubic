@@ -1,9 +1,13 @@
+use crate::actions::CreateInstanceAction;
 use crate::commands::image::ImageCommands;
+use crate::env::Environment;
 use crate::error::Error;
+use crate::fs::FS;
 use crate::image::{ImageDao, ImageName, ImageStore};
 use crate::instance::{Instance, InstanceDao, InstanceName, InstanceStore, PortForward};
 use crate::util;
 use crate::view::Console;
+use crate::view::SpinnerView;
 use clap::Parser;
 
 pub const DEFAULT_CPU_COUNT: u16 = 4;
@@ -50,6 +54,7 @@ impl CreateInstanceCommand {
     pub fn run(
         &self,
         console: &mut dyn Console,
+        env: &Environment,
         image_dao: &ImageDao,
         instance_dao: &InstanceDao,
     ) -> Result<(), Error> {
@@ -63,24 +68,23 @@ impl CreateInstanceCommand {
             image: self.image.clone(),
         }
         .dispatch(console, image_dao)?;
+
+        let mut create_spinner = SpinnerView::new("Creating virtual machine instance");
         let image = image_dao.get(&self.image)?;
-        image_dao.copy_image(&image, name.as_str())?;
 
-        let disk_capacity = util::human_readable_to_bytes(&self.disk)?;
-        let ssh_port = util::generate_random_ssh_port();
-
-        let mut instance = Instance {
+        let instance = Instance {
             name: name.to_string(),
             arch: image.arch,
             user: self.user.to_string(),
             cpus: self.cpus,
             mem: util::human_readable_to_bytes(&self.mem)?,
-            disk_capacity: 0, // Will be overwritten by resize operation below
-            ssh_port,
+            disk_capacity: util::human_readable_to_bytes(&self.disk)?,
+            ssh_port: util::generate_random_ssh_port(),
             hostfwd: self.port.clone(),
         };
-        instance_dao.resize(&mut instance, disk_capacity)?;
-        instance_dao.store(&instance)?;
+        CreateInstanceAction::new().run(env, &FS::new(), instance_dao, &image, instance)?;
+
+        create_spinner.stop();
         Result::Ok(())
     }
 }

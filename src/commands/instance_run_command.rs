@@ -1,4 +1,5 @@
 use crate::commands;
+use crate::env::Environment;
 use crate::error::Error;
 use crate::image::ImageDao;
 use crate::instance::{InstanceDao, Target};
@@ -16,13 +17,14 @@ impl InstanceRunCommand {
     pub fn run(
         &self,
         console: &mut dyn Console,
+        env: &Environment,
         image_dao: &ImageDao,
         instance_dao: &InstanceDao,
         verbosity: commands::Verbosity,
     ) -> Result<(), Error> {
         let instance_name = self.create_cmd.get_name()?;
 
-        self.create_cmd.run(console, image_dao, instance_dao)?;
+        self.create_cmd.run(console, env, image_dao, instance_dao)?;
         commands::InstanceSshCommand {
             target: Target::from_instance_name(instance_name.clone()),
             xforward: false,

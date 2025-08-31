@@ -1,7 +1,7 @@
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
-use crate::instance::{Instance, InstanceState, InstanceStore};
+use crate::instance::{Instance, InstanceName, InstanceState, InstanceStore};
 use crate::qemu::Monitor;
 use crate::ssh_cmd::PortChecker;
 use crate::util;
@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::DirEntry;
 use std::path::Path;
 use std::str;
+use std::str::FromStr;
 
 pub const USER: &str = "cubic";
 
@@ -39,7 +40,7 @@ impl InstanceDao {
 
 impl InstanceStore for InstanceDao {
     fn get_instances(&self) -> Vec<String> {
-        let mut instances: Vec<_> = self
+        let mut instances: Vec<String> = self
             .fs
             .read_dir(&self.env.get_instance_dir())
             .map_err(|_| ())
@@ -48,11 +49,12 @@ impl InstanceStore for InstanceDao {
                     .collect::<Result<Vec<DirEntry>, _>>()
                     .map_err(|_| ())
             })
-            .and_then(|entries| {
+            .map(|entries| {
                 entries
                     .iter()
-                    .map(|entry| entry.file_name().to_str().map(|x| x.to_string()).ok_or(()))
-                    .collect()
+                    .filter_map(|entry| entry.file_name().to_str().map(|x| x.to_string()))
+                    .filter(|entry| InstanceName::from_str(entry).is_ok())
+                    .collect::<Vec<String>>()
             })
             .unwrap_or_default();
         instances.sort_by_key(|a| a.to_lowercase());

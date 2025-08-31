@@ -22,10 +22,6 @@ pub mod tests {
                 .ok_or(Error::UnknownInstance(name.to_string()))
         }
 
-        fn copy_image(&self, _image: &Image, _name: &str) -> Result<(), Error> {
-            Ok(())
-        }
-
         fn exists(&self, image: &Image) -> bool {
             self.images.contains(image)
         }
