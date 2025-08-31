@@ -78,12 +78,6 @@ impl FS {
         Path::new(path).exists()
     }
 
-    pub fn copy_file(&self, from: &str, to: &str) -> Result<(), Error> {
-        fs::copy(from, to)
-            .map(|_| ())
-            .map_err(|e| Error::FS(format!("Cannot copy file from '{from}' to '{to}' ({e})")))
-    }
-
     pub fn write_file(&self, path: &str, data: &[u8]) -> Result<(), Error> {
         self.create_file(path)?
             .write_all(data)

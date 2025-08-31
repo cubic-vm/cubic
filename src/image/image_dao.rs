@@ -3,7 +3,6 @@ use crate::error::Error;
 use crate::fs::FS;
 use crate::image::{Image, ImageFactory, ImageName, ImageStore};
 use std::path::Path;
-use std::str;
 
 pub struct ImageDao {
     fs: FS,
@@ -33,14 +32,6 @@ impl ImageStore for ImageDao {
             })
             .cloned()
             .ok_or(Error::UnknownImage(name.to_string()))
-    }
-
-    fn copy_image(&self, image: &Image, name: &str) -> Result<(), Error> {
-        self.fs.create_dir(&self.env.get_instance_dir2(name))?;
-        self.fs.copy_file(
-            &self.env.get_image_file(&image.to_file_name()),
-            &self.env.get_instance_image_file(name),
-        )
     }
 
     fn exists(&self, image: &Image) -> bool {
