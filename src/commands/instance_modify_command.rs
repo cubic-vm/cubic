@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore, PortForward};
-use crate::util;
+use crate::model::DataSize;
 use clap::Parser;
 
 /// Modify a virtual machine instance configuration
@@ -13,10 +13,10 @@ pub struct InstanceModifyCommand {
     cpus: Option<u16>,
     /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
     #[clap(short, long)]
-    mem: Option<String>,
+    mem: Option<DataSize>,
     /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
     #[clap(short, long)]
-    disk: Option<String>,
+    disk: Option<DataSize>,
     /// Add port forwarding rule (e.g. -p 8000:80)
     #[clap(short, long)]
     port: Vec<PortForward>,
@@ -34,11 +34,11 @@ impl InstanceModifyCommand {
         }
 
         if let Some(mem) = &self.mem {
-            instance.mem = util::human_readable_to_bytes(mem)?;
+            instance.mem = mem.get_bytes() as u64;
         }
 
         if let Some(disk) = &self.disk {
-            instance_dao.resize(&mut instance, util::human_readable_to_bytes(disk)?)?;
+            instance_dao.resize(&mut instance, disk.get_bytes() as u64)?;
         }
 
         instance.hostfwd.append(&mut self.port.clone());

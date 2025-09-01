@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::instance::{InstanceName, InstanceStore};
-use crate::util;
+use crate::model::DataSize;
 use crate::view::{Console, MapView};
 use clap::Parser;
 
@@ -26,10 +26,10 @@ impl InstanceShowCommand {
         let mut view = MapView::new();
         view.add("Arch", &instance.arch.to_string());
         view.add("CPUs", &instance.cpus.to_string());
-        view.add("Memory", &util::bytes_to_human_readable(instance.mem));
+        view.add("Memory", &DataSize::new(instance.mem as usize).to_size());
         view.add(
             "Disk",
-            &util::bytes_to_human_readable(instance.disk_capacity),
+            &DataSize::new(instance.disk_capacity as usize).to_size(),
         );
         view.add("User", &instance.user);
         view.add("SSH Port", &instance.ssh_port.to_string());
