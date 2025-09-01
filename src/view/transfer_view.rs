@@ -38,8 +38,8 @@ impl TransferView {
             self.bytes_per_second += transferred_bytes / transfer_time_sec;
             self.bytes_per_second /= 2;
             print!(
-                " {:>10}/s",
-                DataSize::new(self.bytes_per_second as usize).to_size()
+                " {:>8}",
+                DataSize::new(self.bytes_per_second as usize).to_speed()
             );
         }
 
