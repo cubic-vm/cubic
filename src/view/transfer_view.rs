@@ -21,7 +21,7 @@ impl TransferView {
 
     pub fn update(&mut self, transferred_bytes: u64, total_bytes: Option<u64>) {
         print!(
-            "\r{}: {:>10} ",
+            "\r{} {:>10} ",
             self.message,
             DataSize::new(transferred_bytes as usize).to_size()
         );
