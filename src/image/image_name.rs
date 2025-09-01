@@ -38,7 +38,7 @@ impl FromStr for ImageName {
     type Err = String;
 
     fn from_str(name: &str) -> Result<Self, Self::Err> {
-        if Regex::new("^(\\w+):(\\w+)(:(amd64|arm64))?$")
+        if Regex::new("^(\\w+):([\\w\\.]+)(:(amd64|arm64))?$")
             .unwrap()
             .is_match(name)
         {
