@@ -5,38 +5,6 @@ use crate::instance::Instance;
 use crate::ssh_cmd::get_ssh_pub_keys;
 use crate::util::SystemCommand;
 use std::path::Path;
-use std::str;
-
-pub fn bytes_to_human_readable(bytes: u64) -> String {
-    match bytes.checked_ilog(1024) {
-        Some(1) => format!("{:3.1} KiB", bytes as f64 / 1024_f64.powf(1_f64)),
-        Some(2) => format!("{:3.1} MiB", bytes as f64 / 1024_f64.powf(2_f64)),
-        Some(3) => format!("{:3.1} GiB", bytes as f64 / 1024_f64.powf(3_f64)),
-        Some(4) => format!("{:3.1} TiB", bytes as f64 / 1024_f64.powf(4_f64)),
-        _ => format!("{:3.1}   B", bytes as f64),
-    }
-}
-
-pub fn human_readable_to_bytes(size: &str) -> Result<u64, Error> {
-    if size.is_empty() {
-        return Result::Err(Error::CannotParseSize(size.to_string()));
-    }
-
-    let suffix: char = size.bytes().last().unwrap() as char;
-    let size = &size[..size.len() - 1];
-    let power = match suffix {
-        'B' => 0,
-        'K' => 1,
-        'M' => 2,
-        'G' => 3,
-        'T' => 4,
-        _ => return Result::Err(Error::CannotParseSize(size.to_string())),
-    };
-
-    size.parse()
-        .map(|size: u64| size * 1024_u64.pow(power))
-        .map_err(|_| Error::CannotParseSize(size.to_string()))
-}
 
 pub fn setup_cloud_init(env: &Environment, instance: &Instance) -> Result<(), Error> {
     let fs = FS::new();

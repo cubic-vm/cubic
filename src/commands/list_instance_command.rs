@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::instance::{InstanceState, InstanceStore};
-use crate::util;
+use crate::model::DataSize;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
 
@@ -39,11 +39,11 @@ impl ListInstanceCommand {
                 .add(&instance.arch.to_string(), Alignment::Left)
                 .add(&instance.cpus.to_string(), Alignment::Right)
                 .add(
-                    &util::bytes_to_human_readable(instance.mem),
+                    &DataSize::new(instance.mem as usize).to_size(),
                     Alignment::Right,
                 )
                 .add(
-                    &util::bytes_to_human_readable(instance.disk_capacity),
+                    &DataSize::new(instance.disk_capacity as usize).to_size(),
                     Alignment::Right,
                 )
                 .add(
@@ -101,7 +101,7 @@ mod tests {
             "\
 PID   Name    Arch    CPUs    Memory      Disk   State
       test    amd64      1   1.0 KiB   1.0 MiB   STOPPED
-      test2   amd64      5   0.0   B   4.9 KiB   STOPPED
+      test2   amd64      5     0   B   4.9 KiB   STOPPED
 "
         );
     }

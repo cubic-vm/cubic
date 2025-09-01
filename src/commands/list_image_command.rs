@@ -1,7 +1,7 @@
 use crate::commands::fetch_image_list;
 use crate::env::Environment;
 use crate::error::Error;
-use crate::util;
+use crate::model::DataSize;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
 
@@ -22,7 +22,7 @@ impl ListImageCommand {
         for image in images {
             let size = image
                 .size
-                .map(util::bytes_to_human_readable)
+                .map(|size| DataSize::new(size as usize).to_size())
                 .unwrap_or_default();
 
             view.add_row()

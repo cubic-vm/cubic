@@ -13,7 +13,6 @@ pub enum Error {
     UnknownImage(String),
     UnsetEnvVar(String),
     CannotParseFile(String),
-    CannotParseSize(String),
     CannotShrinkDisk(String),
     CannotOpenTerminal(String),
     HostFwdRuleMalformed(String),
@@ -39,7 +38,6 @@ impl Error {
                 Error::UnknownImage(name) => format!("Unknown image name {name}"),
                 Error::UnsetEnvVar(var) => format!("Environment variable '{var}' is not set"),
                 Error::CannotParseFile(path) => format!("Cannot parse file '{path}'"),
-                Error::CannotParseSize(size) => format!("Invalid data size format '{size}'"),
                 Error::CannotShrinkDisk(name) => {
                     format!("Cannot shrink the disk of the instance '{name}'")
                 }

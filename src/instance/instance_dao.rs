@@ -2,6 +2,7 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
 use crate::instance::{Instance, InstanceName, InstanceState, InstanceStore};
+use crate::model::DataSize;
 use crate::qemu::Monitor;
 use crate::ssh_cmd::PortChecker;
 use crate::util;
@@ -77,8 +78,8 @@ impl InstanceStore for InstanceDao {
                 name: name.to_string(),
                 user: USER.to_string(),
                 cpus: 1,
-                mem: util::human_readable_to_bytes("1G").unwrap(),
-                disk_capacity: util::human_readable_to_bytes("1G").unwrap(),
+                mem: DataSize::from_str("1G").unwrap().get_bytes() as u64,
+                disk_capacity: DataSize::from_str("1G").unwrap().get_bytes() as u64,
                 ssh_port: util::generate_random_ssh_port(),
                 ..Instance::default()
             }))

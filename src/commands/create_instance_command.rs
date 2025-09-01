@@ -5,6 +5,7 @@ use crate::error::Error;
 use crate::fs::FS;
 use crate::image::{ImageDao, ImageName, ImageStore};
 use crate::instance::{Instance, InstanceDao, InstanceName, InstanceStore, PortForward};
+use crate::model::DataSize;
 use crate::util;
 use crate::view::Console;
 use crate::view::SpinnerView;
@@ -34,10 +35,10 @@ pub struct CreateInstanceCommand {
     cpus: u16,
     /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
     #[clap(short, long, default_value = DEFAULT_MEM_SIZE)]
-    mem: String,
+    mem: DataSize,
     /// Disk size of the virtual machine instance (e.g. 10G for 10 gigabytes)
     #[clap(short, long, default_value = DEFAULT_DISK_SIZE)]
-    disk: String,
+    disk: DataSize,
     /// Forward ports from guest to host (e.g. -p 8000:80 or -p 127.0.0.1:9000:90/tcp)
     #[clap(short, long)]
     port: Vec<PortForward>,
@@ -77,8 +78,8 @@ impl CreateInstanceCommand {
             arch: image.arch,
             user: self.user.to_string(),
             cpus: self.cpus,
-            mem: util::human_readable_to_bytes(&self.mem)?,
-            disk_capacity: util::human_readable_to_bytes(&self.disk)?,
+            mem: self.mem.get_bytes() as u64,
+            disk_capacity: self.disk.get_bytes() as u64,
             ssh_port: util::generate_random_ssh_port(),
             hostfwd: self.port.clone(),
         };

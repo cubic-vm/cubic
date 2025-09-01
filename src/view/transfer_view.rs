@@ -1,4 +1,4 @@
-use crate::util;
+use crate::model::DataSize;
 use std::io;
 use std::io::Write;
 use std::time::Instant;
@@ -22,13 +22,13 @@ impl TransferView {
         print!(
             "\r{}: {:>10}",
             self.message,
-            util::bytes_to_human_readable(transferred_bytes)
+            DataSize::new(transferred_bytes as usize).to_size()
         );
 
         if let Some(total_bytes) = total_bytes {
             print!(
                 " / {:>10} [{:>3.0}%]",
-                util::bytes_to_human_readable(total_bytes),
+                DataSize::new(total_bytes as usize).to_size(),
                 transferred_bytes as f64 / total_bytes as f64 * 100_f64
             );
         }
@@ -39,7 +39,7 @@ impl TransferView {
             self.bytes_per_second /= 2;
             print!(
                 " {:>10}/s",
-                util::bytes_to_human_readable(self.bytes_per_second)
+                DataSize::new(self.bytes_per_second as usize).to_size()
             );
         }
 
