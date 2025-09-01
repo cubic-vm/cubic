@@ -53,7 +53,7 @@ impl FromStr for ImageName {
             Ok(Self { vendor, name, arch })
         } else {
             Err(
-                "Image name must have the format: vendor:name[:arch] (e.g. debain:bookworm, debian:buster:amd64)"
+                "Image name must have the format: vendor:name[:arch] (e.g. debian:bookworm, debian:buster:amd64)"
                     .to_string(),
             )
         }
@@ -71,14 +71,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_debain_bookworm() {
+    fn test_debian_bookworm() {
         let image = ImageName::from_str("debian:bookworm").unwrap();
         assert_eq!(image.get_vendor(), "debian");
         assert_eq!(image.get_name(), "bookworm");
     }
 
     #[test]
-    fn test_debain_bookworm_amd64() {
+    fn test_debian_bookworm_amd64() {
         let image = ImageName::from_str("debian:buster:amd64").unwrap();
         assert_eq!(image.get_vendor(), "debian");
         assert_eq!(image.get_name(), "buster");
@@ -86,7 +86,7 @@ mod tests {
     }
 
     #[test]
-    fn test_debain_bookworm_arm64() {
+    fn test_debian_bookworm_arm64() {
         let image = ImageName::from_str("debian:bookworm:arm64").unwrap();
         assert_eq!(image.get_vendor(), "debian");
         assert_eq!(image.get_name(), "bookworm");
