@@ -14,7 +14,7 @@ impl ImageFetcher {
         WebClient::new()?.download_file(
             &image.url,
             target_file,
-            TransferView::new("Downloading image"),
+            TransferView::new(&format!("Downloading {}", &image.to_name())),
         )
     }
 }
