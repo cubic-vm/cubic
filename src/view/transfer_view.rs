@@ -1,4 +1,5 @@
 use crate::model::DataSize;
+use crate::view::ProgressBar;
 use std::io;
 use std::io::Write;
 use std::time::Instant;
@@ -20,16 +21,17 @@ impl TransferView {
 
     pub fn update(&mut self, transferred_bytes: u64, total_bytes: Option<u64>) {
         print!(
-            "\r{}: {:>10}",
+            "\r{}: {:>10} ",
             self.message,
             DataSize::new(transferred_bytes as usize).to_size()
         );
 
         if let Some(total_bytes) = total_bytes {
+            let percent = transferred_bytes as f64 / total_bytes as f64;
             print!(
-                " / {:>10} [{:>3.0}%]",
-                DataSize::new(total_bytes as usize).to_size(),
-                transferred_bytes as f64 / total_bytes as f64 * 100_f64
+                "{} {:>3.0}%",
+                ProgressBar::new(percent, 40),
+                percent * 100_f64
             );
         }
 
@@ -38,7 +40,7 @@ impl TransferView {
             self.bytes_per_second += transferred_bytes / transfer_time_sec;
             self.bytes_per_second /= 2;
             print!(
-                " {:>8}",
+                " @ {:>8}",
                 DataSize::new(self.bytes_per_second as usize).to_speed()
             );
         }
