@@ -64,6 +64,6 @@ impl StartInstanceAction {
     }
 
     pub fn is_done(&self) -> bool {
-        PortChecker::new(self.instance.ssh_port).try_connect()
+        PortChecker::new().is_open(self.instance.ssh_port)
     }
 }
