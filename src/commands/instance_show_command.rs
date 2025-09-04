@@ -40,6 +40,10 @@ impl InstanceShowCommand {
         );
         view.add("User", &instance.user);
         view.add("SSH Port", &instance.ssh_port.to_string());
+        view.add(
+            "SSH",
+            &format!("ssh -p {} {}@localhost", instance.ssh_port, instance.user),
+        );
 
         for (index, rule) in instance.hostfwd.iter().enumerate() {
             let key = if index == 0 { "Forward" } else { "" };
@@ -62,7 +66,7 @@ mod tests {
     use std::str::FromStr;
 
     #[test]
-    fn test_show_command() {
+    fn test_show_command1() {
         let console = &mut ConsoleMock::new();
         let instance_store = &InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
@@ -92,6 +96,43 @@ Disk Used:  n/a
 Disk Total: 1.0 MiB
 User:       cubic
 SSH Port:   9000
+SSH:        ssh -p 9000 cubic@localhost
+"
+        );
+    }
+
+    #[test]
+    fn test_show_command2() {
+        let console = &mut ConsoleMock::new();
+        let instance_store = &InstanceStoreMock::new(vec![Instance {
+            name: "test".to_string(),
+            arch: Arch::ARM64,
+            user: "john".to_string(),
+            cpus: 2,
+            mem: 1,
+            disk_capacity: 1,
+            ssh_port: 8000,
+            hostfwd: Vec::new(),
+            ..Instance::default()
+        }]);
+
+        InstanceShowCommand {
+            instance: InstanceName::from_str("test").unwrap(),
+        }
+        .run(console, instance_store)
+        .unwrap();
+
+        assert_eq!(
+            console.get_output(),
+            "\
+Arch:       arm64
+CPUs:       2
+Memory:     1   B
+Disk Used:  n/a
+Disk Total: 1   B
+User:       john
+SSH Port:   8000
+SSH:        ssh -p 8000 john@localhost
 "
         );
     }
