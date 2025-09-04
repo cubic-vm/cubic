@@ -5,7 +5,6 @@ use crate::instance::{Instance, InstanceName, InstanceState, InstanceStore};
 use crate::model::DataSize;
 use crate::qemu::Monitor;
 use crate::ssh_cmd::PortChecker;
-use crate::util;
 use crate::util::SystemCommand;
 use serde::{Deserialize, Serialize};
 use std::fs::DirEntry;
@@ -80,7 +79,7 @@ impl InstanceStore for InstanceDao {
                 cpus: 1,
                 mem: DataSize::from_str("1G").unwrap().get_bytes() as u64,
                 disk_capacity: DataSize::from_str("1G").unwrap().get_bytes() as u64,
-                ssh_port: util::generate_random_ssh_port(),
+                ssh_port: PortChecker::new().get_new_port(),
                 ..Instance::default()
             }))
     }
@@ -158,7 +157,7 @@ impl InstanceStore for InstanceDao {
 
     fn get_state(&self, instance: &Instance) -> InstanceState {
         if self.is_running(instance) {
-            if PortChecker::new(instance.ssh_port).try_connect() {
+            if PortChecker::new().is_open(instance.ssh_port) {
                 InstanceState::Running
             } else {
                 InstanceState::Starting
