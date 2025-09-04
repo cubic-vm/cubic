@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceName, InstanceStore};
-use crate::util;
+use crate::ssh_cmd::PortChecker;
 use clap::Parser;
 
 /// Clone a virtual machine instance
@@ -20,7 +20,7 @@ impl InstanceCloneCommand {
         )?;
 
         let mut new_instance = instance_dao.load(self.new_name.as_str())?;
-        new_instance.ssh_port = util::generate_random_ssh_port();
+        new_instance.ssh_port = PortChecker::new().get_new_port();
         instance_dao.store(&new_instance)
     }
 }
