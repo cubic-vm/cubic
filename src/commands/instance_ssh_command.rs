@@ -31,13 +31,6 @@ impl InstanceSshCommand {
         verbosity: Verbosity,
     ) -> Result<(), Error> {
         let name = self.target.get_instance();
-        let instance = instance_dao.load(name.as_str())?;
-        let user = self
-            .target
-            .get_user()
-            .map(|user| user.to_string())
-            .unwrap_or(instance.user.to_string());
-        let ssh_port = instance.ssh_port;
 
         commands::InstanceStartCommand {
             qemu_args: None,
@@ -45,6 +38,14 @@ impl InstanceSshCommand {
             instances: vec![name.to_string()],
         }
         .run(instance_dao, verbosity)?;
+
+        let instance = instance_dao.load(name.as_str())?;
+        let user = self
+            .target
+            .get_user()
+            .map(|user| user.to_string())
+            .unwrap_or(instance.user.to_string());
+        let ssh_port = instance.ssh_port;
 
         let mut ssh = None;
         let mut start_time = Instant::now();

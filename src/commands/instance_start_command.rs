@@ -2,6 +2,7 @@ use crate::actions::StartInstanceAction;
 use crate::commands::Verbosity;
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore};
+use crate::ssh_cmd::PortChecker;
 use crate::view::SpinnerView;
 use clap::Parser;
 use std::thread::sleep;
@@ -25,8 +26,14 @@ impl InstanceStartCommand {
         // Launch virtual machine instances
         let mut actions = Vec::new();
         for name in &self.instances {
-            let instance = &instance_dao.load(name)?;
+            let instance = &mut instance_dao.load(name)?;
             if !instance_dao.is_running(instance) {
+                // Make SSH port is available
+                if PortChecker::new().is_open(instance.ssh_port) {
+                    instance.ssh_port = PortChecker::new().get_new_port();
+                    instance_dao.store(instance)?;
+                }
+
                 let mut action = StartInstanceAction::new(instance);
                 action.run(
                     instance_dao,
