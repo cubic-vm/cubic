@@ -4,7 +4,7 @@ use crate::fs::FS;
 use crate::instance::{Instance, InstanceName, InstanceStore};
 use crate::model::DataSize;
 use crate::qemu::{Monitor, QemuImg};
-use crate::util;
+use crate::ssh_cmd::PortChecker;
 use crate::util::SystemCommand;
 use serde::{Deserialize, Serialize};
 use std::fs::DirEntry;
@@ -86,7 +86,7 @@ impl InstanceStore for InstanceDao {
                 cpus: 1,
                 mem: DataSize::from_str("1G").unwrap().get_bytes() as u64,
                 disk_capacity: DataSize::from_str("1G").unwrap().get_bytes() as u64,
-                ssh_port: util::generate_random_ssh_port(),
+                ssh_port: PortChecker::new().get_new_port(),
                 ..Instance::default()
             }))
     }

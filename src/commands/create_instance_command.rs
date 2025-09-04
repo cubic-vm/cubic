@@ -6,7 +6,7 @@ use crate::fs::FS;
 use crate::image::{ImageDao, ImageName, ImageStore};
 use crate::instance::{Instance, InstanceDao, InstanceName, InstanceStore, PortForward};
 use crate::model::DataSize;
-use crate::util;
+use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
 use crate::view::SpinnerView;
 use clap::Parser;
@@ -80,7 +80,7 @@ impl CreateInstanceCommand {
             cpus: self.cpus,
             mem: self.mem.get_bytes() as u64,
             disk_capacity: self.disk.get_bytes() as u64,
-            ssh_port: util::generate_random_ssh_port(),
+            ssh_port: PortChecker::new().get_new_port(),
             hostfwd: self.port.clone(),
             ..Instance::default()
         };
