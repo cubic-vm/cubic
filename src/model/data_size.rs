@@ -26,10 +26,10 @@ impl DataSize {
 
     pub fn to_speed(&self) -> String {
         match self.bytes.checked_ilog(1024) {
-            Some(1) => format!("{} kbps", self.bytes * 8 / 1000),
-            Some(2) => format!("{} mbps", self.bytes * 8 / 1000_usize.pow(2)),
-            Some(3) => format!("{} gbps", self.bytes * 8 / 1000_usize.pow(3)),
-            Some(4) => format!("{} tbps", self.bytes * 8 / 1000_usize.pow(4)),
+            Some(1) => format!("{} Kbps", self.bytes * 8 / 1000),
+            Some(2) => format!("{} Mbps", self.bytes * 8 / 1000_usize.pow(2)),
+            Some(3) => format!("{} Gbps", self.bytes * 8 / 1000_usize.pow(3)),
+            Some(4) => format!("{} Tbps", self.bytes * 8 / 1000_usize.pow(4)),
             _ => format!("{}  bps", self.bytes * 8),
         }
     }
@@ -100,22 +100,22 @@ mod tests {
 
     #[test]
     fn test_kilobyte_to_speed() {
-        assert_eq!(&DataSize::new(1024).to_speed(), "8 kbps")
+        assert_eq!(&DataSize::new(1024).to_speed(), "8 Kbps")
     }
 
     #[test]
     fn test_megabyte_to_speed() {
-        assert_eq!(&DataSize::new(1024_usize.pow(2)).to_speed(), "8 mbps")
+        assert_eq!(&DataSize::new(1024_usize.pow(2)).to_speed(), "8 Mbps")
     }
 
     #[test]
     fn test_gigabyte_to_speed() {
-        assert_eq!(&DataSize::new(1024_usize.pow(3)).to_speed(), "8 gbps")
+        assert_eq!(&DataSize::new(1024_usize.pow(3)).to_speed(), "8 Gbps")
     }
 
     #[test]
     fn test_terrabyte_to_speed() {
-        assert_eq!(&DataSize::new(1024_usize.pow(4)).to_speed(), "8 tbps")
+        assert_eq!(&DataSize::new(1024_usize.pow(4)).to_speed(), "8 Tbps")
     }
 
     #[test]
