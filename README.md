@@ -68,36 +68,7 @@ cubic@quickstart:~$
 
 # :dizzy: How to install Cubic?
 
-### Linux
-
-Install Cubic on Linux as [Snap](https://snapcraft.io) with the following command:
-```bash
-sudo sh -c "snap install cubic && snap connect cubic:kvm && snap connect cubic:ssh-keys"
-```
-
-### macOS
-
-Install Cubic on macOS via [Homebrew](https://brew.sh) with the following command:
-```bash
-brew install cubic-vm/cubic/cubic
-```
-
-### Windows
-
-Install Cubic on Windows in [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) as [Snap](https://snapcraft.io) with the following command:
-```bash
-sudo sh -c "snap install cubic && snap connect cubic:kvm && snap connect cubic:ssh-keys"
-```
-
-### Others
-
-> [!NOTE]  
-> Cubic requires the following dependencies: `QEMU`, `OpenSSH` and either `cdrtools` or `cdrkit`.
-
-Install Cubic from [crates.io](https://crates.io/crates/cubic):
-```bash
-cargo install cubic
-```
+See https://cubic-vm.org/install.html for more information.
 
 # :bulb: How to use Cubic?
 
