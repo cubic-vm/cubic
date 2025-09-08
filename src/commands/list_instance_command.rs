@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::instance::{InstanceState, InstanceStore};
+use crate::instance::InstanceStore;
 use crate::model::DataSize;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
@@ -55,10 +55,10 @@ impl ListInstanceCommand {
                     Alignment::Right,
                 )
                 .add(
-                    match instance_store.get_state(&instance) {
-                        InstanceState::Stopped => "STOPPED",
-                        InstanceState::Starting => "STARTING",
-                        InstanceState::Running => "RUNNING",
+                    if instance_store.is_running(&instance) {
+                        "running"
+                    } else {
+                        "stopped"
                     },
                     Alignment::Left,
                 );
@@ -110,8 +110,8 @@ mod tests {
             console.get_output(),
             "\
 PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   State
-      test    amd64      1   1.0 KiB         n/a      1.0 MiB   STOPPED
-      test2   amd64      5     0   B         n/a      4.9 KiB   STOPPED
+      test    amd64      1   1.0 KiB         n/a      1.0 MiB   stopped
+      test2   amd64      5     0   B         n/a      4.9 KiB   stopped
 "
         );
     }
