@@ -3,50 +3,67 @@
 Install Cubic
 =============
 
-Linux
------
+Install on Linux
+----------------
 
-Install Cubic on Linux as `Snap`_ with the following command:
+You can install Cubic on Linux with the following methods:
 
-.. code-block::
+* `Install with Cargo`_ 
+* `Install with Homebrew`_ 
+* `Install with Snap`_ 
 
-       $ sudo snap install cubic && sudo snap connect cubic:kvm && sudo snap connect cubic:ssh-keys
+Install on macOS
+----------------
 
-.. _Snap: https://snapcraft.io/cubic
+You can install Cubic on macOS with the following methods:
 
-macOS
------
+* `Install with Cargo`_ 
+* `Install with Homebrew`_ 
 
-Install Cubic on macOS via `Homebrew`_ with the following command:
+Install on Windows
+------------------
 
-.. code-block::
+You can install Cubic on Windows with the following methods:
 
-       $ brew install cubic-vm/cubic/cubic
+* `Install with Cargo`_ 
+* `Install with Homebrew`_ (in WSL)
+* `Install with Snap`_ (in WSL)
 
-.. _Homebrew: https://brew.sh
+Install with Cargo
+------------------
 
-Windows
--------
-
-Install Cubic on Windows in `WSL`_ as `Snap`_ with the following command:
-
-.. code-block::
-
-       $ sudo snap install cubic && sudo snap connect cubic:kvm && sudo snap connect cubic:ssh-keys
- 
-.. _WSL: https://learn.microsoft.com/en-us/windows/wsl/install
-.. _Snap: https://snapcraft.io/cubic
-
-Others
-------
-
-Install Cubic from `crates.io`_:
+Use the following command to install Cubic with `Cargo`_:
 
 .. note:: Cubic requires the following dependencies: ``QEMU``, ``OpenSSH`` and either ``cdrtools`` or ``cdrkit``.
-
 
 .. code-block::
 
        $ cargo install cubic
 
-.. _crates.io: https://crates.io/crates/cubic
+.. _Cargo: https://crates.io/crates/cubic
+
+Install with Homebrew
+---------------------
+
+Use the following command to install Cubic via `Homebrew`_:
+
+.. code-block::
+
+       $ brew install cubic-vm/cubic/cubic
+
+.. _Homebrew: https://github.com/cubic-vm/homebrew-cubic
+
+
+
+Install with Snap
+-----------------
+
+Use the following command to install Cubic with `Snap`_:
+
+.. code-block::
+
+       $ sudo snap install cubic && \
+            sudo snap connect cubic:kvm && \
+            sudo snap connect cubic:ssh-keys
+
+.. _Snap: https://snapcraft.io/cubic
