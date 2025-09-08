@@ -2,7 +2,7 @@
 pub mod tests {
 
     use crate::error::Error;
-    use crate::instance::{Instance, InstanceState, InstanceStore};
+    use crate::instance::{Instance, InstanceStore};
     use crate::qemu::Monitor;
 
     pub struct InstanceStoreMock {
@@ -50,10 +50,6 @@ pub mod tests {
 
         fn delete(&self, _instance: &Instance) -> Result<(), Error> {
             Result::Ok(())
-        }
-
-        fn get_state(&self, _instance: &Instance) -> InstanceState {
-            InstanceState::Stopped
         }
 
         fn is_running(&self, _instance: &Instance) -> bool {

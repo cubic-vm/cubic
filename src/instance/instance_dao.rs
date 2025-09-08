@@ -1,10 +1,9 @@
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
-use crate::instance::{Instance, InstanceName, InstanceState, InstanceStore};
+use crate::instance::{Instance, InstanceName, InstanceStore};
 use crate::model::DataSize;
 use crate::qemu::{Monitor, QemuImg};
-use crate::ssh_cmd::PortChecker;
 use crate::util;
 use crate::util::SystemCommand;
 use serde::{Deserialize, Serialize};
@@ -160,18 +159,6 @@ impl InstanceStore for InstanceDao {
                 .remove_dir(&self.env.get_instance_dir2(&instance.name))
                 .ok();
             Ok(())
-        }
-    }
-
-    fn get_state(&self, instance: &Instance) -> InstanceState {
-        if self.is_running(instance) {
-            if PortChecker::new(instance.ssh_port).try_connect() {
-                InstanceState::Running
-            } else {
-                InstanceState::Starting
-            }
-        } else {
-            InstanceState::Stopped
         }
     }
 
