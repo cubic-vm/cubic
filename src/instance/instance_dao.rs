@@ -3,7 +3,7 @@ use crate::error::Error;
 use crate::fs::FS;
 use crate::instance::{Instance, InstanceName, InstanceState, InstanceStore};
 use crate::model::DataSize;
-use crate::qemu::Monitor;
+use crate::qemu::{Monitor, QemuImg};
 use crate::ssh_cmd::PortChecker;
 use crate::util;
 use crate::util::SystemCommand;
@@ -74,6 +74,13 @@ impl InstanceStore for InstanceDao {
         self.fs
             .open_file(&self.env.get_instance_config_file(name))
             .and_then(|mut file| Instance::deserialize(name, &mut file))
+            .map(|mut instance| {
+                let size = QemuImg::new()
+                    .get_image_info(&self.env, &instance)
+                    .map(|info| info.actual_size);
+                instance.disk_used = size;
+                instance
+            })
             .or(Ok(Instance {
                 name: name.to_string(),
                 user: USER.to_string(),

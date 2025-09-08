@@ -33,6 +33,8 @@ pub struct Instance {
     pub user: String,
     pub cpus: u16,
     pub mem: u64,
+    #[serde(skip)]
+    pub disk_used: Option<u64>,
     pub disk_capacity: u64,
     pub ssh_port: u16,
     #[serde(default)]
@@ -167,6 +169,7 @@ machine:
             disk_capacity: 1000,
             ssh_port: 10000,
             hostfwd: Vec::new(),
+            ..Instance::default()
         }
         .serialize(&mut writer)
         .expect("Cannot parser config");

@@ -1,4 +1,4 @@
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct Environment {
     data_dir: String,
     cache_dir: String,
