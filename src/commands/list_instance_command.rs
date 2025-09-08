@@ -23,7 +23,8 @@ impl ListInstanceCommand {
             .add("Arch", Alignment::Left)
             .add("CPUs", Alignment::Right)
             .add("Memory", Alignment::Right)
-            .add("Disk", Alignment::Right)
+            .add("Disk Used", Alignment::Right)
+            .add("Disk Total", Alignment::Right)
             .add("State", Alignment::Left);
 
         for instance_name in &instance_names {
@@ -40,6 +41,13 @@ impl ListInstanceCommand {
                 .add(&instance.cpus.to_string(), Alignment::Right)
                 .add(
                     &DataSize::new(instance.mem as usize).to_size(),
+                    Alignment::Right,
+                )
+                .add(
+                    &instance
+                        .disk_used
+                        .map(|size| DataSize::new(size as usize).to_size())
+                        .unwrap_or("n/a".to_string()),
                     Alignment::Right,
                 )
                 .add(
@@ -81,6 +89,7 @@ mod tests {
                 disk_capacity: 1048576,
                 ssh_port: 9000,
                 hostfwd: Vec::new(),
+                ..Instance::default()
             },
             Instance {
                 name: "test2".to_string(),
@@ -91,6 +100,7 @@ mod tests {
                 disk_capacity: 5000,
                 ssh_port: 9000,
                 hostfwd: Vec::new(),
+                ..Instance::default()
             },
         ]);
 
@@ -99,9 +109,9 @@ mod tests {
         assert_eq!(
             console.get_output(),
             "\
-PID   Name    Arch    CPUs    Memory      Disk   State
-      test    amd64      1   1.0 KiB   1.0 MiB   STOPPED
-      test2   amd64      5     0   B   4.9 KiB   STOPPED
+PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   State
+      test    amd64      1   1.0 KiB         n/a      1.0 MiB   STOPPED
+      test2   amd64      5     0   B         n/a      4.9 KiB   STOPPED
 "
         );
     }
@@ -115,7 +125,7 @@ PID   Name    Arch    CPUs    Memory      Disk   State
 
         assert_eq!(
             console.get_output(),
-            "PID   Name   Arch   CPUs   Memory   Disk   State\n"
+            "PID   Name   Arch   CPUs   Memory   Disk Used   Disk Total   State\n"
         );
     }
 }

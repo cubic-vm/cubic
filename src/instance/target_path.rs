@@ -81,6 +81,7 @@ mod tests {
             disk_capacity: 1024,
             ssh_port: 22,
             hostfwd: Vec::new(),
+            ..Instance::default()
         }]);
         assert_eq!(
             path.to_scp(&store).unwrap().as_str(),
@@ -101,6 +102,7 @@ mod tests {
             disk_capacity: 1024,
             ssh_port: 22,
             hostfwd: Vec::new(),
+            ..Instance::default()
         }]);
         assert_eq!(
             path.to_scp(&store).unwrap().as_str(),

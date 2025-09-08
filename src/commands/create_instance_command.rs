@@ -82,6 +82,7 @@ impl CreateInstanceCommand {
             disk_capacity: self.disk.get_bytes() as u64,
             ssh_port: util::generate_random_ssh_port(),
             hostfwd: self.port.clone(),
+            ..Instance::default()
         };
         CreateInstanceAction::new().run(env, &FS::new(), instance_dao, &image, instance)?;
 

@@ -28,7 +28,14 @@ impl InstanceShowCommand {
         view.add("CPUs", &instance.cpus.to_string());
         view.add("Memory", &DataSize::new(instance.mem as usize).to_size());
         view.add(
-            "Disk",
+            "Disk Used",
+            &instance
+                .disk_used
+                .map(|size| DataSize::new(size as usize).to_size())
+                .unwrap_or("n/a".to_string()),
+        );
+        view.add(
+            "Disk Total",
             &DataSize::new(instance.disk_capacity as usize).to_size(),
         );
         view.add("User", &instance.user);
@@ -66,6 +73,7 @@ mod tests {
             disk_capacity: 1048576,
             ssh_port: 9000,
             hostfwd: Vec::new(),
+            ..Instance::default()
         }]);
 
         InstanceShowCommand {
@@ -77,12 +85,13 @@ mod tests {
         assert_eq!(
             console.get_output(),
             "\
-Arch:     amd64
-CPUs:     1
-Memory:   1.0 KiB
-Disk:     1.0 MiB
-User:     cubic
-SSH Port: 9000
+Arch:       amd64
+CPUs:       1
+Memory:     1.0 KiB
+Disk Used:  n/a
+Disk Total: 1.0 MiB
+User:       cubic
+SSH Port:   9000
 "
         );
     }
