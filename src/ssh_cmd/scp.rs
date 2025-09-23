@@ -88,7 +88,10 @@ mod tests {
         let cmd = Scp::new()
             .set_root_dir("/snap/cubic/current")
             .copy("/from/file", "/to/file");
-        assert_eq!(cmd.get_command(), "/snap/cubic/current/usr/bin/scp -3 -r -S/snap/cubic/current/usr/bin/ssh /from/file /to/file");
+        assert_eq!(
+            cmd.get_command(),
+            "/snap/cubic/current/usr/bin/scp -3 -r -S/snap/cubic/current/usr/bin/ssh /from/file /to/file"
+        );
     }
 
     #[test]
@@ -104,7 +107,9 @@ mod tests {
             .set_args("-myarg1 -myarg2 -myarg3")
             .copy("/from/file", "/to/file");
 
-        assert_eq!(cmd.get_command(), "/snap/cubic/current/usr/bin/scp -oUserKnownHostsFile=/home/test/.ssh/known_hosts -3 -r -S/snap/cubic/current/usr/bin/ssh -i/home/cubic/.ssh/id_rsa -i/home/cubic/.ssh/id_ed25519 -myarg1 -myarg2 -myarg3 /from/file /to/file"
+        assert_eq!(
+            cmd.get_command(),
+            "/snap/cubic/current/usr/bin/scp -oUserKnownHostsFile=/home/test/.ssh/known_hosts -3 -r -S/snap/cubic/current/usr/bin/ssh -i/home/cubic/.ssh/id_rsa -i/home/cubic/.ssh/id_ed25519 -myarg1 -myarg2 -myarg3 /from/file /to/file"
         );
     }
 }

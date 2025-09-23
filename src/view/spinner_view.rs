@@ -1,5 +1,5 @@
 use std::cmp::max;
-use std::io::{stdout, Write};
+use std::io::{Write, stdout};
 use std::sync::mpsc::{self, TryRecvError};
 use std::thread::{self, JoinHandle};
 use std::time;

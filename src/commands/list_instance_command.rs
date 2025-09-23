@@ -72,8 +72,8 @@ impl ListInstanceCommand {
 mod tests {
     use super::*;
     use crate::arch::Arch;
-    use crate::instance::instance_store_mock::tests::InstanceStoreMock;
     use crate::instance::Instance;
+    use crate::instance::instance_store_mock::tests::InstanceStoreMock;
     use crate::view::console_mock::tests::ConsoleMock;
 
     #[test]

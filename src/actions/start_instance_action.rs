@@ -38,7 +38,7 @@ impl StartInstanceAction {
         emulator.add_drive(&env.get_instance_image_file(&self.instance.name), "qcow2");
         emulator.add_drive(&env.get_user_data_image_file(&self.instance.name), "raw");
         emulator.set_network(&self.instance.hostfwd, self.instance.ssh_port);
-        if let Some(ref args) = qemu_args {
+        if let Some(args) = qemu_args {
             emulator.set_qemu_args(args);
         }
         emulator.set_verbose(verbose);
