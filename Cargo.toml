@@ -37,7 +37,7 @@ homepage = "https://cubic-vm.org"
 repository = "https://github.com/cubic-vm/cubic"
 keywords = ["cli", "vm"]
 categories = ["command-line-utilities"]
-edition = "2021"
+edition = "2024"
 
 [features]
 qemu-sandbox = []

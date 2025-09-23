@@ -1,7 +1,7 @@
 use crate::commands;
 use crate::error::Error;
 use crate::instance::{InstanceStore, TargetPath};
-use crate::ssh_cmd::{get_ssh_private_key_names, Scp};
+use crate::ssh_cmd::{Scp, get_ssh_private_key_names};
 use clap::Parser;
 use std::env;
 

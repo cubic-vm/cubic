@@ -145,7 +145,16 @@ impl FromStr for PortForward {
             .iter()
             .collect();
 
-        if let &[_, _, host_ip, Some(host_port), Some(guest_port), _, protocol] = caps.as_slice() {
+        if let &[
+            _,
+            _,
+            host_ip,
+            Some(host_port),
+            Some(guest_port),
+            _,
+            protocol,
+        ] = caps.as_slice()
+        {
             Self::from_value(
                 protocol.map(|p| p.as_str()),
                 host_ip.map(|ip| ip.as_str()),

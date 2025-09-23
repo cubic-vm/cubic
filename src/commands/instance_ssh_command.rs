@@ -1,7 +1,7 @@
 use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore, Target};
-use crate::ssh_cmd::{get_ssh_private_key_names, Ssh};
+use crate::ssh_cmd::{Ssh, get_ssh_private_key_names};
 use crate::view::{Console, SpinnerView};
 use clap::Parser;
 use std::env;

@@ -39,7 +39,9 @@ impl FromStr for DataSize {
     type Err = String;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let error = format!("Cannot parse data size '{value}'. The input should be a number followed by a letter (B, K, M, G or T) for bytes, kilobytes, etc. Example: 1G for one gigabyte.");
+        let error = format!(
+            "Cannot parse data size '{value}'. The input should be a number followed by a letter (B, K, M, G or T) for bytes, kilobytes, etc. Example: 1G for one gigabyte."
+        );
 
         if value.is_empty() {
             return Err(error);

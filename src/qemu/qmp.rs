@@ -2,7 +2,7 @@ use crate::commands::Verbosity;
 use crate::error::Error;
 use crate::qemu;
 use serde_json::Value;
-use std::io::{prelude::*, BufReader, BufWriter, Read, Write};
+use std::io::{BufReader, BufWriter, Read, Write, prelude::*};
 use std::os::unix::net::UnixStream;
 use std::time::Duration;
 
@@ -72,7 +72,7 @@ impl Qmp {
                 qemu::QmpMessage::Success { id, .. } | qemu::QmpMessage::Error { id, .. }
                     if *id == request_id =>
                 {
-                    return Ok(response)
+                    return Ok(response);
                 }
                 _ => {}
             }
