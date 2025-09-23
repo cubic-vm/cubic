@@ -10,14 +10,11 @@ jobs:
     name: Check
     runs-on: ubuntu-24.04
     steps:
-      - name: Install task
-        run: sudo snap install task --classic
-
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Build image
-        run: task build-image
+        run: make build-image
 
       - name: Check
-        run: task check
+        run: make check
