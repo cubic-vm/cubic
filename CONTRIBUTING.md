@@ -10,7 +10,8 @@ https://github.com/cubic-vm/cubic/pulls
 
 ## What license does Cubic use?
 
-Cubic is licensed under GPL-2 and any contribution must be released under the same license.
+Cubic is dual-licensed under the MIT and Apache 2.0 licenses.
+By submitting a pull request, you agree that your contribution is licensed under these licenses.
 
 ## How to create a good pull request?
 
