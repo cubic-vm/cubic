@@ -26,7 +26,7 @@ test: build-image
 	${DOCKER_CMD} ${IMAGE} cargo test
 
 audit: build-image
-	${DOCKER_CMD} ${IMAGE} cargo audit
+	${DOCKER_CMD} ${IMAGE} cargo audit --ignore RUSTSEC-2023-0071 # no fix available so far
 
 update: build-image
 	${DOCKER_CMD} ${IMAGE} cargo update
