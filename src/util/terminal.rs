@@ -15,6 +15,29 @@ use std::sync::{
 use std::thread;
 use std::time::Duration;
 
+pub fn term_raw_mode() -> libc::termios {
+    let mut termios_original: libc::termios;
+    unsafe {
+        termios_original = mem::zeroed();
+        libc::tcgetattr(0, &mut termios_original);
+        let mut termios = mem::zeroed();
+        libc::tcgetattr(0, &mut termios);
+        termios.c_lflag &= !libc::ICANON;
+        termios.c_lflag &= !libc::ECHO;
+        termios.c_lflag &= !libc::ISIG;
+        termios.c_cc[libc::VMIN] = 1;
+        termios.c_cc[libc::VTIME] = 0;
+        libc::tcsetattr(0, libc::TCSANOW, &termios);
+    }
+    termios_original
+}
+
+pub fn term_reset(termios_original: libc::termios) {
+    unsafe {
+        libc::tcsetattr(0, libc::TCSANOW, &termios_original);
+    }
+}
+
 pub struct Terminal {
     threads: Vec<thread::JoinHandle<()>>,
 }
@@ -37,19 +60,7 @@ fn spawn_stream_thread(
     running: Arc<AtomicBool>,
 ) -> thread::JoinHandle<()> {
     thread::spawn(move || {
-        let mut termios_original: libc::termios;
-        unsafe {
-            termios_original = mem::zeroed();
-            libc::tcgetattr(0, &mut termios_original);
-            let mut termios = mem::zeroed();
-            libc::tcgetattr(0, &mut termios);
-            termios.c_lflag &= !libc::ICANON;
-            termios.c_lflag &= !libc::ECHO;
-            termios.c_lflag &= !libc::ISIG;
-            termios.c_cc[libc::VMIN] = 1;
-            termios.c_cc[libc::VTIME] = 0;
-            libc::tcsetattr(0, libc::TCSANOW, &termios);
-        }
+        let termios_original = term_raw_mode();
 
         let buf = &mut [0u8; 10];
         let mut out = std::io::stdout();
@@ -72,9 +83,7 @@ fn spawn_stream_thread(
         out.write_all("\n".as_bytes()).ok();
         out.flush().ok();
 
-        unsafe {
-            libc::tcsetattr(0, libc::TCSANOW, &termios_original);
-        }
+        term_reset(termios_original);
     })
 }
 

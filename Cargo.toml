@@ -50,6 +50,9 @@ serde_json = "^1"
 serde_yaml = "^0"
 libc = "^0"
 regex = "^1"
+tokio = { version = "1", features = ["full"] }
+russh = "0"
+termion = "4"
 
 [profile.release]
 opt-level = 'z'

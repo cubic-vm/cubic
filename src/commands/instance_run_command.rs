@@ -4,13 +4,17 @@ use crate::error::Error;
 use crate::image::ImageDao;
 use crate::instance::{InstanceDao, Target};
 use crate::view::Console;
-use clap::Parser;
+use clap::{self, Parser};
 
 /// Create, start and open a shell in a new virtual machine instance
 #[derive(Parser)]
 pub struct InstanceRunCommand {
     #[clap(flatten)]
     create_cmd: commands::CreateInstanceCommand,
+    #[clap(long, conflicts_with = "russh", default_value_t = true, hide = true)]
+    pub openssh: bool,
+    #[clap(long, conflicts_with = "openssh", default_value_t = false, hide = true)]
+    pub russh: bool,
 }
 
 impl InstanceRunCommand {
@@ -30,6 +34,8 @@ impl InstanceRunCommand {
             xforward: false,
             ssh_args: None,
             cmd: None,
+            openssh: self.openssh,
+            russh: self.russh,
         }
         .run(console, instance_dao, verbosity)
     }

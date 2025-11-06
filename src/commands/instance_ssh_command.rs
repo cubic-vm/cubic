@@ -1,7 +1,7 @@
 use crate::commands::{self, Verbosity};
 use crate::error::Error;
 use crate::instance::{InstanceDao, InstanceStore, Target};
-use crate::ssh_cmd::{Ssh, get_ssh_private_key_names};
+use crate::ssh_cmd::{Openssh, Russh, Ssh, get_ssh_private_key_names};
 use crate::view::{Console, SpinnerView};
 use clap::Parser;
 use std::env;
@@ -19,6 +19,11 @@ pub struct InstanceSshCommand {
     /// Pass additional SSH arguments
     #[clap(long)]
     pub ssh_args: Option<String>,
+    /// Select the ssh client library (openssh or russh are supported)
+    #[clap(long, conflicts_with = "russh", default_value_t = false, hide = true)]
+    pub openssh: bool,
+    #[clap(long, conflicts_with = "openssh", default_value_t = false, hide = true)]
+    pub russh: bool,
     /// Execute a command in the virtual machine
     pub cmd: Option<String>,
 }
@@ -47,43 +52,42 @@ impl InstanceSshCommand {
             .unwrap_or(instance.user.to_string());
         let ssh_port = instance.ssh_port;
 
-        let mut ssh = None;
-        let mut start_time = Instant::now();
+        let mut ssh: Box<dyn Ssh> = if !self.russh {
+            Box::new(Openssh::new())
+        } else {
+            Box::new(Russh::new())
+        };
+        ssh.set_known_hosts_file(
+            env::var("HOME")
+                .map(|dir| format!("{dir}/.ssh/known_hosts"))
+                .ok(),
+        );
+        ssh.set_private_keys(get_ssh_private_key_names()?);
+        ssh.set_port(Some(ssh_port));
+        ssh.set_xforward(self.xforward);
+        ssh.set_args(self.ssh_args.clone().unwrap_or_default());
+        ssh.set_user(user.clone());
+        ssh.set_cmd(self.cmd.clone());
+        console.debug(&ssh.get_command());
 
         console.info("Default login user: cubic / password: cubic");
 
         loop {
-            if ssh.is_none() {
-                let mut cmd = Ssh::new()
-                    .set_known_hosts_file(
-                        env::var("HOME")
-                            .map(|dir| format!("{dir}/.ssh/known_hosts"))
-                            .ok(),
-                    )
-                    .set_private_keys(get_ssh_private_key_names()?)
-                    .set_port(Some(ssh_port))
-                    .set_xforward(self.xforward)
-                    .set_args(self.ssh_args.clone().unwrap_or_default())
-                    .set_user(user.clone())
-                    .set_cmd(self.cmd.clone())
-                    .connect();
-                console.debug(&cmd.get_command());
-                ssh = Some(cmd.spawn()?);
-                start_time = Instant::now();
+            let start_time = Instant::now();
+            if ssh.connect() {
+                // exit on success
+                break;
             }
 
-            if let Ok(Some(exit)) = ssh.as_mut().unwrap().try_wait() {
-                if exit.success() || self.cmd.is_some() || start_time.elapsed().as_secs() > 5 {
-                    break;
-                }
-                let spinner = (!verbosity.is_quiet()).then(|| SpinnerView::new("Try to connect"));
-                thread::sleep(Duration::from_secs(5));
-                if let Some(mut s) = spinner {
-                    s.stop()
-                }
-                ssh = None;
-            } else {
-                thread::sleep(Duration::from_secs(1));
+            if self.ssh_args.is_some() || start_time.elapsed().as_secs() > 5 {
+                // exit if cli command or time expired
+                break;
+            }
+
+            let spinner = (!verbosity.is_quiet()).then(|| SpinnerView::new("Try to connect"));
+            thread::sleep(Duration::from_secs(5));
+            if let Some(mut s) = spinner {
+                s.stop()
             }
         }
 
