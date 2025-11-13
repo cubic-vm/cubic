@@ -78,7 +78,22 @@ impl Russh {
         Self::default()
     }
 
-    async fn authenticate(&self, session: &mut russh::client::Handle<Client>) -> Result<(), ()> {
+    async fn authenticate_with_default_password(
+        &self,
+        session: &mut russh::client::Handle<Client>,
+    ) -> Result<(), ()> {
+        let auth = session
+            .authenticate_password(&self.user, "cubic")
+            .await
+            .map(|auth| auth.success());
+
+        if let Ok(true) = auth { Ok(()) } else { Err(()) }
+    }
+
+    async fn authenticate_with_password(
+        &self,
+        session: &mut russh::client::Handle<Client>,
+    ) -> Result<(), ()> {
         let user = &self.user;
         loop {
             let mut stdout = std::io::stdout();
@@ -100,6 +115,18 @@ impl Russh {
         }
 
         Ok(())
+    }
+
+    async fn authenticate(&self, session: &mut russh::client::Handle<Client>) -> Result<(), ()> {
+        if self
+            .authenticate_with_default_password(session)
+            .await
+            .is_ok()
+        {
+            return Ok(());
+        }
+
+        self.authenticate_with_password(session).await
     }
 
     async fn open_channel(&self) -> Result<Channel<russh::client::Msg>, ()> {
