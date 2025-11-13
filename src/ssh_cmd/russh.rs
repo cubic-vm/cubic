@@ -164,7 +164,11 @@ impl Russh {
             .await
             .map_err(|_| ())?;
 
-        channel.request_shell(true).await.map_err(|_| ())?;
+        if let Some(cmd) = &self.cmd {
+            channel.exec(true, cmd.as_str()).await.map_err(|_| ())?;
+        } else {
+            channel.request_shell(true).await.map_err(|_| ())?;
+        }
         let (ssh_in, ssh_out) = channel.split();
 
         let stdin_stream = tokio::spawn(handle_stdin_stream(ssh_out));
