@@ -45,3 +45,19 @@ pub use prune_command::*;
 pub use show_command::*;
 pub use show_image_command::*;
 pub use verbosity::*;
+
+use crate::env::Environment;
+use crate::error::Error;
+use crate::image::ImageStore;
+use crate::instance::InstanceStore;
+use crate::view::Console;
+
+trait Command {
+    fn run(
+        &self,
+        console: &mut dyn Console,
+        env: &Environment,
+        image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
+    ) -> Result<(), Error>;
+}

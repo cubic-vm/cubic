@@ -1,8 +1,11 @@
 use crate::actions::StartInstanceAction;
-use crate::commands::Verbosity;
+use crate::commands::Command;
+use crate::env::Environment;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore};
+use crate::image::ImageStore;
+use crate::instance::InstanceStore;
 use crate::ssh_cmd::PortChecker;
+use crate::view::Console;
 use crate::view::SpinnerView;
 use clap::Parser;
 use std::thread::sleep;
@@ -21,26 +24,28 @@ pub struct InstanceStartCommand {
     pub instances: Vec<String>,
 }
 
-impl InstanceStartCommand {
-    pub fn run(&self, instance_dao: &InstanceDao, verbosity: Verbosity) -> Result<(), Error> {
+impl Command for InstanceStartCommand {
+    fn run(
+        &self,
+        console: &mut dyn Console,
+        env: &Environment,
+        _image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
+    ) -> Result<(), Error> {
+        let verbosity = console.get_verbosity();
         // Launch virtual machine instances
         let mut actions = Vec::new();
         for name in &self.instances {
-            let instance = &mut instance_dao.load(name)?;
-            if !instance_dao.is_running(instance) {
+            let instance = &mut instance_store.load(name)?;
+            if !instance_store.is_running(instance) {
                 // Make SSH port is available
                 if PortChecker::new().is_open(instance.ssh_port) {
                     instance.ssh_port = PortChecker::new().get_new_port();
-                    instance_dao.store(instance)?;
+                    instance_store.store(instance)?;
                 }
 
                 let mut action = StartInstanceAction::new(instance);
-                action.run(
-                    instance_dao,
-                    &instance_dao.env,
-                    &self.qemu_args,
-                    verbosity.is_verbose(),
-                )?;
+                action.run(instance_store, env, &self.qemu_args, verbosity.is_verbose())?;
 
                 actions.push(action);
             }

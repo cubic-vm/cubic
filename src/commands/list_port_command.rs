@@ -1,5 +1,8 @@
+use crate::commands::Command;
+use crate::env::Environment;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore};
+use crate::image::ImageStore;
+use crate::instance::InstanceStore;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
 
@@ -7,9 +10,15 @@ use clap::Parser;
 #[derive(Parser)]
 pub struct ListPortCommand;
 
-impl ListPortCommand {
-    pub fn run(&self, console: &mut dyn Console, instance_dao: &InstanceDao) -> Result<(), Error> {
-        let instance_names = instance_dao.get_instances();
+impl Command for ListPortCommand {
+    fn run(
+        &self,
+        console: &mut dyn Console,
+        _env: &Environment,
+        _image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
+    ) -> Result<(), Error> {
+        let instance_names = instance_store.get_instances();
 
         let mut view = TableView::new();
         view.add_row()
@@ -20,7 +29,7 @@ impl ListPortCommand {
             .add("State", Alignment::Left);
 
         for instance_name in instance_names {
-            let instance = &instance_dao.load(&instance_name)?;
+            let instance = &instance_store.load(&instance_name)?;
             for rule in &instance.hostfwd {
                 view.add_row()
                     .add(&instance_name, Alignment::Left)
@@ -31,7 +40,7 @@ impl ListPortCommand {
                     .add(&format!(":{}", rule.get_guest_port()), Alignment::Left)
                     .add(&format!("/{}", rule.get_protocol()), Alignment::Left)
                     .add(
-                        instance_dao
+                        instance_store
                             .is_running(instance)
                             .then_some("in use")
                             .unwrap_or_default(),

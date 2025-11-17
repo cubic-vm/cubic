@@ -19,7 +19,7 @@ impl StartInstanceAction {
 
     pub fn run(
         &mut self,
-        instance_dao: &impl InstanceStore,
+        instance_dao: &dyn InstanceStore,
         env: &Environment,
         qemu_args: &Option<String>,
         verbose: bool,

@@ -1,6 +1,10 @@
+use crate::commands::Command;
+use crate::env::Environment;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore, PortForward};
+use crate::image::ImageStore;
+use crate::instance::{InstanceStore, PortForward};
 use crate::model::DataSize;
+use crate::view::Console;
 use clap::Parser;
 
 /// Modify a virtual machine instance configuration
@@ -25,9 +29,15 @@ pub struct InstanceModifyCommand {
     rm_port: Vec<PortForward>,
 }
 
-impl InstanceModifyCommand {
-    pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
-        let mut instance = instance_dao.load(&self.instance)?;
+impl Command for InstanceModifyCommand {
+    fn run(
+        &self,
+        _console: &mut dyn Console,
+        _env: &Environment,
+        _image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
+    ) -> Result<(), Error> {
+        let mut instance = instance_store.load(&self.instance)?;
 
         if let Some(cpus) = &self.cpus {
             instance.cpus = *cpus;
@@ -38,13 +48,13 @@ impl InstanceModifyCommand {
         }
 
         if let Some(disk) = &self.disk {
-            instance_dao.resize(&mut instance, disk.get_bytes() as u64)?;
+            instance_store.resize(&mut instance, disk.get_bytes() as u64)?;
         }
 
         instance.hostfwd.append(&mut self.port.clone());
         instance.hostfwd.retain(|p| !self.rm_port.contains(p));
 
-        instance_dao.store(&instance)?;
+        instance_store.store(&instance)?;
         Result::Ok(())
     }
 }

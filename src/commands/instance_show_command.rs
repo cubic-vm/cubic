@@ -1,4 +1,7 @@
+use crate::commands::Command;
+use crate::env::Environment;
 use crate::error::Error;
+use crate::image::ImageStore;
 use crate::instance::{InstanceName, InstanceStore};
 use crate::model::DataSize;
 use crate::view::{Console, MapView};
@@ -11,10 +14,12 @@ pub struct InstanceShowCommand {
     pub instance: InstanceName,
 }
 
-impl InstanceShowCommand {
-    pub fn run(
+impl Command for InstanceShowCommand {
+    fn run(
         &self,
         console: &mut dyn Console,
+        _env: &Environment,
+        _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
         if !instance_store.exists(self.instance.as_str()) {
@@ -60,6 +65,7 @@ impl InstanceShowCommand {
 mod tests {
     use super::*;
     use crate::arch::Arch;
+    use crate::image::image_store_mock::tests::ImageStoreMock;
     use crate::instance::Instance;
     use crate::instance::instance_store_mock::tests::InstanceStoreMock;
     use crate::view::console_mock::tests::ConsoleMock;
@@ -68,6 +74,8 @@ mod tests {
     #[test]
     fn test_show_command1() {
         let console = &mut ConsoleMock::new();
+        let env = &Environment::new(String::new(), String::new(), String::new());
+        let image_store = &ImageStoreMock::default();
         let instance_store = &InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             arch: Arch::AMD64,
@@ -83,7 +91,7 @@ mod tests {
         InstanceShowCommand {
             instance: InstanceName::from_str("test").unwrap(),
         }
-        .run(console, instance_store)
+        .run(console, env, image_store, instance_store)
         .unwrap();
 
         assert_eq!(
@@ -104,6 +112,8 @@ SSH:        ssh -p 9000 cubic@localhost
     #[test]
     fn test_show_command2() {
         let console = &mut ConsoleMock::new();
+        let env = &Environment::new(String::new(), String::new(), String::new());
+        let image_store = &ImageStoreMock::default();
         let instance_store = &InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             arch: Arch::ARM64,
@@ -119,7 +129,7 @@ SSH:        ssh -p 9000 cubic@localhost
         InstanceShowCommand {
             instance: InstanceName::from_str("test").unwrap(),
         }
-        .run(console, instance_store)
+        .run(console, env, image_store, instance_store)
         .unwrap();
 
         assert_eq!(
@@ -140,13 +150,15 @@ SSH:        ssh -p 8000 john@localhost
     #[test]
     fn test_show_command_failed() {
         let console = &mut ConsoleMock::new();
+        let env = &Environment::new(String::new(), String::new(), String::new());
         let instance_store = &InstanceStoreMock::new(Vec::new());
+        let image_store = &ImageStoreMock::default();
 
         assert!(matches!(
             InstanceShowCommand {
                 instance: InstanceName::from_str("test").unwrap()
             }
-            .run(console, instance_store),
+            .run(console, env, image_store, instance_store),
             Result::Err(Error::UnknownInstance(_))
         ));
     }

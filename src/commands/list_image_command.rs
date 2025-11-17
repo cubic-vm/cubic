@@ -1,6 +1,8 @@
-use crate::commands::fetch_image_list;
+use crate::commands::{Command, fetch_image_list};
 use crate::env::Environment;
 use crate::error::Error;
+use crate::image::ImageStore;
+use crate::instance::InstanceStore;
 use crate::model::DataSize;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
@@ -9,8 +11,14 @@ use clap::Parser;
 #[derive(Parser)]
 pub struct ListImageCommand;
 
-impl ListImageCommand {
-    pub fn run(&self, console: &mut dyn Console, env: &Environment) -> Result<(), Error> {
+impl Command for ListImageCommand {
+    fn run(
+        &self,
+        console: &mut dyn Console,
+        env: &Environment,
+        _image_store: &dyn ImageStore,
+        _instance_store: &dyn InstanceStore,
+    ) -> Result<(), Error> {
         let images = fetch_image_list(env);
 
         let mut view = TableView::new();

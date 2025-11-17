@@ -1,8 +1,10 @@
 use crate::commands;
+use crate::commands::Command;
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
-use crate::image::{Image, ImageDao, ImageFactory, ImageFetcher, ImageName, ImageStore};
+use crate::image::{Image, ImageFactory, ImageFetcher, ImageName, ImageStore};
+use crate::instance::InstanceStore;
 use crate::view::{Console, SpinnerView};
 use clap::Subcommand;
 
@@ -28,27 +30,33 @@ pub enum ImageCommands {
     Prune(commands::PruneCommand),
 }
 
-impl ImageCommands {
-    pub fn dispatch(&self, console: &mut dyn Console, image_dao: &ImageDao) -> Result<(), Error> {
+impl Command for ImageCommands {
+    fn run(
+        &self,
+        console: &mut dyn Console,
+        env: &Environment,
+        image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
+    ) -> Result<(), Error> {
         match self {
-            ImageCommands::Ls(cmd) => cmd.run(console, &image_dao.env),
-            ImageCommands::Info(cmd) => cmd.run(console, &image_dao.env, image_dao),
+            ImageCommands::Ls(cmd) => cmd.run(console, env, image_store, instance_store),
+            ImageCommands::Info(cmd) => cmd.run(console, env, image_store, instance_store),
             ImageCommands::Fetch { image } => {
-                fetch_image_list(&image_dao.env);
-                let image = &image_dao.get(image)?;
+                fetch_image_list(env);
+                let image = &image_store.get(image)?;
 
-                if !image_dao.exists(image) {
-                    FS::new().create_dir(&image_dao.env.get_image_dir())?;
+                if !image_store.exists(image) {
+                    FS::new().create_dir(&env.get_image_dir())?;
                     ImageFetcher::new().fetch(
                         image,
-                        &format!("{}/{}", image_dao.env.get_image_dir(), image.to_file_name()),
+                        &format!("{}/{}", env.get_image_dir(), image.to_file_name()),
                     )?;
                 }
 
                 Ok(())
             }
 
-            ImageCommands::Prune(cmd) => cmd.run(image_dao),
+            ImageCommands::Prune(cmd) => cmd.run(console, env, image_store, instance_store),
         }
     }
 }

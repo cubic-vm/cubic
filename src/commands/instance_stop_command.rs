@@ -1,7 +1,10 @@
 use crate::actions::StopInstanceAction;
-use crate::commands;
+use crate::commands::Command;
+use crate::env::Environment;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore};
+use crate::image::ImageStore;
+use crate::instance::InstanceStore;
+use crate::view::Console;
 use crate::view::SpinnerView;
 use clap::Parser;
 use std::thread;
@@ -20,28 +23,30 @@ pub struct InstanceStopCommand {
     pub instances: Vec<String>,
 }
 
-impl InstanceStopCommand {
-    pub fn run(
+impl Command for InstanceStopCommand {
+    fn run(
         &self,
-        instance_dao: &InstanceDao,
-        verbosity: commands::Verbosity,
+        console: &mut dyn Console,
+        _env: &Environment,
+        _image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
         let stop_instances = if self.all {
-            instance_dao.get_instances()
+            instance_store.get_instances()
         } else {
             self.instances.clone()
         };
 
         let mut actions = Vec::new();
         for instance in &stop_instances {
-            let mut action = StopInstanceAction::new(&instance_dao.load(instance)?);
-            action.run(instance_dao)?;
+            let mut action = StopInstanceAction::new(&instance_store.load(instance)?);
+            action.run(instance_store)?;
             actions.push(action);
         }
 
-        if self.wait && !verbosity.is_quiet() {
+        if self.wait && !console.get_verbosity().is_quiet() {
             let mut spinner = SpinnerView::new("Stopping instance(s)");
-            while actions.iter().any(|action| !action.is_done(instance_dao)) {
+            while actions.iter().any(|action| !action.is_done(instance_store)) {
                 thread::sleep(Duration::from_secs(1))
             }
             spinner.stop();

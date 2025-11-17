@@ -1,4 +1,6 @@
-use crate::commands::{self, InstanceCloneCommand, InstanceModifyCommand, InstanceRenameCommand};
+use crate::commands::{
+    self, Command, InstanceCloneCommand, InstanceModifyCommand, InstanceRenameCommand,
+};
 use crate::env::EnvironmentFactory;
 use crate::error::Error;
 use crate::image::ImageDao;
@@ -61,32 +63,35 @@ pub struct CommandDispatcher {
 
 impl CommandDispatcher {
     pub fn dispatch(self, console: &mut dyn Console) -> Result<(), Error> {
-        let verbosity = commands::Verbosity::new(self.global.verbose, self.global.quiet);
-        console.set_verbosity(verbosity);
+        console.set_verbosity(commands::Verbosity::new(
+            self.global.verbose,
+            self.global.quiet,
+        ));
         let env = EnvironmentFactory::create_env()?;
         let image_dao = ImageDao::new(&env)?;
         let instance_dao = InstanceDao::new(&env)?;
 
-        match self.command {
-            Commands::Run(cmd) => cmd.run(console, &env, &image_dao, &instance_dao, verbosity),
-            Commands::Instances(cmd) => cmd.run(console, &instance_dao),
-            Commands::Images(cmd) => cmd.run(console, &env),
-            Commands::Ports(cmd) => cmd.run(console, &instance_dao),
-            Commands::Create(cmd) => cmd.run(console, &env, &image_dao, &instance_dao),
-            Commands::Modify(cmd) => cmd.run(&instance_dao),
-            Commands::Clone(cmd) => cmd.run(&instance_dao),
-            Commands::Rename(cmd) => cmd.run(&instance_dao),
-            Commands::Show(cmd) => cmd.run(console, &env, &instance_dao, &image_dao),
-            Commands::Start(cmd) => cmd.run(&instance_dao, verbosity),
-            Commands::Stop(cmd) => cmd.run(&instance_dao, verbosity),
-            Commands::Restart(cmd) => cmd.run(&instance_dao, verbosity),
-            Commands::Console(cmd) => cmd.run(&instance_dao, verbosity),
-            Commands::Ssh(cmd) => cmd.run(console, &instance_dao, verbosity),
-            Commands::Scp(cmd) => cmd.run(&instance_dao, verbosity),
-            Commands::Delete(cmd) => cmd.run(&instance_dao, verbosity),
-            Commands::Image(command) => command.dispatch(console, &image_dao),
-            Commands::Prune(cmd) => cmd.run(&image_dao),
-            Commands::Net(command) => command.dispatch(console, &instance_dao),
+        match &self.command {
+            Commands::Run(cmd) => cmd as &dyn Command,
+            Commands::Instances(cmd) => cmd,
+            Commands::Images(cmd) => cmd,
+            Commands::Ports(cmd) => cmd,
+            Commands::Create(cmd) => cmd,
+            Commands::Modify(cmd) => cmd,
+            Commands::Clone(cmd) => cmd,
+            Commands::Rename(cmd) => cmd,
+            Commands::Show(cmd) => cmd,
+            Commands::Start(cmd) => cmd,
+            Commands::Stop(cmd) => cmd,
+            Commands::Restart(cmd) => cmd,
+            Commands::Console(cmd) => cmd,
+            Commands::Ssh(cmd) => cmd,
+            Commands::Scp(cmd) => cmd,
+            Commands::Delete(cmd) => cmd,
+            Commands::Image(cmd) => cmd,
+            Commands::Prune(cmd) => cmd,
+            Commands::Net(cmd) => cmd,
         }
+        .run(console, &env, &image_dao, &instance_dao)
     }
 }

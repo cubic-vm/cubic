@@ -14,6 +14,10 @@ impl Stdio {
 }
 
 impl Console for Stdio {
+    fn get_verbosity(&mut self) -> Verbosity {
+        self.verbosity
+    }
+
     fn set_verbosity(&mut self, verbosity: Verbosity) {
         self.verbosity = verbosity;
     }

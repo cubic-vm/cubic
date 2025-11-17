@@ -1,7 +1,10 @@
-use crate::commands;
+use crate::commands::Command;
+use crate::env::Environment;
 use crate::error::Error;
+use crate::image::ImageStore;
 use crate::instance::{InstanceStore, TargetPath};
 use crate::ssh_cmd::{Scp, get_ssh_private_key_names};
+use crate::view::Console;
 use clap::Parser;
 use std::env;
 
@@ -17,12 +20,15 @@ pub struct InstanceScpCommand {
     scp_args: Option<String>,
 }
 
-impl InstanceScpCommand {
-    pub fn run(
+impl Command for InstanceScpCommand {
+    fn run(
         &self,
+        console: &mut dyn Console,
+        _env: &Environment,
+        _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-        verbosity: commands::Verbosity,
     ) -> Result<(), Error> {
+        let verbosity = console.get_verbosity();
         let from = &self.from.to_scp(instance_store)?;
         let to = &self.to.to_scp(instance_store)?;
 
