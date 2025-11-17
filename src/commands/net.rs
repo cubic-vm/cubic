@@ -1,9 +1,11 @@
 mod hostfwd;
 
+use crate::commands::Command;
+use crate::env::Environment;
 use crate::error::Error;
-use crate::instance::InstanceDao;
+use crate::image::ImageStore;
+use crate::instance::InstanceStore;
 use crate::view::Console;
-
 use clap::Subcommand;
 use hostfwd::HostfwdCommands;
 
@@ -23,14 +25,16 @@ pub enum NetworkCommands {
     Hostfwd(HostfwdCommands),
 }
 
-impl NetworkCommands {
-    pub fn dispatch(
+impl Command for NetworkCommands {
+    fn run(
         &self,
         console: &mut dyn Console,
-        instance_dao: &InstanceDao,
+        env: &Environment,
+        image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
         match self {
-            NetworkCommands::Hostfwd(command) => command.dispatch(console, instance_dao),
+            NetworkCommands::Hostfwd(cmd) => cmd.run(console, env, image_store, instance_store),
         }
     }
 }

@@ -1,4 +1,7 @@
+use crate::commands::Command;
+use crate::env::Environment;
 use crate::error::Error;
+use crate::image::ImageStore;
 use crate::instance::InstanceStore;
 use crate::model::DataSize;
 use crate::view::{Alignment, Console, TableView};
@@ -8,10 +11,12 @@ use clap::Parser;
 #[derive(Parser)]
 pub struct ListInstanceCommand;
 
-impl ListInstanceCommand {
-    pub fn run(
+impl Command for ListInstanceCommand {
+    fn run(
         &self,
         console: &mut dyn Console,
+        _env: &Environment,
+        _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
         let instance_names = instance_store.get_instances();
@@ -72,6 +77,7 @@ impl ListInstanceCommand {
 mod tests {
     use super::*;
     use crate::arch::Arch;
+    use crate::image::image_store_mock::tests::ImageStoreMock;
     use crate::instance::Instance;
     use crate::instance::instance_store_mock::tests::InstanceStoreMock;
     use crate::view::console_mock::tests::ConsoleMock;
@@ -79,6 +85,8 @@ mod tests {
     #[test]
     fn test_list_instance_command() {
         let console = &mut ConsoleMock::new();
+        let image_store = &ImageStoreMock::default();
+        let env = &Environment::new(String::new(), String::new(), String::new());
         let instance_store = &InstanceStoreMock::new(vec![
             Instance {
                 name: "test".to_string(),
@@ -104,7 +112,9 @@ mod tests {
             },
         ]);
 
-        ListInstanceCommand {}.run(console, instance_store).unwrap();
+        ListInstanceCommand {}
+            .run(console, env, image_store, instance_store)
+            .unwrap();
 
         assert_eq!(
             console.get_output(),
@@ -120,8 +130,12 @@ PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   State
     fn test_list_instance_command_empty() {
         let console = &mut ConsoleMock::new();
         let instance_store = &InstanceStoreMock::new(Vec::new());
+        let image_store = &ImageStoreMock::default();
+        let env = &Environment::new(String::new(), String::new(), String::new());
 
-        ListInstanceCommand {}.run(console, instance_store).unwrap();
+        ListInstanceCommand {}
+            .run(console, env, image_store, instance_store)
+            .unwrap();
 
         assert_eq!(
             console.get_output(),

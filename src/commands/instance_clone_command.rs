@@ -1,6 +1,10 @@
+use crate::commands::Command;
+use crate::env::Environment;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceName, InstanceStore};
+use crate::image::ImageStore;
+use crate::instance::{InstanceName, InstanceStore};
 use crate::ssh_cmd::PortChecker;
+use crate::view::Console;
 use clap::Parser;
 
 /// Clone a virtual machine instance
@@ -12,15 +16,21 @@ pub struct InstanceCloneCommand {
     new_name: InstanceName,
 }
 
-impl InstanceCloneCommand {
-    pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
-        instance_dao.clone(
-            &instance_dao.load(self.name.as_str())?,
+impl Command for InstanceCloneCommand {
+    fn run(
+        &self,
+        _console: &mut dyn Console,
+        _env: &Environment,
+        _image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
+    ) -> Result<(), Error> {
+        instance_store.clone(
+            &instance_store.load(self.name.as_str())?,
             self.new_name.as_str(),
         )?;
 
-        let mut new_instance = instance_dao.load(self.new_name.as_str())?;
+        let mut new_instance = instance_store.load(self.new_name.as_str())?;
         new_instance.ssh_port = PortChecker::new().get_new_port();
-        instance_dao.store(&new_instance)
+        instance_store.store(&new_instance)
     }
 }

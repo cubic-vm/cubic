@@ -1,10 +1,11 @@
 use crate::actions::CreateInstanceAction;
+use crate::commands::Command;
 use crate::commands::image::ImageCommands;
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
-use crate::image::{ImageDao, ImageName, ImageStore};
-use crate::instance::{Instance, InstanceDao, InstanceName, InstanceStore, PortForward};
+use crate::image::{ImageName, ImageStore};
+use crate::instance::{Instance, InstanceName, InstanceStore, PortForward};
 use crate::model::DataSize;
 use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
@@ -51,27 +52,29 @@ impl CreateInstanceCommand {
             .or(self.name.clone())
             .ok_or(Error::InvalidArgument("Missing instance name".to_string()))
     }
+}
 
-    pub fn run(
+impl Command for CreateInstanceCommand {
+    fn run(
         &self,
         console: &mut dyn Console,
         env: &Environment,
-        image_dao: &ImageDao,
-        instance_dao: &InstanceDao,
+        image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
         let name = self.get_name()?;
 
-        if instance_dao.exists(name.as_str()) {
+        if instance_store.exists(name.as_str()) {
             return Result::Err(Error::InstanceAlreadyExists(name.to_string()));
         }
 
         ImageCommands::Fetch {
             image: self.image.clone(),
         }
-        .dispatch(console, image_dao)?;
+        .run(console, env, image_store, instance_store)?;
 
         let mut create_spinner = SpinnerView::new("Creating virtual machine instance");
-        let image = image_dao.get(&self.image)?;
+        let image = image_store.get(&self.image)?;
 
         let instance = Instance {
             name: name.to_string(),
@@ -84,7 +87,7 @@ impl CreateInstanceCommand {
             hostfwd: self.port.clone(),
             ..Instance::default()
         };
-        CreateInstanceAction::new().run(env, &FS::new(), instance_dao, &image, instance)?;
+        CreateInstanceAction::new().run(env, &FS::new(), instance_store, &image, instance)?;
 
         create_spinner.stop();
         Result::Ok(())

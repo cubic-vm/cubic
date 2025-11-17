@@ -1,5 +1,9 @@
+use crate::commands::Command;
+use crate::env::Environment;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceName, InstanceStore};
+use crate::image::ImageStore;
+use crate::instance::{InstanceName, InstanceStore};
+use crate::view::Console;
 use clap::Parser;
 
 /// Rename a virtual machine instance
@@ -11,10 +15,16 @@ pub struct InstanceRenameCommand {
     new_name: InstanceName,
 }
 
-impl InstanceRenameCommand {
-    pub fn run(&self, instance_dao: &InstanceDao) -> Result<(), Error> {
-        instance_dao.rename(
-            &mut instance_dao.load(self.old_name.as_str())?,
+impl Command for InstanceRenameCommand {
+    fn run(
+        &self,
+        _console: &mut dyn Console,
+        _env: &Environment,
+        _image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
+    ) -> Result<(), Error> {
+        instance_store.rename(
+            &mut instance_store.load(self.old_name.as_str())?,
             self.new_name.as_str(),
         )
     }

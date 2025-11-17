@@ -1,4 +1,4 @@
-use crate::commands;
+use crate::commands::{self, Command};
 use crate::env::Environment;
 use crate::error::Error;
 use crate::image::ImageStore;
@@ -14,21 +14,21 @@ pub struct ShowCommand {
     name: InstanceImageName,
 }
 
-impl ShowCommand {
-    pub fn run(
-        self,
+impl Command for ShowCommand {
+    fn run(
+        &self,
         console: &mut dyn Console,
         env: &Environment,
-        instance_store: &dyn InstanceStore,
         image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
-        match self.name {
-            InstanceImageName::Image(name) => {
-                commands::ShowImageCommand { name }.run(console, env, image_store)
+        match &self.name {
+            InstanceImageName::Image(name) => commands::ShowImageCommand { name: name.clone() }
+                .run(console, env, image_store, instance_store),
+            InstanceImageName::Instance(instance) => commands::InstanceShowCommand {
+                instance: instance.clone(),
             }
-            InstanceImageName::Instance(instance) => {
-                commands::InstanceShowCommand { instance }.run(console, instance_store)
-            }
+            .run(console, env, image_store, instance_store),
         }
     }
 }

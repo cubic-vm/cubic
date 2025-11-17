@@ -1,8 +1,8 @@
-use crate::commands;
+use crate::commands::{self, Command};
 use crate::env::Environment;
 use crate::error::Error;
-use crate::image::ImageDao;
-use crate::instance::{InstanceDao, Target};
+use crate::image::ImageStore;
+use crate::instance::{InstanceStore, Target};
 use crate::view::Console;
 use clap::{self, Parser};
 
@@ -17,18 +17,18 @@ pub struct InstanceRunCommand {
     pub russh: bool,
 }
 
-impl InstanceRunCommand {
-    pub fn run(
+impl Command for InstanceRunCommand {
+    fn run(
         &self,
         console: &mut dyn Console,
         env: &Environment,
-        image_dao: &ImageDao,
-        instance_dao: &InstanceDao,
-        verbosity: commands::Verbosity,
+        image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
         let instance_name = self.create_cmd.get_name()?;
 
-        self.create_cmd.run(console, env, image_dao, instance_dao)?;
+        self.create_cmd
+            .run(console, env, image_store, instance_store)?;
         commands::InstanceSshCommand {
             target: Target::from_instance_name(instance_name.clone()),
             xforward: false,
@@ -37,6 +37,6 @@ impl InstanceRunCommand {
             openssh: self.openssh,
             russh: self.russh,
         }
-        .run(console, instance_dao, verbosity)
+        .run(console, env, image_store, instance_store)
     }
 }

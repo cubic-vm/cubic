@@ -1,7 +1,10 @@
-use crate::commands;
+use crate::commands::{self, Command};
+use crate::env::Environment;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore};
+use crate::image::ImageStore;
+use crate::instance::InstanceStore;
 use crate::util;
+use crate::view::Console;
 use clap::Parser;
 
 /// Delete one or more virtual machine instances
@@ -17,11 +20,13 @@ pub struct DeleteInstanceCommand {
     instances: Vec<String>,
 }
 
-impl DeleteInstanceCommand {
-    pub fn run(
+impl Command for DeleteInstanceCommand {
+    fn run(
         &self,
-        instance_dao: &InstanceDao,
-        verbosity: commands::Verbosity,
+        console: &mut dyn Console,
+        env: &Environment,
+        image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
         if self.force {
             commands::InstanceStopCommand {
@@ -29,15 +34,15 @@ impl DeleteInstanceCommand {
                 wait: true,
                 instances: self.instances.clone(),
             }
-            .run(instance_dao, verbosity)?;
+            .run(console, env, image_store, instance_store)?;
         }
 
         for instance in &self.instances {
-            if !instance_dao.exists(instance) {
+            if !instance_store.exists(instance) {
                 return Result::Err(Error::UnknownInstance(instance.clone()));
             }
 
-            if instance_dao.is_running(&instance_dao.load(instance)?) {
+            if instance_store.is_running(&instance_store.load(instance)?) {
                 return Result::Err(Error::InstanceNotStopped(instance.to_string()));
             }
         }
@@ -48,7 +53,7 @@ impl DeleteInstanceCommand {
                     "Do you really want delete the instance '{instance}'? [y/n]: "
                 ))
             {
-                instance_dao.delete(&instance_dao.load(instance)?)?;
+                instance_store.delete(&instance_store.load(instance)?)?;
                 println!("Deleted instance {instance}");
             }
         }

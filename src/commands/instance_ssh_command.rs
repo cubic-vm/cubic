@@ -1,6 +1,8 @@
-use crate::commands::{self, Verbosity};
+use crate::commands::{self, Command};
+use crate::env::Environment;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore, Target};
+use crate::image::ImageStore;
+use crate::instance::{InstanceStore, Target};
 use crate::ssh_cmd::{Openssh, Russh, Ssh, get_ssh_private_key_names};
 use crate::view::{Console, SpinnerView};
 use clap::Parser;
@@ -28,13 +30,15 @@ pub struct InstanceSshCommand {
     pub cmd: Option<String>,
 }
 
-impl InstanceSshCommand {
-    pub fn run(
+impl Command for InstanceSshCommand {
+    fn run(
         &self,
         console: &mut dyn Console,
-        instance_dao: &InstanceDao,
-        verbosity: Verbosity,
+        env: &Environment,
+        image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
+        let verbosity = console.get_verbosity();
         let name = self.target.get_instance();
 
         commands::InstanceStartCommand {
@@ -42,9 +46,9 @@ impl InstanceSshCommand {
             wait: true,
             instances: vec![name.to_string()],
         }
-        .run(instance_dao, verbosity)?;
+        .run(console, env, image_store, instance_store)?;
 
-        let instance = instance_dao.load(name.as_str())?;
+        let instance = instance_store.load(name.as_str())?;
         let user = self
             .target
             .get_user()

@@ -25,6 +25,9 @@ pub mod tests {
 
     impl Console for ConsoleMock {
         fn set_verbosity(&mut self, _verbosity: Verbosity) {}
+        fn get_verbosity(&mut self) -> Verbosity {
+            Verbosity::Normal
+        }
 
         fn debug(&mut self, msg: &str) {
             self.log(msg)

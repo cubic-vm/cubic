@@ -1,6 +1,8 @@
-use crate::commands;
+use crate::commands::{self, Command};
+use crate::env::Environment;
 use crate::error::Error;
-use crate::instance::{InstanceDao, InstanceStore, PortForward};
+use crate::image::ImageStore;
+use crate::instance::{InstanceStore, PortForward};
 use crate::view::Console;
 use clap::Subcommand;
 
@@ -38,27 +40,29 @@ pub enum HostfwdCommands {
     },
 }
 
-impl HostfwdCommands {
-    pub fn dispatch(
+impl Command for HostfwdCommands {
+    fn run(
         &self,
         console: &mut dyn Console,
-        instance_dao: &InstanceDao,
+        env: &Environment,
+        image_store: &dyn ImageStore,
+        instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
         match self {
-            HostfwdCommands::List(cmd) => cmd.run(console, instance_dao),
+            HostfwdCommands::List(cmd) => cmd.run(console, env, image_store, instance_store),
             HostfwdCommands::Add { instance, rule } => match PortForward::from_qemu(rule) {
                 Ok(rule) => {
-                    let mut instance = instance_dao.load(instance)?;
+                    let mut instance = instance_store.load(instance)?;
                     instance.hostfwd.push(rule);
-                    instance_dao.store(&instance)
+                    instance_store.store(&instance)
                 }
                 Err(msg) => Err(Error::HostFwdRuleMalformed(msg)),
             },
             HostfwdCommands::Del { instance, rule } => match PortForward::from_qemu(rule) {
                 Ok(rule) => {
-                    let mut instance = instance_dao.load(instance)?;
+                    let mut instance = instance_store.load(instance)?;
                     instance.hostfwd.retain(|item| item != &rule);
-                    instance_dao.store(&instance)
+                    instance_store.store(&instance)
                 }
                 Err(msg) => Err(Error::HostFwdRuleMalformed(msg)),
             },
