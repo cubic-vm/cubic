@@ -26,14 +26,15 @@ impl Command for ListPortCommand {
             .add("Host", Alignment::Left)
             .add("Guest", Alignment::Left)
             .add("Protocol", Alignment::Left)
-            .add("State", Alignment::Left);
+            .add("In Use", Alignment::Left);
 
         for instance_name in instance_names {
             let instance = &instance_store.load(&instance_name)?;
-            let status = instance_store
-                .is_running(instance)
-                .then_some("in use")
-                .unwrap_or_default();
+            let status = if instance_store.is_running(instance) {
+                "yes"
+            } else {
+                "no"
+            };
 
             view.add_row()
                 .add(&instance_name, Alignment::Left)
