@@ -11,10 +11,8 @@ use clap::{self, Parser};
 pub struct InstanceRunCommand {
     #[clap(flatten)]
     create_cmd: commands::CreateInstanceCommand,
-    #[clap(long, conflicts_with = "russh", default_value_t = true, hide = true)]
-    pub openssh: bool,
-    #[clap(long, conflicts_with = "openssh", default_value_t = false, hide = true)]
-    pub russh: bool,
+    #[clap(flatten)]
+    ssh_args: commands::SshArgs,
 }
 
 impl Command for InstanceRunCommand {
@@ -30,12 +28,10 @@ impl Command for InstanceRunCommand {
         self.create_cmd
             .run(console, env, image_store, instance_store)?;
         commands::InstanceSshCommand {
-            target: Target::from_instance_name(instance_name.clone()),
-            xforward: false,
+            args: self.ssh_args.clone(),
             ssh_args: None,
+            target: Target::from_instance_name(instance_name.clone()),
             cmd: None,
-            openssh: self.openssh,
-            russh: self.russh,
         }
         .run(console, env, image_store, instance_store)
     }
