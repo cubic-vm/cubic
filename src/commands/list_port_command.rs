@@ -30,6 +30,18 @@ impl Command for ListPortCommand {
 
         for instance_name in instance_names {
             let instance = &instance_store.load(&instance_name)?;
+            let status = instance_store
+                .is_running(instance)
+                .then_some("in use")
+                .unwrap_or_default();
+
+            view.add_row()
+                .add(&instance_name, Alignment::Left)
+                .add(&format!("127.0.0.1:{}", instance.ssh_port), Alignment::Left)
+                .add(":22", Alignment::Left)
+                .add("/tcp", Alignment::Left)
+                .add(status, Alignment::Left);
+
             for rule in &instance.hostfwd {
                 view.add_row()
                     .add(&instance_name, Alignment::Left)
@@ -39,13 +51,7 @@ impl Command for ListPortCommand {
                     )
                     .add(&format!(":{}", rule.get_guest_port()), Alignment::Left)
                     .add(&format!("/{}", rule.get_protocol()), Alignment::Left)
-                    .add(
-                        instance_store
-                            .is_running(instance)
-                            .then_some("in use")
-                            .unwrap_or_default(),
-                        Alignment::Left,
-                    );
+                    .add(status, Alignment::Left);
             }
         }
         view.print(console);
