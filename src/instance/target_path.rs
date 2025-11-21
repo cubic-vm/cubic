@@ -10,6 +10,10 @@ pub struct TargetPath {
 }
 
 impl TargetPath {
+    pub fn get_target(&self) -> Option<&Target> {
+        self.target.as_ref()
+    }
+
     pub fn to_scp(&self, instance_store: &dyn InstanceStore) -> Result<String, Error> {
         if let Some(target) = self.target.as_ref() {
             let instance = instance_store.load(target.get_instance().as_str())?;
