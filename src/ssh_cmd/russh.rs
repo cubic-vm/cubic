@@ -250,4 +250,8 @@ impl Ssh for Russh {
         terminal::term_reset(termios_original);
         result
     }
+
+    fn copy(&self, _console: &mut dyn Console, _root_dir: &str, _from: &str, _to: &str) -> bool {
+        false
+    }
 }

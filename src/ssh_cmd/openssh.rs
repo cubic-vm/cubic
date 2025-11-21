@@ -83,4 +83,32 @@ impl Ssh for Openssh {
             false
         }
     }
+
+    fn copy(&self, console: &mut dyn Console, root_dir: &str, from: &str, to: &str) -> bool {
+        let mut command = SystemCommand::new(&format!("{root_dir}/usr/bin/scp"));
+
+        if let Some(ref known_hosts_file) = self.known_hosts_file {
+            Path::new(known_hosts_file)
+                .parent()
+                .and_then(|dir| dir.to_str())
+                .map(|dir| FS::new().create_dir(dir));
+
+            command.arg(format!("-oUserKnownHostsFile={known_hosts_file}"));
+        }
+
+        command
+            .arg("-3")
+            .arg("-r")
+            .arg(format!("-S{root_dir}/usr/bin/ssh"))
+            .args(self.private_keys.iter().map(|key| format!("-i{key}")))
+            .args(self.args.split(' ').filter(|item| !item.is_empty()))
+            .arg(from)
+            .arg(to);
+
+        console.debug(&command.get_command());
+        command
+            .set_stdout(!console.get_verbosity().is_quiet())
+            .run()
+            .is_ok()
+    }
 }
