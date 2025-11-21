@@ -73,18 +73,13 @@ impl Command for InstanceSshCommand {
                 .ok(),
         );
         ssh.set_private_keys(get_ssh_private_key_names()?);
-        ssh.set_port(Some(ssh_port));
-        ssh.set_xforward(self.args.xforward);
         ssh.set_args(self.ssh_args.clone().unwrap_or_default());
-        ssh.set_user(user.clone());
         ssh.set_cmd(self.cmd.clone());
-        console.debug(&ssh.get_command());
-
         console.info("Default login user: cubic / password: cubic");
 
         loop {
             let start_time = Instant::now();
-            if ssh.connect() {
+            if ssh.shell(console, &user, ssh_port, self.args.xforward) {
                 // exit on success
                 break;
             }

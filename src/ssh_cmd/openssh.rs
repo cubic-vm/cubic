@@ -1,16 +1,14 @@
 use crate::fs::FS;
 use crate::ssh_cmd::Ssh;
 use crate::util::SystemCommand;
+use crate::view::Console;
 use std::path::Path;
 
 #[derive(Default)]
 pub struct Openssh {
     known_hosts_file: Option<String>,
     private_keys: Vec<String>,
-    user: String,
-    port: Option<u16>,
     args: String,
-    xforward: bool,
     cmd: Option<String>,
 }
 
@@ -19,7 +17,13 @@ impl Openssh {
         Self::default()
     }
 
-    fn create_system_command(&mut self) -> SystemCommand {
+    fn create_system_command(
+        &mut self,
+        console: &mut dyn Console,
+        user: &str,
+        port: u16,
+        xforward: bool,
+    ) -> SystemCommand {
         let mut command = SystemCommand::new("ssh");
 
         if let Some(ref known_hosts_file) = self.known_hosts_file {
@@ -32,7 +36,7 @@ impl Openssh {
         }
 
         command
-            .args(self.port.map(|port| format!("-p{port}")).as_slice())
+            .arg(format!("-p{port}"))
             .arg("-oPreferredAuthentications=publickey,password")
             .arg("-oStrictHostKeyChecking=accept-new")
             .args(
@@ -41,11 +45,12 @@ impl Openssh {
                     .map(|key| format!("-i{key}"))
                     .collect::<Vec<_>>(),
             )
-            .args(self.xforward.then_some("-X").as_slice())
+            .args(xforward.then_some("-X").as_slice())
             .args(self.args.split(' ').filter(|item| !item.is_empty()))
-            .arg(format!("{}@127.0.0.1", self.user))
+            .arg(format!("{}@127.0.0.1", user))
             .args(self.cmd.as_slice());
 
+        console.debug(&command.get_command());
         command
     }
 }
@@ -59,36 +64,23 @@ impl Ssh for Openssh {
         self.private_keys = private_keys;
     }
 
-    fn set_user(&mut self, user: String) {
-        self.user = user;
-    }
-
-    fn set_port(&mut self, port: Option<u16>) {
-        self.port = port;
-    }
-
     fn set_args(&mut self, args: String) {
         self.args = args;
-    }
-
-    fn set_xforward(&mut self, xforward: bool) {
-        self.xforward = xforward;
     }
 
     fn set_cmd(&mut self, cmd: Option<String>) {
         self.cmd = cmd;
     }
 
-    fn connect(&mut self) -> bool {
-        let mut child = self.create_system_command().spawn().unwrap();
+    fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16, xforward: bool) -> bool {
+        let mut child = self
+            .create_system_command(console, user, port, xforward)
+            .spawn()
+            .unwrap();
         if let Ok(exit) = child.wait() {
             exit.success()
         } else {
             false
         }
-    }
-
-    fn get_command(&mut self) -> String {
-        self.create_system_command().get_command()
     }
 }

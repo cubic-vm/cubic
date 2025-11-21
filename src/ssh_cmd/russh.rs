@@ -1,5 +1,6 @@
 use crate::ssh_cmd::Ssh;
 use crate::util::terminal;
+use crate::view::Console;
 use russh::keys::*;
 use russh::*;
 use std::env;
@@ -12,10 +13,7 @@ use tokio::io::AsyncWriteExt;
 pub struct Russh {
     known_hosts_file: Option<String>,
     private_keys: Vec<String>,
-    user: String,
-    port: Option<u16>,
     args: String,
-    xforward: bool,
     cmd: Option<String>,
 }
 
@@ -81,9 +79,10 @@ impl Russh {
     async fn authenticate_with_default_password(
         &self,
         session: &mut russh::client::Handle<Client>,
+        user: &str,
     ) -> Result<(), ()> {
         let auth = session
-            .authenticate_password(&self.user, "cubic")
+            .authenticate_password(user, "cubic")
             .await
             .map(|auth| auth.success());
 
@@ -93,6 +92,7 @@ impl Russh {
     async fn authenticate_with_pubkey(
         &self,
         session: &mut russh::client::Handle<Client>,
+        user: &str,
     ) -> Result<(), ()> {
         let hash_alg = session
             .best_supported_rsa_hash()
@@ -104,7 +104,7 @@ impl Russh {
             if let Ok(key_pair) = load_secret_key(key, None) {
                 if let Ok(auth) = session
                     .authenticate_publickey(
-                        &self.user,
+                        user,
                         PrivateKeyWithHashAlg::new(Arc::new(key_pair), hash_alg),
                     )
                     .await
@@ -122,8 +122,8 @@ impl Russh {
     async fn authenticate_with_password(
         &self,
         session: &mut russh::client::Handle<Client>,
+        user: &str,
     ) -> Result<(), ()> {
-        let user = &self.user;
         loop {
             let mut stdout = std::io::stdout();
             stdout
@@ -146,25 +146,27 @@ impl Russh {
         Ok(())
     }
 
-    async fn authenticate(&self, session: &mut russh::client::Handle<Client>) -> Result<(), ()> {
+    async fn authenticate(
+        &self,
+        session: &mut russh::client::Handle<Client>,
+        user: &str,
+    ) -> Result<(), ()> {
         if self
-            .authenticate_with_default_password(session)
+            .authenticate_with_default_password(session, user)
             .await
             .is_ok()
         {
             return Ok(());
         }
 
-        if self.authenticate_with_pubkey(session).await.is_ok() {
+        if self.authenticate_with_pubkey(session, user).await.is_ok() {
             return Ok(());
         }
 
-        self.authenticate_with_password(session).await
+        self.authenticate_with_password(session, user).await
     }
 
-    async fn open_channel(&self) -> Result<Channel<russh::client::Msg>, ()> {
-        let port = self.port.ok_or(())?;
-
+    async fn open_channel(&self, user: &str, port: u16) -> Result<Channel<russh::client::Msg>, ()> {
         let config = client::Config {
             inactivity_timeout: Some(Duration::from_secs(60)),
             ..<_>::default()
@@ -176,13 +178,13 @@ impl Russh {
 
         let mut session = client::connect(config, addrs, sh).await.map_err(|_| ())?;
 
-        self.authenticate(&mut session).await?;
+        self.authenticate(&mut session, user).await?;
 
         session.channel_open_session().await.map_err(|_| ())
     }
 
-    async fn handle_interactive_shell(&self) -> Result<(), ()> {
-        let channel = self.open_channel().await?;
+    async fn handle_interactive_shell(&self, user: &str, port: u16) -> Result<(), ()> {
+        let channel = self.open_channel(user, port).await?;
         let (w, h) = termion::terminal_size().map_err(|_| ())?;
         channel
             .request_pty(
@@ -221,41 +223,31 @@ impl Ssh for Russh {
         self.private_keys = private_keys;
     }
 
-    fn set_user(&mut self, user: String) {
-        self.user = user;
-    }
-
-    fn set_port(&mut self, port: Option<u16>) {
-        self.port = port;
-    }
-
     fn set_args(&mut self, args: String) {
         self.args = args;
-    }
-
-    fn set_xforward(&mut self, xforward: bool) {
-        self.xforward = xforward;
     }
 
     fn set_cmd(&mut self, cmd: Option<String>) {
         self.cmd = cmd;
     }
 
-    fn connect(&mut self) -> bool {
+    fn shell(
+        &mut self,
+        _console: &mut dyn Console,
+        user: &str,
+        port: u16,
+        _xforward: bool,
+    ) -> bool {
         let termios_original = terminal::term_raw_mode();
 
         let result = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap()
-            .block_on(self.handle_interactive_shell())
+            .block_on(self.handle_interactive_shell(user, port))
             .is_ok();
 
         terminal::term_reset(termios_original);
         result
-    }
-
-    fn get_command(&mut self) -> String {
-        String::new()
     }
 }
