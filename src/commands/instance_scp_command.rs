@@ -3,7 +3,7 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::image::ImageStore;
 use crate::instance::{InstanceStore, TargetPath};
-use crate::ssh_cmd::{Scp, get_ssh_private_key_names};
+use crate::ssh_cmd::{Openssh, Russh, Ssh, get_ssh_private_key_names};
 use crate::view::Console;
 use clap::Parser;
 use std::env;
@@ -18,6 +18,10 @@ pub struct InstanceScpCommand {
     /// Pass additional SCP arguments
     #[clap(long)]
     scp_args: Option<String>,
+    #[clap(long, conflicts_with = "russh", default_value_t = false, hide = true)]
+    pub openssh: bool,
+    #[clap(long, conflicts_with = "openssh", default_value_t = false, hide = true)]
+    pub russh: bool,
 }
 
 impl Command for InstanceScpCommand {
@@ -28,22 +32,24 @@ impl Command for InstanceScpCommand {
         _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
-        let verbosity = console.get_verbosity();
         let from = &self.from.to_scp(instance_store)?;
         let to = &self.to.to_scp(instance_store)?;
+        let root_dir = env::var("SNAP").unwrap_or_default();
 
-        Scp::new()
-            .set_root_dir(env::var("SNAP").unwrap_or_default().as_str())
-            .set_verbose(verbosity.is_verbose())
-            .set_known_hosts_file(
-                env::var("HOME")
-                    .map(|dir| format!("{dir}/.ssh/known_hosts"))
-                    .ok(),
-            )
-            .set_private_keys(get_ssh_private_key_names()?)
-            .set_args(self.scp_args.as_ref().unwrap_or(&String::new()))
-            .copy(from, to)
-            .set_stdout(!verbosity.is_quiet())
-            .run()
+        let mut ssh: Box<dyn Ssh> = if !self.russh {
+            Box::new(Openssh::new())
+        } else {
+            Box::new(Russh::new())
+        };
+
+        ssh.set_known_hosts_file(
+            env::var("HOME")
+                .map(|dir| format!("{dir}/.ssh/known_hosts"))
+                .ok(),
+        );
+        ssh.set_private_keys(get_ssh_private_key_names()?);
+        ssh.set_args(self.scp_args.clone().unwrap_or_default());
+        ssh.copy(console, &root_dir, from, to);
+        Ok(())
     }
 }
