@@ -90,6 +90,35 @@ impl Russh {
         if let Ok(true) = auth { Ok(()) } else { Err(()) }
     }
 
+    async fn authenticate_with_pubkey(
+        &self,
+        session: &mut russh::client::Handle<Client>,
+    ) -> Result<(), ()> {
+        let hash_alg = session
+            .best_supported_rsa_hash()
+            .await
+            .map_err(|_| ())?
+            .flatten();
+
+        for key in &self.private_keys {
+            if let Ok(key_pair) = load_secret_key(key, None) {
+                if let Ok(auth) = session
+                    .authenticate_publickey(
+                        &self.user,
+                        PrivateKeyWithHashAlg::new(Arc::new(key_pair), hash_alg),
+                    )
+                    .await
+                {
+                    if auth.success() {
+                        return Ok(());
+                    }
+                }
+            }
+        }
+
+        Err(())
+    }
+
     async fn authenticate_with_password(
         &self,
         session: &mut russh::client::Handle<Client>,
@@ -123,6 +152,10 @@ impl Russh {
             .await
             .is_ok()
         {
+            return Ok(());
+        }
+
+        if self.authenticate_with_pubkey(session).await.is_ok() {
             return Ok(());
         }
 
