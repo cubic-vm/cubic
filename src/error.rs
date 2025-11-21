@@ -7,6 +7,7 @@ pub enum Error {
     UnknownArch(String),
     UnknownInstance(String),
     InstanceNotStopped(String),
+    InstanceNotRunning(String),
     InstanceAlreadyExists(String),
     Io(io::Error),
     FS(String),
@@ -31,6 +32,7 @@ impl Error {
                 Error::UnknownArch(name) => format!("Unknown architecture: '{name}'"),
                 Error::UnknownInstance(instance) => format!("Unknown instance '{instance}'"),
                 Error::InstanceNotStopped(name) => format!("Instance '{name}' is not stopped"),
+                Error::InstanceNotRunning(name) => format!("Instance '{name}' is not running"),
                 Error::InstanceAlreadyExists(id) =>
                     format!("Instance with name '{id}' already exists"),
                 Error::Io(e) => format!("{}", e),

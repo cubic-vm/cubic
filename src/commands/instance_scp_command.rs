@@ -8,6 +8,19 @@ use crate::view::Console;
 use clap::Parser;
 use std::env;
 
+fn check_target_is_running(
+    instance_store: &dyn InstanceStore,
+    target: &TargetPath,
+) -> Result<(), Error> {
+    if let Some(target) = target.get_target() {
+        let instance = instance_store.load(target.get_instance().as_str())?;
+        if !instance_store.is_running(&instance) {
+            return Err(Error::InstanceNotRunning(instance.name.clone()));
+        }
+    }
+    Ok(())
+}
+
 /// Copy a file from or to a virtual machine instance with SCP
 #[derive(Parser)]
 pub struct InstanceScpCommand {
@@ -32,8 +45,9 @@ impl Command for InstanceScpCommand {
         _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
-        let from = &self.from.to_scp(instance_store)?;
-        let to = &self.to.to_scp(instance_store)?;
+        check_target_is_running(instance_store, &self.from)?;
+        check_target_is_running(instance_store, &self.to)?;
+
         let root_dir = env::var("SNAP").unwrap_or_default();
 
         let mut ssh: Box<dyn Ssh> = if !self.russh {
@@ -49,7 +63,12 @@ impl Command for InstanceScpCommand {
         );
         ssh.set_private_keys(get_ssh_private_key_names()?);
         ssh.set_args(self.scp_args.clone().unwrap_or_default());
-        ssh.copy(console, &root_dir, from, to);
+        ssh.copy(
+            console,
+            &root_dir,
+            &self.from.to_scp(instance_store)?,
+            &self.to.to_scp(instance_store)?,
+        );
         Ok(())
     }
 }
