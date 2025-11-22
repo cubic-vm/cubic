@@ -1,5 +1,4 @@
 use crate::ssh_cmd::Ssh;
-use crate::util::terminal;
 use crate::view::Console;
 use russh::keys::*;
 use russh::*;
@@ -137,7 +136,7 @@ impl Russh {
 
     async fn handle_interactive_shell(
         &self,
-        term_mode: libc::termios,
+        console: &mut dyn Console,
         user: &str,
         port: u16,
     ) -> Result<(), ()> {
@@ -168,8 +167,8 @@ impl Russh {
         let mut stdout = tokio::io::stdout();
 
         tokio::select!(
-            _ = tokio::io::copy(&mut stdin, &mut ssh_out) => { terminal::term_reset(term_mode); std::process::exit(0); },
-            _ = tokio::io::copy(&mut ssh_in, &mut stdout) => { terminal::term_reset(term_mode); std::process::exit(0); },
+            _ = tokio::io::copy(&mut stdin, &mut ssh_out) => { console.reset(); std::process::exit(0); },
+            _ = tokio::io::copy(&mut ssh_in, &mut stdout) => { console.reset(); std::process::exit(0); },
             else => {}
         );
         Ok(())
@@ -193,23 +192,15 @@ impl Ssh for Russh {
         self.cmd = cmd;
     }
 
-    fn shell(
-        &mut self,
-        _console: &mut dyn Console,
-        user: &str,
-        port: u16,
-        _xforward: bool,
-    ) -> bool {
-        let term_mode = terminal::term_raw_mode();
-
+    fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16, _xforward: bool) -> bool {
+        console.raw_mode();
         let result = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap()
-            .block_on(self.handle_interactive_shell(term_mode, user, port))
+            .block_on(self.handle_interactive_shell(console, user, port))
             .is_ok();
-
-        terminal::term_reset(term_mode);
+        console.reset();
         result
     }
 

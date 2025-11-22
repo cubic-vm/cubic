@@ -38,12 +38,13 @@ impl Command for InstanceConsoleCommand {
             thread::sleep(Duration::new(1, 0));
         }
 
+        console.raw_mode();
         if let Ok(mut term) = Terminal::open(&console_path) {
             term.wait();
         } else {
             println!("Cannot open shell");
         }
-
+        console.reset();
         Ok(())
     }
 }

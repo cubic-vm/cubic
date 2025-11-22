@@ -6,4 +6,7 @@ pub trait Console {
     fn debug(&mut self, msg: &str);
     fn info(&mut self, msg: &str);
     fn error(&mut self, msg: &str);
+
+    fn raw_mode(&mut self);
+    fn reset(&mut self);
 }
