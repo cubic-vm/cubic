@@ -4,9 +4,8 @@ use crate::view::Console;
 use russh::keys::*;
 use russh::*;
 use std::env;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::sync::Arc;
-use tokio::io::AsyncWriteExt;
 
 #[derive(Default)]
 pub struct Russh {
@@ -27,47 +26,6 @@ impl client::Handler for Client {
     ) -> Result<bool, Self::Error> {
         Ok(true)
     }
-}
-
-async fn handle_stdin_stream<S: From<(ChannelId, ChannelMsg)> + Send + Sync + 'static>(
-    out: ChannelWriteHalf<S>,
-) -> Result<(), ()> {
-    let stdin = std::io::stdin();
-
-    for byte in stdin.bytes() {
-        let buffer = [byte.unwrap()];
-        out.data(std::io::Cursor::new(buffer))
-            .await
-            .map_err(|_| ())?;
-        tokio::task::yield_now().await;
-    }
-
-    Ok(())
-}
-
-async fn handle_stdout_stream(mut ssh_in: ChannelReadHalf) -> Result<(), ()> {
-    let mut stdout = tokio::io::stdout();
-
-    loop {
-        if let Some(msg) = ssh_in.wait().await {
-            match msg {
-                ChannelMsg::Data { ref data } => {
-                    stdout.write_all(data).await.map_err(|_| ())?;
-                    stdout.flush().await.map_err(|_| ())?;
-                }
-                ChannelMsg::ExitStatus { .. } => {
-                    break;
-                }
-                _ => {}
-            }
-        } else {
-            break;
-        }
-
-        tokio::task::yield_now().await;
-    }
-
-    Ok(())
 }
 
 impl Russh {
@@ -177,7 +135,12 @@ impl Russh {
         session.channel_open_session().await.map_err(|_| ())
     }
 
-    async fn handle_interactive_shell(&self, user: &str, port: u16) -> Result<(), ()> {
+    async fn handle_interactive_shell(
+        &self,
+        term_mode: libc::termios,
+        user: &str,
+        port: u16,
+    ) -> Result<(), ()> {
         let channel = self.open_channel(user, port).await?;
         let (w, h) = termion::terminal_size().map_err(|_| ())?;
         channel
@@ -198,12 +161,17 @@ impl Russh {
         } else {
             channel.request_shell(true).await.map_err(|_| ())?;
         }
-        let (ssh_in, ssh_out) = channel.split();
+        let (mut ssh_in, ssh_out) = channel.split();
+        let mut ssh_in = ssh_in.make_reader();
+        let mut ssh_out = ssh_out.make_writer();
+        let mut stdin = tokio::io::stdin();
+        let mut stdout = tokio::io::stdout();
 
-        let stdin_stream = tokio::spawn(handle_stdin_stream(ssh_out));
-        handle_stdout_stream(ssh_in).await?;
-        stdin_stream.abort();
-
+        tokio::select!(
+            _ = tokio::io::copy(&mut stdin, &mut ssh_out) => { terminal::term_reset(term_mode); std::process::exit(0); },
+            _ = tokio::io::copy(&mut ssh_in, &mut stdout) => { terminal::term_reset(term_mode); std::process::exit(0); },
+            else => {}
+        );
         Ok(())
     }
 }
@@ -232,16 +200,16 @@ impl Ssh for Russh {
         port: u16,
         _xforward: bool,
     ) -> bool {
-        let termios_original = terminal::term_raw_mode();
+        let term_mode = terminal::term_raw_mode();
 
         let result = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap()
-            .block_on(self.handle_interactive_shell(user, port))
+            .block_on(self.handle_interactive_shell(term_mode, user, port))
             .is_ok();
 
-        terminal::term_reset(termios_original);
+        terminal::term_reset(term_mode);
         result
     }
 
