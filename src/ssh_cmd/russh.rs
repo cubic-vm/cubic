@@ -6,7 +6,6 @@ use russh::*;
 use std::env;
 use std::io::{Read, Write};
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 
 #[derive(Default)]
@@ -167,12 +166,7 @@ impl Russh {
     }
 
     async fn open_channel(&self, user: &str, port: u16) -> Result<Channel<russh::client::Msg>, ()> {
-        let config = client::Config {
-            inactivity_timeout: Some(Duration::from_secs(60)),
-            ..<_>::default()
-        };
-
-        let config = Arc::new(config);
+        let config = Arc::new(client::Config::default());
         let sh = Client {};
         let addrs = ("127.0.0.1", port);
 
