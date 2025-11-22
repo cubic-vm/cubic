@@ -40,5 +40,8 @@ pub mod tests {
         fn error(&mut self, msg: &str) {
             self.log(msg)
         }
+
+        fn raw_mode(&mut self) {}
+        fn reset(&mut self) {}
     }
 }
