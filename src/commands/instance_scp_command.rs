@@ -66,8 +66,8 @@ impl Command for InstanceScpCommand {
         ssh.copy(
             console,
             &root_dir,
-            &self.from.to_scp(instance_store)?,
-            &self.to.to_scp(instance_store)?,
+            &self.from.to_target_instance_path(instance_store)?,
+            &self.to.to_target_instance_path(instance_store)?,
         );
         Ok(())
     }

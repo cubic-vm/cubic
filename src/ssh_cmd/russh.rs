@@ -1,9 +1,13 @@
-use crate::ssh_cmd::Ssh;
+use crate::instance::{Instance, TargetInstancePath};
+use crate::ssh_cmd::{SftpPath, Ssh};
 use crate::view::Console;
 use russh::keys::*;
 use russh::*;
+use russh_sftp::client::SftpSession;
 use std::env;
 use std::io::Write;
+use std::path::Path;
+use std::rc::Rc;
 use std::sync::Arc;
 
 #[derive(Default)]
@@ -173,6 +177,39 @@ impl Russh {
         );
         Ok(())
     }
+
+    async fn open_sftp(&self, instance: &Instance, user: &Option<String>) -> Rc<SftpSession> {
+        let user = user.as_ref().unwrap_or(&instance.user);
+        let channel = self.open_channel(user, instance.ssh_port).await.unwrap();
+        channel.request_subsystem(true, "sftp").await.unwrap();
+        Rc::new(SftpSession::new(channel.into_stream()).await.unwrap())
+    }
+
+    async fn open_target_fs(&self, path: &TargetInstancePath) -> SftpPath {
+        let sftp = if let Some(instance) = &path.instance {
+            Some(self.open_sftp(instance, &path.user).await)
+        } else {
+            None
+        };
+        SftpPath {
+            sftp,
+            path: Path::new(&path.path).to_path_buf(),
+        }
+    }
+
+    async fn async_copy(
+        &self,
+        _console: &mut dyn Console,
+        _root_dir: &str,
+        from: &TargetInstancePath,
+        to: &TargetInstancePath,
+    ) -> Result<(), ()> {
+        let source = self.open_target_fs(from).await;
+        let target = self.open_target_fs(to).await;
+
+        source.copy(target).await;
+        Ok(())
+    }
 }
 
 impl Ssh for Russh {
@@ -204,7 +241,18 @@ impl Ssh for Russh {
         result
     }
 
-    fn copy(&self, _console: &mut dyn Console, _root_dir: &str, _from: &str, _to: &str) -> bool {
-        false
+    fn copy(
+        &self,
+        console: &mut dyn Console,
+        root_dir: &str,
+        from: &TargetInstancePath,
+        to: &TargetInstancePath,
+    ) -> bool {
+        tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(self.async_copy(console, root_dir, from, to))
+            .is_ok()
     }
 }

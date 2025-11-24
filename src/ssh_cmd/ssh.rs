@@ -1,3 +1,4 @@
+use crate::instance::TargetInstancePath;
 use crate::view::Console;
 
 pub trait Ssh {
@@ -6,5 +7,11 @@ pub trait Ssh {
     fn set_args(&mut self, args: String);
     fn set_cmd(&mut self, cmd: Option<String>);
     fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16, xforward: bool) -> bool;
-    fn copy(&self, console: &mut dyn Console, root_dir: &str, from: &str, to: &str) -> bool;
+    fn copy(
+        &self,
+        console: &mut dyn Console,
+        root_dir: &str,
+        from: &TargetInstancePath,
+        to: &TargetInstancePath,
+    ) -> bool;
 }

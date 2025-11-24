@@ -52,6 +52,7 @@ libc = "^0"
 regex = "^1"
 tokio = { version = "1", features = ["full"] }
 russh = "0"
+russh-sftp = "2"
 termion = "4"
 
 [profile.release]
