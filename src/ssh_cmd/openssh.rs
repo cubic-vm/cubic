@@ -1,4 +1,5 @@
 use crate::fs::FS;
+use crate::instance::TargetInstancePath;
 use crate::ssh_cmd::Ssh;
 use crate::util::SystemCommand;
 use crate::view::Console;
@@ -84,7 +85,13 @@ impl Ssh for Openssh {
         }
     }
 
-    fn copy(&self, console: &mut dyn Console, root_dir: &str, from: &str, to: &str) -> bool {
+    fn copy(
+        &self,
+        console: &mut dyn Console,
+        root_dir: &str,
+        from: &TargetInstancePath,
+        to: &TargetInstancePath,
+    ) -> bool {
         let mut command = SystemCommand::new(&format!("{root_dir}/usr/bin/scp"));
 
         if let Some(ref known_hosts_file) = self.known_hosts_file {
@@ -102,8 +109,8 @@ impl Ssh for Openssh {
             .arg(format!("-S{root_dir}/usr/bin/ssh"))
             .args(self.private_keys.iter().map(|key| format!("-i{key}")))
             .args(self.args.split(' ').filter(|item| !item.is_empty()))
-            .arg(from)
-            .arg(to);
+            .arg(from.to_scp())
+            .arg(to.to_scp());
 
         console.debug(&command.get_command());
         command

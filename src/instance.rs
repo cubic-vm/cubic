@@ -4,6 +4,7 @@ pub mod instance_store;
 pub mod instance_store_mock;
 pub mod port_forward;
 pub mod target;
+pub mod target_instance_path;
 pub mod target_path;
 
 use crate::arch::Arch;
@@ -15,6 +16,7 @@ pub use port_forward::*;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 pub use target::*;
+pub use target_instance_path::*;
 pub use target_path::*;
 
 fn default_user() -> String {

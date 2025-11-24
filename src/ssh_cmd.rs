@@ -1,6 +1,7 @@
 mod openssh;
 mod port_checker;
 mod russh;
+mod sftp_path;
 mod ssh;
 
 use crate::error::Error;
@@ -8,6 +9,7 @@ use crate::fs::FS;
 pub use openssh::Openssh;
 pub use port_checker::PortChecker;
 pub use russh::Russh;
+pub use sftp_path::SftpPath;
 pub use ssh::Ssh;
 use std::env;
 use std::fs::DirEntry;
