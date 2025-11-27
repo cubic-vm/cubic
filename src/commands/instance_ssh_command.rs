@@ -75,7 +75,6 @@ impl Command for InstanceSshCommand {
         ssh.set_private_keys(get_ssh_private_key_names()?);
         ssh.set_args(self.ssh_args.clone().unwrap_or_default());
         ssh.set_cmd(self.cmd.clone());
-        console.info("Default login user: cubic / password: cubic");
 
         loop {
             let start_time = Instant::now();
