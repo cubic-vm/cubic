@@ -28,7 +28,7 @@ impl ImageStore for ImageDao {
             .find(|image| {
                 (image.vendor == name.get_vendor())
                     && (image.arch == name.get_arch())
-                    && (image.codename == name.get_name() || image.version == name.get_name())
+                    && image.names.contains(&name.get_name().to_string())
             })
             .cloned()
             .ok_or(Error::UnknownImage(name.to_string()))
