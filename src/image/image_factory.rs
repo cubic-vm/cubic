@@ -228,10 +228,15 @@ impl ImageFactory {
                 {
                     let url = Self::replace_vars(loc.download_url, &name, &version);
                     if let Ok(size) = web.get_file_size(&url) {
+                        let version = Self::replace_vars(distro.version_pattern, &name, &version);
+                        let codename = Self::replace_vars(distro.name_pattern, &name, &version);
+                        let mut names = vec![version.clone()];
+                        if version != codename {
+                            names.push(codename);
+                        }
                         images.push(Image {
                             vendor: distro.vendor.to_string(),
-                            codename: Self::replace_vars(distro.name_pattern, &name, &version),
-                            version: Self::replace_vars(distro.version_pattern, &name, &version),
+                            names,
                             arch: *arch,
                             url,
                             size,
