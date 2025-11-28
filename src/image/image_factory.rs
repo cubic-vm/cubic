@@ -10,7 +10,7 @@ use std::fs::File;
 use std::sync::LazyLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const IMAGE_CACHE_LIFETIME_SEC: u64 = 24 * 60 * 60; // = 1 day
+const IMAGE_CACHE_LIFETIME_SEC: u64 = 7 * 24 * 60 * 60; // = 1 week
 
 struct ImageLocation {
     url: &'static str,
