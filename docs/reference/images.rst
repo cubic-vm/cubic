@@ -11,6 +11,7 @@ cubic images
     Usage: cubic images [OPTIONS]
 
     Options:
+      -a, --all      Show all images
       -v, --verbose  Increase logging output
       -q, --quiet    Reduce logging output
       -h, --help     Print help

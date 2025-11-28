@@ -4,12 +4,12 @@ use std::fmt;
 use std::str::FromStr;
 
 #[cfg(target_arch = "aarch64")]
-fn get_default_arch() -> Arch {
+pub fn get_default_arch() -> Arch {
     Arch::ARM64
 }
 
 #[cfg(not(target_arch = "aarch64"))]
-fn get_default_arch() -> Arch {
+pub fn get_default_arch() -> Arch {
     Arch::AMD64
 }
 
