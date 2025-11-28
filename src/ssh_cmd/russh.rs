@@ -1,6 +1,6 @@
 use crate::instance::{Instance, TargetInstancePath};
 use crate::ssh_cmd::{SftpPath, Ssh};
-use crate::view::Console;
+use crate::view::{Console, SpinnerView};
 use russh::keys::*;
 use russh::*;
 use russh_sftp::client::SftpSession;
@@ -126,14 +126,30 @@ impl Russh {
         self.authenticate_with_password(session, user).await
     }
 
-    async fn open_channel(&self, user: &str, port: u16) -> Result<Channel<russh::client::Msg>, ()> {
-        let config = Arc::new(client::Config::default());
-        let sh = Client {};
-        let addrs = ("127.0.0.1", port);
+    async fn open_channel(
+        &self,
+        console: &mut dyn Console,
+        user: &str,
+        port: u16,
+    ) -> Result<Channel<russh::client::Msg>, ()> {
+        let mut session;
 
-        let mut session = client::connect(config, addrs, sh).await.map_err(|_| ())?;
+        let spinner = (!console.get_verbosity().is_quiet()).then(|| SpinnerView::new("Connecting"));
+        loop {
+            let sh = Client {};
+            let addrs = ("127.0.0.1", port);
+            let config = Arc::new(client::Config::default());
+            if let Ok(s) = client::connect(config, addrs, sh).await.map_err(|_| ()) {
+                session = s;
+                break;
+            }
+        }
 
         self.authenticate(&mut session, user).await?;
+
+        if let Some(mut s) = spinner {
+            s.stop()
+        }
 
         session.channel_open_session().await.map_err(|_| ())
     }
@@ -144,7 +160,7 @@ impl Russh {
         user: &str,
         port: u16,
     ) -> Result<(), ()> {
-        let channel = self.open_channel(user, port).await?;
+        let channel = self.open_channel(console, user, port).await?;
         let (w, h) = termion::terminal_size().map_err(|_| ())?;
         channel
             .request_pty(
@@ -178,16 +194,28 @@ impl Russh {
         Ok(())
     }
 
-    async fn open_sftp(&self, instance: &Instance, user: &Option<String>) -> Rc<SftpSession> {
+    async fn open_sftp(
+        &self,
+        console: &mut dyn Console,
+        instance: &Instance,
+        user: &Option<String>,
+    ) -> Rc<SftpSession> {
         let user = user.as_ref().unwrap_or(&instance.user);
-        let channel = self.open_channel(user, instance.ssh_port).await.unwrap();
+        let channel = self
+            .open_channel(console, user, instance.ssh_port)
+            .await
+            .unwrap();
         channel.request_subsystem(true, "sftp").await.unwrap();
         Rc::new(SftpSession::new(channel.into_stream()).await.unwrap())
     }
 
-    async fn open_target_fs(&self, path: &TargetInstancePath) -> SftpPath {
+    async fn open_target_fs(
+        &self,
+        console: &mut dyn Console,
+        path: &TargetInstancePath,
+    ) -> SftpPath {
         let sftp = if let Some(instance) = &path.instance {
-            Some(self.open_sftp(instance, &path.user).await)
+            Some(self.open_sftp(console, instance, &path.user).await)
         } else {
             None
         };
@@ -199,13 +227,13 @@ impl Russh {
 
     async fn async_copy(
         &self,
-        _console: &mut dyn Console,
+        console: &mut dyn Console,
         _root_dir: &str,
         from: &TargetInstancePath,
         to: &TargetInstancePath,
     ) -> Result<(), ()> {
-        let source = self.open_target_fs(from).await;
-        let target = self.open_target_fs(to).await;
+        let source = self.open_target_fs(console, from).await;
+        let target = self.open_target_fs(console, to).await;
 
         source.copy(target).await;
         Ok(())

@@ -4,11 +4,9 @@ use crate::error::Error;
 use crate::image::ImageStore;
 use crate::instance::{InstanceStore, Target};
 use crate::ssh_cmd::{Openssh, Russh, Ssh, get_ssh_private_key_names};
-use crate::view::{Console, SpinnerView};
+use crate::view::Console;
 use clap::Parser;
 use std::env;
-use std::thread;
-use std::time::{Duration, Instant};
 
 #[derive(Clone, Parser)]
 pub struct SshArgs {
@@ -44,7 +42,6 @@ impl Command for InstanceSshCommand {
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
-        let verbosity = console.get_verbosity();
         let name = self.target.get_instance();
 
         commands::InstanceStartCommand {
@@ -75,26 +72,7 @@ impl Command for InstanceSshCommand {
         ssh.set_private_keys(get_ssh_private_key_names()?);
         ssh.set_args(self.ssh_args.clone().unwrap_or_default());
         ssh.set_cmd(self.cmd.clone());
-
-        loop {
-            let start_time = Instant::now();
-            if ssh.shell(console, &user, ssh_port, self.args.xforward) {
-                // exit on success
-                break;
-            }
-
-            if self.ssh_args.is_some() || start_time.elapsed().as_secs() > 5 {
-                // exit if cli command or time expired
-                break;
-            }
-
-            let spinner = (!verbosity.is_quiet()).then(|| SpinnerView::new("Try to connect"));
-            thread::sleep(Duration::from_secs(5));
-            if let Some(mut s) = spinner {
-                s.stop()
-            }
-        }
-
+        ssh.shell(console, &user, ssh_port, self.args.xforward);
         Ok(())
     }
 }

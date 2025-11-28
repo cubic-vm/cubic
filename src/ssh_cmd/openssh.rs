@@ -2,8 +2,10 @@ use crate::fs::FS;
 use crate::instance::TargetInstancePath;
 use crate::ssh_cmd::Ssh;
 use crate::util::SystemCommand;
-use crate::view::Console;
+use crate::view::{Console, SpinnerView};
 use std::path::Path;
+use std::thread;
+use std::time::{Duration, Instant};
 
 #[derive(Default)]
 pub struct Openssh {
@@ -54,6 +56,24 @@ impl Openssh {
         console.debug(&command.get_command());
         command
     }
+
+    fn shell_internal(
+        &mut self,
+        console: &mut dyn Console,
+        user: &str,
+        port: u16,
+        xforward: bool,
+    ) -> bool {
+        let mut child = self
+            .create_system_command(console, user, port, xforward)
+            .spawn()
+            .unwrap();
+        if let Ok(exit) = child.wait() {
+            exit.success()
+        } else {
+            false
+        }
+    }
 }
 
 impl Ssh for Openssh {
@@ -74,15 +94,26 @@ impl Ssh for Openssh {
     }
 
     fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16, xforward: bool) -> bool {
-        let mut child = self
-            .create_system_command(console, user, port, xforward)
-            .spawn()
-            .unwrap();
-        if let Ok(exit) = child.wait() {
-            exit.success()
-        } else {
-            false
+        loop {
+            let start_time = Instant::now();
+            if self.shell_internal(console, user, port, xforward) {
+                // exit on success
+                break;
+            }
+
+            if !self.args.is_empty() || start_time.elapsed().as_secs() > 5 {
+                // exit if cli command or time expired
+                break;
+            }
+
+            let spinner =
+                (!console.get_verbosity().is_quiet()).then(|| SpinnerView::new("Try to connect"));
+            thread::sleep(Duration::from_secs(5));
+            if let Some(mut s) = spinner {
+                s.stop()
+            }
         }
+        true
     }
 
     fn copy(
