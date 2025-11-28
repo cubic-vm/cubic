@@ -34,22 +34,9 @@ impl Command for ListImageCommand {
                 .unwrap_or_default();
 
             view.add_row()
-                .add(
-                    &format!("{}:{}", image.vendor, image.version),
-                    Alignment::Left,
-                )
+                .add(&image.get_image_names(), Alignment::Left)
                 .add(&image.arch.to_string(), Alignment::Left)
                 .add(&size, Alignment::Right);
-
-            if image.version != image.codename {
-                view.add_row()
-                    .add(
-                        &format!("{}:{}", image.vendor, image.codename),
-                        Alignment::Left,
-                    )
-                    .add(&image.arch.to_string(), Alignment::Left)
-                    .add(&size, Alignment::Right);
-            }
         }
         view.print(console);
         Ok(())

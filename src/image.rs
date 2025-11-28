@@ -18,20 +18,43 @@ use std::io::{Read, Write};
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Image {
     pub vendor: String,
-    pub codename: String,
-    pub version: String,
+    pub names: Vec<String>,
     pub arch: Arch,
     pub url: String,
     pub size: Option<u64>,
 }
 
 impl Image {
+    pub fn get_version(&self) -> &str {
+        &self.names[0]
+    }
+
+    pub fn get_name(&self) -> &str {
+        if self.names.len() > 1 {
+            &self.names[1]
+        } else {
+            &self.names[0]
+        }
+    }
+
+    pub fn get_image_names(&self) -> String {
+        format!(
+            "{}:{}",
+            self.vendor,
+            if self.names.len() > 1 {
+                format!("{{{}}}", self.names.join(", "))
+            } else {
+                self.names[0].clone()
+            }
+        )
+    }
+
     pub fn to_name(&self) -> String {
-        format!("{}:{}:{}", self.vendor, self.version, self.arch)
+        format!("{}:{}:{}", self.vendor, self.get_version(), self.arch)
     }
 
     pub fn to_file_name(&self) -> String {
-        format!("{}_{}_{}", self.vendor, self.codename, self.arch)
+        format!("{}_{}_{}", self.vendor, self.get_name(), self.arch)
     }
 }
 
@@ -97,8 +120,7 @@ mod tests {
         ImageCache {
             images: vec![Image {
                 vendor: "testvendor".to_string(),
-                codename: "testcodename".to_string(),
-                version: "testversion".to_string(),
+                names: vec!["testversion".to_string(), "testcodename".to_string()],
                 arch: Arch::AMD64,
                 url: "testurl".to_string(),
                 size: None,
@@ -112,8 +134,9 @@ mod tests {
             String::from_utf8(writer).unwrap(),
             r#"images:
 - vendor: testvendor
-  codename: testcodename
-  version: testversion
+  names:
+  - testversion
+  - testcodename
   arch: AMD64
   url: testurl
   size: null
