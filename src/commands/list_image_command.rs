@@ -1,7 +1,7 @@
 use crate::commands::{Command, fetch_image_list};
 use crate::env::Environment;
 use crate::error::Error;
-use crate::image::ImageStore;
+use crate::image::{ImageStore, get_default_arch};
 use crate::instance::InstanceStore;
 use crate::model::DataSize;
 use crate::view::{Alignment, Console, TableView};
@@ -9,7 +9,11 @@ use clap::Parser;
 
 /// List all supported virtual machine images
 #[derive(Parser)]
-pub struct ListImageCommand;
+pub struct ListImageCommand {
+    /// Show all images
+    #[clap(short, long, action, global = true)]
+    all: bool,
+}
 
 impl Command for ListImageCommand {
     fn run(
@@ -28,6 +32,10 @@ impl Command for ListImageCommand {
             .add("Size", Alignment::Right);
 
         for image in images {
+            if !self.all && image.arch != get_default_arch() {
+                continue;
+            }
+
             let size = image
                 .size
                 .map(|size| DataSize::new(size as usize).to_size())
