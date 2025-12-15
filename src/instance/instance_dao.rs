@@ -1,7 +1,9 @@
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
-use crate::instance::{Instance, InstanceName, InstanceStore};
+use crate::instance::{
+    Instance, InstanceDeserializer, InstanceName, InstanceStore, YamlInstanceDeserializer,
+};
 use crate::model::DataSize;
 use crate::qemu::{Monitor, QemuImg};
 use crate::ssh_cmd::PortChecker;
@@ -70,9 +72,11 @@ impl InstanceStore for InstanceDao {
             return Result::Err(Error::UnknownInstance(name.to_string()));
         }
 
+        let deserializer = Box::new(YamlInstanceDeserializer::new());
+
         self.fs
             .open_file(&self.env.get_instance_config_file(name))
-            .and_then(|mut file| Instance::deserialize(name, &mut file))
+            .and_then(|mut file| deserializer.deserialize(name, &mut file))
             .map(|mut instance| {
                 let size = QemuImg::new()
                     .get_image_info(&self.env, &instance)
