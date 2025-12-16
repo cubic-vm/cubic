@@ -2,7 +2,8 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
 use crate::instance::{
-    Instance, InstanceDeserializer, InstanceName, InstanceStore, YamlInstanceDeserializer,
+    Instance, InstanceDeserializer, InstanceName, InstanceStore, TomlInstanceDeserializer,
+    YamlInstanceDeserializer,
 };
 use crate::model::DataSize;
 use crate::qemu::{Monitor, QemuImg};
@@ -72,10 +73,18 @@ impl InstanceStore for InstanceDao {
             return Result::Err(Error::UnknownInstance(name.to_string()));
         }
 
-        let deserializer = Box::new(YamlInstanceDeserializer::new());
+        let yaml_path = &self.env.get_instance_yaml_config_file(name);
+        let toml_path = &self.env.get_instance_toml_config_file(name);
+
+        let (path, deserializer): (&str, Box<dyn InstanceDeserializer>) =
+            if Path::new(toml_path).exists() {
+                (toml_path, Box::new(TomlInstanceDeserializer::new()))
+            } else {
+                (yaml_path, Box::new(YamlInstanceDeserializer::new()))
+            };
 
         self.fs
-            .open_file(&self.env.get_instance_config_file(name))
+            .open_file(path)
             .and_then(|mut file| deserializer.deserialize(name, &mut file))
             .map(|mut instance| {
                 let size = QemuImg::new()
@@ -96,7 +105,7 @@ impl InstanceStore for InstanceDao {
     }
 
     fn store(&self, instance: &Instance) -> Result<(), Error> {
-        let file_name = self.env.get_instance_config_file(&instance.name);
+        let file_name = self.env.get_instance_yaml_config_file(&instance.name);
         let temp_file_name = format!("{file_name}.tmp");
 
         let mut file = self.fs.create_file(&temp_file_name)?;

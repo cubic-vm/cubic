@@ -54,6 +54,7 @@ tokio = { version = "1", features = ["full"] }
 russh = "0"
 russh-sftp = "2"
 termion = "4"
+toml = "0"
 
 [profile.release]
 opt-level = 'z'

@@ -42,8 +42,12 @@ impl Environment {
         format!("{}/{instance}", &self.get_instance_dir())
     }
 
-    pub fn get_instance_config_file(&self, instance: &str) -> String {
+    pub fn get_instance_yaml_config_file(&self, instance: &str) -> String {
         format!("{}/machine.yaml", &self.get_instance_dir2(instance))
+    }
+
+    pub fn get_instance_toml_config_file(&self, instance: &str) -> String {
+        format!("{}/instance.toml", &self.get_instance_dir2(instance))
     }
 
     pub fn get_instance_image_file(&self, instance: &str) -> String {
@@ -116,8 +120,12 @@ mod tests {
             "/data/cubic/machines/mymachine"
         );
         assert_eq!(
-            env.get_instance_config_file("mymachine"),
+            env.get_instance_yaml_config_file("mymachine"),
             "/data/cubic/machines/mymachine/machine.yaml"
+        );
+        assert_eq!(
+            env.get_instance_toml_config_file("mymachine"),
+            "/data/cubic/machines/mymachine/instance.toml"
         );
         assert_eq!(
             env.get_instance_image_file("mymachine"),

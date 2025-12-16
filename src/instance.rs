@@ -7,6 +7,7 @@ pub mod port_forward;
 pub mod target;
 pub mod target_instance_path;
 pub mod target_path;
+pub mod toml_instance_deserializer;
 pub mod yaml_instance_deserializer;
 
 use crate::arch::Arch;
@@ -21,6 +22,7 @@ use std::io::Write;
 pub use target::*;
 pub use target_instance_path::*;
 pub use target_path::*;
+pub use toml_instance_deserializer::*;
 pub use yaml_instance_deserializer::*;
 
 fn default_user() -> String {
@@ -60,8 +62,6 @@ impl Instance {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    
 
     #[test]
     fn test_serialize_minimal_config() {
