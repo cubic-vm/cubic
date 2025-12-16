@@ -21,6 +21,7 @@ pub enum Error {
     Web(reqwest::Error),
     SerdeJson(serde_json::Error),
     SerdeYaml(serde_yaml::Error),
+    SerdeToml(toml::ser::Error),
 }
 
 impl Error {
@@ -55,6 +56,7 @@ impl Error {
                 }
                 Error::SerdeJson(err) => format!("[JSON] {err}"),
                 Error::SerdeYaml(err) => format!("[YAML] {err}"),
+                Error::SerdeToml(err) => format!("[TOML] {err}"),
                 Error::Web(e) => format!("{e}"),
             }
         ))

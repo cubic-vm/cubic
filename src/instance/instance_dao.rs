@@ -2,8 +2,8 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
 use crate::instance::{
-    Instance, InstanceDeserializer, InstanceName, InstanceStore, TomlInstanceDeserializer,
-    YamlInstanceDeserializer,
+    Instance, InstanceDeserializer, InstanceName, InstanceSerializer, InstanceStore,
+    TomlInstanceDeserializer, YamlInstanceDeserializer,
 };
 use crate::model::DataSize;
 use crate::qemu::{Monitor, QemuImg};
@@ -105,12 +105,16 @@ impl InstanceStore for InstanceDao {
     }
 
     fn store(&self, instance: &Instance) -> Result<(), Error> {
-        let file_name = self.env.get_instance_yaml_config_file(&instance.name);
+        let file_name = self.env.get_instance_toml_config_file(&instance.name);
         let temp_file_name = format!("{file_name}.tmp");
 
         let mut file = self.fs.create_file(&temp_file_name)?;
-        instance.serialize(&mut file)?;
-        self.fs.rename_file(&temp_file_name, &file_name)
+        InstanceSerializer::new().serialize(instance, &mut file)?;
+        self.fs.rename_file(&temp_file_name, &file_name)?;
+
+        // remove deprecated yaml file format
+        self.fs
+            .remove_file(&self.env.get_instance_yaml_config_file(&instance.name))
     }
 
     fn clone(&self, instance: &Instance, new_name: &str) -> Result<(), Error> {
