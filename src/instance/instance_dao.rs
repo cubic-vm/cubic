@@ -115,6 +115,9 @@ impl InstanceStore for InstanceDao {
         // remove deprecated yaml file format
         self.fs
             .remove_file(&self.env.get_instance_yaml_config_file(&instance.name))
+            .ok();
+
+        Ok(())
     }
 
     fn clone(&self, instance: &Instance, new_name: &str) -> Result<(), Error> {
