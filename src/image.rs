@@ -15,12 +15,20 @@ pub use image_store::*;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+pub enum HashAlg {
+    Sha512,
+    Sha256,
+}
+
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Image {
     pub vendor: String,
     pub names: Vec<String>,
     pub arch: Arch,
-    pub url: String,
+    pub image_url: String,
+    pub checksum_url: String,
+    pub hash_alg: HashAlg,
     pub size: Option<u64>,
 }
 
@@ -122,7 +130,9 @@ mod tests {
                 vendor: "testvendor".to_string(),
                 names: vec!["testversion".to_string(), "testcodename".to_string()],
                 arch: Arch::AMD64,
-                url: "testurl".to_string(),
+                image_url: "imageurl".to_string(),
+                checksum_url: "checksumurl".to_string(),
+                hash_alg: HashAlg::Sha256,
                 size: None,
             }],
             timestamp: 1000,
@@ -138,7 +148,9 @@ mod tests {
   - testversion
   - testcodename
   arch: AMD64
-  url: testurl
+  image_url: imageurl
+  checksum_url: checksumurl
+  hash_alg: Sha256
   size: null
 timestamp: 1000
 "#

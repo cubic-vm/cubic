@@ -106,8 +106,8 @@ impl Ssh for Openssh {
                 break;
             }
 
-            let spinner =
-                (!console.get_verbosity().is_quiet()).then(|| SpinnerView::new("Try to connect"));
+            let spinner = (!console.get_verbosity().is_quiet())
+                .then(|| SpinnerView::new("Try to connect".to_string()));
             thread::sleep(Duration::from_secs(5));
             if let Some(mut s) = spinner {
                 s.stop()

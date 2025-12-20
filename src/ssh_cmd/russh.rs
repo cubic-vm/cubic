@@ -132,7 +132,8 @@ impl Russh {
     ) -> Result<Channel<russh::client::Msg>, ()> {
         let mut session;
 
-        let spinner = (!console.get_verbosity().is_quiet()).then(|| SpinnerView::new("Connecting"));
+        let spinner = (!console.get_verbosity().is_quiet())
+            .then(|| SpinnerView::new("Connecting".to_string()));
         loop {
             let sh = Client {};
             let addrs = ("127.0.0.1", port);

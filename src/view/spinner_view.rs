@@ -12,7 +12,7 @@ pub struct SpinnerView {
 }
 
 impl SpinnerView {
-    pub fn new(text: &'static str) -> Self {
+    pub fn new(text: String) -> Self {
         let (tx, rx) = mpsc::channel();
 
         let thread = thread::spawn(move || {

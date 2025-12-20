@@ -9,7 +9,7 @@ use crate::view::{Console, SpinnerView};
 use clap::Subcommand;
 
 pub fn fetch_image_list(env: &Environment) -> Vec<Image> {
-    let mut spinner = SpinnerView::new("Fetching image list");
+    let mut spinner = SpinnerView::new("Fetching image list".to_string());
     let images: Vec<Image> = ImageFactory::new(env).create_images().unwrap_or_default();
     spinner.stop();
     images

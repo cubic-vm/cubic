@@ -45,7 +45,7 @@ impl Command for InstanceStopCommand {
         }
 
         if self.wait && !console.get_verbosity().is_quiet() {
-            let mut spinner = SpinnerView::new("Stopping instance(s)");
+            let mut spinner = SpinnerView::new("Stopping instance(s)".to_string());
             while actions.iter().any(|action| !action.is_done(instance_store)) {
                 thread::sleep(Duration::from_secs(1))
             }

@@ -73,7 +73,7 @@ impl Command for CreateInstanceCommand {
         }
         .run(console, env, image_store, instance_store)?;
 
-        let mut create_spinner = SpinnerView::new("Creating virtual machine instance");
+        let mut create_spinner = SpinnerView::new("Creating virtual machine instance".to_string());
         let image = image_store.get(&self.image)?;
 
         let instance = Instance {

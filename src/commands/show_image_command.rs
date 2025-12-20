@@ -25,7 +25,8 @@ impl Command for ShowImageCommand {
         let image = image_store.get(&self.name)?;
         let mut view = MapView::new();
         view.add("Name", &image.get_image_names());
-        view.add("URL", &image.url);
+        view.add("Image URL", &image.image_url);
+        view.add("Checksum URL", &image.checksum_url);
         view.print(console);
         Ok(())
     }
