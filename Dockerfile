@@ -16,5 +16,5 @@ RUN apt update && \
         python3-sphinx \
         python3-sphinx-rtd-theme
 RUN rustup component add clippy rustfmt && \
-    cargo install --locked cargo-audit@0.21.1 &&\
+    cargo install cargo-audit &&\
     cargo fetch
