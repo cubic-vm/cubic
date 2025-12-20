@@ -43,19 +43,19 @@ edition = "2024"
 qemu-sandbox = []
 
 [dependencies]
-clap = { version = "^4", features = ["derive"] }
-reqwest = { version = "^0", default-features = false, features = ["rustls-tls", "blocking", "gzip", "brotli"] }
-serde = { version = "^1", features = ["derive"] }
-serde_json = "^1"
-serde_yaml = "^0"
-libc = "^0"
-regex = "^1"
-tokio = { version = "1", features = ["full"] }
+clap = { version = "4", features = ["derive"] }
+libc = "0"
+regex = "1"
+reqwest = { version = "0", default-features = false, features = ["rustls-tls", "blocking", "gzip", "brotli"] }
 russh = "0"
 russh-sftp = "2"
-termion = "4"
-toml = "0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0"
 sha2 = "0"
+termion = "4"
+tokio = { version = "1", features = ["full"] }
+toml = "0"
 
 [profile.release]
 opt-level = 'z'
