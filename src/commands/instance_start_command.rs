@@ -53,7 +53,7 @@ impl Command for InstanceStartCommand {
 
         // Wait for virtual machine instances to be started
         if self.wait && !verbosity.is_quiet() {
-            let mut spinner = SpinnerView::new("Starting instance(s)");
+            let mut spinner = SpinnerView::new("Starting instance(s)".to_string());
             while actions.iter().any(|a| !a.is_done()) {
                 sleep(Duration::from_secs(1));
             }

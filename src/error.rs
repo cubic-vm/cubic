@@ -22,6 +22,7 @@ pub enum Error {
     SerdeJson(serde_json::Error),
     SerdeYaml(serde_yaml::Error),
     SerdeToml(toml::ser::Error),
+    InvalidChecksum,
 }
 
 impl Error {
@@ -58,6 +59,7 @@ impl Error {
                 Error::SerdeYaml(err) => format!("[YAML] {err}"),
                 Error::SerdeToml(err) => format!("[TOML] {err}"),
                 Error::Web(e) => format!("{e}"),
+                Error::InvalidChecksum => "Verification of image failed".to_string(),
             }
         ))
     }
