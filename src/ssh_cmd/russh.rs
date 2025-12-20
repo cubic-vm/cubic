@@ -61,18 +61,16 @@ impl Russh {
             .flatten();
 
         for key in &self.private_keys {
-            if let Ok(key_pair) = load_secret_key(key, None) {
-                if let Ok(auth) = session
+            if let Ok(key_pair) = load_secret_key(key, None)
+                && let Ok(auth) = session
                     .authenticate_publickey(
                         user,
                         PrivateKeyWithHashAlg::new(Arc::new(key_pair), hash_alg),
                     )
                     .await
-                {
-                    if auth.success() {
-                        return Ok(());
-                    }
-                }
+                && auth.success()
+            {
+                return Ok(());
             }
         }
 

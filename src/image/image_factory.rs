@@ -274,10 +274,10 @@ impl ImageFactory {
         let cache = self.read_image_cache();
 
         // Use cache if valid
-        if let Some(cache) = &cache {
-            if get_timestamp() - cache.timestamp < IMAGE_CACHE_LIFETIME_SEC {
-                return Ok(cache.images.clone());
-            }
+        if let Some(cache) = &cache
+            && get_timestamp() - cache.timestamp < IMAGE_CACHE_LIFETIME_SEC
+        {
+            return Ok(cache.images.clone());
         }
 
         // Fetch images
