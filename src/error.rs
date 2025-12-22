@@ -20,7 +20,6 @@ pub enum Error {
     SystemCommandFailed(String, String),
     Web(reqwest::Error),
     SerdeJson(serde_json::Error),
-    SerdeYaml(serde_yaml::Error),
     SerdeToml(toml::ser::Error),
     InvalidChecksum,
 }
@@ -56,7 +55,6 @@ impl Error {
                     )
                 }
                 Error::SerdeJson(err) => format!("[JSON] {err}"),
-                Error::SerdeYaml(err) => format!("[YAML] {err}"),
                 Error::SerdeToml(err) => format!("[TOML] {err}"),
                 Error::Web(e) => format!("{e}"),
                 Error::InvalidChecksum => "Verification of image failed".to_string(),

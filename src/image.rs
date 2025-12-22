@@ -74,11 +74,16 @@ pub struct ImageCache {
 
 impl ImageCache {
     pub fn deserialize(reader: &mut dyn Read) -> Result<ImageCache, Error> {
-        serde_yaml::from_reader(reader).map_err(Error::SerdeYaml)
+        let mut data = String::new();
+        reader.read_to_string(&mut data).map_err(Error::Io)?;
+        toml::from_str(&data).map_err(|_| Error::CannotParseFile(String::new()))
     }
 
     pub fn serialize(&self, writer: &mut dyn Write) -> Result<(), Error> {
-        serde_yaml::to_writer(writer, self).map_err(Error::SerdeYaml)
+        toml::to_string(self)
+            .map(|content| writer.write_all(&content.into_bytes()))
+            .map(|_| ())
+            .map_err(Error::SerdeToml)
     }
 }
 
@@ -97,7 +102,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_empty() {
-        let reader = &mut BufReader::new("images: []\ntimestamp: 0".as_bytes());
+        let reader = &mut BufReader::new("images = []\ntimestamp = 0".as_bytes());
         let cache = ImageCache::deserialize(reader);
         assert_eq!(cache.unwrap(), ImageCache::default());
     }
@@ -110,15 +115,49 @@ mod tests {
 
         assert_eq!(
             String::from_utf8(writer).unwrap(),
-            "images: []\ntimestamp: 0\n"
+            "images = []\ntimestamp = 0\n"
         );
     }
 
     #[test]
     fn test_deserialize_single() {
-        let reader = &mut BufReader::new("images: []\ntimestamp: 0".as_bytes());
-        let cache = ImageCache::deserialize(reader);
-        assert_eq!(cache.unwrap(), ImageCache::default());
+        let reader = &mut BufReader::new(
+            r#"timestamp = 5000
+
+[[images]]
+vendor = "testvendor"
+names = ["testversion", "testcodename"]
+arch = "AMD64"
+image_url = "imageurl"
+checksum_url = "checksumurl"
+hash_alg = "Sha256"
+
+[[images]]
+vendor = "testvendor2"
+names = ["testversion2", "testcodename2"]
+arch = "ARM64"
+image_url = "imageurl2"
+checksum_url = "checksumurl2"
+hash_alg = "Sha512"
+
+"#
+            .as_bytes(),
+        );
+        let cache = ImageCache::deserialize(reader).unwrap();
+        assert_eq!(cache.timestamp, 5000);
+        assert_eq!(cache.images.len(), 2);
+        assert_eq!(cache.images[0].vendor, "testvendor");
+        assert_eq!(cache.images[0].names, ["testversion", "testcodename"]);
+        assert_eq!(cache.images[0].arch, Arch::AMD64);
+        assert_eq!(cache.images[0].image_url, "imageurl");
+        assert_eq!(cache.images[0].checksum_url, "checksumurl");
+        assert_eq!(cache.images[0].hash_alg, HashAlg::Sha256);
+        assert_eq!(cache.images[1].vendor, "testvendor2");
+        assert_eq!(cache.images[1].names, ["testversion2", "testcodename2"]);
+        assert_eq!(cache.images[1].arch, Arch::ARM64);
+        assert_eq!(cache.images[1].image_url, "imageurl2");
+        assert_eq!(cache.images[1].checksum_url, "checksumurl2");
+        assert_eq!(cache.images[1].hash_alg, HashAlg::Sha512);
     }
 
     #[test]
@@ -142,17 +181,15 @@ mod tests {
 
         assert_eq!(
             String::from_utf8(writer).unwrap(),
-            r#"images:
-- vendor: testvendor
-  names:
-  - testversion
-  - testcodename
-  arch: AMD64
-  image_url: imageurl
-  checksum_url: checksumurl
-  hash_alg: Sha256
-  size: null
-timestamp: 1000
+            r#"timestamp = 1000
+
+[[images]]
+vendor = "testvendor"
+names = ["testversion", "testcodename"]
+arch = "AMD64"
+image_url = "imageurl"
+checksum_url = "checksumurl"
+hash_alg = "Sha256"
 "#
         );
     }
