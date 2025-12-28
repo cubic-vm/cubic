@@ -3,7 +3,7 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::image::ImageStore;
 use crate::instance::{InstanceStore, Target};
-use crate::ssh_cmd::{Openssh, Russh, Ssh, get_ssh_private_key_names};
+use crate::ssh_cmd::{Ssh, SshFactory, get_ssh_private_key_names};
 use crate::view::Console;
 use clap::Parser;
 use std::env;
@@ -59,11 +59,7 @@ impl Command for InstanceSshCommand {
             .unwrap_or(instance.user.to_string());
         let ssh_port = instance.ssh_port;
 
-        let mut ssh: Box<dyn Ssh> = if !self.args.russh {
-            Box::new(Openssh::new())
-        } else {
-            Box::new(Russh::new())
-        };
+        let mut ssh: Box<dyn Ssh> = SshFactory::new().create(self.args.russh);
         ssh.set_known_hosts_file(
             env::var("HOME")
                 .map(|dir| format!("{dir}/.ssh/known_hosts"))
