@@ -40,15 +40,17 @@ categories = ["command-line-utilities"]
 edition = "2024"
 
 [features]
+default = ["russh"]
 qemu-sandbox = []
+russh = ["dep:russh", "dep:russh-sftp"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 libc = "0"
 regex = "1"
 reqwest = { version = "0", default-features = false, features = ["rustls-tls", "blocking", "gzip", "brotli"] }
-russh = "0"
-russh-sftp = "2"
+russh = { version = "0", optional = true }
+russh-sftp = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0"

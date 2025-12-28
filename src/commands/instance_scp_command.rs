@@ -3,7 +3,7 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::image::ImageStore;
 use crate::instance::{InstanceStore, TargetPath};
-use crate::ssh_cmd::{Openssh, Russh, Ssh, get_ssh_private_key_names};
+use crate::ssh_cmd::{Ssh, SshFactory, get_ssh_private_key_names};
 use crate::view::Console;
 use clap::Parser;
 use std::env;
@@ -49,12 +49,7 @@ impl Command for InstanceScpCommand {
         check_target_is_running(instance_store, &self.to)?;
 
         let root_dir = env::var("SNAP").unwrap_or_default();
-
-        let mut ssh: Box<dyn Ssh> = if !self.russh {
-            Box::new(Openssh::new())
-        } else {
-            Box::new(Russh::new())
-        };
+        let mut ssh: Box<dyn Ssh> = SshFactory::new().create(self.russh);
 
         ssh.set_known_hosts_file(
             env::var("HOME")
