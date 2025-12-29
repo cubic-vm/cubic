@@ -6,9 +6,9 @@ permissions:
   pull-requests: read
 
 jobs:
-  check:
-    name: Check
-    runs-on: ubuntu-24.04
+  linux:
+    name: Check Linux
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -18,3 +18,22 @@ jobs:
 
       - name: Check
         run: make check
+
+  macos:
+    name: Check macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup toolchain install stable
+
+      - name: Build Code
+        run: cargo build
+
+      - name: Test Code
+        run: cargo test
+
+      - name: Run Code
+        run: cargo run --help
