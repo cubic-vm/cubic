@@ -5,10 +5,40 @@ use russh::keys::*;
 use russh::*;
 use russh_sftp::client::SftpSession;
 use std::env;
-use std::io::Write;
+use std::io::{Cursor, Write};
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
+use tokio::io::AsyncReadExt;
+
+async fn ssh_output(output: ChannelWriteHalf<client::Msg>) -> Result<(), ()> {
+    let mut stdin = tokio::io::stdin();
+    let mut geometry = termion::terminal_size().map_err(|_| ())?;
+    let mut c: &mut [u8] = &mut [0];
+
+    loop {
+        // read character from stdin
+        if stdin.read(c).await.map_err(|_| ())? == 0 {
+            continue;
+        }
+
+        // send character to ssh server
+        output
+            .data(&mut Cursor::new(&mut c))
+            .await
+            .map_err(|_| ())?;
+
+        // update terminal geometry
+        let new_geometry = termion::terminal_size().map_err(|_| ())?;
+        if geometry != new_geometry {
+            geometry = new_geometry;
+            output
+                .window_change(geometry.0 as u32, geometry.1 as u32, 0, 0)
+                .await
+                .map_err(|_| ())?;
+        }
+    }
+}
 
 #[derive(Default)]
 pub struct Russh {
@@ -181,12 +211,10 @@ impl Russh {
         }
         let (mut ssh_in, ssh_out) = channel.split();
         let mut ssh_in = ssh_in.make_reader();
-        let mut ssh_out = ssh_out.make_writer();
-        let mut stdin = tokio::io::stdin();
         let mut stdout = tokio::io::stdout();
 
         tokio::select!(
-            _ = tokio::io::copy(&mut stdin, &mut ssh_out) => { console.reset(); std::process::exit(0); },
+            _ = ssh_output(ssh_out) => { console.reset(); std::process::exit(0); },
             _ = tokio::io::copy(&mut ssh_in, &mut stdout) => { console.reset(); std::process::exit(0); },
             else => {}
         );
