@@ -556,7 +556,6 @@ name = "cubic"
 version = "0.16.0"
 dependencies = [
  "clap",
- "libc",
  "regex",
  "reqwest",
  "russh",

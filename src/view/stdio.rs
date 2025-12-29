@@ -1,22 +1,21 @@
 use crate::commands::Verbosity;
 use crate::view::Console;
-use libc;
-use std::mem;
+use std::io::{Stdout, stdout};
+use termion::{
+    self,
+    raw::{IntoRawMode, RawTerminal},
+};
 
 pub struct Stdio {
     verbosity: Verbosity,
-    term: libc::termios,
+    raw_mode: Option<RawTerminal<Stdout>>,
 }
 
 impl Stdio {
     pub fn new() -> Self {
-        unsafe {
-            let mut term: libc::termios = mem::zeroed();
-            libc::tcgetattr(0, &mut term);
-            Self {
-                verbosity: Verbosity::new(false, false),
-                term,
-            }
+        Self {
+            verbosity: Verbosity::new(false, false),
+            raw_mode: None,
         }
     }
 }
@@ -47,20 +46,14 @@ impl Console for Stdio {
     }
 
     fn raw_mode(&mut self) {
-        unsafe {
-            let mut term = self.term;
-            term.c_lflag &= !libc::ICANON;
-            term.c_lflag &= !libc::ECHO;
-            term.c_lflag &= !libc::ISIG;
-            term.c_cc[libc::VMIN] = 1;
-            term.c_cc[libc::VTIME] = 0;
-            libc::tcsetattr(0, libc::TCSANOW, &term);
+        if self.raw_mode.is_none() {
+            self.raw_mode = stdout().into_raw_mode().ok();
         }
     }
 
     fn reset(&mut self) {
-        unsafe {
-            libc::tcsetattr(0, libc::TCSANOW, &self.term);
+        if let Some(raw) = &mut self.raw_mode {
+            raw.suspend_raw_mode().ok();
         }
     }
 }
