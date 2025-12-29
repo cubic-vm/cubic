@@ -11,9 +11,12 @@ use std::rc::Rc;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 
-async fn ssh_output(output: ChannelWriteHalf<client::Msg>) -> Result<(), ()> {
+async fn ssh_output(
+    console: &mut dyn Console,
+    output: ChannelWriteHalf<client::Msg>,
+) -> Result<(), ()> {
     let mut stdin = tokio::io::stdin();
-    let mut geometry = termion::terminal_size().map_err(|_| ())?;
+    let mut geometry = console.get_geometry();
     let mut c: &mut [u8] = &mut [0];
 
     loop {
@@ -29,11 +32,13 @@ async fn ssh_output(output: ChannelWriteHalf<client::Msg>) -> Result<(), ()> {
             .map_err(|_| ())?;
 
         // update terminal geometry
-        let new_geometry = termion::terminal_size().map_err(|_| ())?;
-        if geometry != new_geometry {
-            geometry = new_geometry;
+        let new_geometry = console.get_geometry();
+        if geometry != new_geometry
+            && let Some(new_geometry) = new_geometry
+        {
+            geometry = Some(new_geometry);
             output
-                .window_change(geometry.0 as u32, geometry.1 as u32, 0, 0)
+                .window_change(new_geometry.0, new_geometry.1, 0, 0)
                 .await
                 .map_err(|_| ())?;
         }
@@ -190,13 +195,13 @@ impl Russh {
         port: u16,
     ) -> Result<(), ()> {
         let channel = self.open_channel(console, user, port).await?;
-        let (w, h) = termion::terminal_size().map_err(|_| ())?;
+        let (w, h) = console.get_geometry().unwrap();
         channel
             .request_pty(
                 false,
                 &env::var("TERM").unwrap_or("xterm".into()),
-                w as u32,
-                h as u32,
+                w,
+                h,
                 0,
                 0,
                 &[],
@@ -214,7 +219,7 @@ impl Russh {
         let mut stdout = tokio::io::stdout();
 
         tokio::select!(
-            _ = ssh_output(ssh_out) => { console.reset(); std::process::exit(0); },
+            _ = ssh_output(console, ssh_out) => { console.reset(); std::process::exit(0); },
             _ = tokio::io::copy(&mut ssh_in, &mut stdout) => { console.reset(); std::process::exit(0); },
             else => {}
         );

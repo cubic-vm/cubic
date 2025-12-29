@@ -45,6 +45,12 @@ impl Console for Stdio {
         eprintln!("{msg}");
     }
 
+    fn get_geometry(&self) -> Option<(u32, u32)> {
+        termion::terminal_size()
+            .map(|(w, h)| (w as u32, h as u32))
+            .ok()
+    }
+
     fn raw_mode(&mut self) {
         if self.raw_mode.is_none() {
             self.raw_mode = stdout().into_raw_mode().ok();

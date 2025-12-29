@@ -7,6 +7,8 @@ pub trait Console {
     fn info(&mut self, msg: &str);
     fn error(&mut self, msg: &str);
 
+    fn get_geometry(&self) -> Option<(u32, u32)>;
+
     fn raw_mode(&mut self);
     fn reset(&mut self);
 }
