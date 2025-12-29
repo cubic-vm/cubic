@@ -41,6 +41,10 @@ pub mod tests {
             self.log(msg)
         }
 
+        fn get_geometry(&self) -> Option<(u32, u32)> {
+            None
+        }
+
         fn raw_mode(&mut self) {}
         fn reset(&mut self) {}
     }
