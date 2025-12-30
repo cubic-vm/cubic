@@ -53,13 +53,12 @@ pub fn setup_cloud_init(env: &Environment, instance: &Instance) -> Result<(), Er
                     \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
                     \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n\
                     ssh_pwauth: True\n\
+                    package_update: true\n\
                     packages:\n\
                     \u{20}\u{20}- openssh\n\
+                    \u{20}\u{20}- qemu-guest-agent\n\
                     runcmd:\n\
                     \u{20}\u{20}- \
-                        apt update; apt install -y qemu-guest-agent socat; \
-                        dnf install -y qemu-guest-agent socat; \
-                        yes | pacman -S qemu-guest-agent socat; \
                         systemctl enable --now qemu-guest-agent\n\
                 "
                 )
