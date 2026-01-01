@@ -54,9 +54,11 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0"
 sha2 = "0"
+ssh-key = { version = "0", features = ["ed25519"]}
 termion = "4"
 tokio = { version = "1", features = ["full"] }
 toml = "0"
+rand_core = { version = "0", features = ["std"]}
 
 [profile.release]
 opt-level = 'z'

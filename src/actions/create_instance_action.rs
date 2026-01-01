@@ -3,7 +3,9 @@ use crate::error::Error;
 use crate::fs::FS;
 use crate::image::Image;
 use crate::instance::{Instance, InstanceStore};
+use crate::ssh_cmd::SshKeyGenerator;
 use crate::util::SystemCommand;
+use std::path::Path;
 
 #[derive(Default)]
 pub struct CreateInstanceAction;
@@ -26,8 +28,13 @@ impl CreateInstanceAction {
         let tmp_dir = &format!("{target_dir}.tmp");
         let tmp_image = &format!("{tmp_dir}/machine.img");
 
-        // Create virtual machine instance image file
+        // Create directory
         fs.create_dir(tmp_dir)?;
+
+        // Create SSH key
+        SshKeyGenerator::new().generate_key(&Path::new(tmp_dir).join("ssh_client_key"))?;
+
+        // Create virtual machine instance image file
         SystemCommand::new("qemu-img")
             .arg("convert")
             .arg("-f")

@@ -1,3 +1,6 @@
+use crate::fs::FS;
+use std::env;
+
 #[derive(Default, Clone)]
 pub struct Environment {
     data_dir: String,
@@ -91,6 +94,31 @@ impl Environment {
             "{}/guest-agent.socket",
             self.get_instance_runtime_dir(instance)
         )
+    }
+
+    pub fn get_ssh_private_key_paths(&self, fs: &FS, instances: Vec<String>) -> Vec<String> {
+        let mut private_keys = instances
+            .iter()
+            .map(|name| format!("{}/ssh_client_key", self.get_instance_dir2(name)))
+            .collect::<Vec<String>>();
+
+        let search_dirs: Vec<String> = ["SNAP_REAL_HOME", "HOME"]
+            .iter()
+            .filter_map(|var| env::var(var).ok())
+            .map(|dir| format!("{dir}/.ssh"))
+            .collect();
+
+        for dir in search_dirs {
+            if let Ok(file_names) = fs.read_dir_file_names(&dir) {
+                for file_name in file_names {
+                    if file_name.starts_with("id_") && !file_name.contains(".") {
+                        private_keys.push(file_name.to_string());
+                    }
+                }
+            }
+        }
+
+        private_keys
     }
 }
 

@@ -42,6 +42,14 @@ impl FS {
         fs::read_dir(path).map_err(|e| Error::FS(format!("Cannot read directory '{path}' ({e})")))
     }
 
+    pub fn read_dir_file_names(&self, path: &str) -> Result<Vec<String>, Error> {
+        self.read_dir(path).map(|dir| {
+            dir.flatten()
+                .filter_map(|file| file.file_name().to_str().map(|name| name.to_string()))
+                .collect()
+        })
+    }
+
     pub fn remove_dir(&self, path: &str) -> Result<(), Error> {
         fs::remove_dir_all(path)
             .map_err(|e| Error::FS(format!("Cannot remove directory '{path}' ({e})")))
