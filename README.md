@@ -13,6 +13,14 @@ Cubic is built on top of `QEMU`, `KVM` and `cloud-init`.
 
 [![Get it from the Snap Store](https://snapcraft.io/en/dark/install.svg)](https://snapcraft.io/cubic)
 
+# :monocle_face: Why use Cubic?
+
+Cubic is a simple tool that may be used for various purposes as for example:
+
+- Develop and test software on different Linux distributions
+- Install software on a virtual machine to not populate the host system
+- Run untrusted software on an isolated virtual machine
+
 # :fire: Features
 
 - Simple command-line interface
