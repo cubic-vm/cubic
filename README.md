@@ -130,7 +130,7 @@ Options:
 
 # :speech_balloon: How to contribute to Cubic?
 
-We are actievely looking for help to improve Cubic.
+We are actively looking for help to improve Cubic.
 You can help in various ways:
 - :girl: Increase Cubic's user base by installing and using it!
 - :star: Star us on [Github](https://github.com/cubic-vm/cubic) to promote the project!
