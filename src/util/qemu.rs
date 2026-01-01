@@ -2,7 +2,7 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
 use crate::instance::Instance;
-use crate::ssh_cmd::get_ssh_pub_keys;
+use crate::ssh_cmd::SshKeyGenerator;
 use crate::util::SystemCommand;
 use std::path::Path;
 
@@ -27,18 +27,13 @@ pub fn setup_cloud_init(env: &Environment, instance: &Instance) -> Result<(), Er
         }
 
         if !Path::new(&user_data_path).exists() {
-            let ssh_pk = if let Ok(ssh_keys) = get_ssh_pub_keys() {
-                format!(
-                    "\u{20}\u{20}\u{20}\u{20}ssh-authorized-keys:\n{}",
-                    ssh_keys
-                        .iter()
-                        .map(|key| format!("\u{20}\u{20}\u{20}\u{20}\u{20}\u{20}- {key}"))
-                        .collect::<Vec<_>>()
-                        .join("\n")
-                )
-            } else {
-                String::new()
-            };
+            let privatekey =
+                Path::new(&env.get_instance_dir2(&instance.name)).join("ssh_client_key");
+            let pubkey = privatekey
+                .exists()
+                .then(|| SshKeyGenerator::new().generate_public_key(&privatekey))
+                .and_then(|key| key.ok())
+                .unwrap_or_default();
 
             fs.write_file(
                 &user_data_path,
@@ -49,10 +44,9 @@ pub fn setup_cloud_init(env: &Environment, instance: &Instance) -> Result<(), Er
                     \u{20}\u{20}- name: {user}\n\
                     \u{20}\u{20}\u{20}\u{20}lock_passwd: false\n\
                     \u{20}\u{20}\u{20}\u{20}hashed_passwd: $y$j9T$wifmOLBedd7NSaH2IqG4L.$2J.8E.qE57lxapsWosOFod37djHePHg7Go03iDNsRe4\n\
-                    {ssh_pk}\n\
+                    \u{20}\u{20}\u{20}\u{20}ssh-authorized-keys: [{pubkey}]\n\
                     \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
                     \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n\
-                    ssh_pwauth: True\n\
                     package_update: true\n\
                     packages:\n\
                     \u{20}\u{20}- openssh\n\
