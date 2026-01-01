@@ -32,7 +32,8 @@ impl Command for InstanceConsoleCommand {
         }
         .run(console, env, image_store, instance_store)?;
 
-        println!("Press CTRL+W to exit the console.");
+        console.info("Default user login: cubic / cubic");
+        console.info("Press CTRL+W to exit the console.");
         let console_path = env.get_console_file(&self.instance);
         while !Path::new(&console_path).exists() {
             thread::sleep(Duration::new(1, 0));
@@ -42,7 +43,7 @@ impl Command for InstanceConsoleCommand {
         if let Ok(mut term) = Terminal::open(&console_path) {
             term.wait();
         } else {
-            println!("Cannot open shell");
+            console.error("Cannot open shell");
         }
         console.reset();
         Ok(())
