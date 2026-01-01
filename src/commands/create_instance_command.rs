@@ -90,7 +90,6 @@ impl Command for CreateInstanceCommand {
         CreateInstanceAction::new().run(env, &FS::new(), instance_store, &image, instance)?;
 
         create_spinner.stop();
-        console.info("Default user login: cubic / cubic");
         Result::Ok(())
     }
 }
