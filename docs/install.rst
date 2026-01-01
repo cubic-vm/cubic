@@ -62,8 +62,18 @@ Use the following command to install Cubic with `Snap`_:
 
 .. code-block::
 
-       $ sudo snap install cubic && \
-            sudo snap connect cubic:kvm && \
-            sudo snap connect cubic:ssh-keys
+       $ sudo snap install cubic
+
+Connect the KVM interface to accelerate the virtual machine (recommend):
+
+.. code-block::
+
+       $ sudo snap connect cubic:kvm
+
+Allow access to the host `.ssh/` directory if you want to connect to the VM with your personal SSH keys (optional):
+
+.. code-block::
+
+       $ sudo snap connect cubic:ssh-keys
 
 .. _Snap: https://snapcraft.io/cubic
