@@ -24,37 +24,22 @@ Cubic is built on top of `QEMU`, `KVM` and `cloud-init`.
 
 # :rocket: Quick Start
 
-A virtual machine instance can be created with a single command:
+A virtual machine instance can be created with a single command. This example
+creates an instance from a Ubuntu image with the name `quickstart`.
 ```
-$ cubic run quickstart --image ubuntu:noble
-Welcome to Ubuntu 24.04 LTS (GNU/Linux 6.8.0-35-generic x86_64)
+$ cubic run --image ubuntu:noble quickstart
+Downloading ubuntu:24.04:amd64  247.9 MiB [======================================] 100% @  39 Mbps
+Successfully verified image checksum
+Welcome to Ubuntu 24.04.3 LTS (GNU/Linux 6.8.0-87-generic x86_64)
 
  * Documentation:  https://help.ubuntu.com
  * Management:     https://landscape.canonical.com
  * Support:        https://ubuntu.com/pro
 
- System information as of Sun Jul 14 13:58:15 UTC 2024
+This system has been minimized by removing packages and content that are
+not required on a system that users do not log into.
 
-  System load:            0.15
-  Usage of /:             60.7% of 2.35GB
-  Memory usage:           29%
-  Swap usage:             0%
-  Processes:              150
-  Users logged in:        0
-  IPv4 address for ens13: 10.0.2.15
-  IPv6 address for ens13: fec0::5054:ff:fe12:3456
-
-Expanded Security Maintenance for Applications is not enabled.
-
-0 updates can be applied immediately.
-
-Enable ESM Apps to receive additional future security updates.
-See https://ubuntu.com/esm or run: sudo pro status
-
-
-The list of available updates is more than a week old.
-To check for new updates run: sudo apt update
-
+To restore this content, you can run the 'unminimize' command.
 
 The programs included with the Ubuntu system are free software;
 the exact distribution terms for each program are described in the
@@ -65,6 +50,8 @@ applicable law.
 
 cubic@quickstart:~$
 ```
+
+Use `cubic images` to list all supported images.
 
 # :dizzy: How to install Cubic?
 
