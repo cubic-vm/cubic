@@ -109,10 +109,17 @@ impl Environment {
             .collect();
 
         for dir in search_dirs {
-            if let Ok(file_names) = fs.read_dir_file_names(&dir) {
-                for file_name in file_names {
-                    if file_name.starts_with("id_") && !file_name.contains(".") {
-                        private_keys.push(file_name.to_string());
+            if let Ok(file_paths) = fs.read_dir_file_paths(&dir) {
+                for file_path in file_paths {
+                    if file_path
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .map(|name| name.starts_with("id_"))
+                        .unwrap_or_default()
+                        && file_path.extension().is_none()
+                        && let Some(file_path) = file_path.to_str()
+                    {
+                        private_keys.push(file_path.to_string());
                     }
                 }
             }
