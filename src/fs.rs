@@ -1,7 +1,7 @@
 use crate::error::Error;
 use std::fs;
 use std::io::prelude::*;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 pub struct FS;
@@ -42,12 +42,9 @@ impl FS {
         fs::read_dir(path).map_err(|e| Error::FS(format!("Cannot read directory '{path}' ({e})")))
     }
 
-    pub fn read_dir_file_names(&self, path: &str) -> Result<Vec<String>, Error> {
-        self.read_dir(path).map(|dir| {
-            dir.flatten()
-                .filter_map(|file| file.file_name().to_str().map(|name| name.to_string()))
-                .collect()
-        })
+    pub fn read_dir_file_paths(&self, path: &str) -> Result<Vec<PathBuf>, Error> {
+        self.read_dir(path)
+            .map(|dir| dir.flatten().map(|dir| dir.path()).collect())
     }
 
     pub fn remove_dir(&self, path: &str) -> Result<(), Error> {
