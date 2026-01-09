@@ -9,14 +9,34 @@ use std::io::{Cursor, Write};
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
-use tokio::io::AsyncReadExt;
+use tokio::{io::AsyncReadExt, sync::Mutex};
 
-async fn ssh_output(
+async fn ssh_geometry(
     console: &mut dyn Console,
-    output: ChannelWriteHalf<client::Msg>,
+    output: Arc<Mutex<ChannelWriteHalf<client::Msg>>>,
 ) -> Result<(), ()> {
-    let mut stdin = tokio::io::stdin();
     let mut geometry = console.get_geometry();
+
+    loop {
+        // update terminal geometry
+        let new_geometry = console.get_geometry();
+        if geometry != new_geometry
+            && let Some(new_geometry) = new_geometry
+        {
+            geometry = Some(new_geometry);
+            output
+                .lock()
+                .await
+                .window_change(new_geometry.0, new_geometry.1, 0, 0)
+                .await
+                .map_err(|_| ())?;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+}
+
+async fn ssh_output(output: Arc<Mutex<ChannelWriteHalf<client::Msg>>>) -> Result<(), ()> {
+    let mut stdin = tokio::io::stdin();
     let mut c: &mut [u8] = &mut [0];
 
     loop {
@@ -27,21 +47,11 @@ async fn ssh_output(
 
         // send character to ssh server
         output
+            .lock()
+            .await
             .data(&mut Cursor::new(&mut c))
             .await
             .map_err(|_| ())?;
-
-        // update terminal geometry
-        let new_geometry = console.get_geometry();
-        if geometry != new_geometry
-            && let Some(new_geometry) = new_geometry
-        {
-            geometry = Some(new_geometry);
-            output
-                .window_change(new_geometry.0, new_geometry.1, 0, 0)
-                .await
-                .map_err(|_| ())?;
-        }
     }
 }
 
@@ -218,8 +228,11 @@ impl Russh {
         let mut ssh_in = ssh_in.make_reader();
         let mut stdout = tokio::io::stdout();
 
+        let ssh_out = Arc::new(Mutex::new(ssh_out));
+
         tokio::select!(
-            _ = ssh_output(console, ssh_out) => { console.reset(); std::process::exit(0); },
+            _ = ssh_geometry(console, ssh_out.clone()) => { console.reset(); std::process::exit(0); },
+            _ = ssh_output(ssh_out.clone()) => { console.reset(); std::process::exit(0); },
             _ = tokio::io::copy(&mut ssh_in, &mut stdout) => { console.reset(); std::process::exit(0); },
             else => {}
         );
