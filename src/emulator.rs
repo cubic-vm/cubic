@@ -9,6 +9,25 @@ pub struct Emulator {
 }
 
 impl Emulator {
+    fn get_accelerator() -> Option<&'static str> {
+        if cfg!(any(target_os = "linux", target_os = "android")) {
+            Some("kvm")
+        } else if cfg!(any(
+            target_os = "freebsd",
+            target_os = "dragonfly",
+            target_os = "openbsd",
+            target_os = "netbsd"
+        )) {
+            Some("nvmm")
+        } else if cfg!(any(target_os = "macos", target_os = "ios")) {
+            Some("hvf")
+        } else if cfg!(target_os = "windows") {
+            Some("whpx")
+        } else {
+            None
+        }
+    }
+
     pub fn from(arch: Arch) -> Result<Emulator, Error> {
         let mut command = match arch {
             Arch::AMD64 => {
@@ -28,20 +47,13 @@ impl Emulator {
 
         // Set CPU type
         command.arg("-cpu").arg("max");
+
         // Enable accelerators
-        command
-            .arg("-accel")
-            .arg("kvm")
-            .arg("-accel")
-            .arg("xen")
-            .arg("-accel")
-            .arg("hvf")
-            .arg("-accel")
-            .arg("nvmm")
-            .arg("-accel")
-            .arg("whpx")
-            .arg("-accel")
-            .arg("tcg");
+        if let Some(accel) = Self::get_accelerator() {
+            command.arg("-accel").arg(accel);
+        }
+        command.arg("-accel").arg("tcg");
+
         // Only boot disk
         command.arg("-boot").arg("c");
         // Disable display
