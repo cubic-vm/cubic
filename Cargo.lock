@@ -553,7 +553,7 @@ dependencies = [
 
 [[package]]
 name = "cubic"
-version = "0.16.0"
+version = "0.17.0"
 dependencies = [
  "clap",
  "rand_core 0.6.4",
