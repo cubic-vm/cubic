@@ -5,11 +5,7 @@ use crate::image::{HashAlg, Image, ImageCache};
 use crate::web::WebClient;
 use regex::Regex;
 use std::collections::HashMap;
-use std::fs::File;
 use std::sync::LazyLock;
-use std::time::{SystemTime, UNIX_EPOCH};
-
-const IMAGE_CACHE_LIFETIME_SEC: u64 = 7 * 24 * 60 * 60; // = 1 week
 
 struct ImageLocation {
     url: &'static str,
@@ -208,13 +204,6 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
     ]
 });
 
-fn get_timestamp() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|time| time.as_secs())
-        .unwrap_or_default()
-}
-
 pub struct ImageFactory {
     env: Environment,
 }
@@ -273,33 +262,13 @@ impl ImageFactory {
         images
     }
 
-    fn read_image_cache(&self) -> Option<ImageCache> {
-        File::open(self.env.get_image_cache_file())
-            .map_err(Error::Io)
-            .and_then(|ref mut reader| ImageCache::deserialize(reader))
-            .ok()
-    }
-
-    fn write_image_cache(&self, images: &[Image]) {
-        let cache = ImageCache {
-            images: images.to_vec(),
-            timestamp: get_timestamp(),
-        };
-
-        // Write cache
-        File::create(self.env.get_image_cache_file())
-            .map_err(Error::Io)
-            .and_then(|mut file| cache.serialize(&mut file))
-            .ok();
-    }
-
     pub fn create_images(&self) -> Result<Vec<Image>, Error> {
         // Read cache
-        let cache = self.read_image_cache();
+        let cache = ImageCache::read_from_file(&self.env.get_image_cache_file());
 
         // Use cache if valid
         if let Some(cache) = &cache
-            && get_timestamp() - cache.timestamp < IMAGE_CACHE_LIFETIME_SEC
+            && cache.is_valid()
         {
             return Ok(cache.images.clone());
         }
@@ -318,7 +287,7 @@ impl ImageFactory {
             }
         } else {
             // Write cache
-            self.write_image_cache(&images);
+            ImageCache::new(images.clone()).write_to_file(&self.env.get_image_cache_file());
         }
 
         Ok(images)
