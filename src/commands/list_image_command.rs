@@ -20,7 +20,7 @@ impl Command for ListImageCommand {
         &self,
         console: &mut dyn Console,
         env: &Environment,
-        _image_store: &dyn ImageStore,
+        image_store: &dyn ImageStore,
         _instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
         let images = fetch_image_list(env);
@@ -29,7 +29,8 @@ impl Command for ListImageCommand {
         view.add_row()
             .add("Name", Alignment::Left)
             .add("Arch", Alignment::Left)
-            .add("Size", Alignment::Right);
+            .add("Size", Alignment::Right)
+            .add("Cached", Alignment::Right);
 
         for image in images {
             if !self.all && image.arch != get_default_arch() {
@@ -44,7 +45,15 @@ impl Command for ListImageCommand {
             view.add_row()
                 .add(&image.get_image_names(), Alignment::Left)
                 .add(&image.arch.to_string(), Alignment::Left)
-                .add(&size, Alignment::Right);
+                .add(&size, Alignment::Right)
+                .add(
+                    if image_store.exists(&image) {
+                        "yes"
+                    } else {
+                        "no"
+                    },
+                    Alignment::Right,
+                );
         }
         view.print(console);
         Ok(())
