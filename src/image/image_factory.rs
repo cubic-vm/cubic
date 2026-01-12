@@ -141,26 +141,28 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
                 (
                     Arch::AMD64,
                     ImageLocation {
-                        url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/",
+                        url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)/images/",
                         pattern: LazyLock::new(|| {
                             Regex::new(r">(openSUSE-Leap-[0-9]+.[0-9]+.x86_64-NoCloud.qcow2)<")
                                 .unwrap()
                         }),
-                        image_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/(version)",
-                        checksum_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/(version).sha256",
+                        image_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)/images/(version)",
+                        checksum_url:
+                            "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)
+/images/(version).sha256",
                         hash_alg: HashAlg::Sha256,
                     },
                 ),
                 (
                     Arch::ARM64,
                     ImageLocation {
-                        url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/",
+                        url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)/images/",
                         pattern: LazyLock::new(|| {
                             Regex::new(r">(openSUSE-Leap-[0-9]+.[0-9]+.aarch64-NoCloud.qcow2)<")
                                 .unwrap()
                         }),
-                        image_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/(version)",
-                        checksum_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/(version).sha256",
+                        image_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)/images/(version)",
+                        checksum_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)/images/(version).sha256",
                         hash_alg: HashAlg::Sha256,
                     },
                 ),
