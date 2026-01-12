@@ -1,6 +1,8 @@
 use crate::actions::CreateInstanceAction;
-use crate::commands::Command;
-use crate::commands::image::ImageCommands;
+use crate::commands::{
+    Command,
+    image::{fetch_image, fetch_image_info},
+};
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
@@ -57,7 +59,7 @@ impl CreateInstanceCommand {
 impl Command for CreateInstanceCommand {
     fn run(
         &self,
-        console: &mut dyn Console,
+        _console: &mut dyn Console,
         env: &Environment,
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
@@ -68,13 +70,11 @@ impl Command for CreateInstanceCommand {
             return Result::Err(Error::InstanceAlreadyExists(name.to_string()));
         }
 
-        ImageCommands::Fetch {
-            image: self.image.clone(),
-        }
-        .run(console, env, image_store, instance_store)?;
+        // Fetch image
+        let image = &fetch_image_info(env, &self.image)?;
+        fetch_image(env, image_store, image)?;
 
         let mut create_spinner = SpinnerView::new("Creating virtual machine instance".to_string());
-        let image = image_store.get(&self.image)?;
 
         let instance = Instance {
             name: name.to_string(),
@@ -87,7 +87,7 @@ impl Command for CreateInstanceCommand {
             hostfwd: self.port.clone(),
             ..Instance::default()
         };
-        CreateInstanceAction::new().run(env, &FS::new(), instance_store, &image, instance)?;
+        CreateInstanceAction::new().run(env, &FS::new(), instance_store, image, instance)?;
 
         create_spinner.stop();
         Result::Ok(())

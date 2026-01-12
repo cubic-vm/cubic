@@ -15,6 +15,32 @@ pub fn fetch_image_list(env: &Environment) -> Vec<Image> {
     images
 }
 
+pub fn fetch_image_info(env: &Environment, image: &ImageName) -> Result<Image, Error> {
+    let mut spinner = SpinnerView::new(format!(
+        "Looking up image {}:{}",
+        image.get_vendor(),
+        image.get_name()
+    ));
+    let image = ImageFactory::new(env).get_image(image);
+    spinner.stop();
+    image
+}
+
+pub fn fetch_image(
+    env: &Environment,
+    image_store: &dyn ImageStore,
+    image: &Image,
+) -> Result<(), Error> {
+    if !image_store.exists(image) {
+        FS::new().create_dir(&env.get_image_dir())?;
+        ImageFetcher::new().fetch(
+            image,
+            &format!("{}/{}", env.get_image_dir(), image.to_file_name()),
+        )?;
+    }
+    Ok(())
+}
+
 #[derive(Subcommand)]
 pub enum ImageCommands {
     #[clap(alias = "list")]
@@ -42,18 +68,8 @@ impl Command for ImageCommands {
             ImageCommands::Ls(cmd) => cmd.run(console, env, image_store, instance_store),
             ImageCommands::Info(cmd) => cmd.run(console, env, image_store, instance_store),
             ImageCommands::Fetch { image } => {
-                fetch_image_list(env);
-                let image = &image_store.get(image)?;
-
-                if !image_store.exists(image) {
-                    FS::new().create_dir(&env.get_image_dir())?;
-                    ImageFetcher::new().fetch(
-                        image,
-                        &format!("{}/{}", env.get_image_dir(), image.to_file_name()),
-                    )?;
-                }
-
-                Ok(())
+                let image = &fetch_image_info(env, image)?;
+                fetch_image(env, image_store, image)
             }
 
             ImageCommands::Prune(cmd) => cmd.run(console, env, image_store, instance_store),
