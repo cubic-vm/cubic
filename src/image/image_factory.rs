@@ -1,7 +1,7 @@
 use crate::arch::Arch;
 use crate::env::Environment;
 use crate::error::Error;
-use crate::image::{HashAlg, Image, ImageCache};
+use crate::image::{HashAlg, Image, ImageCache, ImageName};
 use crate::web::WebClient;
 use regex::Regex;
 use std::collections::HashMap;
@@ -229,22 +229,39 @@ impl ImageFactory {
         text.replace("(name)", name).replace("(version)", version)
     }
 
-    fn add_images(web: &mut WebClient, distro: &Distro) -> Vec<Image> {
+    fn add_images(
+        web: &mut WebClient,
+        distro: &Distro,
+        filter_name: Option<ImageName>,
+    ) -> Vec<Image> {
         let mut images = Vec::new();
         for name in Self::match_content(web, distro.overview_url, &distro.overview_pattern) {
             for (arch, loc) in &distro.images {
+                if let Some(filter_name) = &filter_name
+                    && *arch != filter_name.get_arch()
+                {
+                    continue;
+                }
+
                 for version in
                     Self::match_content(web, &loc.url.replace("(name)", &name), &loc.pattern)
                 {
                     let image_url = Self::replace_vars(loc.image_url, &name, &version);
                     let checksum_url = Self::replace_vars(loc.checksum_url, &name, &version);
+                    let version = Self::replace_vars(distro.version_pattern, &name, &version);
+                    let codename = Self::replace_vars(distro.name_pattern, &name, &version);
+                    let mut names = vec![version.clone()];
+                    if version != codename {
+                        names.push(codename);
+                    }
+
+                    if let Some(filter_name) = &filter_name
+                        && !names.contains(&filter_name.get_name().to_string())
+                    {
+                        continue;
+                    }
+
                     if let Ok(size) = web.get_file_size(&image_url) {
-                        let version = Self::replace_vars(distro.version_pattern, &name, &version);
-                        let codename = Self::replace_vars(distro.name_pattern, &name, &version);
-                        let mut names = vec![version.clone()];
-                        if version != codename {
-                            names.push(codename);
-                        }
                         images.push(Image {
                             vendor: distro.vendor.to_string(),
                             names,
@@ -277,7 +294,7 @@ impl ImageFactory {
         let web = &mut WebClient::new()?;
         let images: Vec<Image> = DISTROS
             .iter()
-            .flat_map(|distro| Self::add_images(web, distro))
+            .flat_map(|distro| Self::add_images(web, distro, None))
             .collect();
 
         // Return cache if fetching failed
@@ -291,5 +308,35 @@ impl ImageFactory {
         }
 
         Ok(images)
+    }
+
+    pub fn get_image(&self, name: &ImageName) -> Result<Image, Error> {
+        // Read cache
+        let cache = ImageCache::read_from_file(&self.env.get_image_cache_file());
+
+        // Use cache if valid
+        if let Some(cache) = &cache
+            && cache.is_valid()
+            && let Some(image) = cache.images.iter().find(|image| {
+                (image.vendor == name.get_vendor())
+                    && (image.arch == name.get_arch())
+                    && image.names.contains(&name.get_name().to_string())
+            })
+        {
+            return Ok(image.clone());
+        }
+
+        // Fetch image
+        let web = &mut WebClient::new()?;
+        DISTROS
+            .iter()
+            .filter(|distro| distro.vendor == name.get_vendor())
+            .flat_map(|distro| Self::add_images(web, distro, Some(name.clone())))
+            .find(|image| {
+                (image.vendor == name.get_vendor())
+                    && (image.arch == name.get_arch())
+                    && image.names.contains(&name.get_name().to_string())
+            })
+            .ok_or(Error::UnknownImage(name.to_string()))
     }
 }

@@ -1,7 +1,7 @@
 use crate::env::Environment;
 use crate::error::Error;
 use crate::fs::FS;
-use crate::image::{Image, ImageFactory, ImageName, ImageStore};
+use crate::image::{Image, ImageStore};
 use std::path::Path;
 
 pub struct ImageDao {
@@ -21,19 +21,6 @@ impl ImageDao {
 }
 
 impl ImageStore for ImageDao {
-    fn get(&self, name: &ImageName) -> Result<Image, Error> {
-        ImageFactory::new(&self.env)
-            .create_images()?
-            .iter()
-            .find(|image| {
-                (image.vendor == name.get_vendor())
-                    && (image.arch == name.get_arch())
-                    && image.names.contains(&name.get_name().to_string())
-            })
-            .cloned()
-            .ok_or(Error::UnknownImage(name.to_string()))
-    }
-
     fn exists(&self, image: &Image) -> bool {
         Path::new(&format!(
             "{}/{}",

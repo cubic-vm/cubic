@@ -10,18 +10,6 @@ pub mod tests {
     }
 
     impl ImageStore for ImageStoreMock {
-        fn get(&self, name: &ImageName) -> Result<Image, Error> {
-            self.images
-                .iter()
-                .find(|image| {
-                    (image.vendor == name.get_vendor())
-                        && (image.arch == name.get_arch())
-                        && image.names.contains(&name.get_name().to_string())
-                })
-                .cloned()
-                .ok_or(Error::UnknownInstance(name.to_string()))
-        }
-
         fn exists(&self, image: &Image) -> bool {
             self.images.contains(image)
         }
