@@ -2,7 +2,7 @@
 pub mod tests {
 
     use crate::error::Error;
-    use crate::image::{Image, ImageName, ImageStore};
+    use crate::image::{Image, ImageStore};
 
     #[derive(Default)]
     pub struct ImageStoreMock {
