@@ -1,4 +1,6 @@
 use crate::view::Console;
+use std::thread;
+use std::time::Duration;
 
 pub enum Alignment {
     Left,
@@ -57,6 +59,7 @@ impl TableView {
                 .collect::<Vec<_>>()
                 .join("   ");
             console.info(line.trim_end());
+            thread::sleep(Duration::from_millis(10));
         }
     }
 }
