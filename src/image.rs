@@ -1,3 +1,4 @@
+pub mod image_cache;
 pub mod image_dao;
 pub mod image_factory;
 pub mod image_fetcher;
@@ -6,14 +7,13 @@ pub mod image_store;
 pub mod image_store_mock;
 
 use crate::arch::Arch;
-use crate::error::Error;
+pub use image_cache::*;
 pub use image_dao::*;
 pub use image_factory::*;
 pub use image_fetcher::*;
 pub use image_name::*;
 pub use image_store::*;
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Write};
 
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum HashAlg {
@@ -63,134 +63,5 @@ impl Image {
 
     pub fn to_file_name(&self) -> String {
         format!("{}_{}_{}", self.vendor, self.get_name(), self.arch)
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Default, Serialize, Deserialize)]
-pub struct ImageCache {
-    images: Vec<Image>,
-    timestamp: u64,
-}
-
-impl ImageCache {
-    pub fn deserialize(reader: &mut dyn Read) -> Result<ImageCache, Error> {
-        let mut data = String::new();
-        reader.read_to_string(&mut data).map_err(Error::Io)?;
-        toml::from_str(&data).map_err(|_| Error::CannotParseFile(String::new()))
-    }
-
-    pub fn serialize(&self, writer: &mut dyn Write) -> Result<(), Error> {
-        toml::to_string(self)
-            .map(|content| writer.write_all(&content.into_bytes()))
-            .map(|_| ())
-            .map_err(Error::SerdeToml)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use std::io::BufReader;
-
-    #[test]
-    fn test_deserialize_invalid() {
-        let reader = &mut BufReader::new("".as_bytes());
-        let cache = ImageCache::deserialize(reader);
-        assert!(cache.is_err());
-    }
-
-    #[test]
-    fn test_deserialize_empty() {
-        let reader = &mut BufReader::new("images = []\ntimestamp = 0".as_bytes());
-        let cache = ImageCache::deserialize(reader);
-        assert_eq!(cache.unwrap(), ImageCache::default());
-    }
-
-    #[test]
-    fn test_serialize_empty() {
-        let mut writer = Vec::new();
-
-        ImageCache::default().serialize(&mut writer).unwrap();
-
-        assert_eq!(
-            String::from_utf8(writer).unwrap(),
-            "images = []\ntimestamp = 0\n"
-        );
-    }
-
-    #[test]
-    fn test_deserialize_single() {
-        let reader = &mut BufReader::new(
-            r#"timestamp = 5000
-
-[[images]]
-vendor = "testvendor"
-names = ["testversion", "testcodename"]
-arch = "AMD64"
-image_url = "imageurl"
-checksum_url = "checksumurl"
-hash_alg = "Sha256"
-
-[[images]]
-vendor = "testvendor2"
-names = ["testversion2", "testcodename2"]
-arch = "ARM64"
-image_url = "imageurl2"
-checksum_url = "checksumurl2"
-hash_alg = "Sha512"
-
-"#
-            .as_bytes(),
-        );
-        let cache = ImageCache::deserialize(reader).unwrap();
-        assert_eq!(cache.timestamp, 5000);
-        assert_eq!(cache.images.len(), 2);
-        assert_eq!(cache.images[0].vendor, "testvendor");
-        assert_eq!(cache.images[0].names, ["testversion", "testcodename"]);
-        assert_eq!(cache.images[0].arch, Arch::AMD64);
-        assert_eq!(cache.images[0].image_url, "imageurl");
-        assert_eq!(cache.images[0].checksum_url, "checksumurl");
-        assert_eq!(cache.images[0].hash_alg, HashAlg::Sha256);
-        assert_eq!(cache.images[1].vendor, "testvendor2");
-        assert_eq!(cache.images[1].names, ["testversion2", "testcodename2"]);
-        assert_eq!(cache.images[1].arch, Arch::ARM64);
-        assert_eq!(cache.images[1].image_url, "imageurl2");
-        assert_eq!(cache.images[1].checksum_url, "checksumurl2");
-        assert_eq!(cache.images[1].hash_alg, HashAlg::Sha512);
-    }
-
-    #[test]
-    fn test_serialize_single() {
-        let mut writer = Vec::new();
-
-        ImageCache {
-            images: vec![Image {
-                vendor: "testvendor".to_string(),
-                names: vec!["testversion".to_string(), "testcodename".to_string()],
-                arch: Arch::AMD64,
-                image_url: "imageurl".to_string(),
-                checksum_url: "checksumurl".to_string(),
-                hash_alg: HashAlg::Sha256,
-                size: None,
-            }],
-            timestamp: 1000,
-        }
-        .serialize(&mut writer)
-        .unwrap();
-
-        assert_eq!(
-            String::from_utf8(writer).unwrap(),
-            r#"timestamp = 1000
-
-[[images]]
-vendor = "testvendor"
-names = ["testversion", "testcodename"]
-arch = "AMD64"
-image_url = "imageurl"
-checksum_url = "checksumurl"
-hash_alg = "Sha256"
-"#
-        );
     }
 }
