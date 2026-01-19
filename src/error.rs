@@ -28,7 +28,8 @@ pub enum Error {
 impl Error {
     pub fn print(&self, console: &mut dyn Console) {
         console.error(&format!(
-            "ERROR: {}",
+            "ERROR: {} \n\n\
+            Please report bugs at https://github.com/cubic-vm/cubic/issues",
             match self {
                 #[cfg(test)]
                 Error::InvalidArgument(err) => format!("Argument error: {err}"),

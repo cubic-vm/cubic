@@ -8,6 +8,9 @@ Cubic is a lightweight command line manager for virtual machines. It has a
 simple, daemon-less and rootless design. All Cubic virtual machines run
 isolated in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
 
+https://cubic-vm.org
+https://github.com/cubic-vm/cubic
+
 Show all supported images:
 $ cubic images
 
