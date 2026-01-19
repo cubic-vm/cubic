@@ -1,5 +1,5 @@
 use crate::error::Error;
-use rand_core::OsRng;
+use rand::rngs::OsRng;
 use ssh_key::{Algorithm, LineEnding, private::PrivateKey};
 use std::path::Path;
 
