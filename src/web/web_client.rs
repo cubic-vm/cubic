@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::fs::FS;
+use crate::util;
 use crate::view::TransferView;
 use reqwest::blocking::Client;
 use sha2::{Digest, Sha256, Sha512};
@@ -9,14 +10,6 @@ use std::path::Path;
 use std::time::Duration;
 
 const REQUEST_TIMEOUT_SEC: u64 = 10;
-
-fn hex_encode(bytes: &[u8]) -> String {
-    let mut string = String::new();
-    for byte in bytes {
-        string = format!("{string}{byte:02x}");
-    }
-    string
-}
 
 #[derive(Default)]
 pub struct Checksum {
@@ -114,8 +107,8 @@ impl WebClient {
         fs.rename_file(&temp_file, file_path)?;
 
         Ok(Checksum {
-            sha512: hex_encode(&writer.sha512.clone().finalize()),
-            sha256: hex_encode(&writer.sha256.clone().finalize()),
+            sha512: util::hex_encode(&writer.sha512.clone().finalize()),
+            sha256: util::hex_encode(&writer.sha256.clone().finalize()),
         })
     }
 
