@@ -11,15 +11,11 @@ use clap::{Parser, Subcommand};
 #[derive(Subcommand)]
 pub enum Commands {
     Run(commands::InstanceRunCommand),
-    #[clap(alias = "add")]
     Create(commands::CreateInstanceCommand),
-    #[clap(alias = "ls", alias = "list")]
     Instances(commands::ListInstanceCommand),
     Images(commands::ListImageCommand),
     Ports(commands::ListPortCommand),
-    #[clap(alias = "info")]
     Show(commands::ShowCommand),
-    #[clap(alias = "config")]
     Modify(InstanceModifyCommand),
     Console(commands::InstanceConsoleCommand),
     Ssh(commands::InstanceSshCommand),
@@ -29,16 +25,8 @@ pub enum Commands {
     Restart(commands::InstanceRestartCommand),
     Rename(InstanceRenameCommand),
     Clone(InstanceCloneCommand),
-    #[clap(alias = "rm", alias = "del")]
     Delete(commands::DeleteInstanceCommand),
     Prune(commands::PruneCommand),
-
-    /// Image subcommands (Deprecated)
-    #[command(subcommand, hide = true)]
-    Image(commands::ImageCommands),
-    /// Network subcommands (Deprecated)
-    #[command(subcommand, hide = true)]
-    Net(commands::NetworkCommands),
 }
 
 #[derive(Parser, Default)]
@@ -88,9 +76,7 @@ impl CommandDispatcher {
             Commands::Ssh(cmd) => cmd,
             Commands::Scp(cmd) => cmd,
             Commands::Delete(cmd) => cmd,
-            Commands::Image(cmd) => cmd,
             Commands::Prune(cmd) => cmd,
-            Commands::Net(cmd) => cmd,
         }
         .run(console, &env, &image_dao, &instance_dao)
     }

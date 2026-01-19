@@ -3,6 +3,7 @@ use std::io;
 
 #[derive(Debug)]
 pub enum Error {
+    #[cfg(test)]
     InvalidArgument(String),
     UnknownArch(String),
     UnknownInstance(String),
@@ -16,7 +17,6 @@ pub enum Error {
     CannotParseFile(String),
     CannotShrinkDisk(String),
     CannotOpenTerminal(String),
-    HostFwdRuleMalformed(String),
     SystemCommandFailed(String, String),
     Web(reqwest::Error),
     SerdeJson(serde_json::Error),
@@ -30,6 +30,7 @@ impl Error {
         console.error(&format!(
             "ERROR: {}",
             match self {
+                #[cfg(test)]
                 Error::InvalidArgument(err) => format!("Argument error: {err}"),
                 Error::UnknownArch(name) => format!("Unknown architecture: '{name}'"),
                 Error::UnknownInstance(instance) => format!("Unknown instance '{instance}'"),
@@ -47,8 +48,6 @@ impl Error {
                 }
                 Error::CannotOpenTerminal(path) =>
                     format!("Failed to open terminal from path: '{path}'"),
-                Error::HostFwdRuleMalformed(rule) =>
-                    format!("Host forwarding rule is malformed: {rule}"),
                 Error::SystemCommandFailed(cmd, stderr) => {
                     format!(
                         "System command execution failed\n{cmd}\n\nReason: {}",

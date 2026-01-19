@@ -23,14 +23,12 @@ impl Command for InstanceRunCommand {
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
-        let instance_name = self.create_cmd.get_name()?;
-
         self.create_cmd
             .run(console, env, image_store, instance_store)?;
         commands::InstanceSshCommand {
             args: self.ssh_args.clone(),
             ssh_args: None,
-            target: Target::from_instance_name(instance_name.clone()),
+            target: Target::from_instance_name(self.create_cmd.instance_name.clone()),
             cmd: None,
         }
         .run(console, env, image_store, instance_store)
