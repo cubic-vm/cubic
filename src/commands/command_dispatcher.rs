@@ -40,7 +40,7 @@ pub struct GlobalOptions {
 }
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None, arg_required_else_help = true)]
+#[command(author, version, about, long_about = None, arg_required_else_help = true, infer_subcommands = true)]
 pub struct CommandDispatcher {
     #[command(subcommand)]
     pub command: Commands,
