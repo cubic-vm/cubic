@@ -22,14 +22,10 @@ pub const DEFAULT_DISK_SIZE: &str = "100G";
 #[derive(Parser)]
 pub struct CreateInstanceCommand {
     /// Name of the virtual machine instance
-    #[clap(conflicts_with = "name")]
-    instance_name: Option<InstanceName>,
+    pub instance_name: InstanceName,
     /// Name of the virtual machine image
     #[clap(short, long)]
     image: ImageName,
-    /// Name of the virtual machine instance
-    #[clap(short, long, conflicts_with = "instance_name", hide = true)]
-    name: Option<InstanceName>,
     /// Name of the user
     #[clap(short, long, default_value = "cubic")]
     user: String,
@@ -47,15 +43,6 @@ pub struct CreateInstanceCommand {
     port: Vec<PortForward>,
 }
 
-impl CreateInstanceCommand {
-    pub fn get_name(&self) -> Result<InstanceName, Error> {
-        self.instance_name
-            .clone()
-            .or(self.name.clone())
-            .ok_or(Error::InvalidArgument("Missing instance name".to_string()))
-    }
-}
-
 impl Command for CreateInstanceCommand {
     fn run(
         &self,
@@ -64,10 +51,8 @@ impl Command for CreateInstanceCommand {
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
-        let name = self.get_name()?;
-
-        if instance_store.exists(name.as_str()) {
-            return Result::Err(Error::InstanceAlreadyExists(name.to_string()));
+        if instance_store.exists(self.instance_name.as_str()) {
+            return Result::Err(Error::InstanceAlreadyExists(self.instance_name.to_string()));
         }
 
         // Fetch image
@@ -77,7 +62,7 @@ impl Command for CreateInstanceCommand {
         let mut create_spinner = SpinnerView::new("Creating virtual machine instance".to_string());
 
         let instance = Instance {
-            name: name.to_string(),
+            name: self.instance_name.to_string(),
             arch: image.arch,
             user: self.user.to_string(),
             cpus: self.cpus,
