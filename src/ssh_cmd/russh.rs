@@ -1,6 +1,9 @@
 use crate::instance::{Instance, TargetInstancePath};
 use crate::ssh_cmd::{SftpPath, Ssh};
+use crate::util;
 use crate::view::{Console, SpinnerView};
+use rand::Rng;
+use rand::rngs::OsRng;
 use russh::keys::*;
 use russh::*;
 use russh_sftp::client::SftpSession;
@@ -10,6 +13,12 @@ use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
 use tokio::{io::AsyncReadExt, sync::Mutex};
+
+fn generate_x11_cookie() -> String {
+    let mut bytes = vec![0u8; 16];
+    OsRng.fill(&mut bytes[..]);
+    util::hex_encode(&bytes)
+}
 
 async fn ssh_geometry(
     console: &mut dyn Console,
@@ -203,6 +212,7 @@ impl Russh {
         console: &mut dyn Console,
         user: &str,
         port: u16,
+        xforward: bool,
     ) -> Result<(), ()> {
         let channel = self.open_channel(console, user, port).await?;
         let (w, h) = console.get_geometry().unwrap();
@@ -218,6 +228,19 @@ impl Russh {
             )
             .await
             .map_err(|_| ())?;
+
+        if xforward {
+            channel
+                .request_x11(
+                    false,
+                    true,
+                    "MIT-MAGIC-COOKIE-1".to_string(),
+                    generate_x11_cookie(),
+                    0,
+                )
+                .await
+                .map_err(|_| ())?;
+        }
 
         if let Some(cmd) = &self.cmd {
             channel.exec(true, cmd.as_str()).await.map_err(|_| ())?;
@@ -302,13 +325,13 @@ impl Ssh for Russh {
         self.cmd = cmd;
     }
 
-    fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16, _xforward: bool) -> bool {
+    fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16, xforward: bool) -> bool {
         console.raw_mode();
         let result = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .unwrap()
-            .block_on(self.handle_interactive_shell(console, user, port))
+            .block_on(self.handle_interactive_shell(console, user, port, xforward))
             .is_ok();
         console.reset();
         result
