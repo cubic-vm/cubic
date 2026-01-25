@@ -56,8 +56,8 @@ machine:
         assert_eq!(instance.name, "test");
         assert_eq!(instance.user, "cubic");
         assert_eq!(instance.cpus, 1);
-        assert_eq!(instance.mem, 1073741824);
-        assert_eq!(instance.disk_capacity, 2361393152);
+        assert_eq!(instance.mem.get_bytes(), 1073741824);
+        assert_eq!(instance.disk_capacity.get_bytes(), 2361393152);
         assert_eq!(instance.ssh_port, 14357);
         assert!(instance.hostfwd.is_empty());
     }
@@ -83,8 +83,8 @@ machine:
         assert_eq!(instance.name, "test");
         assert_eq!(instance.user, "tux");
         assert_eq!(instance.cpus, 1);
-        assert_eq!(instance.mem, 1073741824);
-        assert_eq!(instance.disk_capacity, 2361393152);
+        assert_eq!(instance.mem.get_bytes(), 1073741824);
+        assert_eq!(instance.disk_capacity.get_bytes(), 2361393152);
         assert_eq!(instance.ssh_port, 14357);
         assert_eq!(
             instance
@@ -117,8 +117,8 @@ machine:
         assert_eq!(instance.name, "test");
         assert_eq!(instance.user, "tux");
         assert_eq!(instance.cpus, 1);
-        assert_eq!(instance.mem, 1073741824);
-        assert_eq!(instance.disk_capacity, 2361393152);
+        assert_eq!(instance.mem.get_bytes(), 1073741824);
+        assert_eq!(instance.disk_capacity.get_bytes(), 2361393152);
         assert_eq!(instance.ssh_port, 14357);
         assert!(instance.hostfwd.is_empty());
     }

@@ -33,7 +33,7 @@ impl StartInstanceAction {
 
         let mut emulator = Emulator::from(self.instance.arch)?;
         emulator.set_cpus(self.instance.cpus);
-        emulator.set_memory(self.instance.mem);
+        emulator.set_memory(self.instance.mem.get_bytes() as u64);
         emulator.set_console(&env.get_console_file(&self.instance.name));
         emulator.add_drive(&env.get_instance_image_file(&self.instance.name), "qcow2");
         emulator.add_drive(&env.get_user_data_image_file(&self.instance.name), "raw");

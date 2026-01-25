@@ -25,6 +25,8 @@ pub use target_path::*;
 pub use toml_instance_deserializer::*;
 pub use yaml_instance_deserializer::*;
 
+use crate::model::DataSize;
+
 fn default_user() -> String {
     USER.to_string()
 }
@@ -38,10 +40,10 @@ pub struct Instance {
     #[serde(default = "default_user")]
     pub user: String,
     pub cpus: u16,
-    pub mem: u64,
+    pub mem: DataSize,
     #[serde(skip)]
-    pub disk_used: Option<u64>,
-    pub disk_capacity: u64,
+    pub disk_used: Option<DataSize>,
+    pub disk_capacity: DataSize,
     pub ssh_port: u16,
     #[serde(default)]
     pub hostfwd: Vec<PortForward>,
