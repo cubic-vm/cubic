@@ -89,7 +89,7 @@ impl InstanceStore for InstanceDao {
             .map(|mut instance| {
                 let size = QemuImg::new()
                     .get_image_info(&self.env, &instance)
-                    .map(|info| info.actual_size);
+                    .map(|info| DataSize::new(info.actual_size as usize));
                 instance.disk_used = size;
                 instance
             })
@@ -97,8 +97,8 @@ impl InstanceStore for InstanceDao {
                 name: name.to_string(),
                 user: USER.to_string(),
                 cpus: 1,
-                mem: DataSize::from_str("1G").unwrap().get_bytes() as u64,
-                disk_capacity: DataSize::from_str("1G").unwrap().get_bytes() as u64,
+                mem: DataSize::from_str("1G").unwrap(),
+                disk_capacity: DataSize::from_str("1G").unwrap(),
                 ssh_port: PortChecker::new().get_new_port(),
                 ..Instance::default()
             }))
@@ -151,7 +151,7 @@ impl InstanceStore for InstanceDao {
     fn resize(&self, instance: &mut Instance, size: u64) -> Result<(), Error> {
         if self.is_running(instance) {
             Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
-        } else if instance.disk_capacity >= size {
+        } else if instance.disk_capacity.get_bytes() >= size as usize {
             Result::Err(Error::CannotShrinkDisk(instance.name.to_string()))
         } else {
             SystemCommand::new("qemu-img")
@@ -159,7 +159,7 @@ impl InstanceStore for InstanceDao {
                 .arg(self.env.get_instance_image_file(&instance.name))
                 .arg(size.to_string())
                 .run()?;
-            instance.disk_capacity = size;
+            instance.disk_capacity = DataSize::new(size as usize);
             Result::Ok(())
         }
     }

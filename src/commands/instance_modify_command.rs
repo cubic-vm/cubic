@@ -44,7 +44,7 @@ impl Command for InstanceModifyCommand {
         }
 
         if let Some(mem) = &self.mem {
-            instance.mem = mem.get_bytes() as u64;
+            instance.mem = mem.clone();
         }
 
         if let Some(disk) = &self.disk {

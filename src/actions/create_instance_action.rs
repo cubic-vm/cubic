@@ -49,7 +49,7 @@ impl CreateInstanceAction {
         SystemCommand::new("qemu-img")
             .arg("resize")
             .arg(tmp_image)
-            .arg(instance.disk_capacity.to_string())
+            .arg(instance.disk_capacity.get_bytes().to_string())
             .run()?;
 
         // Write configuration file

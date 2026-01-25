@@ -1,6 +1,7 @@
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::str::FromStr;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct DataSize {
     bytes: usize,
 }
@@ -63,6 +64,26 @@ impl FromStr for DataSize {
                 bytes: size * 1024_usize.pow(power),
             })
             .map_err(|_| error)
+    }
+}
+
+impl Serialize for DataSize {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_u64(self.bytes as u64)
+    }
+}
+
+impl<'de> Deserialize<'de> for DataSize {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Self {
+            bytes: usize::deserialize(deserializer)?,
+        })
     }
 }
 

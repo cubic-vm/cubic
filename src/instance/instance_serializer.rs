@@ -22,6 +22,7 @@ impl InstanceSerializer {
 mod tests {
     use super::*;
     use crate::arch::Arch;
+    use crate::model::DataSize;
 
     #[test]
     fn test_serialize_minimal_config() {
@@ -34,8 +35,8 @@ mod tests {
                     arch: Arch::AMD64,
                     user: "tux".to_string(),
                     cpus: 1,
-                    mem: 1000,
-                    disk_capacity: 1000,
+                    mem: DataSize::new(1000),
+                    disk_capacity: DataSize::new(1000),
                     ssh_port: 10000,
                     hostfwd: Vec::new(),
                     ..Instance::default()

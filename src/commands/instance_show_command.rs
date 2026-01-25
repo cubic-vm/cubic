@@ -3,7 +3,6 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::image::ImageStore;
 use crate::instance::{InstanceName, InstanceStore};
-use crate::model::DataSize;
 use crate::view::{Console, MapView};
 use clap::Parser;
 
@@ -31,18 +30,15 @@ impl Command for InstanceShowCommand {
         let mut view = MapView::new();
         view.add("Arch", &instance.arch.to_string());
         view.add("CPUs", &instance.cpus.to_string());
-        view.add("Memory", &DataSize::new(instance.mem as usize).to_size());
+        view.add("Memory", &instance.mem.to_size());
         view.add(
             "Disk Used",
             &instance
                 .disk_used
-                .map(|size| DataSize::new(size as usize).to_size())
+                .map(|size| size.to_size())
                 .unwrap_or("n/a".to_string()),
         );
-        view.add(
-            "Disk Total",
-            &DataSize::new(instance.disk_capacity as usize).to_size(),
-        );
+        view.add("Disk Total", &instance.disk_capacity.to_size());
         view.add("User", &instance.user);
         view.add("SSH Port", &instance.ssh_port.to_string());
         view.add(
@@ -68,6 +64,7 @@ mod tests {
     use crate::image::image_store_mock::tests::ImageStoreMock;
     use crate::instance::Instance;
     use crate::instance::instance_store_mock::tests::InstanceStoreMock;
+    use crate::model::DataSize;
     use crate::view::console_mock::tests::ConsoleMock;
     use std::str::FromStr;
 
@@ -81,8 +78,8 @@ mod tests {
             arch: Arch::AMD64,
             user: "cubic".to_string(),
             cpus: 1,
-            mem: 1024,
-            disk_capacity: 1048576,
+            mem: DataSize::new(1024),
+            disk_capacity: DataSize::new(1048576),
             ssh_port: 9000,
             hostfwd: Vec::new(),
             ..Instance::default()
@@ -119,8 +116,8 @@ SSH:        ssh -p 9000 cubic@localhost
             arch: Arch::ARM64,
             user: "john".to_string(),
             cpus: 2,
-            mem: 1,
-            disk_capacity: 1,
+            mem: DataSize::new(1),
+            disk_capacity: DataSize::new(1),
             ssh_port: 8000,
             hostfwd: Vec::new(),
             ..Instance::default()

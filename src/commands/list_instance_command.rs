@@ -3,7 +3,6 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::image::ImageStore;
 use crate::instance::InstanceStore;
-use crate::model::DataSize;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
 
@@ -44,21 +43,16 @@ impl Command for ListInstanceCommand {
                 .add(instance_name, Alignment::Left)
                 .add(&instance.arch.to_string(), Alignment::Left)
                 .add(&instance.cpus.to_string(), Alignment::Right)
-                .add(
-                    &DataSize::new(instance.mem as usize).to_size(),
-                    Alignment::Right,
-                )
+                .add(&instance.mem.to_size(), Alignment::Right)
                 .add(
                     &instance
                         .disk_used
-                        .map(|size| DataSize::new(size as usize).to_size())
+                        .as_ref()
+                        .map(|size| size.to_size())
                         .unwrap_or("n/a".to_string()),
                     Alignment::Right,
                 )
-                .add(
-                    &DataSize::new(instance.disk_capacity as usize).to_size(),
-                    Alignment::Right,
-                )
+                .add(&instance.disk_capacity.to_size(), Alignment::Right)
                 .add(
                     if instance_store.is_running(&instance) {
                         "running"
@@ -80,6 +74,7 @@ mod tests {
     use crate::image::image_store_mock::tests::ImageStoreMock;
     use crate::instance::Instance;
     use crate::instance::instance_store_mock::tests::InstanceStoreMock;
+    use crate::model::DataSize;
     use crate::view::console_mock::tests::ConsoleMock;
 
     #[test]
@@ -93,8 +88,8 @@ mod tests {
                 arch: Arch::AMD64,
                 user: "cubic".to_string(),
                 cpus: 1,
-                mem: 1024,
-                disk_capacity: 1048576,
+                mem: DataSize::new(1024),
+                disk_capacity: DataSize::new(1048576),
                 ssh_port: 9000,
                 hostfwd: Vec::new(),
                 ..Instance::default()
@@ -104,8 +99,8 @@ mod tests {
                 arch: Arch::AMD64,
                 user: "cubic".to_string(),
                 cpus: 5,
-                mem: 0,
-                disk_capacity: 5000,
+                mem: DataSize::new(0),
+                disk_capacity: DataSize::new(5000),
                 ssh_port: 9000,
                 hostfwd: Vec::new(),
                 ..Instance::default()

@@ -66,8 +66,8 @@ impl Command for CreateInstanceCommand {
             arch: image.arch,
             user: self.user.to_string(),
             cpus: self.cpus,
-            mem: self.mem.get_bytes() as u64,
-            disk_capacity: self.disk.get_bytes() as u64,
+            mem: self.mem.clone(),
+            disk_capacity: self.disk.clone(),
             ssh_port: PortChecker::new().get_new_port(),
             hostfwd: self.port.clone(),
             ..Instance::default()
