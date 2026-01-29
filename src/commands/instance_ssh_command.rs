@@ -59,7 +59,7 @@ impl Command for InstanceSshCommand {
             .map(|user| user.to_string())
             .unwrap_or(instance.user.to_string());
         let ssh_port = instance.ssh_port;
-        let mut ssh: Box<dyn Ssh> = SshFactory::new().create(self.args.russh);
+        let mut ssh: Box<dyn Ssh> = SshFactory::new().create(self.args.openssh);
         ssh.set_known_hosts_file(
             env::var("HOME")
                 .map(|dir| format!("{dir}/.ssh/known_hosts"))

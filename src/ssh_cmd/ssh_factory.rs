@@ -1,4 +1,3 @@
-#[cfg(feature = "russh")]
 use crate::ssh_cmd::Russh;
 use crate::ssh_cmd::{Openssh, Ssh};
 
@@ -10,17 +9,11 @@ impl SshFactory {
         Self
     }
 
-    #[cfg(feature = "russh")]
-    pub fn create(&self, use_russh: bool) -> Box<dyn Ssh> {
-        if use_russh {
-            Box::new(Russh::new())
-        } else {
+    pub fn create(&self, use_openssh: bool) -> Box<dyn Ssh> {
+        if use_openssh {
             Box::new(Openssh::new())
+        } else {
+            Box::new(Russh::new())
         }
-    }
-
-    #[cfg(not(feature = "russh"))]
-    pub fn create(&self, _use_russh: bool) -> Box<dyn Ssh> {
-        Box::new(Openssh::new())
     }
 }

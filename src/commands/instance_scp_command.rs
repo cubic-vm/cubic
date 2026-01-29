@@ -50,7 +50,7 @@ impl Command for InstanceScpCommand {
         check_target_is_running(instance_store, &self.to)?;
 
         let root_dir = env::var("SNAP").unwrap_or_default();
-        let mut ssh: Box<dyn Ssh> = SshFactory::new().create(self.russh);
+        let mut ssh: Box<dyn Ssh> = SshFactory::new().create(self.openssh);
 
         let pubkeys = env.get_ssh_private_key_paths(
             &FS::new(),
