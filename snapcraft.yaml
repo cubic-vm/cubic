@@ -40,6 +40,9 @@ parts:
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/bin/qemu-system-x86_64-microvm
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/bin/qemu-system-i386
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/bin/qemu-system-arm
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-ppc
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc32
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc64
   cleanup:
     after:
       - cubic
