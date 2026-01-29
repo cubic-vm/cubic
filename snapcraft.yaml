@@ -27,60 +27,33 @@ parts:
       - qemu-utils
       - qemu-system-x86
       - qemu-system-arm
-      - qemu-system-gui
-      - qemu-system-modules-spice
       - qemu-efi-aarch64
       - seabios
-      - libvirglrenderer1
     override-build: |
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-ppc
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc32
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc64
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/cmake*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/dri*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/gdk*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/gio*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/gli*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/gstreamer*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/gtk*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/icu*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libEGL*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libGL*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libLLVM*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libOpenGL*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libSDL*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libX*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libasound*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libavahi*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libavahi*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libbmp*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libdrm*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libgdk*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libgst*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libgtk*
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libicudata*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libjpeg*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libnss*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libogg*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libopus*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libpipewire*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libpulse*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libsensors*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libsharp*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libsnd*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libtiff*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libunwind*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libvorbis*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libvulkan*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libwayland*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libwebp*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libxcb*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libxml*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libxshm*
-      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/spa*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libgallium*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libLLVM*
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/bin/qemu-pr-helper
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/bin/qemu-io
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/bin/qemu-nbd
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/bin/qemu-storage-daemon
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/bin/qemu-system-x86_64-microvm
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/bin/qemu-system-i386
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/bin/qemu-system-arm
+  cleanup:
+    after:
+      - cubic
+      - runtime-dependencies
+    plugin: nil
+    build-snaps:
+      - core24
+    override-prime: |
+      set -eux
+      for snap in "core24"; do
+          cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$CRAFT_PRIME/{}" \;
+      done
 apps:
   cubic:
-    extensions: [gnome]
     command: bin/cubic
     plugs:
       - kvm
