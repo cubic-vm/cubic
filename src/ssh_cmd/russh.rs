@@ -327,11 +327,8 @@ impl Ssh for Russh {
 
     fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16, xforward: bool) -> bool {
         console.raw_mode();
-        let result = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .unwrap()
-            .block_on(self.handle_interactive_shell(console, user, port, xforward))
+        let result = util::AsyncCaller::new()
+            .call(self.handle_interactive_shell(console, user, port, xforward))
             .is_ok();
         console.reset();
         result
@@ -344,11 +341,8 @@ impl Ssh for Russh {
         from: &TargetInstancePath,
         to: &TargetInstancePath,
     ) -> bool {
-        tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .unwrap()
-            .block_on(self.async_copy(console, root_dir, from, to))
+        util::AsyncCaller::new()
+            .call(self.async_copy(console, root_dir, from, to))
             .is_ok()
     }
 }
