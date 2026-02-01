@@ -4,7 +4,8 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::image::ImageStore;
 use crate::instance::InstanceStore;
-use crate::ssh_cmd::PortChecker;
+use crate::ssh_cmd::{PortChecker, Russh};
+use crate::util;
 use crate::view::Console;
 use crate::view::SpinnerView;
 use clap::Parser;
@@ -33,11 +34,14 @@ impl Command for InstanceStartCommand {
         instance_store: &dyn InstanceStore,
     ) -> Result<(), Error> {
         let verbosity = console.get_verbosity();
+        let async_caller = util::AsyncCaller::new();
+        let russh = Russh::new();
+
         // Launch virtual machine instances
         let mut actions = Vec::new();
         for name in &self.instances {
             let instance = &mut instance_store.load(name)?;
-            if !instance_store.is_running(instance) {
+            if !async_caller.call(russh.is_running(instance.ssh_port)) {
                 // Make SSH port is available
                 if PortChecker::new().is_open(instance.ssh_port) {
                     instance.ssh_port = PortChecker::new().get_new_port();

@@ -90,6 +90,16 @@ impl Russh {
         Self::default()
     }
 
+    pub async fn is_running(&self, port: u16) -> bool {
+        client::connect(
+            Arc::new(client::Config::default()),
+            ("127.0.0.1", port),
+            Client {},
+        )
+        .await
+        .is_ok()
+    }
+
     async fn authenticate_with_default_password(
         &self,
         session: &mut russh::client::Handle<Client>,
