@@ -16,9 +16,11 @@ pub enum Error {
     UnsetEnvVar(String),
     CannotParseFile(String),
     CannotShrinkDisk(String),
+    #[cfg(not(windows))]
     CannotOpenTerminal(String),
     SystemCommandFailed(String, String),
     Web(reqwest::Error),
+    #[cfg(not(windows))]
     SerdeJson(serde_json::Error),
     SerdeToml(toml::ser::Error),
     InvalidChecksum,
@@ -47,6 +49,7 @@ impl Error {
                 Error::CannotShrinkDisk(name) => {
                     format!("Cannot shrink the disk of the instance '{name}'")
                 }
+                #[cfg(not(windows))]
                 Error::CannotOpenTerminal(path) =>
                     format!("Failed to open terminal from path: '{path}'"),
                 Error::SystemCommandFailed(cmd, stderr) => {
@@ -55,6 +58,7 @@ impl Error {
                         stderr.trim()
                     )
                 }
+                #[cfg(not(windows))]
                 Error::SerdeJson(err) => format!("[JSON] {err}"),
                 Error::SerdeToml(err) => format!("[TOML] {err}"),
                 Error::Web(e) => format!("{e}"),

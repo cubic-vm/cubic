@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::instance::Instance;
+#[cfg(not(windows))]
 use crate::qemu::Monitor;
 use std::str;
 
@@ -16,5 +17,7 @@ pub trait InstanceStore {
 
     fn is_running(&self, instance: &Instance) -> bool;
     fn get_pid(&self, instance: &Instance) -> Result<u64, ()>;
+
+    #[cfg(not(windows))]
     fn get_monitor(&self, instance: &Instance) -> Result<Monitor, Error>;
 }
