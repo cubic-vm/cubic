@@ -3,6 +3,7 @@ pub mod tests {
 
     use crate::error::Error;
     use crate::instance::{Instance, InstanceStore};
+    #[cfg(not(windows))]
     use crate::qemu::Monitor;
 
     pub struct InstanceStoreMock {
@@ -60,6 +61,7 @@ pub mod tests {
             Result::Err(())
         }
 
+        #[cfg(not(windows))]
         fn get_monitor(&self, _instance: &Instance) -> Result<Monitor, Error> {
             Result::Err(Error::InvalidArgument("not supported".to_string()))
         }

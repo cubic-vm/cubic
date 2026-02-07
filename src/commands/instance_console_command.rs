@@ -3,6 +3,7 @@ use crate::env::Environment;
 use crate::error::Error;
 use crate::image::ImageStore;
 use crate::instance::InstanceStore;
+#[cfg(not(windows))]
 use crate::util::Terminal;
 use crate::view::Console;
 use clap::Parser;
@@ -40,6 +41,7 @@ impl Command for InstanceConsoleCommand {
         }
 
         console.raw_mode();
+        #[cfg(not(windows))]
         if let Ok(mut term) = Terminal::open(&console_path) {
             term.wait();
         } else {

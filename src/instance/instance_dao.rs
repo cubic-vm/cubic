@@ -6,7 +6,9 @@ use crate::instance::{
     TomlInstanceDeserializer, YamlInstanceDeserializer,
 };
 use crate::model::DataSize;
-use crate::qemu::{Monitor, QemuImg};
+#[cfg(not(windows))]
+use crate::qemu::Monitor;
+use crate::qemu::QemuImg;
 use crate::ssh_cmd::PortChecker;
 use crate::util::SystemCommand;
 use serde::{Deserialize, Serialize};
@@ -196,6 +198,7 @@ impl InstanceStore for InstanceDao {
         pid.trim().parse::<u64>().map_err(|_| ())
     }
 
+    #[cfg(not(windows))]
     fn get_monitor(&self, instance: &Instance) -> Result<Monitor, Error> {
         Monitor::new(&self.env, &instance.name)
     }
