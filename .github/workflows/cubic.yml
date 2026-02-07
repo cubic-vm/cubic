@@ -36,7 +36,7 @@ jobs:
         run: cargo test
 
       - name: Run Code
-        run: cargo run --help
+        run: cargo run -- --help
 
   windows:
     name: Check Windows
@@ -55,4 +55,4 @@ jobs:
         run: cargo test
 
       - name: Run Code
-        run: cargo run --help
+        run: cargo run -- --help
