@@ -37,3 +37,22 @@ jobs:
 
       - name: Run Code
         run: cargo run --help
+
+  windows:
+    name: Check Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup toolchain install stable
+
+      - name: Build Code
+        run: cargo build
+
+      - name: Test Code
+        run: cargo test
+
+      - name: Run Code
+        run: cargo run --help
