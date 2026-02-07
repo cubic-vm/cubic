@@ -1,21 +1,15 @@
 use crate::commands::Verbosity;
 use crate::view::Console;
-use std::io::{Stdout, stdout};
-use termion::{
-    self,
-    raw::{IntoRawMode, RawTerminal},
-};
+use crossterm;
 
 pub struct Stdio {
     verbosity: Verbosity,
-    raw_mode: Option<RawTerminal<Stdout>>,
 }
 
 impl Stdio {
     pub fn new() -> Self {
         Self {
             verbosity: Verbosity::new(false, false),
-            raw_mode: None,
         }
     }
 }
@@ -46,20 +40,16 @@ impl Console for Stdio {
     }
 
     fn get_geometry(&self) -> Option<(u32, u32)> {
-        termion::terminal_size()
+        crossterm::terminal::size()
             .map(|(w, h)| (w as u32, h as u32))
             .ok()
     }
 
     fn raw_mode(&mut self) {
-        if self.raw_mode.is_none() {
-            self.raw_mode = stdout().into_raw_mode().ok();
-        }
+        crossterm::terminal::enable_raw_mode().ok();
     }
 
     fn reset(&mut self) {
-        if let Some(raw) = &mut self.raw_mode {
-            raw.suspend_raw_mode().ok();
-        }
+        crossterm::terminal::disable_raw_mode().ok();
     }
 }
