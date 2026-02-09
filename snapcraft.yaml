@@ -23,7 +23,6 @@ parts:
     plugin: nil
     stage-packages:
       - genisoimage
-      - openssh-client
       - qemu-utils
       - qemu-system-x86
       - qemu-system-arm

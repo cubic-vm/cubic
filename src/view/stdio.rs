@@ -23,12 +23,6 @@ impl Console for Stdio {
         self.verbosity = verbosity;
     }
 
-    fn debug(&mut self, msg: &str) {
-        if self.verbosity.is_verbose() {
-            println!("{msg}");
-        }
-    }
-
     fn info(&mut self, msg: &str) {
         if !self.verbosity.is_quiet() {
             println!("{msg}");

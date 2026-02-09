@@ -4,7 +4,7 @@ use crate::error::Error;
 use crate::fs::FS;
 use crate::image::ImageStore;
 use crate::instance::{InstanceStore, TargetPath};
-use crate::ssh_cmd::{Ssh, SshFactory};
+use crate::ssh_cmd::Russh;
 use crate::view::Console;
 use clap::Parser;
 use std::env;
@@ -29,13 +29,6 @@ pub struct InstanceScpCommand {
     from: TargetPath,
     /// Target of the data to copy
     to: TargetPath,
-    /// Pass additional SCP arguments
-    #[clap(long)]
-    scp_args: Option<String>,
-    #[clap(long, conflicts_with = "russh", default_value_t = false, hide = true)]
-    pub openssh: bool,
-    #[clap(long, conflicts_with = "openssh", default_value_t = false, hide = true)]
-    pub russh: bool,
 }
 
 impl Command for InstanceScpCommand {
@@ -50,7 +43,7 @@ impl Command for InstanceScpCommand {
         check_target_is_running(instance_store, &self.to)?;
 
         let root_dir = env::var("SNAP").unwrap_or_default();
-        let mut ssh: Box<dyn Ssh> = SshFactory::new().create(self.openssh);
+        let mut ssh = Russh::new();
 
         let pubkeys = env.get_ssh_private_key_paths(
             &FS::new(),
@@ -64,13 +57,7 @@ impl Command for InstanceScpCommand {
                 .collect(),
         );
 
-        ssh.set_known_hosts_file(
-            env::var("HOME")
-                .map(|dir| format!("{dir}/.ssh/known_hosts"))
-                .ok(),
-        );
         ssh.set_private_keys(pubkeys);
-        ssh.set_args(self.scp_args.clone().unwrap_or_default());
         ssh.copy(
             console,
             &root_dir,

@@ -29,10 +29,6 @@ pub mod tests {
             Verbosity::Normal
         }
 
-        fn debug(&mut self, msg: &str) {
-            self.log(msg)
-        }
-
         fn info(&mut self, msg: &str) {
             self.log(msg)
         }
