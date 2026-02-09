@@ -1,6 +1,6 @@
 use crate::error::Error;
 use std::ffi::OsStr;
-use std::process::{Child, Command, Output, Stdio};
+use std::process::{Command, Output, Stdio};
 use std::str::from_utf8;
 
 pub struct SystemCommand {
@@ -28,11 +28,6 @@ impl SystemCommand {
         )
         .trim()
         .to_string()
-    }
-
-    pub fn set_stdout(&mut self, stdout: bool) -> &mut Self {
-        self.stdout = stdout;
-        self
     }
 
     pub fn env(&mut self, key: &str, value: &str) -> &mut Self {
@@ -75,15 +70,6 @@ impl SystemCommand {
                     ))
                 }
             })
-    }
-
-    pub fn spawn(&mut self) -> Result<Child, Error> {
-        self.cmd
-            .stdin(Stdio::inherit())
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|e| Error::SystemCommandFailed(self.get_command(), e.to_string()))
     }
 
     pub fn output(&mut self) -> Result<Output, Error> {

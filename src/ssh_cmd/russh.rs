@@ -1,9 +1,7 @@
 use crate::instance::{Instance, TargetInstancePath};
-use crate::ssh_cmd::{SftpPath, Ssh};
+use crate::ssh_cmd::SftpPath;
 use crate::util;
 use crate::view::{Console, SpinnerView};
-use rand::Rng;
-use rand::rngs::OsRng;
 use russh::keys::*;
 use russh::*;
 use russh_sftp::client::SftpSession;
@@ -13,12 +11,6 @@ use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
 use tokio::{io::AsyncReadExt, sync::Mutex};
-
-fn generate_x11_cookie() -> String {
-    let mut bytes = vec![0u8; 16];
-    OsRng.fill(&mut bytes[..]);
-    util::hex_encode(&bytes)
-}
 
 async fn ssh_geometry(
     console: &mut dyn Console,
@@ -66,9 +58,7 @@ async fn ssh_output(output: Arc<Mutex<ChannelWriteHalf<client::Msg>>>) -> Result
 
 #[derive(Default)]
 pub struct Russh {
-    known_hosts_file: Option<String>,
     private_keys: Vec<String>,
-    args: String,
     cmd: Option<String>,
 }
 
@@ -222,7 +212,6 @@ impl Russh {
         console: &mut dyn Console,
         user: &str,
         port: u16,
-        xforward: bool,
     ) -> Result<(), ()> {
         let channel = self.open_channel(console, user, port).await?;
         let (w, h) = console.get_geometry().unwrap();
@@ -238,19 +227,6 @@ impl Russh {
             )
             .await
             .map_err(|_| ())?;
-
-        if xforward {
-            channel
-                .request_x11(
-                    false,
-                    true,
-                    "MIT-MAGIC-COOKIE-1".to_string(),
-                    generate_x11_cookie(),
-                    0,
-                )
-                .await
-                .map_err(|_| ())?;
-        }
 
         if let Some(cmd) = &self.cmd {
             channel.exec(true, cmd.as_str()).await.map_err(|_| ())?;
@@ -316,35 +292,25 @@ impl Russh {
         source.copy(target).await;
         Ok(())
     }
-}
 
-impl Ssh for Russh {
-    fn set_known_hosts_file(&mut self, path: Option<String>) {
-        self.known_hosts_file = path;
-    }
-
-    fn set_private_keys(&mut self, private_keys: Vec<String>) {
+    pub fn set_private_keys(&mut self, private_keys: Vec<String>) {
         self.private_keys = private_keys;
     }
 
-    fn set_args(&mut self, args: String) {
-        self.args = args;
-    }
-
-    fn set_cmd(&mut self, cmd: Option<String>) {
+    pub fn set_cmd(&mut self, cmd: Option<String>) {
         self.cmd = cmd;
     }
 
-    fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16, xforward: bool) -> bool {
+    pub fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16) -> bool {
         console.raw_mode();
         let result = util::AsyncCaller::new()
-            .call(self.handle_interactive_shell(console, user, port, xforward))
+            .call(self.handle_interactive_shell(console, user, port))
             .is_ok();
         console.reset();
         result
     }
 
-    fn copy(
+    pub fn copy(
         &self,
         console: &mut dyn Console,
         root_dir: &str,
