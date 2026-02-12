@@ -47,6 +47,7 @@ qemu-sandbox = []
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
 crossterm = "0"
 rand = "=0.8"
 regex = "1"
