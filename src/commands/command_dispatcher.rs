@@ -27,6 +27,7 @@ pub enum Commands {
     Clone(InstanceCloneCommand),
     Delete(commands::DeleteInstanceCommand),
     Prune(commands::PruneCommand),
+    Completions(commands::CompletionsCommand),
 }
 
 #[derive(Parser, Default)]
@@ -77,6 +78,7 @@ impl CommandDispatcher {
             Commands::Scp(cmd) => cmd,
             Commands::Delete(cmd) => cmd,
             Commands::Prune(cmd) => cmd,
+            Commands::Completions(cmd) => cmd,
         }
         .run(console, &env, &image_dao, &instance_dao)
     }

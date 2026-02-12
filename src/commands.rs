@@ -1,4 +1,5 @@
 pub mod command_dispatcher;
+pub mod completions_command;
 pub mod create_instance_command;
 pub mod delete_instance_command;
 pub mod image;
@@ -22,6 +23,7 @@ pub mod show_image_command;
 pub mod verbosity;
 
 pub use command_dispatcher::*;
+pub use completions_command::*;
 pub use create_instance_command::*;
 pub use delete_instance_command::*;
 pub use image::*;

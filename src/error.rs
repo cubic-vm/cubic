@@ -24,6 +24,7 @@ pub enum Error {
     SerdeJson(serde_json::Error),
     SerdeToml(toml::ser::Error),
     InvalidChecksum,
+    CouldNotDetectShell,
     Ssh(ssh_key::Error),
 }
 
@@ -63,6 +64,7 @@ impl Error {
                 Error::SerdeToml(err) => format!("[TOML] {err}"),
                 Error::Web(e) => format!("{e}"),
                 Error::InvalidChecksum => "Verification of image failed".to_string(),
+                Error::CouldNotDetectShell => "Could not detect shell".to_string(),
                 Error::Ssh(ssh) => format!("SSH error: {ssh}"),
             }
         ))
