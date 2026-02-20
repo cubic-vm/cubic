@@ -53,3 +53,4 @@ Reference
   * :ref:`ref_cubic_clone`
   * :ref:`ref_cubic_delete`
   * :ref:`ref_cubic_prune`
+  * :ref:`ref_cubic_completions`

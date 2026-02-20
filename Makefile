@@ -1,6 +1,9 @@
 DOCKER_CMD=docker run --rm -v .:/usr/local/app
 IMAGE=cubic:latest
 
+CMDS= run create instances images ports show modify console ssh scp start stop \
+		restart rename clone delete prune completions
+
 build-image:
 	if [ -z "`docker images -q ${IMAGE}`" ]; then docker build -t ${IMAGE} .; fi
 
@@ -43,6 +46,15 @@ build: build-image
 
 doc: build-image
 	${DOCKER_CMD} ${IMAGE} sphinx-build docs target/doc && python3 -m http.server -d target/doc 4000
+
+gen-ref: build-image
+	@${DOCKER_CMD} -it ${IMAGE} sh -c '\
+	echo ".. _ref_cubic:\n\ncubic\n=====\n\n.. code-block::\n\n    $$ cubic --help" > docs/reference/cubic.rst; \
+	cargo run -- --help | sed "s/^/    /" >> docs/reference/cubic.rst; \
+	for cmd in ${CMDS}; do \
+		echo ".. _ref_cubic_$${cmd}:\n\ncubic $${cmd}\n=====\n\n.. code-block::\n\n    $$ cubic $${cmd} --help" > docs/reference/$${cmd}.rst; \
+		cargo run -- $${cmd} --help | sed "s/^/    /" >> docs/reference/$${cmd}.rst; \
+	done'
 
 release: build-image
 	sed "s/^\(version =\).*$$/\1 \"${version}\"/g" -i Cargo.toml
