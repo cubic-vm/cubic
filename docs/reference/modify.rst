@@ -1,18 +1,18 @@
 .. _ref_cubic_modify:
 
 cubic modify
-============
+=====
 
 .. code-block::
 
     $ cubic modify --help
     Modify a virtual machine instance configuration
-
+    
     Usage: cubic modify [OPTIONS] <INSTANCE>
-
+    
     Arguments:
       <INSTANCE>  Name of the virtual machine instance
-
+    
     Options:
       -c, --cpus <CPUS>        Number of CPUs for the virtual machine instance
       -m, --mem <MEM>          Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)

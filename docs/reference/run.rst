@@ -1,18 +1,18 @@
 .. _ref_cubic_run:
 
 cubic run
-=========
+=====
 
 .. code-block::
 
     $ cubic run --help
     Create, start and open a shell in a new virtual machine instance
-
-    Usage: cubic run [OPTIONS] --image <IMAGE> [INSTANCE_NAME]
-
+    
+    Usage: cubic run [OPTIONS] --image <IMAGE> <INSTANCE_NAME>
+    
     Arguments:
-      [INSTANCE_NAME]  Name of the virtual machine instance
-
+      <INSTANCE_NAME>  Name of the virtual machine instance
+    
     Options:
       -i, --image <IMAGE>  Name of the virtual machine image
       -u, --user <USER>    Name of the user [default: cubic]

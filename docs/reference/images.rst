@@ -1,15 +1,15 @@
 .. _ref_cubic_images:
 
 cubic images
-============
+=====
 
 .. code-block::
 
     $ cubic images --help
     List all supported virtual machine images
-
+    
     Usage: cubic images [OPTIONS]
-
+    
     Options:
       -a, --all      Show all images
       -v, --verbose  Increase logging output
