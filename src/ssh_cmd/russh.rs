@@ -7,7 +7,6 @@ use russh::*;
 use russh_sftp::client::SftpSession;
 use std::env;
 use std::io::{Cursor, Write};
-use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
 use tokio::{io::AsyncReadExt, sync::Mutex};
@@ -275,7 +274,7 @@ impl Russh {
         };
         SftpPath {
             sftp,
-            path: Path::new(&path.path).to_path_buf(),
+            path: path.to_pathbuf(),
         }
     }
 
