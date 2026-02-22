@@ -1,0 +1,65 @@
+name: snap
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-snap-amd64:
+    runs-on: ubuntu-latest
+    outputs:
+      snap-file: ${{ steps.build-snap-amd64.outputs.snap }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snapcore/action-build@v1
+        id: build-snap-amd64
+        with:
+          snapcraft-args: "--build-for amd64"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cubic-snap-amd64
+          path: ${{ steps.build-snap-amd64.outputs.snap }}
+  build-snap-arm64:
+    runs-on: ubuntu-latest
+    outputs:
+      snap-file: ${{ steps.build-snap-arm64.outputs.snap }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snapcore/action-build@v1
+        id: build-snap-arm64
+        with:
+          snapcraft-args: "--build-for arm64"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cubic-snap-arm64
+          path: ${{ steps.build-snap-arm64.outputs.snap }}
+  publish-snap-amd64:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build-snap-amd64
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: cubic-snap-amd64
+          path: .
+      - uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAP_STORE_LOGIN }}
+        with:
+          snap: ${{ needs.build-snap-amd64.outputs.snap-file }}
+          release: 'edge'
+  publish-snap-arm64:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build-snap-arm64
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: cubic-snap-arm64
+          path: .
+      - uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAP_STORE_LOGIN }}
+        with:
+          snap: ${{ needs.build-snap-arm64.outputs.snap-file }}
+          release: 'edge'

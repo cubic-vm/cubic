@@ -13,6 +13,11 @@ base: core24
 platforms:
   amd64:
   arm64:
+    build-on:
+      - amd64
+      - arm64
+    build-for:
+      - arm64
 confinement: strict
 parts:
   cubic:
