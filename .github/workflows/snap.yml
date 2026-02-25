@@ -1,4 +1,7 @@
-name: snap
+name: Build Snap
+permissions:
+  contents: read
+
 on:
   push:
     branches:
