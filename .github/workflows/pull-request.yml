@@ -62,7 +62,7 @@ jobs:
         run: cargo install cargo-audit
 
       - name: Audit Source Code
-        run: cargo audit --ignore RUSTSEC-2023-0071
+        run: cargo audit
 
   linux:
     name: Build on Linux
