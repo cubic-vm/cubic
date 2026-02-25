@@ -68,3 +68,16 @@ lto = true
 codegen-units = 1
 panic = 'abort'
 strip = true
+
+[package.metadata.deb]
+maintainer = "Roger Knecht <rknecht@pm.me>"
+copyright = "2026, Roger Knecht <rknecht@pm.me>"
+license-file = ["LICENSE-APACHE", "0", "LICENSE-MIT", "0"]
+extended-description = """A lightweight command-line manager for virtual machines ."""
+depends = "qemu-system-x86, qemu-system-arm, genisoimage"
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/cubic", "usr/bin/", "755"],
+    { source = "README.md", dest = "usr/share/doc/cubic/README", mode = "644"},
+]
