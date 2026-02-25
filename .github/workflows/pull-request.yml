@@ -1,0 +1,113 @@
+name: Pull Request Checks
+permissions:
+  contents: read
+  pull-requests: read
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup toolchain install stable
+
+      - name: Check Formatting
+        run: cargo fmt --check
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup toolchain install stable
+
+      - name: Lint Source Code
+        run: cargo clippy -- -D warnings
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup toolchain install stable
+
+      - name: Test Source Code
+        run: cargo test
+
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup toolchain install stable
+
+      - name: Setup Cargo Audit
+        run: cargo install cargo-audit
+
+      - name: Audit Source Code
+        run: cargo audit --ignore RUSTSEC-2023-0071
+
+  linux:
+    name: Build on Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup toolchain install stable
+
+      - name: Build Source Code
+        run: cargo build
+
+      - name: Run Source Code
+        run: cargo run -- --help
+
+  macos:
+    name: Build on macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup toolchain install stable
+
+      - name: Build Source Code
+        run: cargo build
+
+      - name: Run Source Code
+        run: cargo run -- --help
+
+  windows:
+    name: Build on Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup toolchain install stable
+
+      - name: Build Source Code
+        run: cargo build
+
+      - name: Run Source Code
+        run: cargo run -- --help
