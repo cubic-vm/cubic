@@ -1,0 +1,31 @@
+name: Build Debian Package
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+jobs:
+  build-debian-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup toolchain install stable
+
+      - name: Install Cargo Deb
+        run: cargo install cargo-deb
+
+      - name: Build Debian Package
+        run: cargo deb
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cubic-debian-amd64
+          path: target/debian/*.deb
