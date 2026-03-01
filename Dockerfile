@@ -17,4 +17,5 @@ RUN apt update && \
         python3-sphinx-rtd-theme
 RUN rustup component add clippy rustfmt && \
     cargo install cargo-audit &&\
-    cargo fetch
+    cargo fetch &&\
+    echo 'alias cubic="cargo run"' >> ~/.bashrc
