@@ -26,6 +26,7 @@ pub enum Error {
     InvalidChecksum,
     CouldNotDetectShell,
     Ssh(ssh_key::Error),
+    InvalidPath(String),
 }
 
 impl Error {
@@ -66,6 +67,7 @@ impl Error {
                 Error::InvalidChecksum => "Verification of image failed".to_string(),
                 Error::CouldNotDetectShell => "Could not detect shell".to_string(),
                 Error::Ssh(ssh) => format!("SSH error: {ssh}"),
+                Error::InvalidPath(path) => format!("Invalid path: {path}"),
             }
         ))
     }

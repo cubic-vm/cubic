@@ -1,3 +1,4 @@
+use crate::error::Error;
 use russh_sftp::{self, client::SftpSession};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -26,27 +27,25 @@ impl SftpPath {
         }
     }
 
-    pub async fn is_file(&self) -> bool {
+    pub async fn is_file(&self) -> Result<bool, Error> {
         match &self.sftp {
-            None => self.path.is_file(),
+            None => Ok(self.path.is_file()),
             Some(sftp) => sftp
                 .metadata(self.to_str())
                 .await
-                .unwrap()
-                .file_type()
-                .is_file(),
+                .map_err(|_| Error::InvalidPath(self.to_str().to_string()))
+                .map(|metadata| metadata.file_type().is_file()),
         }
     }
 
-    pub async fn is_dir(&self) -> bool {
+    pub async fn is_dir(&self) -> Result<bool, Error> {
         match &self.sftp {
-            None => self.path.is_dir(),
+            None => Ok(self.path.is_dir()),
             Some(sftp) => sftp
                 .metadata(self.to_str())
                 .await
-                .unwrap()
-                .file_type()
-                .is_dir(),
+                .map_err(|_| Error::InvalidPath(self.to_str().to_string()))
+                .map(|metadata| metadata.file_type().is_dir()),
         }
     }
 
@@ -112,31 +111,35 @@ impl SftpPath {
         }
     }
 
-    pub async fn recursive_copy(&self, target: SftpPath) {
-        if self.is_file().await {
+    pub async fn recursive_copy(&self, target: SftpPath) -> Result<(), Error> {
+        if self.is_file().await? {
             let reader = self.open_file().await;
-            if target.exists().await && target.is_dir().await {
+            if target.exists().await && target.is_dir().await? {
                 target.append(&self.name()).write_file(reader).await;
             } else {
                 target.write_file(reader).await;
             }
-        } else if self.is_dir().await {
+        } else if self.is_dir().await? {
             let target_dir = target.append(&self.name());
             target_dir.create_path().await;
             for entry in self.read_dir().await {
-                Box::pin(entry.recursive_copy(target_dir.clone())).await;
+                Box::pin(entry.recursive_copy(target_dir.clone())).await?;
             }
         }
+
+        Ok(())
     }
 
-    pub async fn copy(&self, target: SftpPath) {
-        if target.exists().await || self.is_file().await {
-            self.recursive_copy(target).await;
-        } else if self.is_dir().await {
+    pub async fn copy(&self, target: SftpPath) -> Result<(), Error> {
+        if target.exists().await || self.is_file().await? {
+            self.recursive_copy(target).await?;
+        } else if self.is_dir().await? {
             target.create_path().await;
             for entry in self.read_dir().await {
-                entry.recursive_copy(target.clone()).await;
+                entry.recursive_copy(target.clone()).await?;
             }
         }
+
+        Ok(())
     }
 }

@@ -63,7 +63,7 @@ impl Command for InstanceScpCommand {
             &root_dir,
             &self.from.to_target_instance_path(instance_store)?,
             &self.to.to_target_instance_path(instance_store)?,
-        );
+        )?;
         Ok(())
     }
 }

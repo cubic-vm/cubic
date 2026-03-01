@@ -1,3 +1,4 @@
+use crate::error::Error;
 use crate::instance::{Instance, TargetInstancePath};
 use crate::ssh_cmd::SftpPath;
 use crate::util;
@@ -284,12 +285,11 @@ impl Russh {
         _root_dir: &str,
         from: &TargetInstancePath,
         to: &TargetInstancePath,
-    ) -> Result<(), ()> {
+    ) -> Result<(), Error> {
         let source = self.open_target_fs(console, from).await;
         let target = self.open_target_fs(console, to).await;
 
-        source.copy(target).await;
-        Ok(())
+        source.copy(target).await
     }
 
     pub fn set_private_keys(&mut self, private_keys: Vec<String>) {
@@ -315,9 +315,7 @@ impl Russh {
         root_dir: &str,
         from: &TargetInstancePath,
         to: &TargetInstancePath,
-    ) -> bool {
-        util::AsyncCaller::new()
-            .call(self.async_copy(console, root_dir, from, to))
-            .is_ok()
+    ) -> Result<(), Error> {
+        util::AsyncCaller::new().call(self.async_copy(console, root_dir, from, to))
     }
 }
