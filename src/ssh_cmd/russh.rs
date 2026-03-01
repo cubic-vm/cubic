@@ -12,7 +12,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use tokio::{io::AsyncReadExt, sync::Mutex};
 
-async fn read_password(user: &str) -> Result<String, ()> {
+async fn read_password(console: &mut dyn Console, user: &str) -> Result<String, ()> {
     let mut stdout = std::io::stdout();
     let mut stdin = tokio::io::stdin();
 
@@ -25,6 +25,7 @@ async fn read_password(user: &str) -> Result<String, ()> {
 
     stdout.flush().map_err(|_| ())?;
 
+    console.raw_mode();
     loop {
         // read character from stdin
         if stdin.read(c).await.map_err(|_| ())? == 0 {
@@ -33,7 +34,11 @@ async fn read_password(user: &str) -> Result<String, ()> {
 
         match c[0] {
             // Ctrl+C
-            0x03 => std::process::exit(1),
+            0x03 => {
+                console.reset();
+                println!();
+                std::process::exit(1)
+            }
 
             // Carriage return and line feed
             0x0A | 0x0D => break,
@@ -48,6 +53,7 @@ async fn read_password(user: &str) -> Result<String, ()> {
             }
         };
     }
+    console.reset();
 
     print!("\r\n");
     str::from_utf8(&password)
@@ -176,11 +182,12 @@ impl Russh {
 
     async fn authenticate_with_password(
         &self,
+        console: &mut dyn Console,
         session: &mut russh::client::Handle<Client>,
         user: &str,
     ) -> Result<(), ()> {
         loop {
-            let password = read_password(user).await?;
+            let password = read_password(console, user).await?;
 
             if session
                 .authenticate_password(user, password)
@@ -197,6 +204,7 @@ impl Russh {
 
     async fn authenticate(
         &self,
+        console: &mut dyn Console,
         session: &mut russh::client::Handle<Client>,
         user: &str,
     ) -> Result<(), ()> {
@@ -212,7 +220,8 @@ impl Russh {
             return Ok(());
         }
 
-        self.authenticate_with_password(session, user).await
+        self.authenticate_with_password(console, session, user)
+            .await
     }
 
     async fn open_channel(
@@ -239,7 +248,7 @@ impl Russh {
             s.stop()
         }
 
-        self.authenticate(&mut session, user).await?;
+        self.authenticate(console, &mut session, user).await?;
 
         session.channel_open_session().await.map_err(|_| ())
     }
@@ -276,6 +285,7 @@ impl Russh {
 
         let ssh_out = Arc::new(Mutex::new(ssh_out));
 
+        console.raw_mode();
         tokio::select!(
             _ = ssh_geometry(console, ssh_out.clone()) => { console.reset(); std::process::exit(0); },
             _ = ssh_output(ssh_out.clone()) => { console.reset(); std::process::exit(0); },
@@ -338,12 +348,9 @@ impl Russh {
     }
 
     pub fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16) -> bool {
-        console.raw_mode();
-        let result = util::AsyncCaller::new()
+        util::AsyncCaller::new()
             .call(self.handle_interactive_shell(console, user, port))
-            .is_ok();
-        console.reset();
-        result
+            .is_ok()
     }
 
     pub fn copy(
