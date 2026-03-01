@@ -1,3 +1,4 @@
+use crate::view::TimeDuration;
 use std::cmp::max;
 use std::io::{Write, stdout};
 use std::sync::mpsc::{self, TryRecvError};
@@ -18,14 +19,14 @@ impl SpinnerView {
         let thread = thread::spawn(move || {
             let mut index = 0;
             let mut line_length = 0;
-            let start = time::Instant::now();
+            let duration = TimeDuration::new();
             while let Err(TryRecvError::Empty) = rx.try_recv() {
                 let text = format!(
-                    "{}{}.. {} ({:.1?}s)",
+                    "{}{}.. {} ({})",
                     if index > 0 { "\r" } else { "" },
                     &text,
                     SPINNER_VIEW_CHARS[index % SPINNER_VIEW_CHARS.len()],
-                    start.elapsed().as_secs_f32()
+                    duration
                 );
 
                 line_length = max(line_length, text.len());

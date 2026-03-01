@@ -5,6 +5,7 @@ pub mod progress_bar;
 pub mod spinner_view;
 pub mod stdio;
 pub mod table_view;
+pub mod time_duration;
 pub mod transfer_view;
 
 pub use console::*;
@@ -13,4 +14,5 @@ pub use progress_bar::*;
 pub use spinner_view::*;
 pub use stdio::*;
 pub use table_view::*;
+pub use time_duration::*;
 pub use transfer_view::*;
