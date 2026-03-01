@@ -12,6 +12,49 @@ use std::rc::Rc;
 use std::sync::Arc;
 use tokio::{io::AsyncReadExt, sync::Mutex};
 
+async fn read_password(user: &str) -> Result<String, ()> {
+    let mut stdout = std::io::stdout();
+    let mut stdin = tokio::io::stdin();
+
+    let mut password = Vec::new();
+    let c: &mut [u8] = &mut [0];
+
+    stdout
+        .write_all(format!("{user}@localhost's password: ").as_bytes())
+        .map_err(|_| ())?;
+
+    stdout.flush().map_err(|_| ())?;
+
+    loop {
+        // read character from stdin
+        if stdin.read(c).await.map_err(|_| ())? == 0 {
+            continue;
+        }
+
+        match c[0] {
+            // Ctrl+C
+            0x03 => std::process::exit(1),
+
+            // Carriage return and line feed
+            0x0A | 0x0D => break,
+
+            // Delete and backspace
+            0x7E | 0x7F => {
+                password.pop();
+            }
+
+            byte => {
+                password.push(byte);
+            }
+        };
+    }
+
+    print!("\r\n");
+    str::from_utf8(&password)
+        .map(|password| password.to_string())
+        .map_err(|_| ())
+}
+
 async fn ssh_geometry(
     console: &mut dyn Console,
     output: Arc<Mutex<ChannelWriteHalf<client::Msg>>>,
@@ -137,20 +180,14 @@ impl Russh {
         user: &str,
     ) -> Result<(), ()> {
         loop {
-            let mut stdout = std::io::stdout();
-            stdout
-                .write_all(format!("{user}@localhost's password: ").as_bytes())
-                .map_err(|_| ())?;
-            stdout.flush().map_err(|_| ())?;
-            let mut password = String::new();
-            std::io::stdin().read_line(&mut password).map_err(|_| ())?;
-            println!();
-            let auth_res = session
-                .authenticate_password(user, &password[..password.len() - 1])
-                .await
-                .map_err(|_| ())?;
+            let password = read_password(user).await?;
 
-            if auth_res.success() {
+            if session
+                .authenticate_password(user, password)
+                .await
+                .map_err(|_| ())?
+                .success()
+            {
                 break;
             }
         }
@@ -198,11 +235,11 @@ impl Russh {
             }
         }
 
-        self.authenticate(&mut session, user).await?;
-
         if let Some(mut s) = spinner {
             s.stop()
         }
+
+        self.authenticate(&mut session, user).await?;
 
         session.channel_open_session().await.map_err(|_| ())
     }
