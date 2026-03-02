@@ -7,7 +7,7 @@
 project = 'cubic'
 copyright = '2025, Cubic'
 author = 'Roger Knecht'
-release =  'v0.18.0'
+release =  'v0.19.0'
 
 extensions = ['sphinx_rtd_theme']
 
