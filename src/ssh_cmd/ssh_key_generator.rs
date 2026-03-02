@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use rand::rngs::OsRng;
 use ssh_key::{Algorithm, LineEnding, private::PrivateKey};
 use std::path::Path;
@@ -11,7 +11,7 @@ impl SshKeyGenerator {
         Self
     }
 
-    pub fn generate_key(&self, private_key_path: &Path) -> Result<(), Error> {
+    pub fn generate_key(&self, private_key_path: &Path) -> Result<()> {
         PrivateKey::random(&mut OsRng, Algorithm::Ed25519)
             .map_err(Error::from)?
             .write_openssh_file(private_key_path, LineEnding::LF)
@@ -19,7 +19,7 @@ impl SshKeyGenerator {
             .map_err(Error::from)
     }
 
-    pub fn generate_public_key(&self, private_key_path: &Path) -> Result<String, Error> {
+    pub fn generate_public_key(&self, private_key_path: &Path) -> Result<String> {
         PrivateKey::read_openssh_file(private_key_path)
             .map_err(Error::from)?
             .public_key()

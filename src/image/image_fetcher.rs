@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::image::{HashAlg, Image};
 use crate::view::{SpinnerView, TransferView};
 use crate::web::WebClient;
@@ -15,7 +15,7 @@ impl ImageFetcher {
         &self,
         client: &mut WebClient,
         image: &Image,
-    ) -> Result<Option<(HashAlg, String)>, Error> {
+    ) -> Result<Option<(HashAlg, String)>> {
         if let Some(pos) = image.image_url.rfind("/") {
             let regex = Regex::new("^[0-9A-Fa-f]+$").unwrap();
             let file_name = &image.image_url[pos + 1..image.image_url.len()];
@@ -47,7 +47,7 @@ impl ImageFetcher {
         Ok(None)
     }
 
-    pub fn fetch(&self, image: &Image, target_file: &str) -> Result<(), Error> {
+    pub fn fetch(&self, image: &Image, target_file: &str) -> Result<()> {
         let mut client = WebClient::new()?;
 
         let checksum = client.download_file(

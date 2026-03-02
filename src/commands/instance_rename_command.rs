@@ -1,6 +1,6 @@
 use crate::commands::Command;
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::ImageStore;
 use crate::instance::{InstanceName, InstanceStore};
 use crate::view::Console;
@@ -22,7 +22,7 @@ impl Command for InstanceRenameCommand {
         _env: &Environment,
         _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         instance_store.rename(
             &mut instance_store.load(self.old_name.as_str())?,
             self.new_name.as_str(),

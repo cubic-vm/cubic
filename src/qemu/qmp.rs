@@ -1,5 +1,5 @@
 use crate::commands::Verbosity;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::qemu;
 use serde_json::Value;
 use std::io::{BufReader, BufWriter, Read, Write, prelude::*};
@@ -16,7 +16,7 @@ pub struct Qmp {
 }
 
 impl Qmp {
-    pub fn new(path: &str, verbosity: Verbosity) -> Result<Self, Error> {
+    pub fn new(path: &str, verbosity: Verbosity) -> Result<Self> {
         let socket = UnixStream::connect(path).map_err(Error::from)?;
 
         let get_timeout = || Some(Duration::from_millis(QMP_TIMEOUT_MS));
@@ -35,7 +35,7 @@ impl Qmp {
         })
     }
 
-    pub fn send(&mut self, message: &qemu::QmpMessage) -> Result<(), Error> {
+    pub fn send(&mut self, message: &qemu::QmpMessage) -> Result<()> {
         let request = serde_json::to_string(message).map_err(Error::from)?;
 
         if self.verbosity.is_verbose() {
@@ -45,7 +45,7 @@ impl Qmp {
         self.writer.flush().map_err(Error::from)
     }
 
-    pub fn recv(&mut self) -> Result<qemu::QmpMessage, Error> {
+    pub fn recv(&mut self) -> Result<qemu::QmpMessage> {
         let mut response = String::new();
         self.reader.read_line(&mut response).map_err(Error::from)?;
 
@@ -56,11 +56,7 @@ impl Qmp {
         serde_json::from_str(&response).map_err(Error::from)
     }
 
-    pub fn execute_with_args(
-        &mut self,
-        cmd: &str,
-        arguments: Value,
-    ) -> Result<qemu::QmpMessage, Error> {
+    pub fn execute_with_args(&mut self, cmd: &str, arguments: Value) -> Result<qemu::QmpMessage> {
         let request_id = Some(self.counter.to_string());
         self.counter += 1;
 
@@ -83,7 +79,7 @@ impl Qmp {
         }
     }
 
-    pub fn execute(&mut self, cmd: &str) -> Result<(), Error> {
+    pub fn execute(&mut self, cmd: &str) -> Result<()> {
         self.execute_with_args(cmd, Value::Null).map(|_| ())
     }
 }

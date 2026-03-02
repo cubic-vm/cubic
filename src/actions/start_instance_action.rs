@@ -1,6 +1,6 @@
 use crate::emulator::Emulator;
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::fs::FS;
 use crate::instance::{Instance, InstanceStore};
 use crate::ssh_cmd::PortChecker;
@@ -23,7 +23,7 @@ impl StartInstanceAction {
         env: &Environment,
         qemu_args: &Option<String>,
         verbose: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         if instance_dao.is_running(&self.instance) {
             return Ok(());
         }

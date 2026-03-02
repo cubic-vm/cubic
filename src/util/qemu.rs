@@ -1,12 +1,12 @@
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::fs::FS;
 use crate::instance::Instance;
 use crate::ssh_cmd::SshKeyGenerator;
 use crate::util::SystemCommand;
 use std::path::Path;
 
-pub fn setup_cloud_init(env: &Environment, instance: &Instance) -> Result<(), Error> {
+pub fn setup_cloud_init(env: &Environment, instance: &Instance) -> Result<()> {
     let fs = FS::new();
     let name = &instance.name;
     let user = &instance.user;

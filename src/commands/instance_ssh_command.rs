@@ -1,6 +1,6 @@
 use crate::commands::{self, Command};
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::fs::FS;
 use crate::image::ImageStore;
 use crate::instance::{InstanceStore, Target};
@@ -24,7 +24,7 @@ impl Command for InstanceSshCommand {
         env: &Environment,
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let name = self.target.get_instance();
 
         commands::InstanceStartCommand {

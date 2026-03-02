@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::instance::{Config, Instance, InstanceDeserializer};
 use std::io::Read;
 use std::str;
@@ -13,7 +13,7 @@ impl YamlInstanceDeserializer {
 }
 
 impl InstanceDeserializer for YamlInstanceDeserializer {
-    fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Result<Instance, Error> {
+    fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Result<Instance> {
         serde_yaml::from_reader(reader)
             .map(|config: Config| config.machine)
             .map(|mut instance: Instance| {

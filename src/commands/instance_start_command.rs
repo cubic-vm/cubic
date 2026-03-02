@@ -1,7 +1,7 @@
 use crate::actions::StartInstanceAction;
 use crate::commands::Command;
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::ImageStore;
 use crate::instance::InstanceStore;
 use crate::ssh_cmd::{PortChecker, Russh};
@@ -32,7 +32,7 @@ impl Command for InstanceStartCommand {
         env: &Environment,
         _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let verbosity = console.get_verbosity();
         let async_caller = util::AsyncCaller::new();
         let russh = Russh::new();

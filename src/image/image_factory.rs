@@ -1,6 +1,6 @@
 use crate::arch::Arch;
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::image::{HashAlg, Image, ImageCache, ImageName};
 use crate::web::WebClient;
 use regex::Regex;
@@ -281,7 +281,7 @@ impl ImageFactory {
         images
     }
 
-    pub fn create_images(&self) -> Result<Vec<Image>, Error> {
+    pub fn create_images(&self) -> Result<Vec<Image>> {
         // Read cache
         let cache = ImageCache::read_from_file(&self.env.get_image_cache_file());
 
@@ -312,7 +312,7 @@ impl ImageFactory {
         Ok(images)
     }
 
-    pub fn get_image(&self, name: &ImageName) -> Result<Image, Error> {
+    pub fn get_image(&self, name: &ImageName) -> Result<Image> {
         // Read cache
         let cache = ImageCache::read_from_file(&self.env.get_image_cache_file());
 

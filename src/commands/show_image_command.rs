@@ -1,6 +1,6 @@
 use crate::commands::{Command, image::fetch_image_info};
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::{ImageName, ImageStore};
 use crate::instance::InstanceStore;
 use crate::view::{Console, MapView};
@@ -20,7 +20,7 @@ impl Command for ShowImageCommand {
         env: &Environment,
         _image_store: &dyn ImageStore,
         _instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let image = fetch_image_info(env, &self.name)?;
         let mut view = MapView::new();
         view.add("Name", &image.get_image_names());

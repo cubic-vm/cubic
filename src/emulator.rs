@@ -1,5 +1,5 @@
 use crate::arch::Arch;
-use crate::error::Error;
+use crate::error::Result;
 use crate::instance::PortForward;
 use crate::util::SystemCommand;
 
@@ -28,7 +28,7 @@ impl Emulator {
         }
     }
 
-    pub fn from(arch: Arch) -> Result<Emulator, Error> {
+    pub fn from(arch: Arch) -> Result<Emulator> {
         let mut command = match arch {
             Arch::AMD64 => {
                 let mut command = SystemCommand::new("qemu-system-x86_64");
@@ -151,7 +151,7 @@ impl Emulator {
         self.command.arg("-pidfile").arg(path);
     }
 
-    pub fn run(&mut self) -> Result<(), Error> {
+    pub fn run(&mut self) -> Result<()> {
         self.command.arg("-daemonize");
 
         if self.verbose {

@@ -1,5 +1,5 @@
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::fs::FS;
 use crate::image::{Image, ImageFactory, ImageFetcher, ImageName, ImageStore};
 use crate::view::SpinnerView;
@@ -11,7 +11,7 @@ pub fn fetch_image_list(env: &Environment) -> Vec<Image> {
     images
 }
 
-pub fn fetch_image_info(env: &Environment, image: &ImageName) -> Result<Image, Error> {
+pub fn fetch_image_info(env: &Environment, image: &ImageName) -> Result<Image> {
     let mut spinner = SpinnerView::new(format!(
         "Looking up image {}:{}",
         image.get_vendor(),
@@ -22,11 +22,7 @@ pub fn fetch_image_info(env: &Environment, image: &ImageName) -> Result<Image, E
     image
 }
 
-pub fn fetch_image(
-    env: &Environment,
-    image_store: &dyn ImageStore,
-    image: &Image,
-) -> Result<(), Error> {
+pub fn fetch_image(env: &Environment, image_store: &dyn ImageStore, image: &Image) -> Result<()> {
     if !image_store.exists(image) {
         FS::new().create_dir(&env.get_image_dir())?;
         ImageFetcher::new().fetch(

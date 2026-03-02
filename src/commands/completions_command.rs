@@ -1,6 +1,6 @@
 use crate::commands::{Command, CommandDispatcher};
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::image::ImageStore;
 use crate::instance::InstanceStore;
 use crate::view::Console;
@@ -22,7 +22,7 @@ impl Command for CompletionsCommand {
         _env: &Environment,
         _image_store: &dyn ImageStore,
         _instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let Some(shell) = self.shell.or_else(Shell::from_env) else {
             return Err(Error::CouldNotDetectShell);
         };

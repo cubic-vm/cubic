@@ -1,6 +1,6 @@
 use crate::commands::Command;
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::image::ImageStore;
 use crate::instance::{InstanceName, InstanceStore};
 use crate::view::{Console, MapView};
@@ -20,7 +20,7 @@ impl Command for InstanceShowCommand {
         _env: &Environment,
         _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         if !instance_store.exists(self.instance.as_str()) {
             return Result::Err(Error::UnknownInstance(self.instance.to_string()));
         }

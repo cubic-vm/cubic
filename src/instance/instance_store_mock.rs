@@ -1,7 +1,7 @@
 #[cfg(test)]
 pub mod tests {
 
-    use crate::error::Error;
+    use crate::error::{Error, Result};
     use crate::instance::{Instance, InstanceStore};
     #[cfg(not(windows))]
     use crate::qemu::Monitor;
@@ -25,7 +25,7 @@ pub mod tests {
             self.instances.iter().any(|i| i.name == name)
         }
 
-        fn load(&self, name: &str) -> Result<Instance, Error> {
+        fn load(&self, name: &str) -> Result<Instance> {
             self.instances
                 .iter()
                 .find(|i| i.name == name)
@@ -33,23 +33,23 @@ pub mod tests {
                 .ok_or(Error::UnknownInstance(name.to_string()))
         }
 
-        fn store(&self, _instance: &Instance) -> Result<(), Error> {
+        fn store(&self, _instance: &Instance) -> Result<()> {
             Result::Ok(())
         }
 
-        fn clone(&self, _instance: &Instance, _new_name: &str) -> Result<(), Error> {
+        fn clone(&self, _instance: &Instance, _new_name: &str) -> Result<()> {
             Result::Ok(())
         }
 
-        fn rename(&self, _instance: &mut Instance, _new_name: &str) -> Result<(), Error> {
+        fn rename(&self, _instance: &mut Instance, _new_name: &str) -> Result<()> {
             Result::Ok(())
         }
 
-        fn resize(&self, _instance: &mut Instance, _size: u64) -> Result<(), Error> {
+        fn resize(&self, _instance: &mut Instance, _size: u64) -> Result<()> {
             Result::Ok(())
         }
 
-        fn delete(&self, _instance: &Instance) -> Result<(), Error> {
+        fn delete(&self, _instance: &Instance) -> Result<()> {
             Result::Ok(())
         }
 
@@ -57,12 +57,12 @@ pub mod tests {
             false
         }
 
-        fn get_pid(&self, _instance: &Instance) -> Result<u64, ()> {
-            Result::Err(())
+        fn get_pid(&self, _instance: &Instance) -> std::result::Result<u64, ()> {
+            std::result::Result::Err(())
         }
 
         #[cfg(not(windows))]
-        fn get_monitor(&self, _instance: &Instance) -> Result<Monitor, Error> {
+        fn get_monitor(&self, _instance: &Instance) -> Result<Monitor> {
             Result::Err(Error::InvalidArgument("not supported".to_string()))
         }
     }

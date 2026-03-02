@@ -1,7 +1,7 @@
 use crate::actions::StopInstanceAction;
 use crate::commands::Command;
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::ImageStore;
 use crate::instance::InstanceStore;
 use crate::view::Console;
@@ -30,7 +30,7 @@ impl Command for InstanceStopCommand {
         _env: &Environment,
         _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let stop_instances = if self.all {
             instance_store.get_instances()
         } else {

@@ -1,6 +1,6 @@
 use crate::commands::{Command, fetch_image_list};
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::{ImageStore, get_default_arch};
 use crate::instance::InstanceStore;
 use crate::model::DataSize;
@@ -22,7 +22,7 @@ impl Command for ListImageCommand {
         env: &Environment,
         image_store: &dyn ImageStore,
         _instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let images = fetch_image_list(env);
 
         let mut view = TableView::new();

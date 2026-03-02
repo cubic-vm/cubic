@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::fs::FS;
 use crate::util;
 use crate::view::TransferView;
@@ -58,7 +58,7 @@ pub struct WebClient {
 }
 
 impl WebClient {
-    pub fn new() -> Result<Self, Error> {
+    pub fn new() -> Result<Self> {
         Ok(WebClient {
             client: reqwest::blocking::Client::builder()
                 .timeout(Duration::from_secs(REQUEST_TIMEOUT_SEC))
@@ -69,7 +69,7 @@ impl WebClient {
         })
     }
 
-    pub fn get_file_size(&mut self, url: &str) -> Result<Option<u64>, Error> {
+    pub fn get_file_size(&mut self, url: &str) -> Result<Option<u64>> {
         Ok(self
             .client
             .head(url)
@@ -86,7 +86,7 @@ impl WebClient {
         url: &str,
         file_path: &str,
         view: TransferView,
-    ) -> Result<Checksum, Error> {
+    ) -> Result<Checksum> {
         let fs = FS::new();
 
         let temp_file = format!("{file_path}.tmp");
@@ -112,7 +112,7 @@ impl WebClient {
         })
     }
 
-    pub fn download_content(&mut self, url: &str) -> Result<String, Error> {
+    pub fn download_content(&mut self, url: &str) -> Result<String> {
         self.client
             .get(url)
             .send()

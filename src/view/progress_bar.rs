@@ -13,7 +13,7 @@ impl ProgressBar {
 }
 
 impl fmt::Display for ProgressBar {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::result::Result<(), fmt::Error> {
         write!(f, "[")?;
         let size = self.size - 2;
         let index = (size as f64 * self.percent) as usize;
