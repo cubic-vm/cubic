@@ -17,7 +17,7 @@ pub enum Error {
     #[error("Instance with name '{0}' already exists")]
     InstanceAlreadyExists(String),
     #[error("IO Error: {0}")]
-    Io(io::Error),
+    Io(#[from] io::Error),
     #[error("FS Error: {0}")]
     FS(String),
     #[error("Unknown image name {0}")]
@@ -34,18 +34,18 @@ pub enum Error {
     #[error("System command execution failed\n{0}\n\nReason: {1}")]
     SystemCommandFailed(String, String),
     #[error("Web Error: {0}")]
-    Web(reqwest::Error),
+    Web(#[from] reqwest::Error),
     #[error("JSON Error: {0}")]
     #[cfg(not(windows))]
-    SerdeJson(serde_json::Error),
+    SerdeJson(#[from] serde_json::Error),
     #[error("TOML Error: {0}")]
-    SerdeToml(toml::ser::Error),
+    SerdeToml(#[from] toml::ser::Error),
     #[error("Verification of image failed")]
     InvalidChecksum,
     #[error("Could not detect shell")]
     CouldNotDetectShell,
     #[error("SSH Error: {0}")]
-    Ssh(ssh_key::Error),
+    Ssh(#[from] ssh_key::Error),
     #[error("Invalid path: {0}")]
     InvalidPath(String),
 }

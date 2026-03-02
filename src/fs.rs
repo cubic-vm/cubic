@@ -28,7 +28,7 @@ impl FS {
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
-            .map_err(Error::Io)?
+            .map_err(Error::from)?
             .wait()
             .map(|_| ())
             .map_err(|e| {

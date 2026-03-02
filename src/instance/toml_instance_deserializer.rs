@@ -15,7 +15,7 @@ impl TomlInstanceDeserializer {
 impl InstanceDeserializer for TomlInstanceDeserializer {
     fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Result<Instance, Error> {
         let mut data = String::new();
-        reader.read_to_string(&mut data).map_err(Error::Io)?;
+        reader.read_to_string(&mut data).map_err(Error::from)?;
         toml::from_str(&data)
             .map(|mut instance: Instance| {
                 instance.name = name.to_string();

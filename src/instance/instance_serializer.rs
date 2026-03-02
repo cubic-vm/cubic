@@ -14,7 +14,7 @@ impl InstanceSerializer {
         toml::to_string(instance)
             .map(|content| writer.write_all(&content.into_bytes()))
             .map(|_| ())
-            .map_err(Error::SerdeToml)
+            .map_err(Error::from)
     }
 }
 
