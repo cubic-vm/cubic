@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::instance::{Instance, InstanceStore};
 
 pub struct StopInstanceAction {
@@ -12,7 +12,7 @@ impl StopInstanceAction {
         }
     }
 
-    pub fn run(&mut self, instance_dao: &dyn InstanceStore) -> Result<(), Error> {
+    pub fn run(&mut self, instance_dao: &dyn InstanceStore) -> Result<()> {
         if !instance_dao.exists(&self.instance.name) {
             return Err(Error::UnknownInstance(self.instance.name.clone()));
         }

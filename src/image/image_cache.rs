@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::image::Image;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
@@ -39,13 +39,13 @@ impl ImageCache {
             .ok();
     }
 
-    fn deserialize(reader: &mut dyn Read) -> Result<ImageCache, Error> {
+    fn deserialize(reader: &mut dyn Read) -> Result<ImageCache> {
         let mut data = String::new();
         reader.read_to_string(&mut data).map_err(Error::from)?;
         toml::from_str(&data).map_err(|_| Error::CannotParseFile(String::new()))
     }
 
-    fn serialize(&self, writer: &mut dyn Write) -> Result<(), Error> {
+    fn serialize(&self, writer: &mut dyn Write) -> Result<()> {
         toml::to_string(self)
             .map(|content| writer.write_all(&content.into_bytes()))
             .map(|_| ())

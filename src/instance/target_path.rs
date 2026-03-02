@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::Result;
 use crate::instance::{InstanceStore, Target, TargetInstancePath};
 use std::fmt;
 use std::str::FromStr;
@@ -17,7 +17,7 @@ impl TargetPath {
     pub fn to_target_instance_path(
         &self,
         instance_store: &dyn InstanceStore,
-    ) -> Result<TargetInstancePath, Error> {
+    ) -> Result<TargetInstancePath> {
         if let Some(target) = self.target.as_ref() {
             let instance = instance_store.load(target.get_instance().as_str())?;
             Ok(TargetInstancePath {
@@ -38,7 +38,7 @@ impl TargetPath {
 impl FromStr for TargetPath {
     type Err = String;
 
-    fn from_str(target_path: &str) -> Result<Self, Self::Err> {
+    fn from_str(target_path: &str) -> std::result::Result<Self, Self::Err> {
         match *target_path.split(':').collect::<Vec<_>>().as_slice() {
             [path] => Ok(Self {
                 target: None,
@@ -55,7 +55,7 @@ impl FromStr for TargetPath {
 }
 
 impl fmt::Display for TargetPath {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> std::result::Result<(), fmt::Error> {
         let mut result = Ok(());
 
         if let Some(target) = self.target.as_ref() {

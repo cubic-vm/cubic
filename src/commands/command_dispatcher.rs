@@ -2,7 +2,7 @@ use crate::commands::{
     self, Command, InstanceCloneCommand, InstanceModifyCommand, InstanceRenameCommand,
 };
 use crate::env::EnvironmentFactory;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::ImageDao;
 use crate::instance::InstanceDao;
 use crate::view::Console;
@@ -51,7 +51,7 @@ pub struct CommandDispatcher {
 }
 
 impl CommandDispatcher {
-    pub fn dispatch(self, console: &mut dyn Console) -> Result<(), Error> {
+    pub fn dispatch(self, console: &mut dyn Console) -> Result<()> {
         console.set_verbosity(commands::Verbosity::new(
             self.global.verbose,
             self.global.quiet,

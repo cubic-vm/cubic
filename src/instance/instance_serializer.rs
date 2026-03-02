@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::instance::Instance;
 use std::io::Write;
 
@@ -10,7 +10,7 @@ impl InstanceSerializer {
         Self
     }
 
-    pub fn serialize(&self, instance: &Instance, writer: &mut dyn Write) -> Result<(), Error> {
+    pub fn serialize(&self, instance: &Instance, writer: &mut dyn Write) -> Result<()> {
         toml::to_string(instance)
             .map(|content| writer.write_all(&content.into_bytes()))
             .map(|_| ())

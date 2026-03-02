@@ -1,6 +1,6 @@
 use crate::commands::Command;
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::ImageStore;
 use crate::instance::{InstanceName, InstanceStore};
 use crate::ssh_cmd::PortChecker;
@@ -23,7 +23,7 @@ impl Command for InstanceCloneCommand {
         _env: &Environment,
         _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         instance_store.clone(
             &instance_store.load(self.name.as_str())?,
             self.new_name.as_str(),

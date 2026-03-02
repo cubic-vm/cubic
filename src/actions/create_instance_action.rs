@@ -1,5 +1,5 @@
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::fs::FS;
 use crate::image::Image;
 use crate::instance::{Instance, InstanceStore};
@@ -22,7 +22,7 @@ impl CreateInstanceAction {
         instance_store: &dyn InstanceStore,
         image: &Image,
         mut instance: Instance,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let instance_name = instance.name.clone();
         let target_dir = &env.get_instance_dir2(&instance.name);
         let tmp_dir = &format!("{target_dir}.tmp");

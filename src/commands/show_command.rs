@@ -1,6 +1,6 @@
 use crate::commands::{self, Command};
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::ImageStore;
 use crate::instance::InstanceStore;
 use crate::model::InstanceImageName;
@@ -21,7 +21,7 @@ impl Command for ShowCommand {
         env: &Environment,
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         match &self.name {
             InstanceImageName::Image(name) => commands::ShowImageCommand { name: name.clone() }
                 .run(console, env, image_store, instance_store),

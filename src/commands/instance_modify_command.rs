@@ -1,6 +1,6 @@
 use crate::commands::Command;
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::ImageStore;
 use crate::instance::{InstanceStore, PortForward};
 use crate::model::DataSize;
@@ -36,7 +36,7 @@ impl Command for InstanceModifyCommand {
         _env: &Environment,
         _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let mut instance = instance_store.load(&self.instance)?;
 
         if let Some(cpus) = &self.cpus {

@@ -1,16 +1,16 @@
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use std::env;
 
 pub struct EnvironmentFactory;
 
 impl EnvironmentFactory {
-    fn read_env(var: &str) -> Result<String, Error> {
+    fn read_env(var: &str) -> Result<String> {
         env::var(var).map_err(|_| Error::UnsetEnvVar(var.to_string()))
     }
 
     #[cfg(target_os = "linux")]
-    pub fn create_env() -> Result<Environment, Error> {
+    pub fn create_env() -> Result<Environment> {
         let data_dir = Self::read_env("SNAP_USER_COMMON")
             .or(Self::read_env("XDG_DATA_HOME"))
             .or_else(|_| Self::read_env("HOME").map(|home| format!("{home}/.local/share")))?;
@@ -27,7 +27,7 @@ impl EnvironmentFactory {
     }
 
     #[cfg(target_os = "macos")]
-    pub fn create_env() -> Result<Environment, Error> {
+    pub fn create_env() -> Result<Environment> {
         let home_dir = Self::read_env("HOME")?;
 
         Ok(Environment::new(
@@ -38,7 +38,7 @@ impl EnvironmentFactory {
     }
 
     #[cfg(target_os = "windows")]
-    pub fn create_env() -> Result<Environment, Error> {
+    pub fn create_env() -> Result<Environment> {
         let local_app_data_dir = Self::read_env("LOCALAPPDATA")?;
         let temp_dir = Self::read_env("TEMP")?;
 

@@ -1,6 +1,6 @@
 use crate::commands::Command;
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::fs::FS;
 use crate::image::ImageStore;
 use crate::instance::{InstanceStore, TargetPath};
@@ -9,10 +9,7 @@ use crate::view::Console;
 use clap::Parser;
 use std::env;
 
-fn check_target_is_running(
-    instance_store: &dyn InstanceStore,
-    target: &TargetPath,
-) -> Result<(), Error> {
+fn check_target_is_running(instance_store: &dyn InstanceStore, target: &TargetPath) -> Result<()> {
     if let Some(target) = target.get_target() {
         let instance = instance_store.load(target.get_instance().as_str())?;
         if !instance_store.is_running(&instance) {
@@ -38,7 +35,7 @@ impl Command for InstanceScpCommand {
         env: &Environment,
         _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         check_target_is_running(instance_store, &self.from)?;
         check_target_is_running(instance_store, &self.to)?;
 

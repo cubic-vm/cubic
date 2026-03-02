@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -10,7 +10,7 @@ pub enum Arch {
 }
 
 impl Arch {
-    pub fn from_str(arch: &str) -> Result<Arch, Error> {
+    pub fn from_str(arch: &str) -> Result<Arch> {
         match arch {
             "amd64" => Ok(Arch::AMD64),
             "arm64" => Ok(Arch::ARM64),

@@ -4,7 +4,7 @@ use crate::commands::{
     image::{fetch_image, fetch_image_info},
 };
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::fs::FS;
 use crate::image::{ImageName, ImageStore};
 use crate::instance::{Instance, InstanceName, InstanceStore, PortForward};
@@ -50,7 +50,7 @@ impl Command for CreateInstanceCommand {
         env: &Environment,
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         if instance_store.exists(self.instance_name.as_str()) {
             return Result::Err(Error::InstanceAlreadyExists(self.instance_name.to_string()));
         }

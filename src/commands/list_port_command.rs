@@ -1,6 +1,6 @@
 use crate::commands::Command;
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::ImageStore;
 use crate::instance::InstanceStore;
 use crate::view::{Alignment, Console, TableView};
@@ -17,7 +17,7 @@ impl Command for ListPortCommand {
         _env: &Environment,
         _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let instance_names = instance_store.get_instances();
 
         let mut view = TableView::new();

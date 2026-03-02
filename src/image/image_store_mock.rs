@@ -1,7 +1,7 @@
 #[cfg(test)]
 pub mod tests {
 
-    use crate::error::Error;
+    use crate::error::Result;
     use crate::image::{Image, ImageStore};
 
     #[derive(Default)]
@@ -14,7 +14,7 @@ pub mod tests {
             self.images.contains(image)
         }
 
-        fn prune(&self) -> Result<(), Error> {
+        fn prune(&self) -> Result<()> {
             Ok(())
         }
     }

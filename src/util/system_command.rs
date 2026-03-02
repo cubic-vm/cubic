@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use std::ffi::OsStr;
 use std::process::{Command, Output, Stdio};
 use std::str::from_utf8;
@@ -49,7 +49,7 @@ impl SystemCommand {
         self
     }
 
-    pub fn run(&mut self) -> Result<(), Error> {
+    pub fn run(&mut self) -> Result<()> {
         self.cmd
             .stdin(Stdio::null())
             .stdout(if self.stdout {
@@ -72,7 +72,7 @@ impl SystemCommand {
             })
     }
 
-    pub fn output(&mut self) -> Result<Output, Error> {
+    pub fn output(&mut self) -> Result<Output> {
         self.cmd
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

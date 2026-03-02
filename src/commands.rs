@@ -47,7 +47,7 @@ pub use show_image_command::*;
 pub use verbosity::*;
 
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::ImageStore;
 use crate::instance::InstanceStore;
 use crate::view::Console;
@@ -59,5 +59,5 @@ trait Command {
         env: &Environment,
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error>;
+    ) -> Result<()>;
 }

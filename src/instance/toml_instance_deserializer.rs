@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::instance::{Instance, InstanceDeserializer};
 use std::io::Read;
 use std::str;
@@ -13,7 +13,7 @@ impl TomlInstanceDeserializer {
 }
 
 impl InstanceDeserializer for TomlInstanceDeserializer {
-    fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Result<Instance, Error> {
+    fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Result<Instance> {
         let mut data = String::new();
         reader.read_to_string(&mut data).map_err(Error::from)?;
         toml::from_str(&data)

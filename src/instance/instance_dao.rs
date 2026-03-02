@@ -1,5 +1,5 @@
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::fs::FS;
 use crate::instance::{
     Instance, InstanceDeserializer, InstanceName, InstanceSerializer, InstanceStore,
@@ -30,7 +30,7 @@ pub struct InstanceDao {
 }
 
 impl InstanceDao {
-    pub fn new(env: &Environment) -> Result<Self, Error> {
+    pub fn new(env: &Environment) -> Result<Self> {
         let fs = FS::new();
         fs.setup_directory_access(&env.get_instance_dir())?;
         fs.setup_directory_access(env.get_cache_dir())?;
@@ -51,7 +51,7 @@ impl InstanceStore for InstanceDao {
             .map_err(|_| ())
             .and_then(|entries| {
                 entries
-                    .collect::<Result<Vec<DirEntry>, _>>()
+                    .collect::<std::result::Result<Vec<DirEntry>, _>>()
                     .map_err(|_| ())
             })
             .map(|entries| {
@@ -70,7 +70,7 @@ impl InstanceStore for InstanceDao {
         Path::new(&self.env.get_instance_dir2(name)).exists()
     }
 
-    fn load(&self, name: &str) -> Result<Instance, Error> {
+    fn load(&self, name: &str) -> Result<Instance> {
         if !self.exists(name) {
             return Result::Err(Error::UnknownInstance(name.to_string()));
         }
@@ -106,7 +106,7 @@ impl InstanceStore for InstanceDao {
             }))
     }
 
-    fn store(&self, instance: &Instance) -> Result<(), Error> {
+    fn store(&self, instance: &Instance) -> Result<()> {
         let file_name = self.env.get_instance_toml_config_file(&instance.name);
         let temp_file_name = format!("{file_name}.tmp");
 
@@ -122,7 +122,7 @@ impl InstanceStore for InstanceDao {
         Ok(())
     }
 
-    fn clone(&self, instance: &Instance, new_name: &str) -> Result<(), Error> {
+    fn clone(&self, instance: &Instance, new_name: &str) -> Result<()> {
         if self.exists(new_name) {
             Result::Err(Error::InstanceAlreadyExists(new_name.to_string()))
         } else if self.is_running(instance) {
@@ -135,7 +135,7 @@ impl InstanceStore for InstanceDao {
         }
     }
 
-    fn rename(&self, instance: &mut Instance, new_name: &str) -> Result<(), Error> {
+    fn rename(&self, instance: &mut Instance, new_name: &str) -> Result<()> {
         if self.exists(new_name) {
             Result::Err(Error::InstanceAlreadyExists(new_name.to_string()))
         } else if self.is_running(instance) {
@@ -150,7 +150,7 @@ impl InstanceStore for InstanceDao {
         }
     }
 
-    fn resize(&self, instance: &mut Instance, size: u64) -> Result<(), Error> {
+    fn resize(&self, instance: &mut Instance, size: u64) -> Result<()> {
         if self.is_running(instance) {
             Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else if instance.disk_capacity.get_bytes() >= size as usize {
@@ -166,7 +166,7 @@ impl InstanceStore for InstanceDao {
         }
     }
 
-    fn delete(&self, instance: &Instance) -> Result<(), Error> {
+    fn delete(&self, instance: &Instance) -> Result<()> {
         if self.is_running(instance) {
             Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
@@ -189,7 +189,7 @@ impl InstanceStore for InstanceDao {
             .path_exists(&self.env.get_qemu_pid_file(&instance.name))
     }
 
-    fn get_pid(&self, instance: &Instance) -> Result<u64, ()> {
+    fn get_pid(&self, instance: &Instance) -> std::result::Result<u64, ()> {
         let pid = self
             .fs
             .read_file_to_string(&self.env.get_qemu_pid_file(&instance.name))
@@ -199,7 +199,7 @@ impl InstanceStore for InstanceDao {
     }
 
     #[cfg(not(windows))]
-    fn get_monitor(&self, instance: &Instance) -> Result<Monitor, Error> {
+    fn get_monitor(&self, instance: &Instance) -> Result<Monitor> {
         Monitor::new(&self.env, &instance.name)
     }
 }

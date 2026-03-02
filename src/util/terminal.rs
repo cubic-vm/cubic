@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 
 use std::io::{self, prelude::*};
 use std::net::Shutdown;
@@ -58,7 +58,7 @@ fn spawn_stream_thread(
 }
 
 impl Terminal {
-    pub fn open(path: &str) -> Result<Self, Error> {
+    pub fn open(path: &str) -> Result<Self> {
         UnixStream::connect(path)
             .map(|stream| {
                 stream.set_nonblocking(true).ok();

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use russh_sftp::{self, client::SftpSession};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -27,7 +27,7 @@ impl SftpPath {
         }
     }
 
-    pub async fn is_file(&self) -> Result<bool, Error> {
+    pub async fn is_file(&self) -> Result<bool> {
         match &self.sftp {
             None => Ok(self.path.is_file()),
             Some(sftp) => sftp
@@ -38,7 +38,7 @@ impl SftpPath {
         }
     }
 
-    pub async fn is_dir(&self) -> Result<bool, Error> {
+    pub async fn is_dir(&self) -> Result<bool> {
         match &self.sftp {
             None => Ok(self.path.is_dir()),
             Some(sftp) => sftp
@@ -111,7 +111,7 @@ impl SftpPath {
         }
     }
 
-    pub async fn recursive_copy(&self, target: SftpPath) -> Result<(), Error> {
+    pub async fn recursive_copy(&self, target: SftpPath) -> Result<()> {
         if self.is_file().await? {
             let reader = self.open_file().await;
             if target.exists().await && target.is_dir().await? {
@@ -130,7 +130,7 @@ impl SftpPath {
         Ok(())
     }
 
-    pub async fn copy(&self, target: SftpPath) -> Result<(), Error> {
+    pub async fn copy(&self, target: SftpPath) -> Result<()> {
         if target.exists().await || self.is_file().await? {
             self.recursive_copy(target).await?;
         } else if self.is_dir().await? {

@@ -1,6 +1,6 @@
 use crate::commands::{self, Command};
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::image::ImageStore;
 use crate::instance::{InstanceStore, Target};
 use crate::view::Console;
@@ -20,7 +20,7 @@ impl Command for InstanceRunCommand {
         env: &Environment,
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         self.create_cmd
             .run(console, env, image_store, instance_store)?;
         commands::InstanceSshCommand {

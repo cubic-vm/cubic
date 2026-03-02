@@ -1,5 +1,5 @@
 use crate::env::Environment;
-use crate::error::Error;
+use crate::error::Result;
 use crate::fs::FS;
 use crate::image::{Image, ImageStore};
 use std::path::Path;
@@ -10,7 +10,7 @@ pub struct ImageDao {
 }
 
 impl ImageDao {
-    pub fn new(env: &Environment) -> Result<Self, Error> {
+    pub fn new(env: &Environment) -> Result<Self> {
         let fs = FS::new();
         fs.setup_directory_access(&env.get_image_dir())?;
         Result::Ok(ImageDao {
@@ -30,7 +30,7 @@ impl ImageStore for ImageDao {
         .exists()
     }
 
-    fn prune(&self) -> Result<(), Error> {
+    fn prune(&self) -> Result<()> {
         self.fs.remove_file(&self.env.get_image_cache_file()).ok();
         self.fs.remove_dir(&self.env.get_image_dir())
     }

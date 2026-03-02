@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, Result};
 use std::fs;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -11,7 +11,7 @@ impl FS {
         Self {}
     }
 
-    pub fn create_dir(&self, path: &str) -> Result<(), Error> {
+    pub fn create_dir(&self, path: &str) -> Result<()> {
         if !Path::new(path).exists() {
             return fs::create_dir_all(path)
                 .map_err(|e| Error::FS(format!("Cannot create directory '{path}' ({e})")));
@@ -20,7 +20,7 @@ impl FS {
         Result::Ok(())
     }
 
-    pub fn copy_dir(&self, from: &str, to: &str) -> Result<(), Error> {
+    pub fn copy_dir(&self, from: &str, to: &str) -> Result<()> {
         Command::new("cp")
             .arg("--recursive")
             .arg(from)
@@ -38,21 +38,21 @@ impl FS {
             })
     }
 
-    pub fn read_dir(&self, path: &str) -> Result<fs::ReadDir, Error> {
+    pub fn read_dir(&self, path: &str) -> Result<fs::ReadDir> {
         fs::read_dir(path).map_err(|e| Error::FS(format!("Cannot read directory '{path}' ({e})")))
     }
 
-    pub fn read_dir_file_paths(&self, path: &str) -> Result<Vec<PathBuf>, Error> {
+    pub fn read_dir_file_paths(&self, path: &str) -> Result<Vec<PathBuf>> {
         self.read_dir(path)
             .map(|dir| dir.flatten().map(|dir| dir.path()).collect())
     }
 
-    pub fn remove_dir(&self, path: &str) -> Result<(), Error> {
+    pub fn remove_dir(&self, path: &str) -> Result<()> {
         fs::remove_dir_all(path)
             .map_err(|e| Error::FS(format!("Cannot remove directory '{path}' ({e})")))
     }
 
-    pub fn setup_directory_access(&self, path: &str) -> Result<(), Error> {
+    pub fn setup_directory_access(&self, path: &str) -> Result<()> {
         self.create_dir(path)?;
 
         let permission = fs::metadata(path)
@@ -66,7 +66,7 @@ impl FS {
         Result::Ok(())
     }
 
-    pub fn create_file(&self, path: &str) -> Result<fs::File, Error> {
+    pub fn create_file(&self, path: &str) -> Result<fs::File> {
         std::fs::OpenOptions::new()
             .write(true)
             .create(true)
@@ -75,7 +75,7 @@ impl FS {
             .map_err(|e| Error::FS(format!("Cannot create file '{path}' ({e})")))
     }
 
-    pub fn open_file(&self, path: &str) -> Result<fs::File, Error> {
+    pub fn open_file(&self, path: &str) -> Result<fs::File> {
         fs::File::open(path).map_err(|e| Error::FS(format!("Cannot open file '{path}' ({e})")))
     }
 
@@ -83,22 +83,22 @@ impl FS {
         Path::new(path).exists()
     }
 
-    pub fn write_file(&self, path: &str, data: &[u8]) -> Result<(), Error> {
+    pub fn write_file(&self, path: &str, data: &[u8]) -> Result<()> {
         self.create_file(path)?
             .write_all(data)
             .map_err(|e| Error::FS(format!("Cannot write file '{path}' ({e})")))
     }
 
-    pub fn read_file_to_string(&self, path: &str) -> Result<String, Error> {
+    pub fn read_file_to_string(&self, path: &str) -> Result<String> {
         fs::read_to_string(path).map_err(|e| Error::FS(format!("Cannot read file '{path}' ({e})")))
     }
 
-    pub fn rename_file(&self, from: &str, to: &str) -> Result<(), Error> {
+    pub fn rename_file(&self, from: &str, to: &str) -> Result<()> {
         fs::rename(from, to)
             .map_err(|e| Error::FS(format!("Cannot rename file from '{from}' to '{to}' ({e})")))
     }
 
-    pub fn remove_file(&self, path: &str) -> Result<(), Error> {
+    pub fn remove_file(&self, path: &str) -> Result<()> {
         fs::remove_file(path).map_err(|e| Error::FS(format!("Cannot delete file '{path}' ({e})")))
     }
 }
