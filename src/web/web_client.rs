@@ -65,7 +65,7 @@ impl WebClient {
                 .gzip(true)
                 .brotli(true)
                 .build()
-                .map_err(Error::Web)?,
+                .map_err(Error::from)?,
         })
     }
 
@@ -74,7 +74,7 @@ impl WebClient {
             .client
             .head(url)
             .send()
-            .map_err(Error::Web)?
+            .map_err(Error::from)?
             .headers()
             .get("Content-Length")
             .and_then(|value| value.to_str().ok())
@@ -98,11 +98,11 @@ impl WebClient {
             return Result::Ok(Checksum::default());
         }
 
-        let mut resp = reqwest::blocking::get(url).map_err(Error::Web)?;
+        let mut resp = reqwest::blocking::get(url).map_err(Error::from)?;
 
         let mut writer =
             ProgressWriter::new(fs.create_file(&temp_file)?, resp.content_length(), view);
-        resp.copy_to(&mut writer).map_err(Error::Web)?;
+        resp.copy_to(&mut writer).map_err(Error::from)?;
 
         fs.rename_file(&temp_file, file_path)?;
 
@@ -116,8 +116,8 @@ impl WebClient {
         self.client
             .get(url)
             .send()
-            .map_err(Error::Web)?
+            .map_err(Error::from)?
             .text()
-            .map_err(Error::Web)
+            .map_err(Error::from)
     }
 }

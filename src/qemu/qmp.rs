@@ -17,39 +17,43 @@ pub struct Qmp {
 
 impl Qmp {
     pub fn new(path: &str, verbosity: Verbosity) -> Result<Self, Error> {
-        let socket = UnixStream::connect(path).map_err(Error::Io)?;
+        let socket = UnixStream::connect(path).map_err(Error::from)?;
 
         let get_timeout = || Some(Duration::from_millis(QMP_TIMEOUT_MS));
-        socket.set_read_timeout(get_timeout()).map_err(Error::Io)?;
-        socket.set_write_timeout(get_timeout()).map_err(Error::Io)?;
+        socket
+            .set_read_timeout(get_timeout())
+            .map_err(Error::from)?;
+        socket
+            .set_write_timeout(get_timeout())
+            .map_err(Error::from)?;
 
         Ok(Qmp {
             counter: 0,
             verbosity,
-            reader: BufReader::new(Box::new(socket.try_clone().map_err(Error::Io)?)),
-            writer: BufWriter::new(Box::new(socket.try_clone().map_err(Error::Io)?)),
+            reader: BufReader::new(Box::new(socket.try_clone().map_err(Error::from)?)),
+            writer: BufWriter::new(Box::new(socket.try_clone().map_err(Error::from)?)),
         })
     }
 
     pub fn send(&mut self, message: &qemu::QmpMessage) -> Result<(), Error> {
-        let request = serde_json::to_string(message).map_err(Error::SerdeJson)?;
+        let request = serde_json::to_string(message).map_err(Error::from)?;
 
         if self.verbosity.is_verbose() {
             println!("QMP send: {request}");
         }
-        self.writer.write(request.as_bytes()).map_err(Error::Io)?;
-        self.writer.flush().map_err(Error::Io)
+        self.writer.write(request.as_bytes()).map_err(Error::from)?;
+        self.writer.flush().map_err(Error::from)
     }
 
     pub fn recv(&mut self) -> Result<qemu::QmpMessage, Error> {
         let mut response = String::new();
-        self.reader.read_line(&mut response).map_err(Error::Io)?;
+        self.reader.read_line(&mut response).map_err(Error::from)?;
 
         if self.verbosity.is_verbose() {
             println!("QMP recv: {response}");
         }
 
-        serde_json::from_str(&response).map_err(Error::SerdeJson)
+        serde_json::from_str(&response).map_err(Error::from)
     }
 
     pub fn execute_with_args(

@@ -27,21 +27,21 @@ impl ImageCache {
 
     pub fn read_from_file(path: &str) -> Option<Self> {
         File::open(path)
-            .map_err(Error::Io)
+            .map_err(Error::from)
             .and_then(|ref mut reader| ImageCache::deserialize(reader))
             .ok()
     }
 
     pub fn write_to_file(&self, path: &str) {
         File::create(path)
-            .map_err(Error::Io)
+            .map_err(Error::from)
             .and_then(|mut file| self.serialize(&mut file))
             .ok();
     }
 
     fn deserialize(reader: &mut dyn Read) -> Result<ImageCache, Error> {
         let mut data = String::new();
-        reader.read_to_string(&mut data).map_err(Error::Io)?;
+        reader.read_to_string(&mut data).map_err(Error::from)?;
         toml::from_str(&data).map_err(|_| Error::CannotParseFile(String::new()))
     }
 
@@ -49,7 +49,7 @@ impl ImageCache {
         toml::to_string(self)
             .map(|content| writer.write_all(&content.into_bytes()))
             .map(|_| ())
-            .map_err(Error::SerdeToml)
+            .map_err(Error::from)
     }
 
     fn get_timestamp() -> u64 {

@@ -13,17 +13,17 @@ impl SshKeyGenerator {
 
     pub fn generate_key(&self, private_key_path: &Path) -> Result<(), Error> {
         PrivateKey::random(&mut OsRng, Algorithm::Ed25519)
-            .map_err(Error::Ssh)?
+            .map_err(Error::from)?
             .write_openssh_file(private_key_path, LineEnding::LF)
             .map(|_| ())
-            .map_err(Error::Ssh)
+            .map_err(Error::from)
     }
 
     pub fn generate_public_key(&self, private_key_path: &Path) -> Result<String, Error> {
         PrivateKey::read_openssh_file(private_key_path)
-            .map_err(Error::Ssh)?
+            .map_err(Error::from)?
             .public_key()
             .to_openssh()
-            .map_err(Error::Ssh)
+            .map_err(Error::from)
     }
 }
