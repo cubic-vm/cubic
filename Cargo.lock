@@ -687,6 +687,7 @@ dependencies = [
  "serde_yaml",
  "sha2 0.10.9",
  "ssh-key",
+ "thiserror 2.0.18",
  "tokio",
  "toml",
 ]

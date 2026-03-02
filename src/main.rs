@@ -15,12 +15,13 @@ mod view;
 mod web;
 
 use crate::commands::CommandDispatcher;
+use crate::view::Console;
 use clap::Parser;
 
 fn main() {
     let console = &mut view::Stdio::new();
     CommandDispatcher::parse()
         .dispatch(console)
-        .map_err(|e| e.print(console))
+        .map_err(|e| console.error(&e.to_string()))
         .ok();
 }

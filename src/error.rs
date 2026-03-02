@@ -1,74 +1,51 @@
-use crate::view::Console;
 use std::io;
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum Error {
     #[cfg(test)]
+    #[error("Argument error: {0}")]
     InvalidArgument(String),
+    #[error("Unknown architecture: '{0}'")]
     UnknownArch(String),
+    #[error("Unknown instance '{0}'")]
     UnknownInstance(String),
+    #[error("Instance '{0}' is not stopped")]
     InstanceNotStopped(String),
+    #[error("Instance '{0}' is not running")]
     InstanceNotRunning(String),
+    #[error("Instance with name '{0}' already exists")]
     InstanceAlreadyExists(String),
+    #[error("IO Error: {0}")]
     Io(io::Error),
+    #[error("FS Error: {0}")]
     FS(String),
+    #[error("Unknown image name {0}")]
     UnknownImage(String),
+    #[error("Environment variable '{0}' is not set")]
     UnsetEnvVar(String),
+    #[error("Cannot parse file '{0}'")]
     CannotParseFile(String),
+    #[error("Cannot shrink the disk of the instance '{0}'")]
     CannotShrinkDisk(String),
     #[cfg(not(windows))]
+    #[error("Failed to open terminal from path: '{0}'")]
     CannotOpenTerminal(String),
+    #[error("System command execution failed\n{0}\n\nReason: {1}")]
     SystemCommandFailed(String, String),
+    #[error("Web Error: {0}")]
     Web(reqwest::Error),
+    #[error("JSON Error: {0}")]
     #[cfg(not(windows))]
     SerdeJson(serde_json::Error),
+    #[error("TOML Error: {0}")]
     SerdeToml(toml::ser::Error),
+    #[error("Verification of image failed")]
     InvalidChecksum,
+    #[error("Could not detect shell")]
     CouldNotDetectShell,
+    #[error("SSH Error: {0}")]
     Ssh(ssh_key::Error),
+    #[error("Invalid path: {0}")]
     InvalidPath(String),
-}
-
-impl Error {
-    pub fn print(&self, console: &mut dyn Console) {
-        console.error(&format!(
-            "ERROR: {} \n\n\
-            Please report bugs at https://github.com/cubic-vm/cubic/issues",
-            match self {
-                #[cfg(test)]
-                Error::InvalidArgument(err) => format!("Argument error: {err}"),
-                Error::UnknownArch(name) => format!("Unknown architecture: '{name}'"),
-                Error::UnknownInstance(instance) => format!("Unknown instance '{instance}'"),
-                Error::InstanceNotStopped(name) => format!("Instance '{name}' is not stopped"),
-                Error::InstanceNotRunning(name) => format!("Instance '{name}' is not running"),
-                Error::InstanceAlreadyExists(id) =>
-                    format!("Instance with name '{id}' already exists"),
-                Error::Io(e) => format!("{}", e),
-                Error::FS(e) => e.to_string(),
-                Error::UnknownImage(name) => format!("Unknown image name {name}"),
-                Error::UnsetEnvVar(var) => format!("Environment variable '{var}' is not set"),
-                Error::CannotParseFile(path) => format!("Cannot parse file '{path}'"),
-                Error::CannotShrinkDisk(name) => {
-                    format!("Cannot shrink the disk of the instance '{name}'")
-                }
-                #[cfg(not(windows))]
-                Error::CannotOpenTerminal(path) =>
-                    format!("Failed to open terminal from path: '{path}'"),
-                Error::SystemCommandFailed(cmd, stderr) => {
-                    format!(
-                        "System command execution failed\n{cmd}\n\nReason: {}",
-                        stderr.trim()
-                    )
-                }
-                #[cfg(not(windows))]
-                Error::SerdeJson(err) => format!("[JSON] {err}"),
-                Error::SerdeToml(err) => format!("[TOML] {err}"),
-                Error::Web(e) => format!("{e}"),
-                Error::InvalidChecksum => "Verification of image failed".to_string(),
-                Error::CouldNotDetectShell => "Could not detect shell".to_string(),
-                Error::Ssh(ssh) => format!("SSH error: {ssh}"),
-                Error::InvalidPath(path) => format!("Invalid path: {path}"),
-            }
-        ))
-    }
 }
