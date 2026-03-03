@@ -1,18 +1,21 @@
 IMAGE_VOLUME=cubic-images
 INSTANCE_VOLUME=cubic-instances
-DOCKER_CMD=docker run --rm -v .:/usr/local/app -v ${IMAGE_VOLUME}:/tmp/cache -v ${INSTANCE_VOLUME}:/tmp/data
+BUILD_VOLUME=cubic-build
+CARGO_VOLUME=cubic-cargo
+DOCKER_CMD=docker run --rm -v .:/usr/local/app \
+	-v ${IMAGE_VOLUME}:/tmp/cache \
+	-v ${INSTANCE_VOLUME}:/tmp/data \
+	-v ${BUILD_VOLUME}:/usr/local/app/target \
+	-v ${CARGO_VOLUME}:/usr/local/cargo
 IMAGE=cubic:latest
 
 CMDS= run create instances images ports show modify console ssh scp start stop \
 		restart rename clone delete prune completions
 
-image-volume:
-	@if [ -n "`docker volume inspect ${IMAGE_VOLUME}`" ]; then docker volume create ${IMAGE_VOLUME}; fi
+volume-%:
+	@if [ -z "`docker images -q $<`" ]; then docker build -t < .; fi
 
-instance-volume:
-	@if [ -n "`docker volume inspect ${INSTANCE_VOLUME}`" ]; then docker volume create ${INSTANCE_VOLUME}; fi
-
-build-image: image-volume instance-volume
+build-image: volume-${IMAGE_VOLUME} volume-${INSTANCE_VOLUME} volume-${BUILD_VOLUME} volume-${CARGO_VOLUME}
 	@if [ -z "`docker images -q ${IMAGE}`" ]; then docker build -t ${IMAGE} .; fi
 
 clean: build-image

@@ -19,5 +19,4 @@ RUN apt update && \
         vim
 RUN rustup component add clippy rustfmt && \
     cargo install cargo-audit &&\
-    cargo fetch &&\
     echo 'alias cubic="cargo run"' >> ~/.bashrc
