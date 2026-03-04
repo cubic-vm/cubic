@@ -1,3 +1,4 @@
+pub mod async_transfer_view;
 pub mod console;
 pub mod console_mock;
 pub mod map_view;
@@ -8,6 +9,7 @@ pub mod table_view;
 pub mod time_duration;
 pub mod transfer_view;
 
+pub use async_transfer_view::*;
 pub use console::*;
 pub use map_view::*;
 pub use progress_bar::*;
