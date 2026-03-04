@@ -1,5 +1,7 @@
 use crate::error::{Error, Result};
+use crate::view::AsyncTransferView;
 use russh_sftp::{self, client::SftpSession};
+use std::cmp::max;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::{self, fs};
@@ -24,6 +26,26 @@ impl SftpPath {
         match &self.sftp {
             None => self.path.exists(),
             Some(sftp) => sftp.try_exists(self.to_str()).await.unwrap(),
+        }
+    }
+
+    pub async fn get_file_size(&self) -> Result<usize> {
+        match &self.sftp {
+            None => self
+                .path
+                .metadata()
+                .map_err(|_| Error::InvalidPath(self.to_str().to_string()))
+                .map(|metadata| metadata.len() as usize),
+            Some(sftp) => sftp
+                .metadata(self.to_str())
+                .await
+                .map_err(|_| Error::InvalidPath(self.to_str().to_string()))
+                .and_then(|metadata| {
+                    metadata
+                        .size
+                        .map(|size| size as usize)
+                        .ok_or(Error::InvalidPath(self.to_str().to_string()))
+                }),
         }
     }
 
@@ -72,8 +94,10 @@ impl SftpPath {
         }
     }
 
-    pub async fn write_file(&self, mut content: Box<dyn AsyncRead + Unpin>) {
-        tokio::io::copy(content.as_mut(), &mut self.create_file().await)
+    pub async fn write_file(&self, name: &str, size: usize, content: Box<dyn AsyncRead + Unpin>) {
+        let name = &format!("{:30}", &name[max(30, name.len()) - 30..name.len()]);
+        let read = &mut AsyncTransferView::new(name, std::pin::Pin::new(content), size);
+        tokio::io::copy(read, &mut self.create_file().await)
             .await
             .unwrap();
     }
@@ -113,11 +137,16 @@ impl SftpPath {
 
     pub async fn recursive_copy(&self, target: SftpPath) -> Result<()> {
         if self.is_file().await? {
+            let name = &self.path.display().to_string();
+            let size = self.get_file_size().await?;
             let reader = self.open_file().await;
             if target.exists().await && target.is_dir().await? {
-                target.append(&self.name()).write_file(reader).await;
+                target
+                    .append(&self.name())
+                    .write_file(name, size, reader)
+                    .await;
             } else {
-                target.write_file(reader).await;
+                target.write_file(name, size, reader).await;
             }
         } else if self.is_dir().await? {
             let target_dir = target.append(&self.name());
