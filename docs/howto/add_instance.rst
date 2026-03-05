@@ -12,25 +12,41 @@ You can list all supported distributions with:
 
 .. code-block::
 
-    $ cubic image ls
-    Name               Arch         Size
-    archlinux:latest   amd64   519.3 MiB
-    [...]
-    debian:12          amd64   424.0 MiB
-    debian:bookworm    amd64   424.0 MiB
-    [...]
-    fedora:42          amd64   507.6 MiB
-    fedora:42          arm64   508.4 MiB
-    [...]
-    opensuse:15.6      amd64   670.3 MiB
-    opensuse:15.6      arm64   634.9 MiB
-    [...]
-    ubuntu:24.04       amd64   243.2 MiB
-    ubuntu:noble       amd64   243.2 MiB
-    ubuntu:24.04       arm64   212.0 MiB
-    ubuntu:noble       arm64   212.0 MiB
-    ubuntu:24.10       amd64   249.4 MiB
-    [...]
+    $ cubic images
+    Name                       Arch         Size   Cached
+    archlinux:latest           amd64   516.7 MiB       no
+    debian:{12, bookworm}      amd64   426.0 MiB       no
+    debian:{11, bullseye}      amd64   343.5 MiB       no
+    debian:{10, buster}        amd64   301.7 MiB       no
+    debian:{13, trixie}        amd64   411.2 MiB       no
+    fedora:41                  amd64   468.9 MiB       no
+    fedora:41                  amd64   468.9 MiB       no
+    fedora:42                  amd64   507.6 MiB       no
+    fedora:43                  amd64   556.3 MiB       no
+    opensuse:15.2              amd64   544.1 MiB       no
+    opensuse:15.3              amd64   560.4 MiB       no
+    opensuse:15.4              amd64   683.7 MiB       no
+    opensuse:15.5              amd64   643.1 MiB       no
+    opensuse:15.6              amd64   683.6 MiB       no
+    rockylinux:10              amd64   548.8 MiB       no
+    rockylinux:8               amd64     1.9 GiB       no
+    rockylinux:9               amd64   618.8 MiB       no
+    ubuntu:{18.04, bionic}     amd64   206.0 MiB       no
+    ubuntu:{18.10, cosmic}     amd64   289.7 MiB       no
+    ubuntu:{19.04, disco}      amd64   153.3 MiB       no
+    ubuntu:{19.10, eoan}       amd64   193.1 MiB       no
+    ubuntu:{20.04, focal}      amd64   251.9 MiB       no
+    ubuntu:{20.10, groovy}     amd64   250.6 MiB       no
+    ubuntu:{21.04, hirsute}    amd64   258.3 MiB       no
+    ubuntu:{21.10, impish}     amd64   254.4 MiB       no
+    ubuntu:{22.04, jammy}      amd64   293.9 MiB       no
+    ubuntu:{22.10, kinetic}    amd64   294.5 MiB       no
+    ubuntu:{23.04, lunar}      amd64   335.9 MiB       no
+    ubuntu:{23.10, mantic}     amd64   228.1 MiB       no
+    ubuntu:{24.04, noble}      amd64   251.5 MiB       no
+    ubuntu:{24.10, oracular}   amd64   249.6 MiB       no
+    ubuntu:{25.04, plucky}     amd64   261.1 MiB       no
+    ubuntu:{25.10, questing}   amd64   394.4 MiB       no
 
 Create the Virtual Machine
 --------------------------
