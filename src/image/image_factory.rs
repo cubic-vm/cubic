@@ -8,10 +8,10 @@ use std::collections::HashMap;
 use std::sync::LazyLock;
 
 struct ImageLocation {
-    url: &'static str,
+    path: &'static str,
     pattern: LazyLock<Regex>,
-    image_url: &'static str,
-    checksum_url: &'static str,
+    image_name: &'static str,
+    checksum_name: &'static str,
     hash_alg: HashAlg,
 }
 
@@ -36,24 +36,24 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
                 (
                     Arch::AMD64,
                     ImageLocation {
-                        url: "https://geo.mirror.pkgbuild.com/images/latest/",
+                        path: "latest/",
                         pattern: LazyLock::new(|| {
                             Regex::new(r">(Arch-Linux-x86_64-cloudimg.qcow2)<").unwrap()
                         }),
-                        image_url: "https://geo.mirror.pkgbuild.com/images/(name)/Arch-Linux-x86_64-cloudimg.qcow2",
-                        checksum_url: "https://geo.mirror.pkgbuild.com/images/(name)/Arch-Linux-x86_64-cloudimg.qcow2.SHA256",
+                        image_name: "Arch-Linux-x86_64-cloudimg.qcow2",
+                        checksum_name: "Arch-Linux-x86_64-cloudimg.qcow2.SHA256",
                         hash_alg: HashAlg::Sha256,
                     },
                 ),
                 (
                     Arch::ARM64,
                     ImageLocation {
-                        url: "https://geo.mirror.pkgbuild.com/images/latest/",
+                        path: "latest/",
                         pattern: LazyLock::new(|| {
                             Regex::new(r">(Arch-Linux-arm64-cloudimg.qcow2)<").unwrap()
                         }),
-                        image_url: "https://geo.mirror.pkgbuild.com/images/(name)/Arch-Linux-arm64-cloudimg.qcow2",
-                        checksum_url: "https://geo.mirror.pkgbuild.com/images/(name)/Arch-Linux-arm64-cloudimg.qcow2.SHA256",
+                        image_name: "Arch-Linux-arm64-cloudimg.qcow2",
+                        checksum_name: "Arch-Linux-arm64-cloudimg.qcow2.SHA256",
                         hash_alg: HashAlg::Sha256,
                     },
                 ),
@@ -69,24 +69,24 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
                 (
                     Arch::AMD64,
                     ImageLocation {
-                        url: "https://cloud.debian.org/images/cloud/(name)/latest/",
+                        path: "(name)/latest/",
                         pattern: LazyLock::new(|| {
                             Regex::new(r">debian-([0-9]+)-generic-amd64.qcow2<").unwrap()
                         }),
-                        image_url: "https://cloud.debian.org/images/cloud/(name)/latest/debian-(version)-generic-amd64.qcow2",
-                        checksum_url: "https://cloud.debian.org/images/cloud/(name)/latest/SHA512SUMS",
+                        image_name: "debian-(version)-generic-amd64.qcow2",
+                        checksum_name: "SHA512SUMS",
                         hash_alg: HashAlg::Sha512,
                     },
                 ),
                 (
                     Arch::ARM64,
                     ImageLocation {
-                        url: "https://cloud.debian.org/images/cloud/(name)/latest/",
+                        path: "(name)/latest/",
                         pattern: LazyLock::new(|| {
                             Regex::new(r">debian-([0-9]+)-generic-arm64.qcow2<").unwrap()
                         }),
-                        image_url: "https://cloud.debian.org/images/cloud/(name)/latest/debian-(version)-generic-arm64.qcow2",
-                        checksum_url: "https://cloud.debian.org/images/cloud/(name)/latest/SHA512SUMS",
+                        image_name: "debian-(version)-generic-arm64.qcow2",
+                        checksum_name: "SHA512SUMS",
                         hash_alg: HashAlg::Sha512,
                     },
                 ),
@@ -102,30 +102,30 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
                 (
                     Arch::AMD64,
                     ImageLocation {
-                        url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/x86_64/images/",
+                        path: "(name)/Cloud/x86_64/images/",
                         pattern: LazyLock::new(|| {
                             Regex::new(
                                 r"Fedora-Cloud-Base-Generic-([0-9]+-[0-9]+.[0-9]+).x86_64.qcow2",
                             )
                             .unwrap()
                         }),
-                        image_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-(version).x86_64.qcow2",
-                        checksum_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/x86_64/images/Fedora-Cloud-(version)-x86_64-CHECKSUM",
+                        image_name: "Fedora-Cloud-Base-Generic-(version).x86_64.qcow2",
+                        checksum_name: "Fedora-Cloud-(version)-x86_64-CHECKSUM",
                         hash_alg: HashAlg::Sha256,
                     },
                 ),
                 (
                     Arch::ARM64,
                     ImageLocation {
-                        url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/aarch64/images/",
+                        path: "(name)/Cloud/aarch64/images/",
                         pattern: LazyLock::new(|| {
                             Regex::new(
                                 r"Fedora-Cloud-Base-Generic-([0-9]+-[0-9]+.[0-9]+).aarch64.qcow2",
                             )
                             .unwrap()
                         }),
-                        image_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/aarch64/images/Fedora-Cloud-Base-Generic-(version).aarch64.qcow2",
-                        checksum_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/(name)/Cloud/aarch64/images/Fedora-Cloud-(version)-aarch64-CHECKSUM",
+                        image_name: "Fedora-Cloud-Base-Generic-(version).aarch64.qcow2",
+                        checksum_name: "Fedora-Cloud-(version)-aarch64-CHECKSUM",
                         hash_alg: HashAlg::Sha256,
                     },
                 ),
@@ -141,28 +141,26 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
                 (
                     Arch::AMD64,
                     ImageLocation {
-                        url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)/images/",
+                        path: "Leap_(name)/images/",
                         pattern: LazyLock::new(|| {
                             Regex::new(r">(openSUSE-Leap-[0-9]+.[0-9]+.x86_64-NoCloud.qcow2)<")
                                 .unwrap()
                         }),
-                        image_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)/images/(version)",
-                        checksum_url:
-                            "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)
-/images/(version).sha256",
+                        image_name: "(version)",
+                        checksum_name: "(version).sha256",
                         hash_alg: HashAlg::Sha256,
                     },
                 ),
                 (
                     Arch::ARM64,
                     ImageLocation {
-                        url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)/images/",
+                        path: "Leap_(name)/images/",
                         pattern: LazyLock::new(|| {
                             Regex::new(r">(openSUSE-Leap-[0-9]+.[0-9]+.aarch64-NoCloud.qcow2)<")
                                 .unwrap()
                         }),
-                        image_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)/images/(version)",
-                        checksum_url: "https://download.opensuse.org/repositories/Cloud:/Images:/Leap_(name)/images/(version).sha256",
+                        image_name: "(version)",
+                        checksum_name: "(version).sha256",
                         hash_alg: HashAlg::Sha256,
                     },
                 ),
@@ -178,26 +176,26 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
                 (
                     Arch::AMD64,
                     ImageLocation {
-                        url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/",
+                        path: "(name)/release/",
                         pattern: LazyLock::new(|| {
                             Regex::new(r">ubuntu-([0-9]+\.[0-9]+)-minimal-cloudimg-amd64.img<")
                                 .unwrap()
                         }),
-                        image_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/ubuntu-(version)-minimal-cloudimg-amd64.img",
-                        checksum_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/SHA256SUMS",
+                        image_name: "ubuntu-(version)-minimal-cloudimg-amd64.img",
+                        checksum_name: "SHA256SUMS",
                         hash_alg: HashAlg::Sha256,
                     },
                 ),
                 (
                     Arch::ARM64,
                     ImageLocation {
-                        url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/",
+                        path: "(name)/release/",
                         pattern: LazyLock::new(|| {
                             Regex::new(r">ubuntu-([0-9]+\.[0-9]+)-minimal-cloudimg-arm64.img<")
                                 .unwrap()
                         }),
-                        image_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/ubuntu-(version)-minimal-cloudimg-arm64.img",
-                        checksum_url: "https://cloud-images.ubuntu.com/minimal/releases/(name)/release/SHA256SUMS",
+                        image_name: "ubuntu-(version)-minimal-cloudimg-arm64.img",
+                        checksum_name: "SHA256SUMS",
                         hash_alg: HashAlg::Sha256,
                     },
                 ),
@@ -245,11 +243,20 @@ impl ImageFactory {
                     continue;
                 }
 
-                for version in
-                    Self::match_content(web, &loc.url.replace("(name)", &name), &loc.pattern)
-                {
-                    let image_url = Self::replace_vars(loc.image_url, &name, &version);
-                    let checksum_url = Self::replace_vars(loc.checksum_url, &name, &version);
+                let loc_url = format!(
+                    "{}{}",
+                    distro.overview_url,
+                    loc.path.replace("(name)", &name)
+                );
+                for version in Self::match_content(web, &loc_url, &loc.pattern) {
+                    let image_url = format!(
+                        "{loc_url}{}",
+                        Self::replace_vars(loc.image_name, &name, &version)
+                    );
+                    let checksum_url = format!(
+                        "{loc_url}{}",
+                        Self::replace_vars(loc.checksum_name, &name, &version)
+                    );
                     let version = Self::replace_vars(distro.version_pattern, &name, &version);
                     let codename = Self::replace_vars(distro.name_pattern, &name, &version);
                     let mut names = vec![version.clone()];
