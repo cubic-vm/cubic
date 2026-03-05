@@ -13,7 +13,7 @@ Cubic is built on top of ``QEMU``, ``KVM`` and ``cloud-init``.
 Features
 ---------
 * Simple command-line interface
-* Supports ArchLinux, Debian, Fedora, OpenSUSE and Ubuntu guest images
+* Supports ArchLinux, Debian, Fedora, OpenSUSE, RockyLinux and Ubuntu guest images
 * Supports Linux, macOS and Window hosts with amd64 and arm64 architecture
 * Supports hardware acceleration with KVM (Linux), Hypervisoer (macOS) and Hyper-V (Windows)
 * Daemon-less design which does not require root rights
