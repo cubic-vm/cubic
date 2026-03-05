@@ -167,6 +167,41 @@ static DISTROS: LazyLock<Vec<Distro>> = LazyLock::new(|| {
             ]),
         },
         Distro {
+            vendor: "rockylinux",
+            name_pattern: "(name)",
+            version_pattern: "(name)",
+            overview_url: "https://dl.rockylinux.org/pub/rocky/",
+            overview_pattern: LazyLock::new(|| Regex::new(r">([0-9]+)/<").unwrap()),
+            images: HashMap::from([
+                (
+                    Arch::AMD64,
+                    ImageLocation {
+                        path: "(name)/images/x86_64/",
+                        pattern: LazyLock::new(|| {
+                            Regex::new(r">Rocky-([0-9]+)-GenericCloud-Base.latest.x86_64.qcow2<")
+                                .unwrap()
+                        }),
+                        image_name: "Rocky-(name)-GenericCloud-Base.latest.x86_64.qcow2",
+                        checksum_name: "Rocky-(name)-GenericCloud-Base.latest.x86_64.qcow2.CHECKSUM",
+                        hash_alg: HashAlg::Sha256,
+                    },
+                ),
+                (
+                    Arch::ARM64,
+                    ImageLocation {
+                        path: "(name)/images/aarch64/",
+                        pattern: LazyLock::new(|| {
+                            Regex::new(r">Rocky-([0-9]+)-GenericCloud-Base.latest.aarch64.qcow2<")
+                                .unwrap()
+                        }),
+                        image_name: "Rocky-(name)-GenericCloud-Base.latest.aarch64.qcow2",
+                        checksum_name: "Rocky-(name)-GenericCloud-Base.latest.aarch64.qcow2.CHECKSUM",
+                        hash_alg: HashAlg::Sha256,
+                    },
+                ),
+            ]),
+        },
+        Distro {
             vendor: "ubuntu",
             name_pattern: "(name)",
             version_pattern: "(version)",
