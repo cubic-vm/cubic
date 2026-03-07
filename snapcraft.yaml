@@ -1,3 +1,4 @@
+---
 name: cubic
 version: '0.19.0'
 license: MIT OR Apache-2.0
@@ -18,6 +19,31 @@ platforms:
       - arm64
     build-for:
       - arm64
+package-repositories:
+  - type: apt
+    architectures: [amd64]
+    formats: [deb, deb-src]
+    components: [main]
+    suites: [noble, noble-updates, noble-backports]
+    key-id: F6ECB3762474EDA9D21B7022871920D1991BC93C
+    url: http://archive.ubuntu.com/ubuntu
+
+  - type: apt
+    architectures: [amd64]
+    formats: [deb, deb-src]
+    components: [main]
+    suites: [noble-security]
+    key-id: F6ECB3762474EDA9D21B7022871920D1991BC93C
+    url: http://security.ubuntu.com/ubuntu
+
+  - type: apt
+    architectures: [arm64]
+    formats: [deb, deb-src]
+    components: [main]
+    suites: [noble, noble-updates, noble-backports]
+    key-id: F6ECB3762474EDA9D21B7022871920D1991BC93C
+    url: http://ports.ubuntu.com/ubuntu-ports
+
 confinement: strict
 parts:
   cubic:
@@ -29,12 +55,12 @@ parts:
   runtime-dependencies:
     plugin: nil
     stage-packages:
-      - genisoimage
-      - qemu-utils
-      - qemu-system-x86
-      - qemu-system-arm
-      - qemu-efi-aarch64
-      - seabios
+      - genisoimage:$CRAFT_ARCH_BUILD_FOR
+      - qemu-utils:$CRAFT_ARCH_BUILD_FOR
+      - qemu-system-x86:$CRAFT_ARCH_BUILD_FOR
+      - qemu-system-arm:$CRAFT_ARCH_BUILD_FOR
+      - qemu-efi-aarch64:$CRAFT_ARCH_BUILD_FOR
+      - seabios:$CRAFT_ARCH_BUILD_FOR
     override-build: |
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libicudata*
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libgallium*
@@ -71,4 +97,4 @@ apps:
       - home
       - ssh-keys
     environment:
-        LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libproxy
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libproxy
