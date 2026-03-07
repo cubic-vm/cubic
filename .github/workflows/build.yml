@@ -1,0 +1,185 @@
+---
+name: Build Pipeline
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - name: cubic-linux-amd64
+            target: x86_64-unknown-linux-gnu
+            packages: gcc-x86-64-linux-gnu
+            suffix: ""
+
+          - name: cubic-linux-arm64
+            target: aarch64-unknown-linux-gnu
+            packages: gcc-aarch64-linux-gnu
+            suffix: ""
+
+          - name: cubic-windows-amd64
+            target: x86_64-pc-windows-gnu
+            packages: gcc-mingw-w64-x86-64 nasm
+            suffix: .exe
+
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: sudo apt-get install -y ${{ matrix.packages }}
+
+      - name: Setup Rust
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Build Executable
+        run: cargo build --locked --release --target ${{ matrix.target }}
+
+      - name: Upload Executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: target/${{ matrix.target }}/release/cubic${{ matrix.suffix }}
+
+  validate-builds:
+    needs: build
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: cubic-linux-amd64
+            cmd: chmod +x cubic && ./cubic --help
+
+          - os: windows-latest
+            artifact: cubic-windows-amd64
+            cmd: ./cubic.exe --help
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Download Executable
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: .
+
+      - name: Run Cubic
+        run: ${{ matrix.cmd }}
+
+  package-deb:
+    runs-on: ubuntu-latest
+    needs: validate-builds
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: rustup toolchain install stable
+
+      - name: Install Cargo Deb
+        run: cargo install cargo-deb
+
+      - name: Build Debian Package
+        run: cargo deb
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cubic-deb-amd64
+          path: target/debian/*.deb
+
+  package-snap:
+    needs: validate-builds
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+          - arch: arm64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Download Executable
+        uses: actions/download-artifact@v4
+        with:
+          name: cubic-linux-${{ matrix.arch }}
+          path: .
+
+      - name: Set File Permissions
+        run: chmod +x cubic
+
+      - name: Package Snap
+        uses: snapcore/action-build@v1
+        with:
+          snapcraft-args: --build-for ${{ matrix.arch }}
+
+      - name: Set File Name
+        run: echo "SNAP_FILE=$(ls cubic_*.snap)" >> $GITHUB_ENV
+
+      - name: Upload Snap
+        uses: actions/upload-artifact@v4
+        with:
+          name: cubic-snap-${{ matrix.arch }}
+          path: ${{ env.SNAP_FILE }}
+
+  validate-packages:
+    needs: [package-deb, package-snap]
+    strategy:
+      matrix:
+        include:
+          - artifact: cubic-deb-amd64
+            install: sudo apt-get update && sudo apt install -y ./*.deb
+
+          - artifact: cubic-snap-amd64
+            install: sudo snap install --dangerous ./*.snap
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: .
+
+      - name: Install Artifact
+        run: ${{ matrix.install }}
+
+      - name: Run Cubic
+        run: cubic --help
+
+  publish-snap:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    needs: validate-packages
+    strategy:
+      matrix:
+        include:
+          - artifact: cubic-snap-amd64
+
+          - artifact: cubic-snap-arm64
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Snap
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: .
+
+      - name: Set File Name
+        run: echo "SNAP_FILE=$(ls cubic_*.snap)" >> $GITHUB_ENV
+
+      - name: Publish Snap
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAP_STORE_LOGIN }}
+        with:
+          snap: ${{ env.SNAP_FILE }}
+          release: ${{ startsWith(github.ref, 'refs/tags/') && 'candidate' || 'edge'}}
