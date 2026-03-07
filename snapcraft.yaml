@@ -21,9 +21,11 @@ platforms:
 confinement: strict
 parts:
   cubic:
-    plugin: rust
+    plugin: dump
     source: .
-    rust-cargo-parameters: ["--features", "qemu-sandbox"]
+    source-type: local
+    stage:
+      - cubic
   runtime-dependencies:
     plugin: nil
     stage-packages:
@@ -61,7 +63,7 @@ parts:
       done
 apps:
   cubic:
-    command: bin/cubic
+    command: cubic
     plugs:
       - kvm
       - network
