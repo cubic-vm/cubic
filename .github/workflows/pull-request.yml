@@ -1,3 +1,4 @@
+---
 name: Pull Request Checks
 permissions:
   contents: read
@@ -9,8 +10,23 @@ on:
       - main
 
 jobs:
-  format:
-    name: Format
+  check:
+    name: Check
+    strategy:
+      matrix:
+        include:
+          - check: cargo fmt --check
+            cargo: ""
+
+          - check: cargo clippy -- -D warnings
+            cargo: ""
+
+          - check: cargo test
+            cargo: ""
+
+          - check: cargo audit
+            cargo: "cargo-audit"
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Code
@@ -19,86 +35,18 @@ jobs:
       - name: Setup Rust
         run: rustup toolchain install stable
 
-      - name: Check Formatting
-        run: cargo fmt --check
+      - name: Install Tools
+        run: sh -c "[ -n \"${{ matrix.cargo }}\" ]  && cargo install ${{ matrix.cargo }} || true"
 
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Run Check
+        run: ${{ matrix.check }}
 
-      - name: Setup Rust
-        run: rustup toolchain install stable
-
-      - name: Lint Source Code
-        run: cargo clippy -- -D warnings
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-
-      - name: Setup Rust
-        run: rustup toolchain install stable
-
-      - name: Test Source Code
-        run: cargo test
-
-  audit:
-    name: Audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-
-      - name: Setup Rust
-        run: rustup toolchain install stable
-
-      - name: Setup Cargo Audit
-        run: cargo install cargo-audit
-
-      - name: Audit Source Code
-        run: cargo audit
-
-  linux:
-    name: Build on Linux
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-
-      - name: Setup Rust
-        run: rustup toolchain install stable
-
-      - name: Build Source Code
-        run: cargo build
-
-      - name: Run Source Code
-        run: cargo run -- --help
-
-  macos:
-    name: Build on macOS
-    runs-on: macos-latest
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-
-      - name: Setup Rust
-        run: rustup toolchain install stable
-
-      - name: Build Source Code
-        run: cargo build
-
-      - name: Run Source Code
-        run: cargo run -- --help
-
-  windows:
-    name: Build on Windows
-    runs-on: windows-latest
+  build:
+    name: Build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
