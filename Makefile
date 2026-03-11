@@ -63,5 +63,4 @@ doc: build-image
 
 release: build-image
 	sed "s/^\(version =\).*$$/\1 \"${version}\"/g" -i Cargo.toml
-	sed "s/^\\(version:\\).*$$/\\1 '${version}'/g" -i snapcraft.yaml
 	make build
