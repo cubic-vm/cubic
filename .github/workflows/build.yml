@@ -116,6 +116,9 @@ jobs:
       - name: Set File Permissions
         run: chmod +x cubic
 
+      - name: Set Version
+        run: sed "s/^\\(version:\\).*$$/\\1 '$(git describe --tags)'/g" -i snapcraft.yaml
+
       - name: Package Snap
         uses: snapcore/action-build@v1
         with:
