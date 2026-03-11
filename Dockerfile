@@ -16,7 +16,8 @@ RUN apt update && \
         python3-sphinx \
         python3-sphinx-rtd-theme \
         git \
-        vim
+        vim &&\
+    git config --global --add safe.directory /usr/local/app
 RUN rustup component add clippy rustfmt && \
     cargo install cargo-audit &&\
     echo 'alias cubic="cargo run"' >> ~/.bashrc

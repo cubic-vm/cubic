@@ -6,7 +6,8 @@ DOCKER_CMD=docker run --rm -v .:/usr/local/app \
 	-v ${IMAGE_VOLUME}:/tmp/cache \
 	-v ${INSTANCE_VOLUME}:/tmp/data \
 	-v ${BUILD_VOLUME}:/usr/local/app/target \
-	-v ${CARGO_VOLUME}:/usr/local/cargo
+	-v ${CARGO_VOLUME}:/usr/local/cargo \
+	-p 4000:4000
 IMAGE=cubic:latest
 
 CMDS= run create instances images ports show modify console ssh scp start stop \
@@ -56,19 +57,11 @@ build: build-image
 	${DOCKER_CMD} ${IMAGE} cargo build
 
 doc: build-image
-	${DOCKER_CMD} ${IMAGE} sphinx-build docs target/doc && python3 -m http.server -d target/doc 4000
-
-gen-ref: build-image
-	@${DOCKER_CMD} -it ${IMAGE} sh -c '\
-	echo ".. _ref_cubic:\n\ncubic\n=====\n\n.. code-block::\n\n    $$ cubic --help" > docs/reference/cubic.rst; \
-	cargo run -- --help | sed "s/^/    /" >> docs/reference/cubic.rst; \
-	for cmd in ${CMDS}; do \
-		echo ".. _ref_cubic_$${cmd}:\n\ncubic $${cmd}\n=====\n\n.. code-block::\n\n    $$ cubic $${cmd} --help" > docs/reference/$${cmd}.rst; \
-		cargo run -- $${cmd} --help | sed "s/^/    /" >> docs/reference/$${cmd}.rst; \
-	done'
+	@${DOCKER_CMD} -it ${IMAGE} ./scripts/generate-docs.sh
+	@${DOCKER_CMD} -it ${IMAGE} sphinx-build docs target/doc
+	@${DOCKER_CMD} -it ${IMAGE} python3 -m http.server -d target/doc 4000
 
 release: build-image
 	sed "s/^\(version =\).*$$/\1 \"${version}\"/g" -i Cargo.toml
 	sed "s/^\\(version:\\).*$$/\\1 '${version}'/g" -i snapcraft.yaml
-	sed "s/^\\(release = \\).*$$/\\1 'v${version}'/g" -i docs/conf.py
 	make build

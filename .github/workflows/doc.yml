@@ -1,3 +1,4 @@
+---
 name: Deploy Documentation to Pages
 
 on:
@@ -27,7 +28,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Generate Files
+      - name: Generate Docs
+        run: ./scripts/generate-docs.sh
+
+      - name: Generate HTML
         run: sphinx-build docs target/doc
 
       - name: Setup Pages
