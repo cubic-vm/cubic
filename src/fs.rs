@@ -1,6 +1,5 @@
 use crate::error::{Error, Result};
 use std::fs;
-use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -81,12 +80,6 @@ impl FS {
 
     pub fn path_exists(&self, path: &str) -> bool {
         Path::new(path).exists()
-    }
-
-    pub fn write_file(&self, path: &str, data: &[u8]) -> Result<()> {
-        self.create_file(path)?
-            .write_all(data)
-            .map_err(|e| Error::FS(format!("Cannot write file '{path}' ({e})")))
     }
 
     pub fn read_file_to_string(&self, path: &str) -> Result<String> {
