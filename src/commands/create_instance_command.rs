@@ -41,6 +41,9 @@ pub struct CreateInstanceCommand {
     /// Forward ports from guest to host (e.g. -p 8000:80 or -p 127.0.0.1:9000:90/tcp)
     #[clap(short, long)]
     port: Vec<PortForward>,
+    /// Execute a shell command on the first boot
+    #[clap(short, long)]
+    execute: Option<String>,
 }
 
 impl Command for CreateInstanceCommand {
@@ -70,6 +73,7 @@ impl Command for CreateInstanceCommand {
             disk_capacity: self.disk.clone(),
             ssh_port: PortChecker::new().get_new_port(),
             hostfwd: self.port.clone(),
+            execute: self.execute.clone(),
             ..Instance::default()
         };
         CreateInstanceAction::new().run(env, &FS::new(), instance_store, image, instance)?;
