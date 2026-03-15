@@ -21,7 +21,7 @@ fn write_user_data(
     let execute = execute
         .map(|execute| {
             format!(
-                "\u{20}\u{20}- \"{}\"\n",
+                "bootcmd:\n\u{20}\u{20}- \"{}\"\n",
                 execute
                     .replace('\\', "\\\\")
                     .replace('"', "\\\"")
@@ -43,16 +43,7 @@ fn write_user_data(
             \u{20}\u{20}\u{20}\u{20}ssh-authorized-keys: [{pubkey}]\n\
             \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
             \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n\
-            package_update: true\n\
-            packages:\n\
-            \u{20}\u{20}- openssh\n\
-            \u{20}\u{20}- qemu-guest-agent\n\
-            bootcmd:\n{execute}\
-            \u{20}\u{20}- systemctl enable --now qemu-guest-agent\n\
-            runcmd:\n\
-            \u{20}\u{20}- \
-                systemctl enable --now qemu-guest-agent\n\
-        "
+            {execute}"
         )
         .as_bytes(),
     ).map_err(Error::from)
@@ -138,14 +129,6 @@ users:
     ssh-authorized-keys: [pubkey]
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
-package_update: true
-packages:
-  - openssh
-  - qemu-guest-agent
-bootcmd:
-  - systemctl enable --now qemu-guest-agent
-runcmd:
-  - systemctl enable --now qemu-guest-agent
 "#;
         assert_eq!(
             actual, expected,
@@ -173,15 +156,8 @@ users:
     ssh-authorized-keys: [pubkey]
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
-package_update: true
-packages:
-  - openssh
-  - qemu-guest-agent
 bootcmd:
   - "\"sudo apt install vim\""
-  - systemctl enable --now qemu-guest-agent
-runcmd:
-  - systemctl enable --now qemu-guest-agent
 "#;
         assert_eq!(
             actual, expected,
