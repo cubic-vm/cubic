@@ -12,7 +12,26 @@ fn write_meta_data(out: &mut dyn Write, name: &str) -> Result<()> {
         .map_err(Error::from)
 }
 
-fn write_user_data(out: &mut dyn Write, user: &str, pubkey: &str) -> Result<()> {
+fn write_user_data(
+    out: &mut dyn Write,
+    user: &str,
+    pubkey: &str,
+    execute: Option<&str>,
+) -> Result<()> {
+    let execute = execute
+        .map(|execute| {
+            format!(
+                "\u{20}\u{20}- \"{}\"\n",
+                execute
+                    .replace('\\', "\\\\")
+                    .replace('"', "\\\"")
+                    .replace('\n', "\\n")
+                    .replace('\r', "\\r")
+                    .replace('\t', "\\t")
+            )
+        })
+        .unwrap_or_default();
+
     out.write_all(
         format!(
             "\
@@ -28,7 +47,7 @@ fn write_user_data(out: &mut dyn Write, user: &str, pubkey: &str) -> Result<()> 
             packages:\n\
             \u{20}\u{20}- openssh\n\
             \u{20}\u{20}- qemu-guest-agent\n\
-            bootcmd:\n\
+            bootcmd:\n{execute}\
             \u{20}\u{20}- systemctl enable --now qemu-guest-agent\n\
             runcmd:\n\
             \u{20}\u{20}- \
@@ -65,7 +84,12 @@ pub fn setup_cloud_init(env: &Environment, instance: &Instance) -> Result<()> {
                 .and_then(|key| key.ok())
                 .unwrap_or_default();
 
-            write_user_data(&mut fs.create_file(&user_data_path)?, user, &pubkey)?;
+            write_user_data(
+                &mut fs.create_file(&user_data_path)?,
+                user,
+                &pubkey,
+                instance.execute.as_deref(),
+            )?;
         }
 
         SystemCommand::new("mkisofs")
@@ -101,9 +125,9 @@ mod tests {
     }
 
     #[test]
-    fn test_write_user_data() {
+    fn test_write_user_data_without_execute() {
         let mut buffer = BufWriter::new(Vec::new());
-        write_user_data(&mut buffer, "tux", "pubkey").unwrap();
+        write_user_data(&mut buffer, "tux", "pubkey", None).unwrap();
         let actual = String::from_utf8(buffer.into_inner().unwrap()).unwrap();
 
         let expected = r#"#cloud-config
@@ -119,6 +143,42 @@ packages:
   - openssh
   - qemu-guest-agent
 bootcmd:
+  - systemctl enable --now qemu-guest-agent
+runcmd:
+  - systemctl enable --now qemu-guest-agent
+"#;
+        assert_eq!(
+            actual, expected,
+            "\nActual: {actual}\nExpected: {expected}\n"
+        )
+    }
+
+    #[test]
+    fn test_write_user_data_with_execute() {
+        let mut buffer = BufWriter::new(Vec::new());
+        write_user_data(
+            &mut buffer,
+            "tux",
+            "pubkey",
+            Some("\"sudo apt install vim\"").as_deref(),
+        )
+        .unwrap();
+        let actual = String::from_utf8(buffer.into_inner().unwrap()).unwrap();
+
+        let expected = r#"#cloud-config
+users:
+  - name: tux
+    lock_passwd: false
+    hashed_passwd: $y$j9T$wifmOLBedd7NSaH2IqG4L.$2J.8E.qE57lxapsWosOFod37djHePHg7Go03iDNsRe4
+    ssh-authorized-keys: [pubkey]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+package_update: true
+packages:
+  - openssh
+  - qemu-guest-agent
+bootcmd:
+  - "\"sudo apt install vim\""
   - systemctl enable --now qemu-guest-agent
 runcmd:
   - systemctl enable --now qemu-guest-agent

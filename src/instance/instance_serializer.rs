@@ -39,6 +39,7 @@ mod tests {
                     disk_capacity: DataSize::new(1000),
                     ssh_port: 10000,
                     hostfwd: Vec::new(),
+                    execute: Some("echo hello world".to_string()),
                     ..Instance::default()
                 },
                 &mut writer,
@@ -55,6 +56,7 @@ mem = 1000
 disk_capacity = 1000
 ssh_port = 10000
 hostfwd = []
+execute = "echo hello world"
 "#
         );
     }
