@@ -46,6 +46,7 @@ Reference
   * :ref:`ref_cubic_console`
   * :ref:`ref_cubic_ssh`
   * :ref:`ref_cubic_scp`
+  * :ref:`ref_cubic_exec`
   * :ref:`ref_cubic_start`
   * :ref:`ref_cubic_stop`
   * :ref:`ref_cubic_restart`

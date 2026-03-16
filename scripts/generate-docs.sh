@@ -1,7 +1,7 @@
 #!/bin/bash
 
-CMDS="run create instances images ports show modify console ssh scp start stop \
-		restart rename clone delete prune completions"
+CMDS="run create instances images ports show modify console ssh scp exec start \
+    stop restart rename clone delete prune completions"
 
 function generate_cmd_doc() {
     name="$1"
