@@ -32,12 +32,16 @@ pub struct InstanceModifyCommand {
 impl Command for InstanceModifyCommand {
     fn run(
         &self,
-        _console: &mut dyn Console,
+        console: &mut dyn Console,
         _env: &Environment,
         _image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<()> {
         let mut instance = instance_store.load(&self.instance)?;
+
+        if instance_store.is_running(&instance) {
+            console.info("Note: changes will be applied after the next restart.");
+        }
 
         if let Some(cpus) = &self.cpus {
             instance.cpus = *cpus;
