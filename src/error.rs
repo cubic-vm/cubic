@@ -50,4 +50,6 @@ pub enum Error {
     Ssh(#[from] ssh_key::Error),
     #[error("Invalid path: {0}")]
     InvalidPath(String),
+    #[error("SCP Error: {0}")]
+    Scp(String),
 }
