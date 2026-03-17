@@ -39,7 +39,45 @@ mod tests {
                     disk_capacity: DataSize::new(1000),
                     ssh_port: 10000,
                     hostfwd: Vec::new(),
+                    execute: None,
+                    ..Instance::default()
+                },
+                &mut writer,
+            )
+            .expect("Cannot parser config");
+        let config = String::from_utf8(writer).unwrap();
+
+        assert_eq!(
+            config,
+            r#"arch = "AMD64"
+user = "tux"
+cpus = 1
+mem = 1000
+disk_capacity = 1000
+ssh_port = 10000
+hostfwd = []
+isolate = false
+"#
+        );
+    }
+
+    #[test]
+    fn test_serialize_full_config() {
+        let mut writer = Vec::new();
+
+        InstanceSerializer::new()
+            .serialize(
+                &Instance {
+                    name: "test".to_string(),
+                    arch: Arch::AMD64,
+                    user: "tux".to_string(),
+                    cpus: 1,
+                    mem: DataSize::new(1000),
+                    disk_capacity: DataSize::new(1000),
+                    ssh_port: 10000,
+                    hostfwd: Vec::new(),
                     execute: Some("echo hello world".to_string()),
+                    isolate: true,
                     ..Instance::default()
                 },
                 &mut writer,
@@ -57,6 +95,7 @@ disk_capacity = 1000
 ssh_port = 10000
 hostfwd = []
 execute = "echo hello world"
+isolate = true
 "#
         );
     }

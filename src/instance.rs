@@ -47,5 +47,8 @@ pub struct Instance {
     pub ssh_port: u16,
     #[serde(default)]
     pub hostfwd: Vec<PortForward>,
+    #[serde(default)]
     pub execute: Option<String>,
+    #[serde(default)]
+    pub isolate: bool,
 }
