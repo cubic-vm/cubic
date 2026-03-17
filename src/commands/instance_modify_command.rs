@@ -5,7 +5,7 @@ use crate::image::ImageStore;
 use crate::instance::{InstanceStore, PortForward};
 use crate::model::DataSize;
 use crate::view::Console;
-use clap::Parser;
+use clap::{ArgAction, Parser};
 
 /// Modify a virtual machine instance configuration
 #[derive(Parser)]
@@ -27,6 +27,12 @@ pub struct InstanceModifyCommand {
     /// Remove port forwarding rule (e.g. -P 8000:80)
     #[clap(short = 'P', long)]
     rm_port: Vec<PortForward>,
+    /// Isolate VM instance from network
+    #[clap(long, action = ArgAction::SetTrue)]
+    isolate: Option<bool>,
+    /// Do not isolate VM instance from network (default)
+    #[clap(long, action = ArgAction::SetTrue)]
+    no_isolate: Option<bool>,
 }
 
 impl Command for InstanceModifyCommand {
@@ -53,6 +59,14 @@ impl Command for InstanceModifyCommand {
 
         if let Some(disk) = &self.disk {
             instance_store.resize(&mut instance, disk.get_bytes() as u64)?;
+        }
+
+        if let Some(isolate) = self.isolate {
+            instance.isolate = isolate;
+        }
+
+        if let Some(no_isolate) = self.no_isolate {
+            instance.isolate = !no_isolate;
         }
 
         instance.hostfwd.append(&mut self.port.clone());

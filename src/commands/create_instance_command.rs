@@ -12,7 +12,7 @@ use crate::model::DataSize;
 use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
 use crate::view::SpinnerView;
-use clap::Parser;
+use clap::{ArgAction, Parser};
 
 pub const DEFAULT_CPU_COUNT: u16 = 4;
 pub const DEFAULT_MEM_SIZE: &str = "4G";
@@ -44,6 +44,9 @@ pub struct CreateInstanceCommand {
     /// Execute a shell command on the first boot
     #[clap(short, long)]
     execute: Option<String>,
+    /// Isolate VM instance from network
+    #[clap(long, action = ArgAction::SetTrue)]
+    isolate: bool,
 }
 
 impl Command for CreateInstanceCommand {
@@ -74,6 +77,7 @@ impl Command for CreateInstanceCommand {
             ssh_port: PortChecker::new().get_new_port(),
             hostfwd: self.port.clone(),
             execute: self.execute.clone(),
+            isolate: self.isolate,
             ..Instance::default()
         };
         CreateInstanceAction::new().run(env, &FS::new(), instance_store, image, instance)?;

@@ -40,6 +40,7 @@ impl Command for InstanceShowCommand {
         );
         view.add("Disk Total", &instance.disk_capacity.to_size());
         view.add("User", &instance.user);
+        view.add("Isolated", if instance.isolate { "yes" } else { "no" });
         view.add("SSH Port", &instance.ssh_port.to_string());
         view.add(
             "SSH",
@@ -100,6 +101,7 @@ Memory:     1.0 KiB
 Disk Used:  n/a
 Disk Total: 1.0 MiB
 User:       cubic
+Isolated:   no
 SSH Port:   9000
 SSH:        ssh -p 9000 cubic@localhost
 "
@@ -120,6 +122,7 @@ SSH:        ssh -p 9000 cubic@localhost
             disk_capacity: DataSize::new(1),
             ssh_port: 8000,
             hostfwd: Vec::new(),
+            isolate: true,
             ..Instance::default()
         }]);
 
@@ -138,6 +141,7 @@ Memory:     1   B
 Disk Used:  n/a
 Disk Total: 1   B
 User:       john
+Isolated:   yes
 SSH Port:   8000
 SSH:        ssh -p 8000 john@localhost
 "

@@ -115,19 +115,20 @@ impl Emulator {
             .arg("chardev:console");
     }
 
-    pub fn set_network(&mut self, hostfwd: &[PortForward], ssh_port: u16) {
+    pub fn set_network(&mut self, hostfwd: &[PortForward], ssh_port: u16, isolate: bool) {
         let mut hostfwd_options = String::new();
         for fwd in hostfwd {
             hostfwd_options.push_str(",hostfwd=");
             hostfwd_options.push_str(&fwd.to_qemu());
         }
 
+        let restrict = if isolate { "on" } else { "off" };
         self.command
             .arg("-device")
             .arg("virtio-net-pci,netdev=net0")
             .arg("-netdev")
             .arg(format!(
-                "user,id=net0,hostfwd=tcp:127.0.0.1:{ssh_port}-:22{hostfwd_options}"
+                "user,id=net0,restrict={restrict},hostfwd=tcp:127.0.0.1:{ssh_port}-:22{hostfwd_options}"
             ));
     }
 
