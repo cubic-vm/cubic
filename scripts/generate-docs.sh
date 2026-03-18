@@ -1,5 +1,7 @@
 #!/bin/bash
 
+version="$1"
+
 CMDS="run create instances images ports show modify console ssh scp exec start \
     stop restart rename clone delete prune completions"
 
@@ -14,7 +16,7 @@ function generate_cmd_doc() {
 }
 
 # Set version
-sed "s/^release = .*$/release = '$(git describe --tags)'/g" -i docs/conf.py
+sed "s/^release = .*$/release = '$version'/g" -i docs/conf.py
 
 # Create Reference Doc Directory
 mkdir -p docs/reference
