@@ -75,36 +75,51 @@ See the [install](https://cubic-vm.org/install.html) instructions for more infor
 Cubic has a simple CLI:
 ```
 $ cubic --help
-Cubic is a lightweight command line manager for virtual machines. It has a
-simple, daemon-less and rootless design. All Cubic virtual machines run
-isolated in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
+Cubic is a lightweight command line manager for virtual machines. It has a 
+simple, daemon-less and rootless design. All Cubic virtual machines run isolated
+in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
 
-https://cubic-vm.org
-https://github.com/cubic-vm/cubic
+For more information, visit: https://cubic-vm.org/
+The source code is located at: https://github.com/cubic-vm/cubic
 
-Show all supported images:
+Create your first virtual machine instance with:
+$ cubic create my-instance --image ubuntu:noble
+$ cubic ssh my-instance
+
+Alternatively, you can use `run` to create and connect a new virtual machine
+instance in a single command:
+$ cubic run my-instance --image ubuntu:noble
+
+Show all supported virtual machine images:
 $ cubic images
 
-Create a new virtual machine instance:
-$ cubic create mymachine --image ubuntu:noble
+Run, create, clone, rename and delete virtual machine instances:
+$ cubic run <instance> --image <image>
+$ cubic create <instance> --image <image>
+$ cubic rename <instance> <new instance name>
+$ cubic clone  <instance> <instance clone name>
+$ cubic delete <instance>
 
 List all virtual machine instances:
 $ cubic instances
 
-Start an instance:
-$ cubic start <instance name>
+Show information about a virtual machine instance:
+$ cubic show <instance>
 
-Stop an instance:
-$ cubic stop <instance name>
+Open a shell in the virtual machine instance:
+$ cubic ssh <instance>
 
-Open a shell in the instance:
-$ cubic ssh <machine name>
+Execute a command in a virtual machine instance:
+$ cubic cmd <instance> "<shell cmd>"
 
-Copy a file from the host to the instance:
-$ cubic scp <path/to/host/file> <machine>:<path/to/guest/file>
+Copy files and directories between host and virtual machine instance:
+$ cubic scp <path/to/host/file> <instance>:<path/to/guest/file>
+$ cubic scp <instance>:<path/to/guest/file> <path/to/host/file>
 
-Copy a file from the instance to the hots:
-$ cubic scp <machine>:<path/to/guest/file> <path/to/host/file>
+Start, restart and stop virtual machine instances:
+$ cubic start   <instance>
+$ cubic restart <instance>
+$ cubic stop    <instance>
 
 
 Usage: cubic [OPTIONS] <COMMAND>
@@ -117,7 +132,7 @@ Commands:
   ports        List forwarded ports for all virtual machine instances
   show         Show virtual machine image or instance information
   modify       Modify a virtual machine instance configuration
-  console      Open the console of an virtual machine instance
+  console      Open the console of a virtual machine instance
   ssh          Connect to a virtual machine instance with SSH
   scp          Copy a file from or to a virtual machine instance with SCP
   exec         Execute a command in the virtual machine instance

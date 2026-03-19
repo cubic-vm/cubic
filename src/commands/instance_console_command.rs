@@ -11,7 +11,7 @@ use std::path::Path;
 use std::thread;
 use std::time::Duration;
 
-/// Open the console of an virtual machine instance
+/// Open the console of a virtual machine instance
 #[derive(Parser)]
 pub struct InstanceConsoleCommand {
     /// Name of the virtual machine instance
