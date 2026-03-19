@@ -39,7 +39,7 @@ Open a shell in the virtual machine instance:
 $ cubic ssh <instance>
 
 Execute a command in a virtual machine instance:
-$ cubic cmd <instance> "<shell cmd>"
+$ cubic exec <instance> "<shell cmd>"
 
 Copy files and directories between host and virtual machine instance:
 $ cubic scp <path/to/host/file> <instance>:<path/to/guest/file>
