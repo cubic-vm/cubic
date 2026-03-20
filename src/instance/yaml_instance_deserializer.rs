@@ -1,4 +1,3 @@
-use crate::error::{Error, Result};
 use crate::instance::{Config, Instance, InstanceDeserializer};
 use std::io::Read;
 use std::str;
@@ -13,14 +12,13 @@ impl YamlInstanceDeserializer {
 }
 
 impl InstanceDeserializer for YamlInstanceDeserializer {
-    fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Result<Instance> {
+    fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Option<Instance> {
         serde_yaml::from_reader(reader)
-            .map(|config: Config| config.machine)
-            .map(|mut instance: Instance| {
-                instance.name = name.to_string();
-                instance
+            .ok()
+            .map(|mut config: Config| {
+                config.machine.name = name.to_string();
+                config.machine
             })
-            .map_err(|_| Error::CannotParseFile(String::new()))
     }
 }
 
@@ -34,7 +32,7 @@ mod tests {
     fn test_deserialize_empty_file() {
         let reader = &mut BufReader::new("".as_bytes());
         let instance = YamlInstanceDeserializer::new().deserialize("test", reader);
-        assert!(instance.is_err());
+        assert_eq!(instance, None);
     }
 
     #[test]

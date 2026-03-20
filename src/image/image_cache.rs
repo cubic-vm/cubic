@@ -27,22 +27,22 @@ impl ImageCache {
 
     pub fn read_from_file(path: &str) -> Option<Self> {
         File::open(path)
-            .map_err(Error::from)
-            .and_then(|ref mut reader| ImageCache::deserialize(reader))
             .ok()
+            .and_then(|ref mut reader| ImageCache::deserialize(reader))
     }
 
     pub fn write_to_file(&self, path: &str) {
-        File::create(path)
-            .map_err(Error::from)
-            .and_then(|mut file| self.serialize(&mut file))
-            .ok();
+        if let Ok(ref mut file) = File::create(path) {
+            self.serialize(file).ok();
+        }
     }
 
-    fn deserialize(reader: &mut dyn Read) -> Result<ImageCache> {
+    fn deserialize(reader: &mut dyn Read) -> Option<ImageCache> {
         let mut data = String::new();
-        reader.read_to_string(&mut data).map_err(Error::from)?;
-        toml::from_str(&data).map_err(|_| Error::CannotParseFile(String::new()))
+        match reader.read_to_string(&mut data).is_ok() {
+            true => toml::from_str(&data).ok(),
+            false => None,
+        }
     }
 
     fn serialize(&self, writer: &mut dyn Write) -> Result<()> {
@@ -69,16 +69,16 @@ mod tests {
 
     #[test]
     fn test_deserialize_invalid() {
-        let reader = &mut BufReader::new("".as_bytes());
-        let cache = ImageCache::deserialize(reader);
-        assert!(cache.is_err());
+        assert_eq!(
+            ImageCache::deserialize(&mut BufReader::new("".as_bytes())),
+            None
+        );
     }
 
     #[test]
     fn test_deserialize_empty() {
         let reader = &mut BufReader::new("images = []\ntimestamp = 0".as_bytes());
-        let cache = ImageCache::deserialize(reader);
-        assert_eq!(cache.unwrap(), ImageCache::default());
+        assert_eq!(ImageCache::deserialize(reader), Some(ImageCache::default()));
     }
 
     #[test]

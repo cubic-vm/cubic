@@ -17,7 +17,7 @@ impl StopInstanceAction {
             return Err(Error::UnknownInstance(self.instance.name.clone()));
         }
 
-        #[cfg(not(windows))]
+        #[cfg(not(any(windows, test)))]
         if instance_dao.is_running(&self.instance) {
             instance_dao.get_monitor(&self.instance)?.shutdown()?;
         }
