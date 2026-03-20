@@ -6,8 +6,12 @@ use crate::instance::InstanceStore;
 use crate::view::Console;
 use clap::Parser;
 
-/// Clear cache and free space
+/// Clear caches
+///
+/// This commands removes cached VM images files.
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct PruneCommand;
 
 impl Command for PruneCommand {

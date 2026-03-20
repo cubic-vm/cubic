@@ -6,8 +6,18 @@ use crate::instance::InstanceStore;
 use crate::view::Console;
 use clap::Parser;
 
-/// Restart virtual machine instances
+/// Restart VM instances
+///
+/// Examples:
+///
+///   Restart the VM instance 'my-instance':
+///   $ cubic restart my-instance
+///
+///   Restart multiple VM instances:
+///   $ cubic restart trixie noble
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct InstanceRestartCommand {
     /// Name of the virtual machine instances to restart
     instances: Vec<String>,

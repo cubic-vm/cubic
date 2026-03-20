@@ -6,7 +6,7 @@ use crate::instance::{InstanceName, InstanceStore};
 use crate::view::{Console, MapView};
 use clap::Parser;
 
-/// Show a virtual machine instance
+/// Show VM instances
 #[derive(Parser)]
 pub struct InstanceShowCommand {
     /// Name of the virtual machine instance
