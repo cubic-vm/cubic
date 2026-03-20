@@ -26,7 +26,7 @@ pub const DEFAULT_DISK_SIZE: &str = "100G";
 /// Examples:
 ///
 ///   Create a VM instance with 8 vCPUs, 10G of RAM, 200G of storage:
-///   $ cubic create example1 --cpus 8 --mem 10G --disk 200G -i debian:trixie
+///   $ cubic create example1 --cpus 8 --memory 10G --disk 200G -i debian:trixie
 ///
 ///   Create a VM instance and forward the instance's HTTP port to the host port 8000:
 ///   $ cubic create example2 --port 8000:80 -i ubuntu:noble
@@ -58,8 +58,8 @@ pub struct CreateInstanceCommand {
     #[clap(short, long, default_value_t = DEFAULT_CPU_COUNT)]
     cpus: u16,
     /// Memory amount of the VM instance
-    #[clap(short, long, default_value = DEFAULT_MEM_SIZE)]
-    mem: DataSize,
+    #[clap(alias = "mem", short, long, default_value = DEFAULT_MEM_SIZE)]
+    memory: DataSize,
     /// Disk size of the VM instance
     #[clap(short, long, default_value = DEFAULT_DISK_SIZE)]
     disk: DataSize,
@@ -97,7 +97,7 @@ impl Command for CreateInstanceCommand {
             arch: image.arch,
             user: self.user.to_string(),
             cpus: self.cpus,
-            mem: self.mem.clone(),
+            mem: self.memory.clone(),
             disk_capacity: self.disk.clone(),
             ssh_port: PortChecker::new().get_new_port(),
             hostfwd: self.port.clone(),

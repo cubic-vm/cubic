@@ -19,7 +19,7 @@ use clap::{ArgAction, Parser};
 ///   $ cubic modify example1 --cpus 8
 ///
 ///   Assign 10 GiB of RAM to a VM instance:
-///   $ cubic modify example2 --mem 10G
+///   $ cubic modify example2 --memory 10G
 ///
 ///   Assign 200 GiB of storage to a VM instance:
 ///   $ cubic modify example3 --disk 200G
@@ -48,8 +48,8 @@ pub struct InstanceModifyCommand {
     #[clap(short, long)]
     cpus: Option<u16>,
     /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
-    #[clap(short, long)]
-    mem: Option<DataSize>,
+    #[clap(alias = "mem", short, long)]
+    memory: Option<DataSize>,
     /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
     #[clap(short, long)]
     disk: Option<DataSize>,
@@ -85,8 +85,8 @@ impl Command for InstanceModifyCommand {
             instance.cpus = *cpus;
         }
 
-        if let Some(mem) = &self.mem {
-            instance.mem = mem.clone();
+        if let Some(memory) = &self.memory {
+            instance.mem = memory.clone();
         }
 
         if let Some(disk) = &self.disk {
