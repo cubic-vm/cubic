@@ -12,13 +12,29 @@ use clap::Parser;
 use std::thread::sleep;
 use std::time::Duration;
 
-/// Start virtual machine instances
+/// Start VM instances
+///
+/// Examples:
+///
+///   Start the VM instance 'my-instance'
+///   $ cubic start my-instance
+///
+///   Start and wait for the VM instance 'my-instance' to start
+///   $ cubic start --wait my-instance
+///
+///   Start multiple VM instances
+///   $ cubic start trixie noble
+///
+///   Pass additional arguments to QEMU
+///   $ cubic start trixie --qemu-args="-sandbox on"
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct InstanceStartCommand {
     /// Pass additional QEMU arguments
     #[clap(long)]
     pub qemu_args: Option<String>,
-    /// Wait for the virtual machine instance to be started
+    /// Wait until the VM instance has started
     #[clap(short, long, default_value_t = false)]
     pub wait: bool,
     /// Name of the virtual machine instances to start

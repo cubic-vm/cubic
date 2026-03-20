@@ -7,9 +7,18 @@ use crate::view::Console;
 use clap::{CommandFactory, Parser};
 use clap_complete::Shell;
 
-/// Generate command completions for your shell
+/// Generate shell completion scripts
+///
+/// Examples:
+///
+///   Generate Bash auto completion script:
+///   $ cubic completions bash > /etc/bash_completion.d/cubic.bash
+///
+///   Generate Fish auto completion script:
+///   $ cubic completions fish > ~/.config/fish/completions/cubic.fish
+///
 #[derive(Parser)]
-#[clap(alias = "completion")]
+#[clap(alias = "completion", verbatim_doc_comment)]
 pub struct CompletionsCommand {
     /// The shell to generate completions for
     shell: Option<Shell>,

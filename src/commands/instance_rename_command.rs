@@ -6,8 +6,15 @@ use crate::instance::{InstanceName, InstanceStore};
 use crate::view::Console;
 use clap::Parser;
 
-/// Rename a virtual machine instance
+/// Rename VM instances
+///
+/// Examples:
+///
+///   Rename the VM instance 'noble' in 'ubuntu':
+///   $ cubic rename noble ubuntu
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct InstanceRenameCommand {
     /// Name of the virtual machine instance to rename
     old_name: InstanceName,

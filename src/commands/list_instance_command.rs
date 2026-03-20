@@ -6,8 +6,19 @@ use crate::instance::InstanceStore;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
 
-/// List all virtual machine instances
+/// List VM instances
+///
+/// Examples:
+///
+///   $ cubic instances
+///   PID     Name           Arch    CPUs     Memory   Disk Used   Disk Total   State
+///           noble-arm64    arm64      8    8.0 GiB     4.4 GiB    100.0 GiB   stopped
+///   1059    trixie         amd64      6   16.0 GiB         n/a    100.0 GiB   running
+///           fedora         amd64      4    4.0 GiB    10.0 GiB    100.0 GiB   stopped
+///
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct ListInstanceCommand;
 
 impl Command for ListInstanceCommand {

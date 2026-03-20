@@ -10,8 +10,21 @@ use clap::Parser;
 use std::thread;
 use std::time::Duration;
 
-/// Stop virtual machine instances
+/// Stop VM instances
+///
+/// Examples:
+///
+///   Stop the VM instance 'my-instance':
+///   $ cubic stop my-instace
+///
+///   Stop and wait until the VM instance 'my-instance' has stopped:
+///   $ cubic stop --wait my-instace
+///
+///   Stop all VM instances:
+///   $ cubic stop --all --wait
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct InstanceStopCommand {
     /// Stop all virtual machine instances
     #[clap(short, long, default_value_t = false)]

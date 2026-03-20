@@ -75,76 +75,62 @@ See the [install](https://cubic-vm.org/install.html) instructions for more infor
 Cubic has a simple CLI:
 ```
 $ cubic --help
-Cubic is a lightweight command line manager for virtual machines. It has a 
-simple, daemon-less and rootless design. All Cubic virtual machines run isolated
+Cubic is a lightweight command line manager for virtual machines. It has a
+simple, daemonless and rootless design. All Cubic virtual machines run isolated
 in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
+
+Examples:
+
+  Create a new VM instance with:
+  $ cubic create example --image ubuntu:noble
+  Open a shell in the VM instance:
+  $ cubic ssh example
+
+  Alternatively, use `run` to execute the above commands in a single command:
+  $ cubic run example --image ubuntu:noble
+
+  Show all supported VM images:
+  $ cubic images
+
+  List previously created VM instances:
+  $ cubic instances
+
+  Show information about a VM instance:
+  $ cubic show <instance>
+
+  Execute a command in a VM instance:
+  $ cubic exec <instance> <shell command>
+
+  Transfer files and directories between host and VM instance:
+  $ cubic scp <path/to/host/file> <instance>:<path/to/guest/file>
+  See `cubic scp --help` for more examples
 
 For more information, visit: https://cubic-vm.org/
 The source code is located at: https://github.com/cubic-vm/cubic
-
-Create your first virtual machine instance with:
-$ cubic create my-instance --image ubuntu:noble
-$ cubic ssh my-instance
-
-Alternatively, you can use `run` to create and connect a new virtual machine
-instance in a single command:
-$ cubic run my-instance --image ubuntu:noble
-
-Show all supported virtual machine images:
-$ cubic images
-
-Run, create, clone, rename and delete virtual machine instances:
-$ cubic run <instance> --image <image>
-$ cubic create <instance> --image <image>
-$ cubic rename <instance> <new instance name>
-$ cubic clone  <instance> <instance clone name>
-$ cubic delete <instance>
-
-List all virtual machine instances:
-$ cubic instances
-
-Show information about a virtual machine instance:
-$ cubic show <instance>
-
-Open a shell in the virtual machine instance:
-$ cubic ssh <instance>
-
-Execute a command in a virtual machine instance:
-$ cubic exec <instance> "<shell cmd>"
-
-Copy files and directories between host and virtual machine instance:
-$ cubic scp <path/to/host/file> <instance>:<path/to/guest/file>
-$ cubic scp <instance>:<path/to/guest/file> <path/to/host/file>
-
-Start, restart and stop virtual machine instances:
-$ cubic start   <instance>
-$ cubic restart <instance>
-$ cubic stop    <instance>
 
 
 Usage: cubic [OPTIONS] <COMMAND>
 
 Commands:
-  run          Create, start and open a shell in a new virtual machine instance
-  create       Create a new virtual machine instance
-  instances    List all virtual machine instances
-  images       List all supported virtual machine images
-  ports        List forwarded ports for all virtual machine instances
-  show         Show virtual machine image or instance information
-  modify       Modify a virtual machine instance configuration
-  console      Open the console of a virtual machine instance
-  ssh          Connect to a virtual machine instance with SSH
-  scp          Copy a file from or to a virtual machine instance with SCP
-  exec         Execute a command in the virtual machine instance
-  start        Start virtual machine instances
-  stop         Stop virtual machine instances
-  restart      Restart virtual machine instances
-  rename       Rename a virtual machine instance
-  clone        Clone a virtual machine instance
-  delete       Delete one or more virtual machine instances
-  prune        Clear cache and free space
-  completions  Generate command completions for your shell
-  help         Print this message or the help of the given subcommand(s)
+  run          Create and start VM instances
+  create       Create VM instances
+  instances    List VM instances
+  images       List VM images
+  ports        List ports for VM instances
+  show         Show VM images and instances
+  modify       Modify VM instances
+  console      Open VM instance console
+  ssh          Connect to VM instances
+  scp          Copy data between host and VM instances
+  exec         Execute commands on VM instances
+  start        Start VM instances
+  stop         Stop VM instances
+  restart      Restart VM instances
+  rename       Rename VM instances
+  clone        Clone VM instances
+  delete       Delete VM instances
+  prune        Clear caches
+  completions  Generate shell completion scripts
 
 Options:
   -v, --verbose  Increase logging output

@@ -7,8 +7,15 @@ use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
 use clap::Parser;
 
-/// Clone a virtual machine instance
+/// Clone VM instances
+///
+/// Examples:
+///
+///   Clone the VM instance 'my-instance' as 'my-instance2':
+///   $ cubic clone my-instance my-instance2
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct InstanceCloneCommand {
     /// Name of the virtual machine instance to clone
     name: InstanceName,

@@ -7,8 +7,18 @@ use crate::util;
 use crate::view::Console;
 use clap::Parser;
 
-/// Delete one or more virtual machine instances
+/// Delete VM instances
+///
+/// Examples:
+///
+///   Delete the VM instance 'my-instance':
+///   $ cubic delete my-instance
+///
+///   Delete multiple VM instances:
+///   $ cubic delete trixie noble
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct DeleteInstanceCommand {
     /// Delete the virtual machine instances even when running
     #[clap(short, long, default_value_t = false)]
