@@ -1,4 +1,3 @@
-use crate::error::{Error, Result};
 use crate::instance::{Instance, InstanceDeserializer};
 use std::io::Read;
 use std::str;
@@ -13,15 +12,17 @@ impl TomlInstanceDeserializer {
 }
 
 impl InstanceDeserializer for TomlInstanceDeserializer {
-    fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Result<Instance> {
+    fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Option<Instance> {
         let mut data = String::new();
-        reader.read_to_string(&mut data).map_err(Error::from)?;
-        toml::from_str(&data)
-            .map(|mut instance: Instance| {
-                instance.name = name.to_string();
-                instance
-            })
-            .map_err(|_| Error::CannotParseFile(String::new()))
+        match reader.read_to_string(&mut data).is_ok() {
+            true => toml::from_str(&data)
+                .map(|mut instance: Instance| {
+                    instance.name = name.to_string();
+                    instance
+                })
+                .ok(),
+            false => None,
+        }
     }
 }
 
@@ -34,8 +35,10 @@ mod tests {
     #[test]
     fn test_deserialize_empty_file() {
         let reader = &mut BufReader::new("".as_bytes());
-        let instance = TomlInstanceDeserializer::new().deserialize("test", reader);
-        assert!(instance.is_err());
+        assert_eq!(
+            TomlInstanceDeserializer::new().deserialize("test", reader),
+            None
+        );
     }
 
     #[test]
