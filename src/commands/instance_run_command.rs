@@ -13,7 +13,7 @@ use clap::{self, Parser};
 /// Examples:
 ///
 ///   Run a VM instance with 8 vCPUs, 10G of RAM, 200G of storage:
-///   $ cubic run example1 --cpus 8 --mem 10G --disk 200G -i debian:trixie
+///   $ cubic run example1 --cpus 8 --memory 10G --disk 200G -i debian:trixie
 ///
 ///   Run a VM instance and forward the instance's HTTP port to the host port 8000:
 ///   $ cubic run example2 --port 8000:80 -i ubuntu:noble
