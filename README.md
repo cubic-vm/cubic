@@ -139,6 +139,55 @@ Options:
   -V, --version  Print version
 ```
 
+# :hammer: How to Build Cubic from Source?
+
+## Install Toolchain
+
+Before running the build commands, ensure you have the necessary tools installed:
+
+- **Git**
+- **GCC**
+- **Rustup**
+
+For **Debian**, **Ubuntu**, and derivatives:
+```bash
+sudo apt update && sudo apt install -y git gcc rustup
+```
+
+For **Fedora** and derivatives:
+```bash
+sudo dnf install -y git gcc rustup && sudo rustup-init -y
+```
+
+For **OpenSUSE** and derivatives:
+```bash
+sudo zypper install -y git gcc rustup
+```
+
+## Build Cubic
+
+Download the source code, navigate to the Cubic source directory and run the build command.
+
+```bash
+git clone https://github.com/cubic-vm/cubic.git
+cd cubic/
+rustup toolchain add stable
+cargo build --locked --release
+```
+The target executable is located at `target/release/cubic`.
+
+**Note**:
+- The `--release` flag is used to create an optimized version of the application.
+- The `--locked` flag is used to ensure the build uses the exact dependency versions intended by the developers.
+
+## Runtime Dependencies
+
+Once built, Cubic needs these tools to actually run the virtual machines:
+
+- **QEMU** (qemu-system-x86_64, qemu-system-arm64, qemu-img)
+- **cdrtools** or **cdrkit** (mkisofs)
+
+
 # :speech_balloon: How to contribute to Cubic?
 
 We are actively looking for help to improve Cubic. You can help in various ways:
