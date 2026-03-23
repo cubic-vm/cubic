@@ -1,10 +1,10 @@
+use crate::cloudinit::UserDataImageFactory;
 use crate::emulator::Emulator;
 use crate::env::Environment;
 use crate::error::Result;
 use crate::fs::FS;
 use crate::instance::{Instance, InstanceStore};
 use crate::ssh_cmd::PortChecker;
-use crate::util::setup_cloud_init;
 
 pub struct StartInstanceAction {
     instance: Instance,
@@ -29,7 +29,7 @@ impl StartInstanceAction {
         }
 
         FS::new().setup_directory_access(&env.get_instance_runtime_dir(&self.instance.name))?;
-        setup_cloud_init(env, &self.instance)?;
+        UserDataImageFactory.create(env, &self.instance)?;
 
         let mut emulator = Emulator::from(self.instance.arch)?;
         emulator.set_cpus(self.instance.cpus);
