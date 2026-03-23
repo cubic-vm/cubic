@@ -62,7 +62,7 @@ impl FromStr for ImageName {
 
 impl fmt::Display for ImageName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "{}", self.name)
+        write!(f, "{}:{}:{}", self.vendor, self.name, self.arch)
     }
 }
 

@@ -1,39 +1,41 @@
 [package]
 name = "cubic"
-version = "0.19.0"
+version = "0.20.0"
 authors = ["Roger Knecht <rknecht@pm.me>"]
 license = "MIT OR Apache-2.0"
 description = """\
-Cubic is a lightweight command line manager for virtual machines. It has a
-simple, daemon-less and rootless design. All Cubic virtual machines run
-isolated in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
+Cubic is a lightweight command line manager for virtual machines. It has a 
+simple, daemonless and rootless design. All Cubic virtual machines run isolated
+in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
 
-https://cubic-vm.org
-https://github.com/cubic-vm/cubic
+Examples:
 
-Show all supported images:
-$ cubic images
+  Create a new VM instance with:
+  $ cubic create example --image ubuntu:noble
+  Open a shell in the VM instance:
+  $ cubic ssh example
 
-Create a new virtual machine instance:
-$ cubic create mymachine --image ubuntu:noble
+  Alternatively, use `run` to execute the above commands in a single command:
+  $ cubic run example --image ubuntu:noble
 
-List all virtual machine instances:
-$ cubic instances
+  Show all supported VM images:
+  $ cubic images
 
-Start an instance:
-$ cubic start <instance name>
+  List previously created VM instances:
+  $ cubic instances
 
-Stop an instance:
-$ cubic stop <instance name>
+  Show information about a VM instance:
+  $ cubic show <instance>
 
-Open a shell in the instance:
-$ cubic ssh <machine name>
+  Execute a command in a VM instance:
+  $ cubic exec <instance> <shell command>
 
-Copy a file from the host to the instance:
-$ cubic scp <path/to/host/file> <machine>:<path/to/guest/file>
+  Transfer files and directories between host and VM instance:
+  $ cubic scp <path/to/host/file> <instance>:<path/to/guest/file>
+  See `cubic scp --help` for more examples
 
-Copy a file from the instance to the hots:
-$ cubic scp <machine>:<path/to/guest/file> <path/to/host/file>
+For more information, visit: https://cubic-vm.org/
+The source code is located at: https://github.com/cubic-vm/cubic
 """
 readme = "README.md"
 homepage = "https://cubic-vm.org"
@@ -61,7 +63,7 @@ sha2 = "0"
 ssh-key = { version = "0", features = ["ed25519"]}
 thiserror = "2"
 tokio = { version = "1", default-features = false, features = ["fs", "io-std"] }
-toml = "0"
+toml = "1"
 
 [profile.release]
 opt-level = 'z'

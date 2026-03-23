@@ -27,11 +27,9 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-tags: true
 
       - name: Generate Docs
-        run: ./scripts/generate-docs.sh
+        run: ./scripts/generate-docs.sh ${{ github.ref_name }}
 
       - name: Generate HTML
         run: sphinx-build docs target/doc

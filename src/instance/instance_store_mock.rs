@@ -3,8 +3,6 @@ pub mod tests {
 
     use crate::error::{Error, Result};
     use crate::instance::{Instance, InstanceStore};
-    #[cfg(not(windows))]
-    use crate::qemu::Monitor;
 
     pub struct InstanceStoreMock {
         instances: Vec<Instance>,
@@ -59,11 +57,6 @@ pub mod tests {
 
         fn get_pid(&self, _instance: &Instance) -> std::result::Result<u64, ()> {
             std::result::Result::Err(())
-        }
-
-        #[cfg(not(windows))]
-        fn get_monitor(&self, _instance: &Instance) -> Result<Monitor> {
-            Result::Err(Error::InvalidArgument("not supported".to_string()))
         }
     }
 }

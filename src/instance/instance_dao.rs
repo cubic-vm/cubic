@@ -6,7 +6,7 @@ use crate::instance::{
     TomlInstanceDeserializer, YamlInstanceDeserializer,
 };
 use crate::model::DataSize;
-#[cfg(not(windows))]
+#[cfg(not(any(windows, test)))]
 use crate::qemu::Monitor;
 use crate::qemu::QemuImg;
 use crate::ssh_cmd::PortChecker;
@@ -85,8 +85,10 @@ impl InstanceStore for InstanceDao {
                 (yaml_path, Box::new(YamlInstanceDeserializer::new()))
             };
 
-        self.fs
+        Ok(self
+            .fs
             .open_file(path)
+            .ok()
             .and_then(|mut file| deserializer.deserialize(name, &mut file))
             .map(|mut instance| {
                 let size = QemuImg::new()
@@ -95,7 +97,7 @@ impl InstanceStore for InstanceDao {
                 instance.disk_used = size;
                 instance
             })
-            .or(Ok(Instance {
+            .unwrap_or(Instance {
                 name: name.to_string(),
                 user: USER.to_string(),
                 cpus: 1,
@@ -198,7 +200,7 @@ impl InstanceStore for InstanceDao {
         pid.trim().parse::<u64>().map_err(|_| ())
     }
 
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, test)))]
     fn get_monitor(&self, instance: &Instance) -> Result<Monitor> {
         Monitor::new(&self.env, &instance.name)
     }

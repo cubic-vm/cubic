@@ -8,8 +8,16 @@ use crate::ssh_cmd::Russh;
 use crate::view::Console;
 use clap::Parser;
 
-/// Connect to a virtual machine instance with SSH
+/// Connect to VM instances
+///
+/// Examples:
+///
+///   Connect to VM instance 'my-instance':
+///   $ cubic ssh my-instance
+///   [...]
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct InstanceSshCommand {
     /// Target instance (format: [username@]instance, e.g. 'myinstance' or 'cubic@myinstance')
     pub target: Target,

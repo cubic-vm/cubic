@@ -11,8 +11,19 @@ use std::path::Path;
 use std::thread;
 use std::time::Duration;
 
-/// Open the console of an virtual machine instance
+/// Open VM instance console
+///
+/// Examples:
+///
+///   Connect to the console of 'my-instance'
+///   $ cubic console my-instance
+///   Default credentials: cubic / cubic
+///   Press CTRL+W to exit the console.
+///
+///   [...]
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct InstanceConsoleCommand {
     /// Name of the virtual machine instance
     instance: String,
@@ -33,7 +44,7 @@ impl Command for InstanceConsoleCommand {
         }
         .run(console, env, image_store, instance_store)?;
 
-        console.info("Default user login: cubic / cubic");
+        console.info("Default credentials: cubic / cubic");
         console.info("Press CTRL+W to exit the console.");
         let console_path = env.get_console_file(&self.instance);
         while !Path::new(&console_path).exists() {

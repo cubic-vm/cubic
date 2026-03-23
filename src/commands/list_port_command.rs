@@ -6,8 +6,23 @@ use crate::instance::InstanceStore;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
 
-/// List forwarded ports for all virtual machine instances
+/// List ports for VM instances
+///
+/// Shows port forwarding rules from VM instance to host. Use cubic modify <instance>
+/// to configure the forwarding.
+///
+/// Examples:
+///
+///   $ cubic ports
+///   Instance       Host              Guest   Protocol   In Use
+///   noble-arm64    127.0.0.1:30612   :22     /tcp       no
+///   noble-arm64    127.0.0.1:2222    :22     /tcp       no
+///   trixie         127.0.0.1:30200   :22     /tcp       yes
+///   trixie         127.0.0.1:4000    :4000   /tcp       yes
+///   fedora         127.0.0.1:59153   :22     /tcp       no
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct ListPortCommand;
 
 impl Command for ListPortCommand {

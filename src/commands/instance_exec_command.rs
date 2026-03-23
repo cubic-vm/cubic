@@ -8,8 +8,15 @@ use crate::ssh_cmd::Russh;
 use crate::view::Console;
 use clap::Parser;
 
-/// Execute a command in the virtual machine instance
+/// Execute commands on VM instances
+///
+/// Examples:
+///
+///   Update a VM instance:
+///   $ cubic exec noble "sudo apt update && sudo apt full-upgrade -y"
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct InstanceExecCommand {
     /// Target instance (format: [username@]instance, e.g. 'myinstance' or 'cubic@myinstance')
     pub target: Target,

@@ -19,8 +19,27 @@ fn check_target_is_running(instance_store: &dyn InstanceStore, target: &TargetPa
     Ok(())
 }
 
-/// Copy a file from or to a virtual machine instance with SCP
+/// Copy data between host and VM instances
+///
+/// Data can be copied from host to VM instance, from VM instance to host, and
+/// between VM instances:
+/// $ cubic scp <path/to/host/file> <instance>:<path/to/guest/file>
+/// $ cubic scp <instance>:<path/to/guest/file> <path/to/host/file>
+/// $ cubic scp <instance>:<path/to/guest/file> <instance>:<path/to/guest/file>
+///
+/// Examples:
+///
+///   Upload a file from host to the VM instance 'trixie':
+///   $ cubic scp ./cubic.tar.gz trixie:~/
+///
+///   Download a directory from the VM instance 'trixie' to host:
+///   $ cubic scp trixie:~/Downloads .
+///
+///   Copy a file from the VM instance 'trixie' to 'noble':
+///   $ cubic scp trixie:~/cubic.tar.gz noble:~/
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct InstanceScpCommand {
     /// Source of the data to copy
     from: TargetPath,

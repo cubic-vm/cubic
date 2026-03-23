@@ -7,8 +7,40 @@ use crate::model::DataSize;
 use crate::view::Console;
 use clap::{ArgAction, Parser};
 
-/// Modify a virtual machine instance configuration
+/// Modify VM instances
+///
+/// Use this command to change the settings of an existing VM instance (CPU, memory,
+/// disk, etc.). The changes will be applied on the next (re-)start of the VM
+/// instance.
+///
+/// Examples:
+///
+///   Assign 8 virtual CPUs to a VM instance:
+///   $ cubic modify example1 --cpus 8
+///
+///   Assign 10 GiB of RAM to a VM instance:
+///   $ cubic modify example2 --memory 10G
+///
+///   Assign 200 GiB of storage to a VM instance:
+///   $ cubic modify example3 --disk 200G
+///
+///   Forward the VM instance's SSH port (TCP port 22) to the host on port 2222:
+///   $ cubic modify example4 --port 2222:22
+///
+///   Forward the VM instance's DNS port (UDP port 53) to the host on port 5353:
+///   $ cubic modify example5 --port 127.0.0.1:5353:53/udp
+///
+///   Remove DNS port forwarding rule:
+///   $ cubic modify example6 --rm-port 127.0.0.1:5353:53/udp
+///
+///   Deny network access (host, LAN, internet, ...) of a VM instance:
+///   $ cubic modify example7 --isolate
+///
+///   Allow network connection of a VM instance:
+///   $ cubic modify example8 --no-isolate
+///
 #[derive(Parser)]
+#[clap(verbatim_doc_comment)]
 pub struct InstanceModifyCommand {
     /// Name of the virtual machine instance
     instance: String,
@@ -16,12 +48,12 @@ pub struct InstanceModifyCommand {
     #[clap(short, long)]
     cpus: Option<u16>,
     /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)
-    #[clap(short, long)]
-    mem: Option<DataSize>,
+    #[clap(alias = "mem", short, long)]
+    memory: Option<DataSize>,
     /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
     #[clap(short, long)]
     disk: Option<DataSize>,
-    /// Add port forwarding rule (e.g. -p 8000:80)
+    /// Add port forwarding rule (format: [host_ip:]host_port:guest_port[/(udp|tcp)], e.g. -p 8000:80/tcp)
     #[clap(short, long)]
     port: Vec<PortForward>,
     /// Remove port forwarding rule (e.g. -P 8000:80)
@@ -53,8 +85,8 @@ impl Command for InstanceModifyCommand {
             instance.cpus = *cpus;
         }
 
-        if let Some(mem) = &self.mem {
-            instance.mem = mem.clone();
+        if let Some(memory) = &self.memory {
+            instance.mem = memory.clone();
         }
 
         if let Some(disk) = &self.disk {

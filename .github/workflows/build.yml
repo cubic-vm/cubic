@@ -106,8 +106,6 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
-        with:
-          fetch-tags: true
 
       - name: Download Executable
         uses: actions/download-artifact@v4
@@ -118,8 +116,14 @@ jobs:
       - name: Set File Permissions
         run: chmod +x cubic
 
-      - name: Set Version
-        run: sed "s/^\\(version:\\).*$$/\\1 '$(git describe --tags)'/g" -i snapcraft.yaml
+      - name: Define Snap Version
+        run: echo "SNAP_VERSION=${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'dev' }}" >> $GITHUB_ENV
+
+      - name: Override Snap Version
+        run: 'sed "s/^version: .*$/version: $SNAP_VERSION/g" -i snapcraft.yaml'
+
+      - name: Show Snap Version
+        run: 'grep "version: " snapcraft.yaml'
 
       - name: Package Snap
         uses: snapcore/action-build@v1

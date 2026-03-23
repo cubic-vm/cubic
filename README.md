@@ -76,60 +76,61 @@ Cubic has a simple CLI:
 ```
 $ cubic --help
 Cubic is a lightweight command line manager for virtual machines. It has a
-simple, daemon-less and rootless design. All Cubic virtual machines run
-isolated in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
+simple, daemonless and rootless design. All Cubic virtual machines run isolated
+in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
 
-https://cubic-vm.org
-https://github.com/cubic-vm/cubic
+Examples:
 
-Show all supported images:
-$ cubic images
+  Create a new VM instance with:
+  $ cubic create example --image ubuntu:noble
+  Open a shell in the VM instance:
+  $ cubic ssh example
 
-Create a new virtual machine instance:
-$ cubic create mymachine --image ubuntu:noble
+  Alternatively, use `run` to execute the above commands in a single command:
+  $ cubic run example --image ubuntu:noble
 
-List all virtual machine instances:
-$ cubic instances
+  Show all supported VM images:
+  $ cubic images
 
-Start an instance:
-$ cubic start <instance name>
+  List previously created VM instances:
+  $ cubic instances
 
-Stop an instance:
-$ cubic stop <instance name>
+  Show information about a VM instance:
+  $ cubic show <instance>
 
-Open a shell in the instance:
-$ cubic ssh <machine name>
+  Execute a command in a VM instance:
+  $ cubic exec <instance> <shell command>
 
-Copy a file from the host to the instance:
-$ cubic scp <path/to/host/file> <machine>:<path/to/guest/file>
+  Transfer files and directories between host and VM instance:
+  $ cubic scp <path/to/host/file> <instance>:<path/to/guest/file>
+  See `cubic scp --help` for more examples
 
-Copy a file from the instance to the hots:
-$ cubic scp <machine>:<path/to/guest/file> <path/to/host/file>
+For more information, visit: https://cubic-vm.org/
+The source code is located at: https://github.com/cubic-vm/cubic
 
 
 Usage: cubic [OPTIONS] <COMMAND>
 
 Commands:
-  run          Create, start and open a shell in a new virtual machine instance
-  create       Create a new virtual machine instance
-  instances    List all virtual machine instances
-  images       List all supported virtual machine images
-  ports        List forwarded ports for all virtual machine instances
-  show         Show virtual machine image or instance information
-  modify       Modify a virtual machine instance configuration
-  console      Open the console of an virtual machine instance
-  ssh          Connect to a virtual machine instance with SSH
-  scp          Copy a file from or to a virtual machine instance with SCP
-  exec         Execute a command in the virtual machine instance
-  start        Start virtual machine instances
-  stop         Stop virtual machine instances
-  restart      Restart virtual machine instances
-  rename       Rename a virtual machine instance
-  clone        Clone a virtual machine instance
-  delete       Delete one or more virtual machine instances
-  prune        Clear cache and free space
-  completions  Generate command completions for your shell
-  help         Print this message or the help of the given subcommand(s)
+  run          Create and start VM instances
+  create       Create VM instances
+  instances    List VM instances
+  images       List VM images
+  ports        List ports for VM instances
+  show         Show VM images and instances
+  modify       Modify VM instances
+  console      Open VM instance console
+  ssh          Connect to VM instances
+  scp          Copy data between host and VM instances
+  exec         Execute commands on VM instances
+  start        Start VM instances
+  stop         Stop VM instances
+  restart      Restart VM instances
+  rename       Rename VM instances
+  clone        Clone VM instances
+  delete       Delete VM instances
+  prune        Clear caches
+  completions  Generate shell completion scripts
 
 Options:
   -v, --verbose  Increase logging output
@@ -137,6 +138,55 @@ Options:
   -h, --help     Print help
   -V, --version  Print version
 ```
+
+# :hammer: How to Build Cubic from Source?
+
+## Install Toolchain
+
+Before running the build commands, ensure you have the necessary tools installed:
+
+- **Git**
+- **GCC**
+- **Rustup**
+
+For **Debian**, **Ubuntu**, and derivatives:
+```bash
+sudo apt update && sudo apt install -y git gcc rustup
+```
+
+For **Fedora** and derivatives:
+```bash
+sudo dnf install -y git gcc rustup && sudo rustup-init -y
+```
+
+For **OpenSUSE** and derivatives:
+```bash
+sudo zypper install -y git gcc rustup
+```
+
+## Build Cubic
+
+Download the source code, navigate to the Cubic source directory and run the build command.
+
+```bash
+git clone https://github.com/cubic-vm/cubic.git
+cd cubic/
+rustup toolchain add stable
+cargo build --locked --release
+```
+The target executable is located at `target/release/cubic`.
+
+**Note**:
+- The `--release` flag is used to create an optimized version of the application.
+- The `--locked` flag is used to ensure the build uses the exact dependency versions intended by the developers.
+
+## Runtime Dependencies
+
+Once built, Cubic needs these tools to actually run the virtual machines:
+
+- **QEMU** (qemu-system-x86_64, qemu-system-arm64, qemu-img)
+- **cdrtools** or **cdrkit** (mkisofs)
+
 
 # :speech_balloon: How to contribute to Cubic?
 
