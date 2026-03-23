@@ -1,5 +1,6 @@
 mod actions;
 mod arch;
+mod cloudinit;
 mod commands;
 mod emulator;
 mod env;
