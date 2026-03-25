@@ -1,4 +1,4 @@
-use crate::commands::{self, Command};
+use crate::commands::{self, Command, Iso9660};
 use crate::env::Environment;
 use crate::error::Result;
 use crate::image::ImageStore;
@@ -35,6 +35,10 @@ use clap::{self, Parser};
 pub struct InstanceRunCommand {
     #[clap(flatten)]
     create_cmd: commands::CreateInstanceCommand,
+    /// Switch for Rust and system ISO9600 implementation
+    #[clap(hide = true)]
+    #[arg(value_enum, long, default_value_t = Iso9660::System)]
+    pub iso9660: Iso9660,
 }
 
 impl Command for InstanceRunCommand {
@@ -50,6 +54,7 @@ impl Command for InstanceRunCommand {
         commands::InstanceSshCommand {
             target: Target::from_instance_name(self.create_cmd.instance_name.clone()),
             cmd: None,
+            iso9660: self.iso9660.clone(),
         }
         .run(console, env, image_store, instance_store)
     }

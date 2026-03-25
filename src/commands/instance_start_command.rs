@@ -8,9 +8,15 @@ use crate::ssh_cmd::{PortChecker, Russh};
 use crate::util;
 use crate::view::Console;
 use crate::view::SpinnerView;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use std::thread::sleep;
 use std::time::Duration;
+
+#[derive(Debug, Clone, ValueEnum)]
+pub enum Iso9660 {
+    System,
+    Rust,
+}
 
 /// Start VM instances
 ///
@@ -39,6 +45,10 @@ pub struct InstanceStartCommand {
     pub wait: bool,
     /// Name of the virtual machine instances to start
     pub instances: Vec<String>,
+    /// Switch for Rust and system ISO9600 implementation
+    #[clap(hide = true)]
+    #[arg(value_enum, long, default_value_t = Iso9660::System)]
+    pub iso9660: Iso9660,
 }
 
 impl Command for InstanceStartCommand {
@@ -65,7 +75,13 @@ impl Command for InstanceStartCommand {
                 }
 
                 let mut action = StartInstanceAction::new(instance);
-                action.run(instance_store, env, &self.qemu_args, verbosity.is_verbose())?;
+                action.run(
+                    instance_store,
+                    env,
+                    &self.qemu_args,
+                    verbosity.is_verbose(),
+                    self.iso9660.clone(),
+                )?;
 
                 actions.push(action);
             }
