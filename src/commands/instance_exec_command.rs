@@ -1,4 +1,4 @@
-use crate::commands::{self, Command};
+use crate::commands::{self, Command, Iso9660};
 use crate::env::Environment;
 use crate::error::Result;
 use crate::fs::FS;
@@ -22,6 +22,10 @@ pub struct InstanceExecCommand {
     pub target: Target,
     /// Command to execute in the virtual machine instance
     pub cmd: String,
+    /// Switch for Rust and system ISO9600 implementation
+    #[clap(hide = true)]
+    #[arg(value_enum, default_value_t = Iso9660::System)]
+    pub iso9660: Iso9660,
 }
 
 impl Command for InstanceExecCommand {
@@ -38,6 +42,7 @@ impl Command for InstanceExecCommand {
             qemu_args: None,
             wait: true,
             instances: vec![name.to_string()],
+            iso9660: self.iso9660.clone(),
         }
         .run(console, env, image_store, instance_store)?;
 

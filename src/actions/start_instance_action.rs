@@ -1,4 +1,5 @@
 use crate::cloudinit::UserDataImageFactory;
+use crate::commands::Iso9660;
 use crate::emulator::Emulator;
 use crate::env::Environment;
 use crate::error::Result;
@@ -23,13 +24,17 @@ impl StartInstanceAction {
         env: &Environment,
         qemu_args: &Option<String>,
         verbose: bool,
+        iso9660: Iso9660,
     ) -> Result<()> {
         if instance_dao.is_running(&self.instance) {
             return Ok(());
         }
 
         FS::new().setup_directory_access(&env.get_instance_runtime_dir(&self.instance.name))?;
-        UserDataImageFactory.create(env, &self.instance)?;
+        match iso9660 {
+            Iso9660::Rust => UserDataImageFactory.create_rust(env, &self.instance)?,
+            Iso9660::System => UserDataImageFactory.create_native(env, &self.instance)?,
+        };
 
         let mut emulator = Emulator::from(self.instance.arch)?;
         emulator.set_cpus(self.instance.cpus);

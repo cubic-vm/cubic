@@ -8,6 +8,7 @@ mod error;
 mod fs;
 mod image;
 mod instance;
+mod iso9660;
 mod model;
 mod qemu;
 mod ssh_cmd;
