@@ -336,7 +336,7 @@ impl Russh {
         let from_is_local = from.instance.is_none();
         let to_is_local = to.instance.is_none();
 
-        // Host → Guest single file: use SCP for streaming throughput
+        // Host -> Guest single file: use SCP for streaming throughput
         if from_is_local && !to_is_local {
             let local_path = from.to_pathbuf();
             if local_path.is_file() {
@@ -352,7 +352,7 @@ impl Russh {
             }
         }
 
-        // Guest → Host: try SCP for single files, fall back to SFTP for directories
+        // Guest -> Host: try SCP for single files, fall back to SFTP for directories
         if !from_is_local && to_is_local {
             let instance = from.instance.as_ref().unwrap();
             let user = from.user.as_ref().unwrap_or(&instance.user);
