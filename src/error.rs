@@ -94,4 +94,6 @@ Troubleshoot:
 
     #[error("Invalid path: {0}")]
     InvalidPath(String),
+    #[error("SCP Error: {0}")]
+    Scp(String),
 }

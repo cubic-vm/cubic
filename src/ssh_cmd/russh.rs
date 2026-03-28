@@ -333,6 +333,41 @@ impl Russh {
         from: &TargetInstancePath,
         to: &TargetInstancePath,
     ) -> Result<(), Error> {
+        let from_is_local = from.instance.is_none();
+        let to_is_local = to.instance.is_none();
+
+        // Host -> Guest single file: use SCP for streaming throughput
+        if from_is_local && !to_is_local {
+            let local_path = from.to_pathbuf();
+            if local_path.is_file() {
+                let instance = to.instance.as_ref().unwrap();
+                let user = to.user.as_ref().unwrap_or(&instance.user);
+                let channel = self
+                    .open_channel(console, user, instance.ssh_port)
+                    .await
+                    .unwrap();
+                let remote_path = to.to_pathbuf();
+                return super::scp::upload(channel, &local_path, remote_path.to_str().unwrap())
+                    .await;
+            }
+        }
+
+        // Guest -> Host: try SCP for single files, fall back to SFTP for directories
+        if !from_is_local && to_is_local {
+            let instance = from.instance.as_ref().unwrap();
+            let user = from.user.as_ref().unwrap_or(&instance.user);
+            if let Ok(channel) = self.open_channel(console, user, instance.ssh_port).await {
+                let remote_path = from.to_pathbuf();
+                let local_path = to.to_pathbuf();
+                let result =
+                    super::scp::download(channel, remote_path.to_str().unwrap(), &local_path).await;
+                if result.is_ok() {
+                    return result;
+                }
+            }
+        }
+
+        // Default: SFTP (directories, guest-to-guest, or SCP fallback)
         let source = self.open_target_fs(console, from).await;
         let target = self.open_target_fs(console, to).await;
 
