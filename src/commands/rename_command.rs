@@ -15,14 +15,14 @@ use clap::Parser;
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct InstanceRenameCommand {
+pub struct RenameCommand {
     /// Name of the virtual machine instance to rename
     old_name: InstanceName,
     /// New name of the virtual machine instance
     new_name: InstanceName,
 }
 
-impl Command for InstanceRenameCommand {
+impl Command for RenameCommand {
     fn run(
         &self,
         _console: &mut dyn Console,

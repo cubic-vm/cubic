@@ -18,7 +18,7 @@ use clap::Parser;
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct InstanceRestartCommand {
+pub struct RestartCommand {
     /// Name of the virtual machine instances to restart
     instances: Vec<String>,
     /// Switch for Rust and system ISO9600 implementation
@@ -27,7 +27,7 @@ pub struct InstanceRestartCommand {
     pub iso9660: Iso9660,
 }
 
-impl Command for InstanceRestartCommand {
+impl Command for RestartCommand {
     fn run(
         &self,
         console: &mut dyn Console,
@@ -35,13 +35,13 @@ impl Command for InstanceRestartCommand {
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<()> {
-        commands::InstanceStopCommand {
+        commands::StopCommand {
             all: false,
             wait: true,
             instances: self.instances.to_vec(),
         }
         .run(console, env, image_store, instance_store)?;
-        commands::InstanceStartCommand {
+        commands::StartCommand {
             qemu_args: None,
             wait: true,
             instances: self.instances.to_vec(),

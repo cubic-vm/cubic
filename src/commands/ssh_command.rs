@@ -8,27 +8,29 @@ use crate::ssh_cmd::Russh;
 use crate::view::Console;
 use clap::Parser;
 
-/// Execute commands on VM instances
+/// Connect to VM instances
 ///
 /// Examples:
 ///
-///   Update a VM instance:
-///   $ cubic exec noble "sudo apt update && sudo apt full-upgrade -y"
+///   Connect to VM instance 'my-instance':
+///   $ cubic ssh my-instance
+///   [...]
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct InstanceExecCommand {
+pub struct SshCommand {
     /// Target instance (format: [username@]instance, e.g. 'myinstance' or 'cubic@myinstance')
     pub target: Target,
     /// Command to execute in the virtual machine instance
-    pub cmd: String,
+    #[clap(hide = true)]
+    pub cmd: Option<String>,
     /// Switch for Rust and system ISO9600 implementation
     #[clap(hide = true)]
-    #[arg(value_enum, default_value_t = Iso9660::System)]
+    #[arg(value_enum, long, default_value_t = Iso9660::System)]
     pub iso9660: Iso9660,
 }
 
-impl Command for InstanceExecCommand {
+impl Command for SshCommand {
     fn run(
         &self,
         console: &mut dyn Console,
@@ -36,9 +38,15 @@ impl Command for InstanceExecCommand {
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<()> {
+        if self.cmd.is_some() {
+            console.info(
+                "Note: cubic ssh with cmd is deprecated - use 'cubic exec <instance> <cmd>' instead",
+            );
+        }
+
         let name = self.target.get_instance();
 
-        commands::InstanceStartCommand {
+        commands::StartCommand {
             qemu_args: None,
             wait: true,
             instances: vec![name.to_string()],
@@ -55,7 +63,7 @@ impl Command for InstanceExecCommand {
         let ssh_port = instance.ssh_port;
         let mut ssh = Russh::new();
         ssh.set_private_keys(env.get_ssh_private_key_paths(&FS::new(), vec![name.to_string()]));
-        ssh.set_cmd(Some(self.cmd.clone()));
+        ssh.set_cmd(self.cmd.clone());
         ssh.shell(console, &user, ssh_port);
         Ok(())
     }

@@ -24,7 +24,7 @@ use std::time::Duration;
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct InstanceConsoleCommand {
+pub struct ConsoleCommand {
     /// Name of the virtual machine instance
     instance: String,
     /// Switch for Rust and system ISO9600 implementation
@@ -33,7 +33,7 @@ pub struct InstanceConsoleCommand {
     pub iso9660: Iso9660,
 }
 
-impl Command for InstanceConsoleCommand {
+impl Command for ConsoleCommand {
     fn run(
         &self,
         console: &mut dyn Console,
@@ -41,7 +41,7 @@ impl Command for InstanceConsoleCommand {
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<()> {
-        commands::InstanceStartCommand {
+        commands::StartCommand {
             qemu_args: None,
             wait: false,
             instances: vec![self.instance.to_string()],

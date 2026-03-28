@@ -40,14 +40,14 @@ fn check_target_is_running(instance_store: &dyn InstanceStore, target: &TargetPa
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct InstanceScpCommand {
+pub struct ScpCommand {
     /// Source of the data to copy
     from: TargetPath,
     /// Target of the data to copy
     to: TargetPath,
 }
 
-impl Command for InstanceScpCommand {
+impl Command for ScpCommand {
     fn run(
         &self,
         console: &mut dyn Console,

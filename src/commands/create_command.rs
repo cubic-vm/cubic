@@ -45,7 +45,7 @@ pub const DEFAULT_DISK_SIZE: &str = "100G";
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct CreateInstanceCommand {
+pub struct CreateCommand {
     /// VM instance name (e.g. 'my-instance')
     pub instance_name: InstanceName,
     /// VM image name (e.g. 'debian:trixie')
@@ -74,7 +74,7 @@ pub struct CreateInstanceCommand {
     isolate: bool,
 }
 
-impl Command for CreateInstanceCommand {
+impl Command for CreateCommand {
     fn run(
         &self,
         _console: &mut dyn Console,

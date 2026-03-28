@@ -32,16 +32,16 @@ use clap::{self, Parser};
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct InstanceRunCommand {
+pub struct RunCommand {
     #[clap(flatten)]
-    create_cmd: commands::CreateInstanceCommand,
+    create_cmd: commands::CreateCommand,
     /// Switch for Rust and system ISO9600 implementation
     #[clap(hide = true)]
     #[arg(value_enum, long, default_value_t = Iso9660::System)]
     pub iso9660: Iso9660,
 }
 
-impl Command for InstanceRunCommand {
+impl Command for RunCommand {
     fn run(
         &self,
         console: &mut dyn Console,
@@ -51,7 +51,7 @@ impl Command for InstanceRunCommand {
     ) -> Result<()> {
         self.create_cmd
             .run(console, env, image_store, instance_store)?;
-        commands::InstanceSshCommand {
+        commands::SshCommand {
             target: Target::from_instance_name(self.create_cmd.instance_name.clone()),
             cmd: None,
             iso9660: self.iso9660.clone(),

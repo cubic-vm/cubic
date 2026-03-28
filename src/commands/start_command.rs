@@ -36,7 +36,7 @@ pub enum Iso9660 {
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct InstanceStartCommand {
+pub struct StartCommand {
     /// Pass additional QEMU arguments
     #[clap(long)]
     pub qemu_args: Option<String>,
@@ -51,7 +51,7 @@ pub struct InstanceStartCommand {
     pub iso9660: Iso9660,
 }
 
-impl Command for InstanceStartCommand {
+impl Command for StartCommand {
     fn run(
         &self,
         console: &mut dyn Console,
