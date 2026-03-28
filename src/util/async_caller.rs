@@ -1,5 +1,3 @@
-use tokio;
-
 pub struct AsyncCaller {
     runtime: tokio::runtime::Runtime,
 }

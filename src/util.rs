@@ -1,9 +1,9 @@
-pub mod async_caller;
-pub mod hex;
-pub mod input;
-pub mod system_command;
+mod async_caller;
+mod hex;
+mod input;
+mod system_command;
 #[cfg(not(windows))]
-pub mod terminal;
+mod terminal;
 
 pub use async_caller::*;
 pub use hex::*;

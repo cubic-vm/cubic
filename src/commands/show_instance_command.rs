@@ -62,11 +62,11 @@ impl Command for ShowInstanceCommand {
 mod tests {
     use super::*;
     use crate::arch::Arch;
-    use crate::image::image_store_mock::tests::ImageStoreMock;
+    use crate::image::ImageStoreMock;
     use crate::instance::Instance;
-    use crate::instance::instance_store_mock::tests::InstanceStoreMock;
+    use crate::instance::InstanceStoreMock;
     use crate::model::DataSize;
-    use crate::view::console_mock::tests::ConsoleMock;
+    use crate::view::ConsoleMock;
     use std::str::FromStr;
 
     #[test]

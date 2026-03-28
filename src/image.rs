@@ -1,10 +1,10 @@
-pub mod image_cache;
-pub mod image_dao;
-pub mod image_factory;
-pub mod image_fetcher;
-pub mod image_name;
-pub mod image_store;
-pub mod image_store_mock;
+mod image_cache;
+mod image_dao;
+mod image_factory;
+mod image_fetcher;
+mod image_name;
+mod image_store;
+mod image_store_mock;
 
 use crate::arch::Arch;
 pub use image_cache::*;
@@ -13,6 +13,8 @@ pub use image_factory::*;
 pub use image_fetcher::*;
 pub use image_name::*;
 pub use image_store::*;
+#[cfg(test)]
+pub use image_store_mock::tests::ImageStoreMock;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]

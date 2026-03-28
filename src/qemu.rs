@@ -1,10 +1,10 @@
 #[cfg(not(any(windows, test)))]
-pub mod monitor;
-pub mod qemu_img;
+mod monitor;
+mod qemu_img;
 #[cfg(not(any(windows, test)))]
-pub mod qmp;
+mod qmp;
 #[cfg(not(any(windows, test)))]
-pub mod qmp_message;
+mod qmp_message;
 
 #[cfg(not(any(windows, test)))]
 pub use monitor::*;

@@ -1,16 +1,18 @@
-pub mod async_transfer_view;
-pub mod console;
-pub mod console_mock;
-pub mod map_view;
-pub mod progress_bar;
-pub mod spinner_view;
-pub mod stdio;
-pub mod table_view;
-pub mod time_duration;
-pub mod transfer_view;
+mod async_transfer_view;
+mod console;
+mod console_mock;
+mod map_view;
+mod progress_bar;
+mod spinner_view;
+mod stdio;
+mod table_view;
+mod time_duration;
+mod transfer_view;
 
 pub use async_transfer_view::*;
 pub use console::*;
+#[cfg(test)]
+pub use console_mock::tests::ConsoleMock;
 pub use map_view::*;
 pub use progress_bar::*;
 pub use spinner_view::*;
