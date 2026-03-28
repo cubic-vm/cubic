@@ -94,4 +94,19 @@ impl FS {
     pub fn remove_file(&self, path: &str) -> Result<()> {
         fs::remove_file(path).map_err(|e| Error::FS(format!("Cannot delete file '{path}' ({e})")))
     }
+
+    pub fn get_size(&self, path: impl Into<PathBuf>) -> u64 {
+        let path = path.into();
+        fs::metadata(&path)
+            .map(|metadata| {
+                if metadata.is_dir() {
+                    fs::read_dir(&path)
+                        .map(|dir| dir.flatten().map(|entry| self.get_size(entry.path())).sum())
+                        .unwrap_or_default()
+                } else {
+                    metadata.len()
+                }
+            })
+            .unwrap_or_default()
+    }
 }

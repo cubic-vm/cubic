@@ -13,9 +13,5 @@ pub mod tests {
         fn exists(&self, image: &Image) -> bool {
             self.images.contains(image)
         }
-
-        fn prune(&self) -> Result<()> {
-            Ok(())
-        }
     }
 }
