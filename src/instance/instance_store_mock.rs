@@ -35,10 +35,6 @@ pub mod tests {
             Result::Ok(())
         }
 
-        fn clone(&self, _instance: &Instance, _new_name: &str) -> Result<()> {
-            Result::Ok(())
-        }
-
         fn rename(&self, _instance: &mut Instance, _new_name: &str) -> Result<()> {
             Result::Ok(())
         }

@@ -10,7 +10,6 @@ pub trait InstanceStore {
     fn load(&self, name: &str) -> Result<Instance>;
     fn store(&self, instance: &Instance) -> Result<()>;
 
-    fn clone(&self, instance: &Instance, new_name: &str) -> Result<()>;
     fn rename(&self, instance: &mut Instance, new_name: &str) -> Result<()>;
     fn resize(&self, instance: &mut Instance, size: u64) -> Result<()>;
     fn delete(&self, instance: &Instance) -> Result<()>;

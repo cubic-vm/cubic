@@ -105,7 +105,9 @@ impl Command for CreateCommand {
             isolate: self.isolate,
             ..Instance::default()
         };
-        CreateInstanceAction::new().run(env, &FS::new(), instance_store, image, instance)?;
+
+        let image_path = &env.get_image_file(&image.to_file_name());
+        CreateInstanceAction::new().run(env, &FS::new(), instance_store, image_path, instance)?;
 
         create_spinner.stop();
         Result::Ok(())

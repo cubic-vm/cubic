@@ -1,7 +1,6 @@
 use crate::env::Environment;
 use crate::error::Result;
 use crate::fs::FS;
-use crate::image::Image;
 use crate::instance::{Instance, InstanceStore};
 use crate::ssh_cmd::SshKeyGenerator;
 use crate::util::SystemCommand;
@@ -20,7 +19,7 @@ impl CreateInstanceAction {
         env: &Environment,
         fs: &FS,
         instance_store: &dyn InstanceStore,
-        image: &Image,
+        image_path: &str,
         mut instance: Instance,
     ) -> Result<()> {
         let instance_name = instance.name.clone();
@@ -41,7 +40,7 @@ impl CreateInstanceAction {
             .arg("qcow2")
             .arg("-O")
             .arg("qcow2")
-            .arg(env.get_image_file(&image.to_file_name()))
+            .arg(image_path)
             .arg(tmp_image)
             .run()?;
 
