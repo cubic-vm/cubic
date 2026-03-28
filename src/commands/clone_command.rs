@@ -16,14 +16,14 @@ use clap::Parser;
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct InstanceCloneCommand {
+pub struct CloneCommand {
     /// Name of the virtual machine instance to clone
     name: InstanceName,
     /// Name of the copy
     new_name: InstanceName,
 }
 
-impl Command for InstanceCloneCommand {
+impl Command for CloneCommand {
     fn run(
         &self,
         _console: &mut dyn Console,

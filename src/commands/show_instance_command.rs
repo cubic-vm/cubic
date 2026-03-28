@@ -8,12 +8,12 @@ use clap::Parser;
 
 /// Show VM instances
 #[derive(Parser)]
-pub struct InstanceShowCommand {
+pub struct ShowInstanceCommand {
     /// Name of the virtual machine instance
     pub instance: InstanceName,
 }
 
-impl Command for InstanceShowCommand {
+impl Command for ShowInstanceCommand {
     fn run(
         &self,
         console: &mut dyn Console,
@@ -86,7 +86,7 @@ mod tests {
             ..Instance::default()
         }]);
 
-        InstanceShowCommand {
+        ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap(),
         }
         .run(console, env, image_store, instance_store)
@@ -126,7 +126,7 @@ SSH:        ssh -p 9000 cubic@localhost
             ..Instance::default()
         }]);
 
-        InstanceShowCommand {
+        ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap(),
         }
         .run(console, env, image_store, instance_store)
@@ -156,7 +156,7 @@ SSH:        ssh -p 8000 john@localhost
         let image_store = &ImageStoreMock::default();
 
         assert!(matches!(
-            InstanceShowCommand {
+            ShowInstanceCommand {
                 instance: InstanceName::from_str("test").unwrap()
             }
             .run(console, env, image_store, instance_store),

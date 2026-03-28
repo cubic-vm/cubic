@@ -51,7 +51,7 @@ impl Command for ShowCommand {
         match &self.name {
             InstanceImageName::Image(name) => commands::ShowImageCommand { name: name.clone() }
                 .run(console, env, image_store, instance_store),
-            InstanceImageName::Instance(instance) => commands::InstanceShowCommand {
+            InstanceImageName::Instance(instance) => commands::ShowInstanceCommand {
                 instance: instance.clone(),
             }
             .run(console, env, image_store, instance_store),

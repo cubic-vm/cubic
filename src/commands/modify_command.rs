@@ -41,7 +41,7 @@ use clap::{ArgAction, Parser};
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct InstanceModifyCommand {
+pub struct ModifyCommand {
     /// Name of the virtual machine instance
     instance: String,
     /// Number of CPUs for the virtual machine instance
@@ -67,7 +67,7 @@ pub struct InstanceModifyCommand {
     no_isolate: Option<bool>,
 }
 
-impl Command for InstanceModifyCommand {
+impl Command for ModifyCommand {
     fn run(
         &self,
         console: &mut dyn Console,

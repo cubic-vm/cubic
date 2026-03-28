@@ -1,6 +1,4 @@
-use crate::commands::{
-    self, Command, InstanceCloneCommand, InstanceModifyCommand, InstanceRenameCommand,
-};
+use crate::commands::{self, Command};
 use crate::env::EnvironmentFactory;
 use crate::error::Result;
 use crate::image::ImageDao;
@@ -10,23 +8,23 @@ use clap::{Parser, Subcommand};
 
 #[derive(Subcommand)]
 pub enum Commands {
-    Run(commands::InstanceRunCommand),
-    Create(commands::CreateInstanceCommand),
+    Run(commands::RunCommand),
+    Create(commands::CreateCommand),
     Instances(commands::ListInstanceCommand),
     Images(commands::ListImageCommand),
     Ports(commands::ListPortCommand),
     Show(commands::ShowCommand),
-    Modify(InstanceModifyCommand),
-    Console(commands::InstanceConsoleCommand),
-    Ssh(commands::InstanceSshCommand),
-    Scp(commands::InstanceScpCommand),
-    Exec(commands::InstanceExecCommand),
-    Start(commands::InstanceStartCommand),
-    Stop(commands::InstanceStopCommand),
-    Restart(commands::InstanceRestartCommand),
-    Rename(InstanceRenameCommand),
-    Clone(InstanceCloneCommand),
-    Delete(commands::DeleteInstanceCommand),
+    Modify(commands::ModifyCommand),
+    Console(commands::ConsoleCommand),
+    Ssh(commands::SshCommand),
+    Scp(commands::ScpCommand),
+    Exec(commands::ExecCommand),
+    Start(commands::StartCommand),
+    Stop(commands::StopCommand),
+    Restart(commands::RestartCommand),
+    Rename(commands::RenameCommand),
+    Clone(commands::CloneCommand),
+    Delete(commands::DeleteCommand),
     Prune(commands::PruneCommand),
     Completions(commands::CompletionsCommand),
 }
@@ -52,7 +50,7 @@ pub struct GlobalOptions {
 )]
 pub struct CommandDispatcher {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: commands::Commands,
 
     #[clap(flatten)]
     global: GlobalOptions,

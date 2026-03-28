@@ -19,7 +19,7 @@ use clap::Parser;
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct DeleteInstanceCommand {
+pub struct DeleteCommand {
     /// Delete the virtual machine instances even when running
     #[clap(short, long, default_value_t = false)]
     force: bool,
@@ -30,7 +30,7 @@ pub struct DeleteInstanceCommand {
     instances: Vec<String>,
 }
 
-impl Command for DeleteInstanceCommand {
+impl Command for DeleteCommand {
     fn run(
         &self,
         console: &mut dyn Console,
@@ -39,7 +39,7 @@ impl Command for DeleteInstanceCommand {
         instance_store: &dyn InstanceStore,
     ) -> Result<()> {
         if self.force {
-            commands::InstanceStopCommand {
+            commands::StopCommand {
                 all: false,
                 wait: true,
                 instances: self.instances.clone(),

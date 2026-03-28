@@ -25,7 +25,7 @@ use std::time::Duration;
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct InstanceStopCommand {
+pub struct StopCommand {
     /// Stop all virtual machine instances
     #[clap(short, long, default_value_t = false)]
     pub all: bool,
@@ -36,7 +36,7 @@ pub struct InstanceStopCommand {
     pub instances: Vec<String>,
 }
 
-impl Command for InstanceStopCommand {
+impl Command for StopCommand {
     fn run(
         &self,
         console: &mut dyn Console,
