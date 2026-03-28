@@ -1,3 +1,3 @@
-pub mod web_client;
+mod web_client;
 
 pub use web_client::*;

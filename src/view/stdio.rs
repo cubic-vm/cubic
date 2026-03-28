@@ -1,6 +1,5 @@
 use crate::commands::Verbosity;
 use crate::view::Console;
-use crossterm;
 
 pub struct Stdio {
     verbosity: Verbosity,

@@ -1,15 +1,15 @@
-pub mod instance_dao;
-pub mod instance_deserializer;
-pub mod instance_name;
-pub mod instance_serializer;
-pub mod instance_store;
-pub mod instance_store_mock;
-pub mod port_forward;
-pub mod target;
-pub mod target_instance_path;
-pub mod target_path;
-pub mod toml_instance_deserializer;
-pub mod yaml_instance_deserializer;
+mod instance_dao;
+mod instance_deserializer;
+mod instance_name;
+mod instance_serializer;
+mod instance_store;
+mod instance_store_mock;
+mod port_forward;
+mod target;
+mod target_instance_path;
+mod target_path;
+mod toml_instance_deserializer;
+mod yaml_instance_deserializer;
 
 use crate::arch::Arch;
 pub use instance_dao::*;
@@ -17,6 +17,8 @@ pub use instance_deserializer::*;
 pub use instance_name::*;
 pub use instance_serializer::*;
 pub use instance_store::*;
+#[cfg(test)]
+pub use instance_store_mock::tests::InstanceStoreMock;
 pub use port_forward::*;
 use serde::{Deserialize, Serialize};
 pub use target::*;
