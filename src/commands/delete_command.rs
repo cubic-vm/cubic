@@ -17,16 +17,19 @@ use clap::Parser;
 ///   Delete multiple VM instances:
 ///   $ cubic delete trixie noble
 ///
+///   Delete multiple VM instances without confirmation:
+///   $ cubic delete --yes trixie noble
+///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
 pub struct DeleteCommand {
-    /// Delete the virtual machine instances even when running
-    #[clap(short, long, default_value_t = false)]
+    /// Delete the VM instances even when running (Deprecated)
+    #[clap(hide = true, short, long, default_value_t = false)]
     force: bool,
-    /// Delete the virtual machine instances without confirmation
+    /// Delete the VM instances without confirmation
     #[clap(short, long, default_value_t = false)]
     yes: bool,
-    /// Name of the virtual machine instances to delete
+    /// Name of the VM instances to delete
     instances: Vec<String>,
 }
 
@@ -38,36 +41,36 @@ impl Command for DeleteCommand {
         image_store: &dyn ImageStore,
         instance_store: &dyn InstanceStore,
     ) -> Result<()> {
-        if self.force {
+        // Check if the instance names are valid
+        for instance in &self.instances {
+            if !instance_store.exists(instance) {
+                return Result::Err(Error::UnknownInstance(instance.clone()));
+            }
+        }
+
+        // Print instances to be deleted
+        console.info("The following VM instances are going to be deleted:");
+        for instance in &self.instances {
+            console.info(&format!("  - {instance}"));
+        }
+
+        // Ask for confirmation
+        if self.yes || util::confirm("\nDo you want to proceed? [y/n]: ") {
+            // Stop the VM instances
             commands::StopCommand {
                 all: false,
                 wait: true,
                 instances: self.instances.clone(),
             }
             .run(console, env, image_store, instance_store)?;
-        }
 
-        for instance in &self.instances {
-            if !instance_store.exists(instance) {
-                return Result::Err(Error::UnknownInstance(instance.clone()));
-            }
-
-            if instance_store.is_running(&instance_store.load(instance)?) {
-                return Result::Err(Error::InstanceNotStopped(instance.to_string()));
-            }
-        }
-
-        for instance in &self.instances {
-            if self.yes
-                || util::confirm(&format!(
-                    "Do you really want delete the instance '{instance}'? [y/n]: "
-                ))
-            {
+            // Delete the VM instances
+            for instance in &self.instances {
                 instance_store.delete(&instance_store.load(instance)?)?;
                 println!("Deleted instance {instance}");
             }
         }
 
-        Result::Ok(())
+        Ok(())
     }
 }
