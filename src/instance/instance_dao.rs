@@ -124,19 +124,6 @@ impl InstanceStore for InstanceDao {
         Ok(())
     }
 
-    fn clone(&self, instance: &Instance, new_name: &str) -> Result<()> {
-        if self.exists(new_name) {
-            Result::Err(Error::InstanceAlreadyExists(new_name.to_string()))
-        } else if self.is_running(instance) {
-            Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
-        } else {
-            self.fs.copy_dir(
-                &self.env.get_instance_dir2(&instance.name),
-                &self.env.get_instance_dir2(new_name),
-            )
-        }
-    }
-
     fn rename(&self, instance: &mut Instance, new_name: &str) -> Result<()> {
         if self.exists(new_name) {
             Result::Err(Error::InstanceAlreadyExists(new_name.to_string()))
