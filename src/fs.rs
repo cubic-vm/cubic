@@ -1,7 +1,6 @@
 use crate::error::{Error, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 
 pub struct FS;
 
@@ -17,24 +16,6 @@ impl FS {
         }
 
         Result::Ok(())
-    }
-
-    pub fn copy_dir(&self, from: &str, to: &str) -> Result<()> {
-        Command::new("cp")
-            .arg("--recursive")
-            .arg(from)
-            .arg(to)
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
-            .map_err(Error::from)?
-            .wait()
-            .map(|_| ())
-            .map_err(|e| {
-                Error::FS(format!(
-                    "Cannot copy directory from '{from}' to '{to}' ({e})"
-                ))
-            })
     }
 
     pub fn read_dir(&self, path: &str) -> Result<fs::ReadDir> {
