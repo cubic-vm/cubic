@@ -37,6 +37,9 @@ lint: build-image
 fix-lint: build-image
 	${DOCKER_CMD} ${IMAGE} cargo clippy --fix --allow-dirty --allow-staged
 
+yamllint: build-image
+	${DOCKER_CMD} ${IMAGE} yamllint --strict .
+
 test: build-image
 	${DOCKER_CMD} ${IMAGE} cargo test
 
@@ -49,7 +52,7 @@ update: build-image
 sh: build-image
 	${DOCKER_CMD} -it ${IMAGE} bash
 
-check: format lint test audit
+check: format lint yamllint test audit
 
 fix: fix-format fix-lint
 

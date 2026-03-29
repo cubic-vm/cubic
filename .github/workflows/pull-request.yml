@@ -41,6 +41,19 @@ jobs:
       - name: Run Check
         run: ${{ matrix.check }}
 
+  lint:
+    name: File Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Install Tools
+        run: sudo apt-get update && sudo apt-get install -y yamllint
+
+      - name: Lint YAML
+        run: yamllint --strict .
+
   build:
     name: Build
     strategy:
