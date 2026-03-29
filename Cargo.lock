@@ -669,7 +669,6 @@ dependencies = [
  "clap",
  "clap_complete",
  "crossterm",
- "rand 0.8.5",
  "regex",
  "reqwest",
  "russh",
