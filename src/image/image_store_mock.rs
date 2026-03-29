@@ -1,7 +1,6 @@
 #[cfg(test)]
 pub mod tests {
 
-    use crate::error::Result;
     use crate::image::{Image, ImageStore};
 
     #[derive(Default)]
