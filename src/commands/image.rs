@@ -6,7 +6,7 @@ use crate::view::SpinnerView;
 
 pub fn fetch_image_list(env: &Environment) -> Vec<Image> {
     let mut spinner = SpinnerView::new("Fetching image list".to_string());
-    let images: Vec<Image> = ImageFactory::new(env).create_images().unwrap_or_default();
+    let images: Vec<Image> = ImageFactory::new(env).get_all_images().unwrap_or_default();
     spinner.stop();
     images
 }
@@ -17,7 +17,7 @@ pub fn fetch_image_info(env: &Environment, image: &ImageName) -> Result<Image> {
         image.get_vendor(),
         image.get_name()
     ));
-    let image = ImageFactory::new(env).get_image(image);
+    let image = ImageFactory::new(env).find_image(image);
     spinner.stop();
     image
 }

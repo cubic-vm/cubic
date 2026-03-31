@@ -17,13 +17,24 @@ impl Arch {
             _ => Result::Err(Error::UnknownArch(arch.to_string())),
         }
     }
+
+    pub fn as_vendor_str(&self) -> &str {
+        match &self {
+            Arch::AMD64 => "amd64",
+            Arch::ARM64 => "arm64",
+        }
+    }
+
+    pub fn as_canonical_str(&self) -> &str {
+        match &self {
+            Arch::AMD64 => "x86_64",
+            Arch::ARM64 => "aarch64",
+        }
+    }
 }
 
 impl fmt::Display for Arch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match &self {
-            Arch::AMD64 => write!(f, "amd64"),
-            Arch::ARM64 => write!(f, "arm64"),
-        }
+        write!(f, "{}", self.as_vendor_str())
     }
 }
