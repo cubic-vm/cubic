@@ -1,3 +1,4 @@
+mod almalinux_image_provider;
 mod archlinux_image_provider;
 mod debian_image_provider;
 mod fedora_image_provider;
@@ -14,6 +15,7 @@ mod rockylinux_image_provider;
 mod ubuntu_image_provider;
 
 use crate::arch::Arch;
+pub use almalinux_image_provider::*;
 pub use archlinux_image_provider::*;
 pub use debian_image_provider::*;
 pub use fedora_image_provider::*;

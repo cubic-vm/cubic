@@ -5,6 +5,7 @@ use crate::image::{self, Image, ImageCache, ImageName};
 use crate::web::WebClient;
 
 const IMAGE_PROVIDERS: &[&dyn image::ImageProvider] = &[
+    &image::AlmaLinuxImageProvider {},
     &image::ArchLinuxImageProvider {},
     &image::DebianImageProvider {},
     &image::FedoraImageProvider {},
