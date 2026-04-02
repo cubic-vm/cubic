@@ -36,7 +36,10 @@ impl StartInstanceAction {
             Iso9660::System => UserDataImageFactory.create_native(env, &self.instance)?,
         };
 
-        let mut emulator = Emulator::from(self.instance.arch)?;
+        let mut emulator = Emulator::from(
+            self.instance.arch,
+            std::env::var("SNAP").as_deref().unwrap_or_default(),
+        )?;
         emulator.set_cpus(self.instance.cpus);
         emulator.set_memory(self.instance.mem.get_bytes() as u64);
         emulator.set_console(&env.get_console_file(&self.instance.name));

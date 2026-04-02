@@ -9,6 +9,7 @@ const IMAGE_PROVIDERS: &[&dyn image::ImageProvider] = &[
     &image::ArchLinuxImageProvider {},
     &image::DebianImageProvider {},
     &image::FedoraImageProvider {},
+    &image::GentooImageProvider {},
     &image::OpenSuseImageProvider {},
     &image::RockyLinuxImageProvider {},
     &image::UbuntuImageProvider {},

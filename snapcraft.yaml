@@ -64,6 +64,7 @@ parts:
       - qemu-system-arm:$CRAFT_ARCH_BUILD_FOR
       - qemu-efi-aarch64:$CRAFT_ARCH_BUILD_FOR
       - seabios:$CRAFT_ARCH_BUILD_FOR
+      - ovmf:$CRAFT_ARCH_BUILD_FOR
     override-build: |
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libicudata*
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libgallium*
