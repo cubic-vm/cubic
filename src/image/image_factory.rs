@@ -2,6 +2,7 @@ use crate::arch::Arch;
 use crate::env::Environment;
 use crate::error::{Error, Result};
 use crate::image::{self, Image, ImageCache, ImageName};
+use crate::util;
 use crate::web::WebClient;
 
 const IMAGE_PROVIDERS: &[&dyn image::ImageProvider] = &[
@@ -41,34 +42,52 @@ impl ImageFactory {
         arch: Arch,
         filter: Option<ImageName>,
     ) -> Option<Image> {
-        let image_content = web
-            .download_content(&image_provider.get_image_dir_url(name, arch))
-            .unwrap();
+        let image_dir_url = format!(
+            "{}{}",
+            image_provider.get_base_url(),
+            &image_provider.get_image_dir_path(name, arch)
+        );
+        let image_content = web.download_content(&image_dir_url).unwrap();
 
-        image_provider
-            .get_image_info(&image_content, name, arch)
-            .and_then(|image_info| {
-                web.get_file_size(&image_info.image_url)
-                    .ok()
-                    .and_then(|size| size)
-                    .and_then(|size| {
-                        if let Some(name) = &filter
-                            && image_info.names.contains(&name.get_name().to_string())
-                        {
-                            None
-                        } else {
-                            Some(Image {
-                                vendor: image_provider.get_vendor(),
-                                names: image_info.names.clone(),
-                                arch,
-                                image_url: image_info.image_url.to_string(),
-                                checksum_url: image_info.checksum_url.to_string(),
-                                hash_alg: image_info.hash_alg,
-                                size: Some(size),
-                            })
-                        }
-                    })
-            })
+        let image_file = util::find_and_extract(
+            &format!(
+                "href=\"({})\"",
+                image_provider.get_image_file_pattern(name, arch)
+            ),
+            &image_content,
+        );
+        let image_file = image_file.first();
+
+        if let Some(image_file) = image_file {
+            let image_url = format!("{image_dir_url}{image_file}");
+            let names = image_provider.get_image_names(image_file, name);
+            web.get_file_size(&image_url)
+                .ok()
+                .and_then(|size| size)
+                .and_then(|size| {
+                    if filter
+                        .map(|name| names.contains(&name.get_name().to_string()))
+                        .unwrap_or(true)
+                    {
+                        Some(Image {
+                            vendor: image_provider.get_vendor().to_string(),
+                            names,
+                            arch,
+                            image_url,
+                            checksum_url: format!(
+                                "{image_dir_url}{}",
+                                image_provider.get_checksum_file(image_file, name, arch)
+                            ),
+                            hash_alg: image_provider.get_checksum_alg(),
+                            size: Some(size),
+                        })
+                    } else {
+                        None
+                    }
+                })
+        } else {
+            None
+        }
     }
 
     fn get_images_from_provider(
@@ -76,10 +95,10 @@ impl ImageFactory {
         image_provider: &dyn image::ImageProvider,
         filter: Option<ImageName>,
     ) -> Vec<Image> {
-        web.download_content(&image_provider.get_image_list_url())
+        web.download_content(image_provider.get_base_url())
             .map(|content| {
                 image_provider
-                    .get_image_names(&content)
+                    .find_image_names(&content)
                     .into_iter()
                     .flat_map(|name| {
                         Self::filter_arch(filter.clone())
@@ -104,10 +123,7 @@ impl ImageFactory {
         let mut images = IMAGE_PROVIDERS
             .iter()
             .filter(|p| filter.is_none() || filter.as_ref().unwrap().get_vendor() == p.get_vendor())
-            .flat_map(|provider| {
-                Self::get_images_from_provider(web, *provider, filter.clone())
-                //.sort_by(|a, b| provider.compare(a, b))
-            })
+            .flat_map(|provider| Self::get_images_from_provider(web, *provider, filter.clone()))
             .collect::<Vec<_>>();
         images.sort();
         images

@@ -1,39 +1,41 @@
 use crate::arch::Arch;
-use crate::image::{HashAlg, ImageInfo, ImageProvider};
+use crate::image::{HashAlg, ImageProvider};
 use crate::util;
 
 pub struct RockyLinuxImageProvider {}
 
 impl ImageProvider for RockyLinuxImageProvider {
-    fn get_vendor(&self) -> String {
-        "rockylinux".to_string()
+    fn get_vendor(&self) -> &str {
+        "rockylinux"
     }
 
-    fn get_image_list_url(&self) -> String {
-        "https://dl.rockylinux.org/pub/rocky/".to_string()
+    fn get_base_url(&self) -> &str {
+        "https://dl.rockylinux.org/pub/rocky/"
     }
 
-    fn get_image_names(&self, content: &str) -> Vec<String> {
+    fn find_image_names(&self, content: &str) -> Vec<String> {
         util::find_and_extract(r#">([0-9]+)/<"#, content)
     }
 
-    fn get_image_dir_url(&self, name: &str, arch: Arch) -> String {
-        let base_url = self.get_image_list_url();
+    fn get_image_dir_path(&self, name: &str, arch: Arch) -> String {
         let arch_name = arch.as_canonical_str();
-        format!("{base_url}{name}/images/{arch_name}/",)
+        format!("{name}/images/{arch_name}/",)
     }
 
-    fn get_image_info(&self, _content: &str, name: &str, arch: Arch) -> Option<ImageInfo> {
-        let base_url = self.get_image_dir_url(name, arch);
+    fn get_image_names(&self, _image_file: &str, name: &str) -> Vec<String> {
+        vec![name.to_string()]
+    }
+
+    fn get_image_file_pattern(&self, name: &str, arch: Arch) -> String {
         let arch_name = arch.as_canonical_str();
-        let image_url =
-            format!("{base_url}Rocky-{name}-GenericCloud-Base.latest.{arch_name}.qcow2");
-        let checksum_url = format!("{image_url}.CHECKSUM");
-        Some(ImageInfo {
-            names: vec![name.to_string()],
-            image_url,
-            checksum_url,
-            hash_alg: HashAlg::Sha256,
-        })
+        format!("Rocky-{name}-GenericCloud-Base.latest.{arch_name}.qcow2")
+    }
+
+    fn get_checksum_file(&self, image_file: &str, _name: &str, _arch: Arch) -> String {
+        format!("{image_file}.CHECKSUM")
+    }
+
+    fn get_checksum_alg(&self) -> HashAlg {
+        HashAlg::Sha256
     }
 }
