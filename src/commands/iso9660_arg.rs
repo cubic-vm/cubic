@@ -11,6 +11,6 @@ pub enum Iso9660 {
 pub struct Iso9660Arg {
     /// Switch for ISO9600 implementation
     #[clap(hide = true)]
-    #[arg(value_enum, long = "iso9660", default_value_t = Iso9660::System)]
+    #[arg(value_enum, long = "iso9660", default_value_t = Iso9660::Rust)]
     pub value: Iso9660,
 }
