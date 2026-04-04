@@ -1,5 +1,5 @@
 use crate::actions::StartInstanceAction;
-use crate::commands::Command;
+use crate::commands::{self, Command};
 use crate::env::Environment;
 use crate::error::Result;
 use crate::image::ImageStore;
@@ -8,15 +8,9 @@ use crate::ssh_cmd::{PortChecker, Russh};
 use crate::util;
 use crate::view::Console;
 use crate::view::SpinnerView;
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use std::thread::sleep;
 use std::time::Duration;
-
-#[derive(Debug, Clone, ValueEnum)]
-pub enum Iso9660 {
-    System,
-    Rust,
-}
 
 /// Start VM instances
 ///
@@ -45,10 +39,8 @@ pub struct StartCommand {
     pub wait: bool,
     /// Name of the virtual machine instances to start
     pub instances: Vec<String>,
-    /// Switch for Rust and system ISO9600 implementation
-    #[clap(hide = true)]
-    #[arg(value_enum, long, default_value_t = Iso9660::System)]
-    pub iso9660: Iso9660,
+    #[clap(flatten)]
+    pub iso9660: commands::Iso9660Arg,
 }
 
 impl Command for StartCommand {
@@ -80,7 +72,7 @@ impl Command for StartCommand {
                     env,
                     &self.qemu_args,
                     verbosity.is_verbose(),
-                    self.iso9660.clone(),
+                    self.iso9660.value.clone(),
                 )?;
 
                 actions.push(action);

@@ -1,4 +1,4 @@
-use crate::commands::{self, Command, Iso9660};
+use crate::commands::{self, Command, Iso9660Arg};
 use crate::env::Environment;
 use crate::error::Result;
 use crate::fs::FS;
@@ -22,10 +22,8 @@ pub struct ExecCommand {
     pub target: Target,
     /// Command to execute in the virtual machine instance
     pub cmd: String,
-    /// Switch for Rust and system ISO9600 implementation
-    #[clap(hide = true)]
-    #[arg(value_enum, default_value_t = Iso9660::System)]
-    pub iso9660: Iso9660,
+    #[clap(flatten)]
+    pub iso9660: Iso9660Arg,
 }
 
 impl Command for ExecCommand {

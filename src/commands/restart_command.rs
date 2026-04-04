@@ -1,4 +1,4 @@
-use crate::commands::{self, Command, Iso9660};
+use crate::commands::{self, Command, Iso9660Arg};
 use crate::env::Environment;
 use crate::error::Result;
 use crate::image::ImageStore;
@@ -21,10 +21,8 @@ use clap::Parser;
 pub struct RestartCommand {
     /// Name of the virtual machine instances to restart
     instances: Vec<String>,
-    /// Switch for Rust and system ISO9600 implementation
-    #[clap(hide = true)]
-    #[arg(value_enum, long, default_value_t = Iso9660::System)]
-    pub iso9660: Iso9660,
+    #[clap(flatten)]
+    pub iso9660: Iso9660Arg,
 }
 
 impl Command for RestartCommand {
