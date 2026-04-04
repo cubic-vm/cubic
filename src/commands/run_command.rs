@@ -1,4 +1,4 @@
-use crate::commands::{self, Command, Iso9660};
+use crate::commands::{self, Command};
 use crate::env::Environment;
 use crate::error::Result;
 use crate::image::ImageStore;
@@ -35,10 +35,8 @@ use clap::{self, Parser};
 pub struct RunCommand {
     #[clap(flatten)]
     create_cmd: commands::CreateCommand,
-    /// Switch for Rust and system ISO9600 implementation
-    #[clap(hide = true)]
-    #[arg(value_enum, long, default_value_t = Iso9660::System)]
-    pub iso9660: Iso9660,
+    #[clap(flatten)]
+    pub iso9660: commands::Iso9660Arg,
 }
 
 impl Command for RunCommand {
