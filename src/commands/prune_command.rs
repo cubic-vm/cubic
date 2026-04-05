@@ -1,9 +1,6 @@
-use crate::commands::Command;
-use crate::env::Environment;
+use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::fs::FS;
-use crate::image::ImageStore;
-use crate::instance::InstanceStore;
 use crate::model::DataSize;
 use crate::util;
 use crate::view::Console;
@@ -18,13 +15,9 @@ use clap::Parser;
 pub struct PruneCommand;
 
 impl Command for PruneCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        env: &Environment,
-        _image_store: &dyn ImageStore,
-        _instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        let env = context.get_env();
+
         // Calculate size
         let fs = FS::new();
         let paths = [env.get_image_cache_file(), env.get_image_dir()];

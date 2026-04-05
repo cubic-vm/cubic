@@ -1,8 +1,6 @@
-use crate::commands::Command;
-use crate::env::Environment;
+use crate::commands::{self, Command};
 use crate::error::{Error, Result};
-use crate::image::ImageStore;
-use crate::instance::{InstanceName, InstanceStore};
+use crate::instance::InstanceName;
 use crate::view::{Console, MapView};
 use clap::Parser;
 
@@ -14,13 +12,9 @@ pub struct ShowInstanceCommand {
 }
 
 impl Command for ShowInstanceCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        _env: &Environment,
-        _image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        let instance_store = context.get_instance_store();
+
         if !instance_store.exists(self.instance.as_str()) {
             return Result::Err(Error::UnknownInstance(self.instance.to_string()));
         }
@@ -62,6 +56,7 @@ impl Command for ShowInstanceCommand {
 mod tests {
     use super::*;
     use crate::arch::Arch;
+    use crate::env::Environment;
     use crate::image::ImageStoreMock;
     use crate::instance::Instance;
     use crate::instance::InstanceStoreMock;
@@ -72,9 +67,9 @@ mod tests {
     #[test]
     fn test_show_command1() {
         let console = &mut ConsoleMock::new();
-        let env = &Environment::new(String::new(), String::new(), String::new());
-        let image_store = &ImageStoreMock::default();
-        let instance_store = &InstanceStoreMock::new(vec![Instance {
+        let env = Environment::new(String::new(), String::new(), String::new());
+        let image_store = ImageStoreMock::default();
+        let instance_store = InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             arch: Arch::AMD64,
             user: "cubic".to_string(),
@@ -85,11 +80,12 @@ mod tests {
             hostfwd: Vec::new(),
             ..Instance::default()
         }]);
+        let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
 
         ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap(),
         }
-        .run(console, env, image_store, instance_store)
+        .run(console, &context)
         .unwrap();
 
         assert_eq!(
@@ -111,9 +107,9 @@ SSH:        ssh -p 9000 cubic@localhost
     #[test]
     fn test_show_command2() {
         let console = &mut ConsoleMock::new();
-        let env = &Environment::new(String::new(), String::new(), String::new());
-        let image_store = &ImageStoreMock::default();
-        let instance_store = &InstanceStoreMock::new(vec![Instance {
+        let env = Environment::new(String::new(), String::new(), String::new());
+        let image_store = ImageStoreMock::default();
+        let instance_store = InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             arch: Arch::ARM64,
             user: "john".to_string(),
@@ -125,11 +121,12 @@ SSH:        ssh -p 9000 cubic@localhost
             isolate: true,
             ..Instance::default()
         }]);
+        let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
 
         ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap(),
         }
-        .run(console, env, image_store, instance_store)
+        .run(console, &context)
         .unwrap();
 
         assert_eq!(
@@ -151,15 +148,16 @@ SSH:        ssh -p 8000 john@localhost
     #[test]
     fn test_show_command_failed() {
         let console = &mut ConsoleMock::new();
-        let env = &Environment::new(String::new(), String::new(), String::new());
-        let instance_store = &InstanceStoreMock::new(Vec::new());
-        let image_store = &ImageStoreMock::default();
+        let env = Environment::new(String::new(), String::new(), String::new());
+        let instance_store = InstanceStoreMock::new(Vec::new());
+        let image_store = ImageStoreMock::default();
+        let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
 
         assert!(matches!(
             ShowInstanceCommand {
                 instance: InstanceName::from_str("test").unwrap()
             }
-            .run(console, env, image_store, instance_store),
+            .run(console, &context),
             Result::Err(Error::UnknownInstance(_))
         ));
     }

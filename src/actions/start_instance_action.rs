@@ -1,10 +1,9 @@
 use crate::cloudinit::UserDataImageFactory;
-use crate::commands::Iso9660;
+use crate::commands::{Context, Iso9660};
 use crate::emulator::Emulator;
-use crate::env::Environment;
 use crate::error::Result;
 use crate::fs::FS;
-use crate::instance::{Instance, InstanceStore};
+use crate::instance::Instance;
 use crate::ssh_cmd::PortChecker;
 
 pub struct StartInstanceAction {
@@ -20,16 +19,16 @@ impl StartInstanceAction {
 
     pub fn run(
         &mut self,
-        instance_dao: &dyn InstanceStore,
-        env: &Environment,
+        context: &Context,
         qemu_args: &Option<String>,
         verbose: bool,
         iso9660: Iso9660,
     ) -> Result<()> {
-        if instance_dao.is_running(&self.instance) {
+        if context.get_instance_store().is_running(&self.instance) {
             return Ok(());
         }
 
+        let env = context.get_env();
         FS::new().setup_directory_access(&env.get_instance_runtime_dir(&self.instance.name))?;
         match iso9660 {
             Iso9660::Rust => UserDataImageFactory.create_rust(env, &self.instance)?,

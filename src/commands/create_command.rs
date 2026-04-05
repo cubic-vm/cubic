@@ -1,13 +1,12 @@
 use crate::actions::CreateInstanceAction;
 use crate::commands::{
-    Command,
+    Command, Context,
     image::{fetch_image, fetch_image_info},
 };
-use crate::env::Environment;
 use crate::error::{Error, Result};
 use crate::fs::FS;
-use crate::image::{ImageName, ImageStore};
-use crate::instance::{Instance, InstanceName, InstanceStore, PortForward};
+use crate::image::ImageName;
+use crate::instance::{Instance, InstanceName, PortForward};
 use crate::model::DataSize;
 use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
@@ -75,20 +74,17 @@ pub struct CreateCommand {
 }
 
 impl Command for CreateCommand {
-    fn run(
-        &self,
-        _console: &mut dyn Console,
-        env: &Environment,
-        image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, _console: &mut dyn Console, context: &Context) -> Result<()> {
+        let env = context.get_env();
+        let instance_store = context.get_instance_store();
+
         if instance_store.exists(self.instance_name.as_str()) {
             return Result::Err(Error::InstanceAlreadyExists(self.instance_name.to_string()));
         }
 
         // Fetch image
         let image = &fetch_image_info(env, &self.image)?;
-        fetch_image(env, image_store, image)?;
+        fetch_image(env, context.get_image_store(), image)?;
 
         let mut create_spinner = SpinnerView::new("Creating virtual machine instance".to_string());
 
@@ -107,7 +103,7 @@ impl Command for CreateCommand {
         };
 
         let image_path = &env.get_image_file(&image.to_file_name());
-        CreateInstanceAction::new().run(env, &FS::new(), instance_store, image_path, instance)?;
+        CreateInstanceAction::new().run(context, &FS::new(), image_path, instance)?;
 
         create_spinner.stop();
         Result::Ok(())

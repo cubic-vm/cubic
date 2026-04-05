@@ -1,8 +1,6 @@
 use crate::commands::{self, Command};
-use crate::env::Environment;
 use crate::error::Result;
-use crate::image::ImageStore;
-use crate::instance::{InstanceStore, Target};
+use crate::instance::Target;
 use crate::view::Console;
 use clap::{self, Parser};
 
@@ -40,20 +38,13 @@ pub struct RunCommand {
 }
 
 impl Command for RunCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        env: &Environment,
-        image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
-        self.create_cmd
-            .run(console, env, image_store, instance_store)?;
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        self.create_cmd.run(console, context)?;
         commands::SshCommand {
             target: Target::from_instance_name(self.create_cmd.instance_name.clone()),
             cmd: None,
             iso9660: self.iso9660.clone(),
         }
-        .run(console, env, image_store, instance_store)
+        .run(console, context)
     }
 }

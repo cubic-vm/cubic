@@ -1,7 +1,7 @@
-use crate::env::Environment;
+use crate::commands::Context;
 use crate::error::Result;
 use crate::fs::FS;
-use crate::instance::{Instance, InstanceStore};
+use crate::instance::Instance;
 use crate::ssh_cmd::SshKeyGenerator;
 use crate::util::SystemCommand;
 use std::path::Path;
@@ -16,14 +16,13 @@ impl CreateInstanceAction {
 
     pub fn run(
         &mut self,
-        env: &Environment,
+        context: &Context,
         fs: &FS,
-        instance_store: &dyn InstanceStore,
         image_path: &str,
         mut instance: Instance,
     ) -> Result<()> {
         let instance_name = instance.name.clone();
-        let target_dir = &env.get_instance_dir2(&instance.name);
+        let target_dir = &context.get_env().get_instance_dir2(&instance.name);
         let tmp_dir = &format!("{target_dir}.tmp");
         let tmp_image = &format!("{tmp_dir}/machine.img");
 
@@ -53,7 +52,7 @@ impl CreateInstanceAction {
 
         // Write configuration file
         instance.name = format!("{instance_name}.tmp");
-        instance_store.store(&instance)?;
+        context.get_instance_store().store(&instance)?;
         instance.name = instance_name;
 
         fs.rename_file(tmp_dir, target_dir)

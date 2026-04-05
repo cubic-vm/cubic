@@ -1,9 +1,6 @@
 use crate::actions::StartInstanceAction;
 use crate::commands::{self, Command};
-use crate::env::Environment;
 use crate::error::Result;
-use crate::image::ImageStore;
-use crate::instance::InstanceStore;
 use crate::ssh_cmd::{PortChecker, Russh};
 use crate::util;
 use crate::view::Console;
@@ -44,13 +41,9 @@ pub struct StartCommand {
 }
 
 impl Command for StartCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        env: &Environment,
-        _image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        let instance_store = context.get_instance_store();
+
         let verbosity = console.get_verbosity();
         let async_caller = util::AsyncCaller::new();
         let russh = Russh::new();
@@ -68,8 +61,7 @@ impl Command for StartCommand {
 
                 let mut action = StartInstanceAction::new(instance);
                 action.run(
-                    instance_store,
-                    env,
+                    context,
                     &self.qemu_args,
                     verbosity.is_verbose(),
                     self.iso9660.value.clone(),

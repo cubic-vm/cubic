@@ -1,9 +1,7 @@
 use crate::commands::{self, Command, Iso9660Arg};
-use crate::env::Environment;
 use crate::error::Result;
 use crate::fs::FS;
-use crate::image::ImageStore;
-use crate::instance::{InstanceStore, Target};
+use crate::instance::Target;
 use crate::ssh_cmd::Russh;
 use crate::view::Console;
 use clap::Parser;
@@ -27,13 +25,8 @@ pub struct ExecCommand {
 }
 
 impl Command for ExecCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        env: &Environment,
-        image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        let env = context.get_env();
         let name = self.target.get_instance();
 
         commands::StartCommand {
@@ -42,9 +35,9 @@ impl Command for ExecCommand {
             instances: vec![name.to_string()],
             iso9660: self.iso9660.clone(),
         }
-        .run(console, env, image_store, instance_store)?;
+        .run(console, context)?;
 
-        let instance = instance_store.load(name.as_str())?;
+        let instance = context.get_instance_store().load(name.as_str())?;
         let user = self
             .target
             .get_user()

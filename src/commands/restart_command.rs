@@ -1,8 +1,5 @@
 use crate::commands::{self, Command, Iso9660Arg};
-use crate::env::Environment;
 use crate::error::Result;
-use crate::image::ImageStore;
-use crate::instance::InstanceStore;
 use crate::view::Console;
 use clap::Parser;
 
@@ -26,25 +23,19 @@ pub struct RestartCommand {
 }
 
 impl Command for RestartCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        env: &Environment,
-        image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
         commands::StopCommand {
             all: false,
             wait: true,
             instances: self.instances.to_vec(),
         }
-        .run(console, env, image_store, instance_store)?;
+        .run(console, context)?;
         commands::StartCommand {
             qemu_args: None,
             wait: true,
             instances: self.instances.to_vec(),
             iso9660: self.iso9660.clone(),
         }
-        .run(console, env, image_store, instance_store)
+        .run(console, context)
     }
 }
