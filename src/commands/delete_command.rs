@@ -1,8 +1,5 @@
 use crate::commands::{self, Command};
-use crate::env::Environment;
 use crate::error::{Error, Result};
-use crate::image::ImageStore;
-use crate::instance::InstanceStore;
 use crate::util;
 use crate::view::Console;
 use clap::Parser;
@@ -34,13 +31,9 @@ pub struct DeleteCommand {
 }
 
 impl Command for DeleteCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        env: &Environment,
-        image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        let instance_store = context.get_instance_store();
+
         // Check if the instance names are valid
         for instance in &self.instances {
             if !instance_store.exists(instance) {
@@ -62,7 +55,7 @@ impl Command for DeleteCommand {
                 wait: true,
                 instances: self.instances.clone(),
             }
-            .run(console, env, image_store, instance_store)?;
+            .run(console, context)?;
 
             // Delete the VM instances
             for instance in &self.instances {

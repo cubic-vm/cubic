@@ -63,8 +63,11 @@ impl CommandDispatcher {
             self.global.quiet,
         ));
         let env = EnvironmentFactory::create_env()?;
-        let image_dao = ImageDao::new(&env)?;
-        let instance_dao = InstanceDao::new(&env)?;
+        let context = &commands::Context::new(
+            env.clone(),
+            Box::new(ImageDao::new(&env)?),
+            Box::new(InstanceDao::new(&env)?),
+        );
 
         match &self.command {
             Commands::Run(cmd) => cmd as &dyn Command,
@@ -87,6 +90,6 @@ impl CommandDispatcher {
             Commands::Prune(cmd) => cmd,
             Commands::Completions(cmd) => cmd,
         }
-        .run(console, &env, &image_dao, &instance_dao)
+        .run(console, context)
     }
 }

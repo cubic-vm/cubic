@@ -1,8 +1,6 @@
-use crate::commands::Command;
-use crate::env::Environment;
+use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::fs::FS;
-use crate::image::ImageStore;
 use crate::instance::{InstanceStore, TargetPath};
 use crate::ssh_cmd::Russh;
 use crate::view::Console;
@@ -48,20 +46,15 @@ pub struct ScpCommand {
 }
 
 impl Command for ScpCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        env: &Environment,
-        _image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        let instance_store = context.get_instance_store();
         check_target_is_running(instance_store, &self.from)?;
         check_target_is_running(instance_store, &self.to)?;
 
         let root_dir = env::var("SNAP").unwrap_or_default();
         let mut ssh = Russh::new();
 
-        let pubkeys = env.get_ssh_private_key_paths(
+        let pubkeys = context.get_env().get_ssh_private_key_paths(
             &FS::new(),
             [&self.from, &self.to]
                 .iter()

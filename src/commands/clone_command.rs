@@ -1,10 +1,8 @@
 use crate::actions::CreateInstanceAction;
-use crate::commands::Command;
-use crate::env::Environment;
+use crate::commands::{Command, Context};
 use crate::error::{Error, Result};
 use crate::fs::FS;
-use crate::image::ImageStore;
-use crate::instance::{InstanceName, InstanceStore};
+use crate::instance::InstanceName;
 use crate::ssh_cmd::PortChecker;
 use crate::view::{Console, SpinnerView};
 use clap::Parser;
@@ -26,13 +24,9 @@ pub struct CloneCommand {
 }
 
 impl Command for CloneCommand {
-    fn run(
-        &self,
-        _console: &mut dyn Console,
-        env: &Environment,
-        _image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, _console: &mut dyn Console, context: &Context) -> Result<()> {
+        let instance_store = context.get_instance_store();
+
         // Verify that the target name is available
         if instance_store.exists(self.new_name.as_str()) {
             return Err(Error::InstanceAlreadyExists(self.new_name.to_string()));
@@ -49,7 +43,9 @@ impl Command for CloneCommand {
         let mut spinner = SpinnerView::new("Cloning VM instance".to_string());
 
         // Load source instance info
-        let image_path = &env.get_instance_image_file(self.name.as_str());
+        let image_path = &context
+            .get_env()
+            .get_instance_image_file(self.name.as_str());
 
         // Setup target instance info
         let mut target = source.clone();
@@ -57,7 +53,7 @@ impl Command for CloneCommand {
         target.ssh_port = PortChecker::new().get_new_port();
 
         // Create VM instance
-        CreateInstanceAction::new().run(env, &FS::new(), instance_store, image_path, target)?;
+        CreateInstanceAction::new().run(context, &FS::new(), image_path, target)?;
 
         spinner.stop();
         Ok(())

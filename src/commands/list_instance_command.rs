@@ -1,8 +1,5 @@
-use crate::commands::Command;
-use crate::env::Environment;
+use crate::commands::{self, Command};
 use crate::error::Result;
-use crate::image::ImageStore;
-use crate::instance::InstanceStore;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
 
@@ -22,13 +19,8 @@ use clap::Parser;
 pub struct ListInstanceCommand;
 
 impl Command for ListInstanceCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        _env: &Environment,
-        _image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        let instance_store = context.get_instance_store();
         let instance_names = instance_store.get_instances();
 
         let mut view = TableView::new();
@@ -82,6 +74,7 @@ impl Command for ListInstanceCommand {
 mod tests {
     use super::*;
     use crate::arch::Arch;
+    use crate::env::Environment;
     use crate::image::ImageStoreMock;
     use crate::instance::Instance;
     use crate::instance::InstanceStoreMock;
@@ -91,9 +84,9 @@ mod tests {
     #[test]
     fn test_list_instance_command() {
         let console = &mut ConsoleMock::new();
-        let image_store = &ImageStoreMock::default();
-        let env = &Environment::new(String::new(), String::new(), String::new());
-        let instance_store = &InstanceStoreMock::new(vec![
+        let image_store = ImageStoreMock::default();
+        let env = Environment::new(String::new(), String::new(), String::new());
+        let instance_store = InstanceStoreMock::new(vec![
             Instance {
                 name: "test".to_string(),
                 arch: Arch::AMD64,
@@ -117,10 +110,9 @@ mod tests {
                 ..Instance::default()
             },
         ]);
+        let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
 
-        ListInstanceCommand {}
-            .run(console, env, image_store, instance_store)
-            .unwrap();
+        ListInstanceCommand {}.run(console, &context).unwrap();
 
         assert_eq!(
             console.get_output(),
@@ -135,13 +127,12 @@ PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   State
     #[test]
     fn test_list_instance_command_empty() {
         let console = &mut ConsoleMock::new();
-        let instance_store = &InstanceStoreMock::new(Vec::new());
-        let image_store = &ImageStoreMock::default();
-        let env = &Environment::new(String::new(), String::new(), String::new());
+        let instance_store = InstanceStoreMock::new(Vec::new());
+        let image_store = ImageStoreMock::default();
+        let env = Environment::new(String::new(), String::new(), String::new());
+        let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
 
-        ListInstanceCommand {}
-            .run(console, env, image_store, instance_store)
-            .unwrap();
+        ListInstanceCommand {}.run(console, &context).unwrap();
 
         assert_eq!(
             console.get_output(),

@@ -2,6 +2,7 @@ mod clone_command;
 mod command_dispatcher;
 mod completions_command;
 mod console_command;
+mod context;
 mod create_command;
 mod delete_command;
 mod exec_command;
@@ -28,6 +29,7 @@ pub use clone_command::*;
 pub use command_dispatcher::*;
 pub use completions_command::*;
 pub use console_command::*;
+pub use context::*;
 pub use create_command::*;
 pub use delete_command::*;
 pub use exec_command::*;
@@ -50,18 +52,9 @@ pub use start_command::*;
 pub use stop_command::*;
 pub use verbosity::*;
 
-use crate::env::Environment;
 use crate::error::Result;
-use crate::image::ImageStore;
-use crate::instance::InstanceStore;
 use crate::view::Console;
 
 trait Command {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        env: &Environment,
-        image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()>;
+    fn run(&self, console: &mut dyn Console, context: &Context) -> Result<()>;
 }

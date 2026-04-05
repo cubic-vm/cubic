@@ -1,8 +1,6 @@
-use crate::commands::{Command, fetch_image_list};
-use crate::env::Environment;
+use crate::commands::{Command, Context, fetch_image_list};
 use crate::error::Result;
-use crate::image::{ImageStore, get_default_arch};
-use crate::instance::InstanceStore;
+use crate::image::get_default_arch;
 use crate::model::DataSize;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
@@ -42,14 +40,8 @@ pub struct ListImageCommand {
 }
 
 impl Command for ListImageCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        env: &Environment,
-        image_store: &dyn ImageStore,
-        _instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
-        let images = fetch_image_list(env);
+    fn run(&self, console: &mut dyn Console, context: &Context) -> Result<()> {
+        let images = fetch_image_list(context.get_env());
 
         let mut view = TableView::new();
         view.add_row()
@@ -73,7 +65,7 @@ impl Command for ListImageCommand {
                 .add(&image.arch.to_string(), Alignment::Left)
                 .add(&size, Alignment::Right)
                 .add(
-                    if image_store.exists(&image) {
+                    if context.get_image_store().exists(&image) {
                         "yes"
                     } else {
                         "no"

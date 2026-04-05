@@ -1,8 +1,5 @@
-use crate::commands::Command;
-use crate::env::Environment;
+use crate::commands::{self, Command};
 use crate::error::Result;
-use crate::image::ImageStore;
-use crate::instance::InstanceStore;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
 
@@ -26,13 +23,8 @@ use clap::Parser;
 pub struct ListPortCommand;
 
 impl Command for ListPortCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        _env: &Environment,
-        _image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        let instance_store = context.get_instance_store();
         let instance_names = instance_store.get_instances();
 
         let mut view = TableView::new();

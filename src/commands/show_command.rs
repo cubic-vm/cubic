@@ -1,8 +1,5 @@
 use crate::commands::{self, Command};
-use crate::env::Environment;
 use crate::error::Result;
-use crate::image::ImageStore;
-use crate::instance::InstanceStore;
 use crate::model::InstanceImageName;
 use crate::view::Console;
 use clap::Parser;
@@ -41,20 +38,15 @@ pub struct ShowCommand {
 }
 
 impl Command for ShowCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        env: &Environment,
-        image_store: &dyn ImageStore,
-        instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
         match &self.name {
-            InstanceImageName::Image(name) => commands::ShowImageCommand { name: name.clone() }
-                .run(console, env, image_store, instance_store),
+            InstanceImageName::Image(name) => {
+                commands::ShowImageCommand { name: name.clone() }.run(console, context)
+            }
             InstanceImageName::Instance(instance) => commands::ShowInstanceCommand {
                 instance: instance.clone(),
             }
-            .run(console, env, image_store, instance_store),
+            .run(console, context),
         }
     }
 }

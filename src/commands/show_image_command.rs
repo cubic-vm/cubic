@@ -1,8 +1,6 @@
-use crate::commands::{Command, image::fetch_image_info};
-use crate::env::Environment;
+use crate::commands::{self, Command, image::fetch_image_info};
 use crate::error::Result;
-use crate::image::{ImageName, ImageStore};
-use crate::instance::InstanceStore;
+use crate::image::ImageName;
 use crate::view::{Console, MapView};
 use clap::Parser;
 
@@ -14,14 +12,8 @@ pub struct ShowImageCommand {
 }
 
 impl Command for ShowImageCommand {
-    fn run(
-        &self,
-        console: &mut dyn Console,
-        env: &Environment,
-        _image_store: &dyn ImageStore,
-        _instance_store: &dyn InstanceStore,
-    ) -> Result<()> {
-        let image = fetch_image_info(env, &self.name)?;
+    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        let image = fetch_image_info(context.get_env(), &self.name)?;
         let mut view = MapView::new();
         view.add("Name", &image.get_image_names());
         view.add("Image URL", &image.image_url);
