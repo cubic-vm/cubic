@@ -67,10 +67,6 @@ impl StartInstanceAction {
         }
 
         emulator.add_qmp("qmp", &env.get_monitor_file(&self.instance.name));
-        emulator.add_guest_agent(
-            "guest-agent",
-            &env.get_guest_agent_file(&self.instance.name),
-        );
         emulator.run()
     }
 
