@@ -89,13 +89,6 @@ impl Environment {
         format!("{}/monitor.socket", self.get_instance_runtime_dir(instance))
     }
 
-    pub fn get_guest_agent_file(&self, instance: &str) -> String {
-        format!(
-            "{}/guest-agent.socket",
-            self.get_instance_runtime_dir(instance)
-        )
-    }
-
     pub fn get_ssh_private_key_paths(&self, fs: &FS, instances: Vec<String>) -> Vec<String> {
         let mut private_keys = instances
             .iter()
@@ -197,10 +190,6 @@ mod tests {
         assert_eq!(
             env.get_monitor_file("mymachine"),
             "/runtime/cubic/instances/mymachine/monitor.socket"
-        );
-        assert_eq!(
-            env.get_guest_agent_file("mymachine"),
-            "/runtime/cubic/instances/mymachine/guest-agent.socket"
         );
     }
 }
