@@ -1,4 +1,4 @@
-use crate::commands::{self, Command, Iso9660Arg};
+use crate::commands::{self, Command};
 use crate::error::Result;
 #[cfg(not(windows))]
 use crate::util::Terminal;
@@ -24,8 +24,6 @@ use std::time::Duration;
 pub struct ConsoleCommand {
     /// Name of the virtual machine instance
     instance: String,
-    #[clap(flatten)]
-    pub iso9660: Iso9660Arg,
 }
 
 impl Command for ConsoleCommand {
@@ -34,7 +32,6 @@ impl Command for ConsoleCommand {
             qemu_args: None,
             wait: false,
             instances: vec![self.instance.to_string()],
-            iso9660: self.iso9660.clone(),
         }
         .run(console, context)?;
 

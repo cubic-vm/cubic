@@ -36,8 +36,6 @@ pub struct StartCommand {
     pub wait: bool,
     /// Name of the virtual machine instances to start
     pub instances: Vec<String>,
-    #[clap(flatten)]
-    pub iso9660: commands::Iso9660Arg,
 }
 
 impl Command for StartCommand {
@@ -60,12 +58,7 @@ impl Command for StartCommand {
                 }
 
                 let mut action = StartInstanceAction::new(instance);
-                action.run(
-                    context,
-                    &self.qemu_args,
-                    verbosity.is_verbose(),
-                    self.iso9660.value.clone(),
-                )?;
+                action.run(context, &self.qemu_args, verbosity.is_verbose())?;
 
                 actions.push(action);
             }

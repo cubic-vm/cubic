@@ -65,14 +65,6 @@ impl Environment {
         format!("{}/user-data.img", &self.get_instance_cache_dir(instance))
     }
 
-    pub fn get_meta_data_file(&self, instance: &str) -> String {
-        format!("{}/meta-data", &self.get_instance_cache_dir(instance))
-    }
-
-    pub fn get_user_data_file(&self, instance: &str) -> String {
-        format!("{}/user-data", &self.get_instance_cache_dir(instance))
-    }
-
     pub fn get_instance_runtime_dir(&self, instance: &str) -> String {
         format!("{}/instances/{instance}", self.runtime_dir)
     }
@@ -166,14 +158,6 @@ mod tests {
         assert_eq!(
             env.get_user_data_image_file("mymachine"),
             "/cache/cubic/instances/mymachine/user-data.img"
-        );
-        assert_eq!(
-            env.get_meta_data_file("mymachine"),
-            "/cache/cubic/instances/mymachine/meta-data"
-        );
-        assert_eq!(
-            env.get_user_data_file("mymachine"),
-            "/cache/cubic/instances/mymachine/user-data"
         );
         assert_eq!(
             env.get_instance_runtime_dir("mymachine"),

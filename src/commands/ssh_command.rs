@@ -22,8 +22,6 @@ pub struct SshCommand {
     /// Command to execute in the virtual machine instance
     #[clap(hide = true)]
     pub cmd: Option<String>,
-    #[clap(flatten)]
-    pub iso9660: commands::Iso9660Arg,
 }
 
 impl Command for SshCommand {
@@ -43,7 +41,6 @@ impl Command for SshCommand {
             qemu_args: None,
             wait: true,
             instances: vec![name.to_string()],
-            iso9660: self.iso9660.clone(),
         }
         .run(console, context)?;
 

@@ -35,19 +35,19 @@ Install with Cargo
 1. Install Dependencies
 ^^^^^
 
-Install rustup and Cubic dependencies (QEMU, genisoimage).
+Install rustup and Cubic dependencies.
 
 For Debian, Ubuntu and derivatives:
 
 .. code-block::
 
-    sudo apt install build-essential rustup qemu-system-x86 qemu-system-arm genisoimage
+    sudo apt install build-essential rustup qemu-system-x86 qemu-system-arm
 
 For Fedora and derivatives:
 
 .. code-block::
 
-    sudo dnf install @development-tools rustup qemu-system-x86 qemu-system-arm qemu-img genisoimage
+    sudo dnf install @development-tools rustup qemu-system-x86 qemu-system-arm qemu-img
     rustup-init -y
     . "$HOME/.cargo/env"
 
@@ -55,7 +55,7 @@ For OpenSUSE and derivatives:
 
 .. code-block::
 
-    sudo zypper install rustup qemu-x86 qemu-arm cdrtools
+    sudo zypper install rustup qemu-x86 qemu-arm
 
 2. Install Rust toolchain
 ^^^^^

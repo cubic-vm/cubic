@@ -53,7 +53,6 @@ Troubleshoot:
     - qemu-system-x86_64
     - qemu-system-aarch64
     - qemu-img
-    - mkisofs
 
   - Report error at https://github.com/cubic-vm/cubic/issues
 "

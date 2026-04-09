@@ -1,4 +1,4 @@
-use crate::commands::{self, Command, Iso9660Arg};
+use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::view::Console;
 use clap::Parser;
@@ -18,8 +18,6 @@ use clap::Parser;
 pub struct RestartCommand {
     /// Name of the virtual machine instances to restart
     instances: Vec<String>,
-    #[clap(flatten)]
-    pub iso9660: Iso9660Arg,
 }
 
 impl Command for RestartCommand {
@@ -34,7 +32,6 @@ impl Command for RestartCommand {
             qemu_args: None,
             wait: true,
             instances: self.instances.to_vec(),
-            iso9660: self.iso9660.clone(),
         }
         .run(console, context)
     }
