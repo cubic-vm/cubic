@@ -58,7 +58,6 @@ parts:
   runtime-dependencies:
     plugin: nil
     stage-packages:
-      - genisoimage:$CRAFT_ARCH_BUILD_FOR
       - qemu-utils:$CRAFT_ARCH_BUILD_FOR
       - qemu-system-x86:$CRAFT_ARCH_BUILD_FOR
       - qemu-system-arm:$CRAFT_ARCH_BUILD_FOR

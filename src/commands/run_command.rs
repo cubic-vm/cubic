@@ -33,8 +33,6 @@ use clap::{self, Parser};
 pub struct RunCommand {
     #[clap(flatten)]
     create_cmd: commands::CreateCommand,
-    #[clap(flatten)]
-    pub iso9660: commands::Iso9660Arg,
 }
 
 impl Command for RunCommand {
@@ -43,7 +41,6 @@ impl Command for RunCommand {
         commands::SshCommand {
             target: Target::from_instance_name(self.create_cmd.instance_name.clone()),
             cmd: None,
-            iso9660: self.iso9660.clone(),
         }
         .run(console, context)
     }

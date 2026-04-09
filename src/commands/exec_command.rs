@@ -1,4 +1,4 @@
-use crate::commands::{self, Command, Iso9660Arg};
+use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::fs::FS;
 use crate::instance::Target;
@@ -20,8 +20,6 @@ pub struct ExecCommand {
     pub target: Target,
     /// Command to execute in the virtual machine instance
     pub cmd: String,
-    #[clap(flatten)]
-    pub iso9660: Iso9660Arg,
 }
 
 impl Command for ExecCommand {
@@ -33,7 +31,6 @@ impl Command for ExecCommand {
             qemu_args: None,
             wait: true,
             instances: vec![name.to_string()],
-            iso9660: self.iso9660.clone(),
         }
         .run(console, context)?;
 

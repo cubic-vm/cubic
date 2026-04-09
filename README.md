@@ -185,8 +185,6 @@ The target executable is located at `target/release/cubic`.
 Once built, Cubic needs these tools to actually run the virtual machines:
 
 - **QEMU** (qemu-system-x86_64, qemu-system-arm64, qemu-img)
-- **cdrtools** or **cdrkit** (mkisofs)
-
 
 # :speech_balloon: How to contribute to Cubic?
 
