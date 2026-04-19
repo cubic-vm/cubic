@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Rust
-        run: rustup toolchain install stable
+        run: rustup toolchain install 1.92.0
 
       - name: Install Tools
         run: sh -c "[ -n \"${{ matrix.cargo }}\" ]  && cargo install ${{ matrix.cargo }} || true"
@@ -65,7 +65,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Rust
-        run: rustup toolchain install stable
+        run: rustup toolchain install 1.92.0
 
       - name: Build Source Code
         run: cargo build
