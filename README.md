@@ -171,7 +171,7 @@ Download the source code, navigate to the Cubic source directory and run the bui
 ```bash
 git clone https://github.com/cubic-vm/cubic.git
 cd cubic/
-rustup toolchain add stable
+rustup toolchain add 1.92.0
 cargo build --locked --release
 ```
 The target executable is located at `target/release/cubic`.

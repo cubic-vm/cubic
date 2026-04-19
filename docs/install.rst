@@ -60,11 +60,11 @@ For OpenSUSE and derivatives:
 2. Install Rust toolchain
 ^^^^^
 
-Install the latest stable Rust toolchain.
+Install the Rust toolchain:
 
 .. code-block::
 
-    rustup toolchain add stable
+    rustup toolchain add 1.92.0
 
 3. Install Cubic
 ^^^^^

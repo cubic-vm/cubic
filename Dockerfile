@@ -1,4 +1,4 @@
-FROM rust:1.92.0
+FROM rust:1.92-slim
 WORKDIR /usr/local/app
 
 COPY . .
@@ -20,5 +20,5 @@ RUN apt update && \
         yamllint &&\
     git config --global --add safe.directory /usr/local/app
 RUN rustup component add clippy rustfmt && \
-    cargo install cargo-audit &&\
+    cargo install --locked cargo-audit &&\
     echo 'alias cubic="cargo run"' >> ~/.bashrc
