@@ -58,20 +58,21 @@ impl ImageFetcher {
 
         // Verify checksum
         let mut spinner = SpinnerView::new(format!("Verify {}", image.to_name()));
+        let mut valid_checksum = false;
+
         if let Ok(Some((hash_alg, hashsum))) = self.fetch_checksum(&mut client, image) {
             let check = match hash_alg {
                 HashAlg::Sha512 => checksum.sha512,
                 HashAlg::Sha256 => checksum.sha256,
             };
-            spinner.stop();
-            if check == hashsum {
-                println!("Successfully verified image checksum");
-            } else {
-                return Err(Error::InvalidChecksum);
-            }
+            valid_checksum = check == hashsum;
         }
-        spinner.stop();
 
-        Ok(())
+        spinner.stop();
+        if valid_checksum {
+            Ok(())
+        } else {
+            Err(Error::InvalidChecksum)
+        }
     }
 }
