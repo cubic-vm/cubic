@@ -85,7 +85,12 @@ mod tests {
     fn test_list_instance_command() {
         let console = &mut ConsoleMock::new();
         let image_store = ImageStoreMock::default();
-        let env = Environment::new(String::new(), String::new(), String::new());
+        let env = Environment::new(
+            "cubic".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
         let instance_store = InstanceStoreMock::new(vec![
             Instance {
                 name: "test".to_string(),
@@ -129,7 +134,12 @@ PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   State
         let console = &mut ConsoleMock::new();
         let instance_store = InstanceStoreMock::new(Vec::new());
         let image_store = ImageStoreMock::default();
-        let env = Environment::new(String::new(), String::new(), String::new());
+        let env = Environment::new(
+            "cubic".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
         let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
 
         ListInstanceCommand {}.run(console, &context).unwrap();

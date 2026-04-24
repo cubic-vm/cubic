@@ -51,8 +51,8 @@ pub struct CreateCommand {
     #[clap(short, long)]
     image: ImageName,
     /// Username (default: 'cubic')
-    #[clap(short, long, default_value = "cubic")]
-    user: String,
+    #[clap(short, long)]
+    user: Option<String>,
     /// Number of vCPUs for the VM instance
     #[clap(short, long, default_value_t = DEFAULT_CPU_COUNT)]
     cpus: u16,
@@ -91,7 +91,11 @@ impl Command for CreateCommand {
         let instance = Instance {
             name: self.instance_name.to_string(),
             arch: image.arch,
-            user: self.user.to_string(),
+            user: self
+                .user
+                .as_deref()
+                .unwrap_or(context.get_env().get_username())
+                .to_string(),
             cpus: self.cpus,
             mem: self.memory.clone(),
             disk_capacity: self.disk.clone(),
