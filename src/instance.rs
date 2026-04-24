@@ -27,10 +27,11 @@ pub use target_path::*;
 pub use toml_instance_deserializer::*;
 pub use yaml_instance_deserializer::*;
 
+use crate::env::DEFAULT_USERNAME;
 use crate::model::DataSize;
 
 fn default_user() -> String {
-    USER.to_string()
+    DEFAULT_USERNAME.to_string()
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

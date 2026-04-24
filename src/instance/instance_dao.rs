@@ -17,8 +17,6 @@ use std::path::Path;
 use std::str;
 use std::str::FromStr;
 
-pub const USER: &str = "cubic";
-
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     pub machine: Instance,
@@ -99,7 +97,7 @@ impl InstanceStore for InstanceDao {
             })
             .unwrap_or(Instance {
                 name: name.to_string(),
-                user: USER.to_string(),
+                user: self.env.get_username().to_string(),
                 cpus: 1,
                 mem: DataSize::from_str("1G").unwrap(),
                 disk_capacity: DataSize::from_str("1G").unwrap(),

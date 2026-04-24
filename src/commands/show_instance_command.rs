@@ -67,12 +67,17 @@ mod tests {
     #[test]
     fn test_show_command1() {
         let console = &mut ConsoleMock::new();
-        let env = Environment::new(String::new(), String::new(), String::new());
+        let env = Environment::new(
+            "myuser".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
         let image_store = ImageStoreMock::default();
         let instance_store = InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             arch: Arch::AMD64,
-            user: "cubic".to_string(),
+            user: "myuser".to_string(),
             cpus: 1,
             mem: DataSize::new(1024),
             disk_capacity: DataSize::new(1048576),
@@ -96,10 +101,10 @@ CPUs:       1
 Memory:     1.0 KiB
 Disk Used:  n/a
 Disk Total: 1.0 MiB
-User:       cubic
+User:       myuser
 Isolated:   no
 SSH Port:   9000
-SSH:        ssh -p 9000 cubic@localhost
+SSH:        ssh -p 9000 myuser@localhost
 "
         );
     }
@@ -107,7 +112,12 @@ SSH:        ssh -p 9000 cubic@localhost
     #[test]
     fn test_show_command2() {
         let console = &mut ConsoleMock::new();
-        let env = Environment::new(String::new(), String::new(), String::new());
+        let env = Environment::new(
+            "cubic".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
         let image_store = ImageStoreMock::default();
         let instance_store = InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
@@ -148,7 +158,12 @@ SSH:        ssh -p 8000 john@localhost
     #[test]
     fn test_show_command_failed() {
         let console = &mut ConsoleMock::new();
-        let env = Environment::new(String::new(), String::new(), String::new());
+        let env = Environment::new(
+            "testuser".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
         let instance_store = InstanceStoreMock::new(Vec::new());
         let image_store = ImageStoreMock::default();
         let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));

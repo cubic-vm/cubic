@@ -3,18 +3,24 @@ use std::env;
 
 #[derive(Default, Clone)]
 pub struct Environment {
+    username: String,
     data_dir: String,
     cache_dir: String,
     runtime_dir: String,
 }
 
 impl Environment {
-    pub fn new(data_dir: String, cache_dir: String, runtime_dir: String) -> Self {
+    pub fn new(username: String, data_dir: String, cache_dir: String, runtime_dir: String) -> Self {
         Self {
+            username,
             data_dir,
             cache_dir,
             runtime_dir,
         }
+    }
+
+    pub fn get_username(&self) -> &str {
+        &self.username
     }
 
     pub fn get_cache_dir(&self) -> &str {
@@ -121,11 +127,14 @@ mod tests {
     #[test]
     fn test_paths() {
         let env = Environment::new(
+            "testuser".to_string(),
             "/data/cubic".to_string(),
             "/cache/cubic".to_string(),
             "/runtime/cubic".to_string(),
         );
 
+        assert_eq!(env.get_username(), "testuser");
+        assert_eq!(env.get_cache_dir(), "/cache/cubic");
         assert_eq!(env.get_cache_dir(), "/cache/cubic");
         assert_eq!(env.get_runtime_dir(), "/runtime/cubic");
         assert_eq!(env.get_instance_dir(), "/data/cubic/machines");
