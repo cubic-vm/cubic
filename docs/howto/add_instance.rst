@@ -65,8 +65,8 @@ You can list all your virtual machine with the following command:
 .. code-block::
 
     $ cubic instances
-    PID    Name         Arch    CPUs     Memory       Disk   State
-           example      amd64      1    1.0 GiB    1.0 GiB   STOPPED
+    PID    Name         Arch    CPUs     Memory       Disk   Running
+           example      amd64      1    1.0 GiB    1.0 GiB       yes
 
 Additional Settings
 -------------------

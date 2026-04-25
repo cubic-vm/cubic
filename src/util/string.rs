@@ -9,6 +9,10 @@ pub fn find_and_extract(regex: &str, input: &str) -> Vec<String> {
         .collect()
 }
 
+pub fn to_yes_no(condition: bool) -> &'static str {
+    if condition { "yes" } else { "no" }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -22,5 +26,11 @@ mod tests {
             ),
             &["buster", "bookworm", "trixie"]
         )
+    }
+
+    #[test]
+    fn test_to_yes_no() {
+        assert_eq!(to_yes_no(true), "yes");
+        assert_eq!(to_yes_no(false), "no");
     }
 }
