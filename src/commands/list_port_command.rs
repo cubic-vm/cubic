@@ -1,5 +1,6 @@
 use crate::commands::{self, Command};
 use crate::error::Result;
+use crate::util;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
 
@@ -37,11 +38,7 @@ impl Command for ListPortCommand {
 
         for instance_name in instance_names {
             let instance = &instance_store.load(&instance_name)?;
-            let status = if instance_store.is_running(instance) {
-                "yes"
-            } else {
-                "no"
-            };
+            let status = util::to_yes_no(instance_store.is_running(instance));
 
             view.add_row()
                 .add(&instance_name, Alignment::Left)

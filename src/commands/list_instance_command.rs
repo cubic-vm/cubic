@@ -1,5 +1,6 @@
 use crate::commands::{self, Command};
 use crate::error::Result;
+use crate::util;
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
 
@@ -8,11 +9,10 @@ use clap::Parser;
 /// Examples:
 ///
 ///   $ cubic instances
-///   PID     Name           Arch    CPUs     Memory   Disk Used   Disk Total   State
-///           noble-arm64    arm64      8    8.0 GiB     4.4 GiB    100.0 GiB   stopped
-///   1059    trixie         amd64      6   16.0 GiB         n/a    100.0 GiB   running
-///           fedora         amd64      4    4.0 GiB    10.0 GiB    100.0 GiB   stopped
-///
+///   PID     Name           Arch    CPUs     Memory   Disk Used   Disk Total   Running
+///           noble-arm64    arm64      8    8.0 GiB     4.4 GiB    100.0 GiB       yes
+///   1059    trixie         amd64      6   16.0 GiB         n/a    100.0 GiB       yes
+///           fedora         amd64      4    4.0 GiB    10.0 GiB    100.0 GiB        no
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
@@ -32,7 +32,7 @@ impl Command for ListInstanceCommand {
             .add("Memory", Alignment::Right)
             .add("Disk Used", Alignment::Right)
             .add("Disk Total", Alignment::Right)
-            .add("State", Alignment::Left);
+            .add("Running", Alignment::Right);
 
         for instance_name in &instance_names {
             let instance = instance_store.load(instance_name)?;
@@ -57,12 +57,8 @@ impl Command for ListInstanceCommand {
                 )
                 .add(&instance.disk_capacity.to_size(), Alignment::Right)
                 .add(
-                    if instance_store.is_running(&instance) {
-                        "running"
-                    } else {
-                        "stopped"
-                    },
-                    Alignment::Left,
+                    util::to_yes_no(instance_store.is_running(&instance)),
+                    Alignment::Right,
                 );
         }
         view.print(console);
@@ -122,9 +118,9 @@ mod tests {
         assert_eq!(
             console.get_output(),
             "\
-PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   State
-      test    amd64      1   1.0 KiB         n/a      1.0 MiB   stopped
-      test2   amd64      5     0   B         n/a      4.9 KiB   stopped
+PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   Running
+      test    amd64      1   1.0 KiB         n/a      1.0 MiB        no
+      test2   amd64      5     0   B         n/a      4.9 KiB        no
 "
         );
     }
@@ -146,7 +142,7 @@ PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   State
 
         assert_eq!(
             console.get_output(),
-            "PID   Name   Arch   CPUs   Memory   Disk Used   Disk Total   State\n"
+            "PID   Name   Arch   CPUs   Memory   Disk Used   Disk Total   Running\n"
         );
     }
 }
