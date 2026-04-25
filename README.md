@@ -70,6 +70,23 @@ Use `cubic images` to list all supported images.
 
 # :dizzy: How to install Cubic?
 
+**Linux** (Snap) and **Windows** (WSL2):
+```
+sudo snap install cubic
+sudo snap connect cubic:kvm
+```
+
+**macOS** (homebrew)
+```
+brew install cubic-vm/cubic/cubic
+```
+
+**Cargo** (requires *qemu-system-x86*, *qemu-system-arm* and *qemu-img* on the host)
+```
+rustup toolchain add 1.92.0
+cargo install cubic
+```
+
 See the [install](https://cubic-vm.org/install.html) instructions for more information.
 
 # :bulb: How to use Cubic?
