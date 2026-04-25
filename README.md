@@ -25,11 +25,13 @@ Cubic is a simple tool that may be used for various purposes, such as:
 
 - Simple command-line interface
 - Supports the following guest OS:
-  - **ArchLinux**
+  - **Alma Linux**
+  - **Arch Linux**
   - **Debian**
   - **Fedora**
+  - **Gentoo**
   - **OpenSUSE**
-  - **RockyLinux**
+  - **Rocky Linux**
   - **Ubuntu**
 - Supports the follwoing host OS: **Linux**, **macOS**, **Windows**
 - Supports **amd64** and **arm64** CPU architectures
