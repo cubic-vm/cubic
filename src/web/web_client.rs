@@ -99,7 +99,7 @@ impl WebClient {
             return Result::Ok(Checksum::default());
         }
 
-        let mut resp = reqwest::blocking::get(url).map_err(Error::from)?;
+        let mut resp = self.client.get(url).send().map_err(Error::from)?;
 
         let mut writer =
             ProgressWriter::new(fs.create_file(&temp_file)?, resp.content_length(), view);
