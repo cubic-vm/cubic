@@ -61,6 +61,7 @@ impl WebClient {
     pub fn new() -> Result<Self> {
         Ok(WebClient {
             client: reqwest::blocking::Client::builder()
+                .user_agent("cubic")
                 .timeout(Duration::from_secs(REQUEST_TIMEOUT_SEC))
                 .gzip(true)
                 .brotli(true)
