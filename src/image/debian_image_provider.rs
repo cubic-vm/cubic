@@ -6,7 +6,7 @@ pub struct DebianImageProvider {}
 
 impl DebianImageProvider {
     fn get_version_from_content(&self, content: &str) -> Option<String> {
-        util::find_and_extract(r#"href=\"debian-([0-9]+)-generic-.*.qcow2\""#, content)
+        util::find_and_extract(r"debian-([^-]+)-generic-[^.]+.qcow2", content)
             .into_iter()
             .next()
     }

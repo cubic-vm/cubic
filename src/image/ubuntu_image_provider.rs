@@ -6,12 +6,9 @@ pub struct UbuntuImageProvider {}
 
 impl UbuntuImageProvider {
     fn get_version_from_content(&self, content: &str) -> Option<String> {
-        util::find_and_extract(
-            r#"href=\"ubuntu-([0-9]+\.[0-9]+)-minimal-cloudimg-.*.img\""#,
-            content,
-        )
-        .into_iter()
-        .next()
+        util::find_and_extract(r"ubuntu-([^-]+)-minimal-cloudimg-[^.]+.img", content)
+            .into_iter()
+            .next()
     }
 }
 
