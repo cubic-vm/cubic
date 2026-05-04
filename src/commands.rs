@@ -23,6 +23,7 @@ mod ssh_command;
 mod start_command;
 mod stop_command;
 mod verbosity;
+mod yes_arg;
 
 pub use clone_command::*;
 pub use command_dispatcher::*;
@@ -49,6 +50,7 @@ pub use ssh_command::*;
 pub use start_command::*;
 pub use stop_command::*;
 pub use verbosity::*;
+pub use yes_arg::*;
 
 use crate::error::Result;
 use crate::view::Console;

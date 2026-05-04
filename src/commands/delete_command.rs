@@ -23,9 +23,8 @@ pub struct DeleteCommand {
     /// Delete the VM instances even when running (Deprecated)
     #[clap(hide = true, short, long, default_value_t = false)]
     force: bool,
-    /// Delete the VM instances without confirmation
-    #[clap(short, long, default_value_t = false)]
-    yes: bool,
+    #[clap(flatten)]
+    yes: commands::YesArg,
     /// Name of the VM instances to delete
     instances: Vec<String>,
 }
@@ -48,7 +47,7 @@ impl Command for DeleteCommand {
         }
 
         // Ask for confirmation
-        if self.yes || util::confirm("\nDo you want to proceed? [y/n]: ") {
+        if self.yes.value || util::confirm("\nDo you want to proceed? [y/n]: ") {
             // Stop the VM instances
             commands::StopCommand {
                 all: false,

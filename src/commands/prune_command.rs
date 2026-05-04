@@ -12,7 +12,10 @@ use clap::Parser;
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct PruneCommand;
+pub struct PruneCommand {
+    #[clap(flatten)]
+    yes: commands::YesArg,
+}
 
 impl Command for PruneCommand {
     fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
@@ -35,7 +38,7 @@ impl Command for PruneCommand {
         // Print size of files to be deleted
         console.info(&format!("\nTotal size: {total}\n"));
 
-        if util::confirm("Are you sure you want to continue? [y/N]") {
+        if self.yes.value || util::confirm("Are you sure you want to continue? [y/N]") {
             // Delete files
             fs.remove_file(&env.get_image_cache_file()).ok();
             fs.remove_dir(&env.get_image_dir()).ok();
