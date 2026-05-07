@@ -32,7 +32,7 @@ pub enum Error {
     InstanceAlreadyExists(String),
 
     #[error(
-        "Environment variable '{0}' is not set.\n\nTemporary (current session):\n  - Linux/macOS: export {0}=value\n  - Windows (PowerShell): $env:{0} = \"value\"\n  - Windows (CMD): set MYVAR={0}\n\nPermanent: Add to your shell profile or Windows Environment Variables settings."
+        "Environment variable '{0}' is not set.\n\nTemporary (current session):\n  - Linux/macOS: export {0}=value\n  - Windows (PowerShell): $env:{0} = \"value\"\n  - Windows (CMD): set {0}=value\n\nPermanent: Add to your shell profile or Windows Environment Variables settings."
     )]
     UnsetEnvVar(String),
 
