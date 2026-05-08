@@ -58,11 +58,11 @@ pub struct ModifyCommand {
     #[clap(short = 'P', long)]
     rm_port: Vec<PortForward>,
     /// Isolate VM instance from network
-    #[clap(long, action = ArgAction::SetTrue)]
-    isolate: Option<bool>,
+    #[clap(long, overrides_with = "no_isolate", action = ArgAction::SetTrue)]
+    isolate: bool,
     /// Do not isolate VM instance from network (default)
-    #[clap(long, action = ArgAction::SetTrue)]
-    no_isolate: Option<bool>,
+    #[clap(long, overrides_with = "isolate", action = ArgAction::SetTrue)]
+    no_isolate: bool,
 }
 
 impl Command for ModifyCommand {
@@ -86,12 +86,10 @@ impl Command for ModifyCommand {
             instance_store.resize(&mut instance, disk.get_bytes() as u64)?;
         }
 
-        if let Some(isolate) = self.isolate {
-            instance.isolate = isolate;
-        }
-
-        if let Some(no_isolate) = self.no_isolate {
-            instance.isolate = !no_isolate;
+        if self.isolate {
+            instance.isolate = true;
+        } else if self.no_isolate {
+            instance.isolate = false;
         }
 
         instance.hostfwd.append(&mut self.port.clone());
