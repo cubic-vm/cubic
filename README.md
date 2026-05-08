@@ -160,50 +160,8 @@ Options:
 
 # :hammer: How to Build Cubic from Source?
 
-## Install Toolchain
-
-Before running the build commands, ensure you have the necessary tools installed:
-
-- **Git**
-- **GCC**
-- **Rustup**
-
-For **Debian**, **Ubuntu**, and derivatives:
-```bash
-sudo apt update && sudo apt install -y git gcc rustup
-```
-
-For **Fedora** and derivatives:
-```bash
-sudo dnf install -y git gcc rustup && sudo rustup-init -y
-```
-
-For **OpenSUSE** and derivatives:
-```bash
-sudo zypper install -y git gcc rustup
-```
-
-## Build Cubic
-
-Download the source code, navigate to the Cubic source directory and run the build command.
-
-```bash
-git clone https://github.com/cubic-vm/cubic.git
-cd cubic/
-rustup toolchain add 1.92.0
-cargo build --locked --release
-```
-The target executable is located at `target/release/cubic`.
-
-**Note**:
-- The `--release` flag is used to create an optimized version of the application.
-- The `--locked` flag is used to ensure the build uses the exact dependency versions intended by the developers.
-
-## Runtime Dependencies
-
-Once built, Cubic needs these tools to actually run the virtual machines:
-
-- **QEMU** (qemu-system-x86_64, qemu-system-arm64, qemu-img)
+See [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on setting up a development
+environment and building the project.
 
 # :speech_balloon: How to contribute to Cubic?
 
@@ -213,6 +171,7 @@ We are actively looking for help to improve Cubic. You can help in various ways:
 - :star: Star us on [Github](https://github.com/cubic-vm/cubic) to promote the project!
 - :beetle: If you found a bug or you are interested in a feature, please create an [issue on Github](https://github.com/cubic-vm/cubic/issues)!
 - :construction_worker: If you are a developer and you want to submit a change, please have a look at the [contribution page](CONTRIBUTING.md)!
+- :pencil: If you are a technical writer and you want to improve the documentation, please have a look at the [contribution page](CONTRIBUTING.md)!
 
 # :page_with_curl: License
 
