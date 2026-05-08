@@ -51,7 +51,7 @@ impl ImageFactory {
 
         let image_file = util::find_and_extract(
             &format!(
-                "href=\"({})\"",
+                "href=\"\\.?/?({})\"",
                 image_provider.get_image_file_pattern(name, arch)
             ),
             &image_content,
