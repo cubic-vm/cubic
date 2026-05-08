@@ -33,7 +33,7 @@ Cubic is a simple tool that may be used for various purposes, such as:
   - **OpenSUSE**
   - **Rocky Linux**
   - **Ubuntu**
-- Supports the follwoing host OS: **Linux**, **macOS**, **Windows**
+- Supports the following host OS: **Linux**, **macOS**, **Windows**
 - Supports **amd64** and **arm64** CPU architectures
 - Supports hardware acceleration with **KVM** (Linux), **Hypervisor** (macOS), and **Hyper-V** (Windows)
 - Daemonless design which does not require root privileges

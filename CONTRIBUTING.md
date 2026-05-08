@@ -18,7 +18,7 @@ By submitting a pull request, you agree that your contribution is licensed under
 High quality pull requests are easier to review and thus take less of your and our time.
 
 General guideline:
-- Each pull request must have exactly one intend (fix a bug, update doc, etc.).
+- Each pull request must have exactly one intent (fix a bug, update doc, etc.).
 - Each pull request should have one Git commit (not mandatory, but recommend).
 - Each Git commit must have a descriptive message that explains the changes.
 - Each Git commit must have a sign off (git commit --signoff).
