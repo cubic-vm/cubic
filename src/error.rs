@@ -6,7 +6,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(
-        "CPU arch '{0}' is not support.\n\nChoose a supported architecture: 'amd64' or 'arm64'"
+        "CPU arch '{0}' is not supported.\n\nChoose a supported architecture: 'amd64' or 'arm64'"
     )]
     UnknownArch(String),
 

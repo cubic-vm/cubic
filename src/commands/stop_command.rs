@@ -12,10 +12,10 @@ use std::time::Duration;
 /// Examples:
 ///
 ///   Stop the VM instance 'my-instance':
-///   $ cubic stop my-instace
+///   $ cubic stop my-instance
 ///
 ///   Stop and wait until the VM instance 'my-instance' has stopped:
-///   $ cubic stop --wait my-instace
+///   $ cubic stop --wait my-instance
 ///
 ///   Stop all VM instances:
 ///   $ cubic stop --all --wait
