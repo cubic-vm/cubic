@@ -60,7 +60,7 @@ build: build-image
 	${DOCKER_CMD} ${IMAGE} cargo build
 
 doc: build-image
-	@${DOCKER_CMD} -it ${IMAGE} ./scripts/generate-docs.sh dev
+	@${DOCKER_CMD} -it ${IMAGE} ./scripts/generate-docs.sh v0.0.0-dev
 	@${DOCKER_CMD} -it ${IMAGE} sphinx-build docs target/doc
 	@${DOCKER_CMD} -it ${IMAGE} python3 -m http.server -d target/doc 4000
 

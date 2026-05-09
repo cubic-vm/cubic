@@ -28,3 +28,64 @@ generate_cmd_doc "cubic" "" "_ref_cubic" "docs/reference/cubic.rst"
 for cmd in ${CMDS}; do
     generate_cmd_doc "cubic $cmd" "$cmd" "_ref_cubic_$cmd" "docs/reference/$cmd.rst"
 done
+
+# Generate reference/index.rst as the Command Reference landing page
+cat > docs/reference/index.rst << 'REFEOF'
+Command Reference
+=================
+
+.. toctree::
+   :hidden:
+
+   cubic
+REFEOF
+
+for cmd in ${CMDS}; do
+    echo "   $cmd" >> docs/reference/index.rst
+done
+
+# Generate index.rst with a single root toctree
+cat > docs/index.rst << 'EOF'
+Cubic
+=====
+
+.. toctree::
+   :caption: How-To
+   :hidden:
+
+   howto/install
+   howto/getting_started
+
+.. toctree::
+   :caption: Command Reference
+   :hidden:
+
+EOF
+
+for cmd in ${CMDS}; do
+    echo "   reference/$cmd" >> docs/index.rst
+done
+
+cat >> docs/index.rst << 'EOF'
+
+Cubic is a lightweight command-line manager for virtual machines with focus on simplicity and security.
+
+It has a simple, daemon-less and rootless design. All Cubic virtual machines run isolated in the user context.
+Cubic is built on top of ``QEMU``, ``KVM`` and ``cloud-init``.
+
+Features
+---------
+* Simple command-line interface
+* Supports Alma Linux, Arch Linux, Debian, Fedora, Gentoo, OpenSUSE, Rocky Linux and Ubuntu guest images
+* Supports Linux, macOS and Windows hosts with amd64 and arm64 architecture
+* Supports hardware acceleration with KVM (Linux), Hypervisor (macOS) and Hyper-V (Windows)
+* Daemon-less design which does not require root rights
+* Written in Rust
+
+Source Code
+===========
+
+The source code of Cubic is on `Github`_.
+
+.. _Github: https://github.com/cubic-vm/cubic
+EOF

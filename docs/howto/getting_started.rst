@@ -1,7 +1,7 @@
 .. _create vm:
 
-Create your First Virtual Machine
-=================================
+Getting Started
+===============
 
 Select a Linux Distribution
 ---------------------------
