@@ -55,6 +55,7 @@ Cubic
 
    howto/install
    howto/getting_started
+   howto/http_server
 
 .. toctree::
    :caption: Command Reference
