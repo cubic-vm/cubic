@@ -58,6 +58,12 @@ Cubic
    howto/http_server
 
 .. toctree::
+   :caption: Architecture
+   :hidden:
+
+   concepts/how_it_works
+
+.. toctree::
    :caption: Command Reference
    :hidden:
 
