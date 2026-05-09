@@ -3,40 +3,7 @@ name = "cubic"
 version = "0.0.0-dev"
 authors = ["Roger Knecht <rknecht@pm.me>"]
 license = "MIT OR Apache-2.0"
-description = """\
-Cubic is a lightweight command line manager for virtual machines. It has a 
-simple, daemonless and rootless design. All Cubic virtual machines run isolated
-in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
-
-Examples:
-
-  Create a new VM instance with:
-  $ cubic create example --image ubuntu:noble
-  Open a shell in the VM instance:
-  $ cubic ssh example
-
-  Alternatively, use `run` to execute the above commands in a single command:
-  $ cubic run example --image ubuntu:noble
-
-  Show all supported VM images:
-  $ cubic images
-
-  List previously created VM instances:
-  $ cubic instances
-
-  Show information about a VM instance:
-  $ cubic show <instance>
-
-  Execute a command in a VM instance:
-  $ cubic exec <instance> <shell command>
-
-  Transfer files and directories between host and VM instance:
-  $ cubic scp <path/to/host/file> <instance>:<path/to/guest/file>
-  See `cubic scp --help` for more examples
-
-For more information, visit: https://cubic-vm.org/
-The source code is located at: https://github.com/cubic-vm/cubic
-"""
+description = "Daemonless, rootless CLI virtual machine manager built on QEMU, KVM and cloud-init"
 readme = "README.md"
 homepage = "https://cubic-vm.org"
 repository = "https://github.com/cubic-vm/cubic"
