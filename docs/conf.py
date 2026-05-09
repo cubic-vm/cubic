@@ -15,5 +15,10 @@ templates_path = ['_templates']
 exclude_patterns = []
 
 html_theme = 'sphinx_rtd_theme'
+html_theme_options = {
+    'navigation_depth': 1,
+    'collapse_navigation': False
+}
+html_sidebars = { '**': ['globaltoc.html', 'searchbox.html'] }
 html_static_path = ['_static']
 html_logo = "logo.svg"
