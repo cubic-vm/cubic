@@ -37,6 +37,27 @@ pub enum Error {
     UnsetEnvVar(String),
 
     #[error(
+        "QEMU not found. Cubic requires QEMU to create and run virtual machines.
+
+Missing executable:
+
+{0}
+
+Troubleshoot:
+  - Install QEMU for your platform
+  - Make sure '{0}' is available on your PATH
+  - Linux/WSL2: install the qemu-system and qemu-utils packages for your distribution
+  - macOS: install QEMU with Homebrew: `brew install qemu`
+
+After installing QEMU, rerun your Cubic command.
+"
+    )]
+    QemuNotFound(String),
+
+    #[error("System command '{0}' was not found on PATH")]
+    SystemCommandNotFound(String),
+
+    #[error(
         "Failed to execute a system command.
 
 Command:
