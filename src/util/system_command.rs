@@ -1,5 +1,6 @@
 use crate::error::{Error, Result};
 use std::ffi::OsStr;
+use std::io::ErrorKind;
 use std::process::{Command, Output, Stdio};
 use std::str::from_utf8;
 
@@ -28,6 +29,23 @@ impl SystemCommand {
         )
         .trim()
         .to_string()
+    }
+
+    fn get_program(&self) -> String {
+        self.cmd.get_program().to_string_lossy().into_owned()
+    }
+
+    fn map_spawn_error(&self, error: std::io::Error) -> Error {
+        if error.kind() == ErrorKind::NotFound {
+            let program = self.get_program();
+            if program.starts_with("qemu-") {
+                return Error::QemuNotFound(program);
+            }
+
+            return Error::SystemCommandNotFound(program);
+        }
+
+        Error::SystemCommandFailed(self.get_command(), error.to_string())
     }
 
     pub fn env(&mut self, key: &str, value: &str) -> &mut Self {
@@ -59,7 +77,7 @@ impl SystemCommand {
             })
             .stderr(Stdio::piped())
             .output()
-            .map_err(|e| Error::SystemCommandFailed(self.get_command(), e.to_string()))
+            .map_err(|e| self.map_spawn_error(e))
             .and_then(|out| {
                 if out.status.success() {
                     Ok(())
@@ -77,7 +95,7 @@ impl SystemCommand {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
-            .map_err(|e| Error::SystemCommandFailed(self.get_command(), e.to_string()))
+            .map_err(|e| self.map_spawn_error(e))
     }
 }
 
@@ -107,5 +125,35 @@ mod tests {
                 .get_command(),
             "cubic -a -b"
         )
+    }
+
+    #[test]
+    fn test_run_reports_missing_qemu_binary() {
+        let program = "qemu-system-x86_64-cubic-missing-test";
+
+        let err = SystemCommand::new(program).run().unwrap_err();
+
+        assert!(matches!(err, Error::QemuNotFound(ref missing) if missing == program));
+        let message = err.to_string();
+        assert!(message.contains("QEMU not found"));
+        assert!(message.contains("brew install qemu"));
+    }
+
+    #[test]
+    fn test_output_reports_missing_qemu_binary() {
+        let program = "qemu-img-cubic-missing-test";
+
+        let err = SystemCommand::new(program).output().unwrap_err();
+
+        assert!(matches!(err, Error::QemuNotFound(ref missing) if missing == program));
+    }
+
+    #[test]
+    fn test_output_reports_missing_system_command() {
+        let program = "cubic-missing-command-test";
+
+        let err = SystemCommand::new(program).output().unwrap_err();
+
+        assert!(matches!(err, Error::SystemCommandNotFound(ref missing) if missing == program));
     }
 }
