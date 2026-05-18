@@ -3,7 +3,7 @@ use crate::view::TransferView;
 use russh::Channel;
 use std::cmp::min;
 use std::path::Path;
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 const BUF_SIZE: usize = 64 * 1024;
 
@@ -14,13 +14,16 @@ async fn read_ack(stream: &mut (impl AsyncReadExt + Unpin)) -> Result<()> {
     match byte[0] {
         0 => Ok(()),
         1 | 2 => {
-            let mut buf_reader = BufReader::new(&mut *stream);
-            let mut msg = String::new();
-            buf_reader.read_line(&mut msg).await?;
-            if msg.ends_with('\n') {
-                msg.pop();
+            let mut msg = Vec::new();
+            let mut c = [0u8; 1];
+            loop {
+                stream.read_exact(&mut c).await?;
+                if c[0] == b'\n' {
+                    break;
+                }
+                msg.push(c[0]);
             }
-            Err(Error::Scp(format!("Invalid SCP header: {msg}")))
+            Err(Error::Scp(String::from_utf8_lossy(&msg).to_string()))
         }
         _ => Err(Error::Scp(format!(
             "Unexpected SCP response byte: {}",
@@ -97,30 +100,28 @@ pub async fn download(
         .await
         .map_err(|e| Error::Scp(format!("Failed to start remote scp: {e}")))?;
 
-    let mut stream = BufReader::new(channel.into_stream());
-    stream.get_mut().write_all(&[0]).await?;
+    let mut stream = channel.into_stream();
+    stream.write_all(&[0]).await?;
 
-    // Read first byte to distinguish header ('C') from error (1/2)
-    let mut first = [0u8; 1];
-    stream.read_exact(&mut first).await?;
-
-    if first[0] == 1 || first[0] == 2 {
-        let mut msg = String::new();
-        stream.read_line(&mut msg).await?;
-        if msg.ends_with('\n') {
-            msg.pop();
+    let mut header_bytes = Vec::new();
+    loop {
+        let mut c = [0u8; 1];
+        stream.read_exact(&mut c).await?;
+        if c[0] == b'\n' {
+            break;
         }
-        return Err(Error::Scp(format!("Invalid SCP header: {msg}")));
+        header_bytes.push(c[0]);
     }
 
-    // Read rest of header line (first byte already consumed)
-    let mut header_rest = String::new();
-    stream.read_line(&mut header_rest).await?;
-    if header_rest.ends_with('\n') {
-        header_rest.pop();
+    if let Some(&first) = header_bytes.first()
+        && (first == 1 || first == 2)
+    {
+        return Err(Error::Scp(
+            String::from_utf8_lossy(&header_bytes[1..]).to_string(),
+        ));
     }
-    let header = format!("{}{header_rest}", first[0] as char);
 
+    let header = String::from_utf8_lossy(&header_bytes);
     let parts: Vec<&str> = header.splitn(3, ' ').collect();
     if parts.len() != 3 || !parts[0].starts_with('C') {
         return Err(Error::Scp(format!("Invalid SCP header: {header}")));
@@ -130,7 +131,7 @@ pub async fn download(
         .map_err(|_| Error::Scp(format!("Invalid file size in header: {}", parts[1])))?;
     let file_name = parts[2];
 
-    stream.get_mut().write_all(&[0]).await?;
+    stream.write_all(&[0]).await?;
 
     let target_path = if local_path.is_dir() {
         local_path.join(file_name)
@@ -154,8 +155,10 @@ pub async fn download(
         view.update(file_size - remaining, Some(file_size));
     }
 
-    read_ack(&mut stream).await?;
-    stream.get_mut().write_all(&[0]).await?;
+    let mut marker = [0u8; 1];
+    stream.read_exact(&mut marker).await?;
+
+    stream.write_all(&[0]).await?;
 
     Ok(())
 }
