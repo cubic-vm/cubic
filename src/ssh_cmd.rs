@@ -1,6 +1,5 @@
 mod port_checker;
 mod russh;
-mod scp;
 mod sftp_path;
 mod ssh_key_generator;
 
