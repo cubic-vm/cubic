@@ -1,0 +1,24 @@
+---
+schemaVersion: "1"
+
+project:
+  organization: "cubic-vm"
+  name: "cubic"
+  author: "Cubic VM team"
+
+releases: []
+
+vulnerabilities:
+  - id: RUSTSEC-2023-0071
+    releases: []
+    packages: ["pkg:cargo/rsa@0.9.10"]
+    reports:
+      - reporter: cargo-audit
+    verdict: not affected
+    justification: vulnerable code not in execute path
+    description: >
+      This is a timing attack that could allow an attacker to recover RSA keys from the server.
+    analysis: >
+      The RSA crate is only used for client authentication.
+    comment: >
+      See https://github.com/Eugeny/russh/issues/637

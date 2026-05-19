@@ -17,8 +17,12 @@ RUN apt update && \
         python3-sphinx-rtd-theme \
         git \
         vim \
-        yamllint &&\
+        yamllint \
+        unzip \
+        curl &&\
+    curl -fsSL https://github.com/vulnlog/vulnlog/releases/download/v0.14.0/install-vulnlog.sh | sh &&\
     git config --global --add safe.directory /usr/local/app
 RUN rustup component add clippy rustfmt && \
     cargo install --locked cargo-audit &&\
-    echo 'alias cubic="cargo run"' >> ~/.bashrc
+    echo 'alias cubic="cargo run"' >> ~/.bashrc &&\
+    echo 'alias vulnlog="/root/bin/vulnlog"' >> ~/.bashrc
