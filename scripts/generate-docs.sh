@@ -56,6 +56,7 @@ Cubic
    howto/install
    howto/getting_started
    howto/http_server
+   howto/ssh_connect
 
 .. toctree::
    :caption: Architecture
