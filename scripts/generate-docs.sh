@@ -57,6 +57,7 @@ Cubic
    howto/getting_started
    howto/http_server
    howto/ssh_connect
+   howto/recover_disk
 
 .. toctree::
    :caption: Architecture
