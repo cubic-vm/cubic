@@ -1,5 +1,6 @@
 use crate::error::{Error, Result};
 use crate::fs::FS;
+use crate::models::Checksum;
 use crate::util;
 use crate::view::TransferView;
 use reqwest::blocking::Client;
@@ -10,12 +11,6 @@ use std::path::Path;
 use std::time::Duration;
 
 const REQUEST_TIMEOUT_SEC: u64 = 10;
-
-#[derive(Default)]
-pub struct Checksum {
-    pub sha512: String,
-    pub sha256: String,
-}
 
 struct ProgressWriter {
     file: File,

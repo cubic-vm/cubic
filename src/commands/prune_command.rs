@@ -1,7 +1,7 @@
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::fs::FS;
-use crate::model::DataSize;
+use crate::models::DataSize;
 use crate::util;
 use crate::view::Console;
 use clap::Parser;

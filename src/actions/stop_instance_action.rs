@@ -1,5 +1,6 @@
 use crate::error::{Error, Result};
-use crate::instance::{Instance, InstanceStore};
+use crate::instance::InstanceStore;
+use crate::models::Instance;
 
 pub struct StopInstanceAction {
     instance: Instance,

@@ -1,5 +1,4 @@
-use crate::arch::Arch;
-use crate::image::HashAlg;
+use crate::models::{Arch, HashAlg};
 
 pub trait ImageProvider {
     fn get_vendor(&self) -> &str;

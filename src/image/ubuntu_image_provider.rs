@@ -1,5 +1,5 @@
-use crate::arch::Arch;
-use crate::image::{HashAlg, ImageProvider};
+use crate::image::ImageProvider;
+use crate::models::{Arch, HashAlg};
 use crate::util;
 
 pub struct UbuntuImageProvider {}

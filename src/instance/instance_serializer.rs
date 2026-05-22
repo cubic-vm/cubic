@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::instance::Instance;
+use crate::models::Instance;
 use std::io::Write;
 
 #[derive(Default)]
@@ -21,8 +21,7 @@ impl InstanceSerializer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::arch::Arch;
-    use crate::model::DataSize;
+    use crate::models::{Arch, DataSize};
 
     #[test]
     fn test_serialize_minimal_config() {

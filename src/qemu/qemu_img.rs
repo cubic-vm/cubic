@@ -1,5 +1,4 @@
-use crate::env::Environment;
-use crate::instance::Instance;
+use crate::models::{Environment, Instance};
 use crate::util::SystemCommand;
 use serde::{Deserialize, Serialize};
 

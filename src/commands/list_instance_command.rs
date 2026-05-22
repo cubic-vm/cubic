@@ -69,12 +69,9 @@ impl Command for ListInstanceCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::arch::Arch;
-    use crate::env::Environment;
     use crate::image::ImageStoreMock;
-    use crate::instance::Instance;
     use crate::instance::InstanceStoreMock;
-    use crate::model::DataSize;
+    use crate::models::{Arch, DataSize, Environment, Instance};
     use crate::view::ConsoleMock;
 
     #[test]

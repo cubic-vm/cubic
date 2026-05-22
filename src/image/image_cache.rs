@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::image::Image;
+use crate::models::Image;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Write};
@@ -64,7 +64,7 @@ impl ImageCache {
 mod tests {
     use super::*;
 
-    use crate::image::{Arch, HashAlg};
+    use crate::models::{Arch, HashAlg};
     use std::io::BufReader;
 
     #[test]

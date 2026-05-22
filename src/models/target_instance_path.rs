@@ -1,4 +1,4 @@
-use crate::instance::Instance;
+use crate::models::Instance;
 use regex::Regex;
 use std::path::{Path, PathBuf};
 

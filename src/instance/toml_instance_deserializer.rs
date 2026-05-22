@@ -1,4 +1,5 @@
-use crate::instance::{Instance, InstanceDeserializer};
+use crate::instance::InstanceDeserializer;
+use crate::models::Instance;
 use std::io::Read;
 use std::str;
 

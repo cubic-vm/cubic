@@ -1,5 +1,4 @@
-use crate::image::ImageName;
-use crate::instance::InstanceName;
+use crate::models::{ImageName, InstanceName};
 use std::fmt;
 use std::str::FromStr;
 

@@ -3,7 +3,7 @@ use crate::commands::Context;
 use crate::emulator::Emulator;
 use crate::error::Result;
 use crate::fs::FS;
-use crate::instance::Instance;
+use crate::models::Instance;
 use crate::ssh_cmd::PortChecker;
 
 pub struct StartInstanceAction {

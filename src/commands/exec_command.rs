@@ -1,7 +1,7 @@
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::fs::FS;
-use crate::instance::Target;
+use crate::models::Target;
 use crate::ssh_cmd::Russh;
 use crate::view::Console;
 use clap::Parser;

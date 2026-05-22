@@ -1,5 +1,4 @@
 mod actions;
-mod arch;
 mod cloudinit;
 mod commands;
 mod emulator;
@@ -9,7 +8,7 @@ mod fs;
 mod image;
 mod instance;
 mod iso9660;
-mod model;
+mod models;
 mod qemu;
 mod ssh_cmd;
 mod util;

@@ -1,7 +1,7 @@
-use crate::env::Environment;
 use crate::error::Result;
 use crate::fs::FS;
-use crate::image::{Image, ImageStore};
+use crate::image::ImageStore;
+use crate::models::{Environment, Image};
 use std::path::Path;
 
 pub struct ImageDao {

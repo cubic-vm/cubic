@@ -1,9 +1,8 @@
 use crate::cloudinit::{MetaDataFactory, UserDataFactory};
-use crate::env::Environment;
 use crate::error::Result;
 use crate::fs::FS;
-use crate::instance::Instance;
 use crate::iso9660::IsoWriter;
+use crate::models::{Environment, Instance};
 use crate::ssh_cmd::SshKeyGenerator;
 use std::path::Path;
 

@@ -1,7 +1,7 @@
 use crate::commands::Context;
 use crate::error::Result;
 use crate::fs::FS;
-use crate::instance::Instance;
+use crate::models::Instance;
 use crate::ssh_cmd::SshKeyGenerator;
 use crate::util::SystemCommand;
 use std::path::Path;
