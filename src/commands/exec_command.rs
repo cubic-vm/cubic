@@ -20,6 +20,8 @@ pub struct ExecCommand {
     pub target: Target,
     /// Command to execute in the virtual machine instance
     pub cmd: String,
+    #[clap(flatten)]
+    pub env_args: commands::EnvArgs,
 }
 
 impl Command for ExecCommand {
@@ -44,6 +46,7 @@ impl Command for ExecCommand {
         let mut ssh = Russh::new();
         ssh.set_private_keys(env.get_ssh_private_key_paths(&FS::new(), vec![name.to_string()]));
         ssh.set_cmd(Some(self.cmd.clone()));
+        ssh.set_env_vars(self.env_args.env_vars.clone());
         ssh.shell(console, &user, ssh_port);
         Ok(())
     }

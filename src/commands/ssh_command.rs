@@ -19,6 +19,8 @@ use clap::Parser;
 pub struct SshCommand {
     /// Target instance (format: [username@]instance, e.g. 'myinstance' or 'cubic@myinstance')
     pub target: Target,
+    #[clap(flatten)]
+    pub env_args: commands::EnvArgs,
     /// Command to execute in the virtual machine instance
     #[clap(hide = true)]
     pub cmd: Option<String>,
@@ -54,6 +56,7 @@ impl Command for SshCommand {
         let mut ssh = Russh::new();
         ssh.set_private_keys(env.get_ssh_private_key_paths(&FS::new(), vec![name.to_string()]));
         ssh.set_cmd(self.cmd.clone());
+        ssh.set_env_vars(self.env_args.env_vars.clone());
         ssh.shell(console, &user, ssh_port);
         Ok(())
     }

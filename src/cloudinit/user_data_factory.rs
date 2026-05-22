@@ -27,6 +27,9 @@ impl UserDataFactory {
             \u{20}\u{20}\u{20}\u{20}ssh-authorized-keys: [{pubkey}]\n\
             \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
             \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n\
+            write_files:\n\
+            \u{20}\u{20}- path: /etc/ssh/sshd_config.d/10-cubic.conf\n\
+            \u{20}\u{20}\u{20}\u{20}content: \"AcceptEnv *\\n\"\n\
             {execute}"
         )
     }
@@ -47,6 +50,9 @@ users:
     ssh-authorized-keys: [pubkey]
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
+write_files:
+  - path: /etc/ssh/sshd_config.d/10-cubic.conf
+    content: "AcceptEnv *\n"
 "#;
         assert_eq!(
             actual, expected,
@@ -66,6 +72,9 @@ users:
     ssh-authorized-keys: [pubkey]
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
+write_files:
+  - path: /etc/ssh/sshd_config.d/10-cubic.conf
+    content: "AcceptEnv *\n"
 bootcmd:
   - "\"sudo apt install vim\""
 "#;

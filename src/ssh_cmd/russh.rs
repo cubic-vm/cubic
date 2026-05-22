@@ -109,6 +109,7 @@ async fn ssh_output(output: Arc<Mutex<ChannelWriteHalf<client::Msg>>>) -> Result
 pub struct Russh {
     private_keys: Vec<String>,
     cmd: Option<String>,
+    env_vars: Vec<String>,
 }
 
 struct Client {}
@@ -274,6 +275,15 @@ impl Russh {
             .await
             .map_err(|_| ())?;
 
+        for var in &self.env_vars {
+            let (name, value) = if let Some((k, v)) = var.split_once('=') {
+                (k.to_string(), v.to_string())
+            } else {
+                (var.clone(), env::var(var).unwrap_or_default())
+            };
+            channel.set_env(false, name, value).await.map_err(|_| ())?;
+        }
+
         if let Some(cmd) = &self.cmd {
             channel.exec(true, cmd.as_str()).await.map_err(|_| ())?;
         } else {
@@ -345,6 +355,10 @@ impl Russh {
 
     pub fn set_cmd(&mut self, cmd: Option<String>) {
         self.cmd = cmd;
+    }
+
+    pub fn set_env_vars(&mut self, env_vars: Vec<String>) {
+        self.env_vars = env_vars;
     }
 
     pub fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16) -> bool {
