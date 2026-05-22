@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::instance::Instance;
+use crate::models::Instance;
 #[cfg(not(any(windows, test)))]
 use crate::qemu::Monitor;
 use std::str;

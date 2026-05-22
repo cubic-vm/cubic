@@ -1,4 +1,4 @@
-use crate::model::DataSize;
+use crate::models::DataSize;
 use crate::view::ProgressBar;
 use std::io;
 use std::io::Write;

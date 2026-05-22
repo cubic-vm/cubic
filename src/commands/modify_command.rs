@@ -1,7 +1,6 @@
 use crate::commands::{self, Command};
 use crate::error::Result;
-use crate::instance::PortForward;
-use crate::model::DataSize;
+use crate::models::{DataSize, PortForward};
 use crate::view::Console;
 use clap::{ArgAction, Parser};
 

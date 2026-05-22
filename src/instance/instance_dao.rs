@@ -1,26 +1,19 @@
-use crate::env::Environment;
 use crate::error::{Error, Result};
 use crate::fs::FS;
 use crate::instance::{
-    Instance, InstanceDeserializer, InstanceName, InstanceSerializer, InstanceStore,
-    TomlInstanceDeserializer, YamlInstanceDeserializer,
+    InstanceDeserializer, InstanceSerializer, InstanceStore, TomlInstanceDeserializer,
+    YamlInstanceDeserializer,
 };
-use crate::model::DataSize;
+use crate::models::{DataSize, Environment, Instance, InstanceName};
 #[cfg(not(any(windows, test)))]
 use crate::qemu::Monitor;
 use crate::qemu::QemuImg;
 use crate::ssh_cmd::PortChecker;
 use crate::util::SystemCommand;
-use serde::{Deserialize, Serialize};
 use std::fs::DirEntry;
 use std::path::Path;
 use std::str;
 use std::str::FromStr;
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub struct Config {
-    pub machine: Instance,
-}
 
 pub struct InstanceDao {
     fs: FS,

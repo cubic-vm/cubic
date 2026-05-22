@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::image::{HashAlg, Image};
+use crate::models::{HashAlg, Image};
 use crate::view::{SpinnerView, TransferView};
 use crate::web::WebClient;
 use regex::Regex;

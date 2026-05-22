@@ -1,7 +1,8 @@
 #[cfg(test)]
 pub mod tests {
 
-    use crate::image::{Image, ImageStore};
+    use crate::image::ImageStore;
+    use crate::models::Image;
 
     #[derive(Default)]
     pub struct ImageStoreMock {

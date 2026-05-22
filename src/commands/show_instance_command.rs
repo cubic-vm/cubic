@@ -1,6 +1,6 @@
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
-use crate::instance::InstanceName;
+use crate::models::InstanceName;
 use crate::view::{Console, MapView};
 use clap::Parser;
 
@@ -55,12 +55,9 @@ impl Command for ShowInstanceCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::arch::Arch;
-    use crate::env::Environment;
     use crate::image::ImageStoreMock;
-    use crate::instance::Instance;
     use crate::instance::InstanceStoreMock;
-    use crate::model::DataSize;
+    use crate::models::{Arch, DataSize, Environment, Instance};
     use crate::view::ConsoleMock;
     use std::str::FromStr;
 

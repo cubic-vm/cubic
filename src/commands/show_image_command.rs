@@ -1,6 +1,6 @@
 use crate::commands::{self, Command, image::fetch_image_info};
 use crate::error::Result;
-use crate::image::ImageName;
+use crate::models::ImageName;
 use crate::view::{Console, MapView};
 use clap::Parser;
 

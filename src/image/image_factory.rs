@@ -1,7 +1,6 @@
-use crate::arch::Arch;
-use crate::env::Environment;
 use crate::error::{Error, Result};
-use crate::image::{self, Image, ImageCache, ImageName};
+use crate::image::{self, ImageCache};
+use crate::models::{Arch, Environment, Image, ImageName};
 use crate::util;
 use crate::web::WebClient;
 

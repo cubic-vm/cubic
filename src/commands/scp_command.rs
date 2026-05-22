@@ -1,7 +1,8 @@
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::fs::FS;
-use crate::instance::{InstanceStore, TargetPath};
+use crate::instance::{InstanceStore, resolve_target_path};
+use crate::models::TargetPath;
 use crate::ssh_cmd::Russh;
 use crate::view::Console;
 use clap::Parser;
@@ -70,8 +71,8 @@ impl Command for ScpCommand {
         ssh.copy(
             console,
             &root_dir,
-            &self.from.to_target_instance_path(instance_store)?,
-            &self.to.to_target_instance_path(instance_store)?,
+            &resolve_target_path(&self.from, instance_store)?,
+            &resolve_target_path(&self.to, instance_store)?,
         )?;
         Ok(())
     }

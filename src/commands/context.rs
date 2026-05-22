@@ -1,6 +1,6 @@
-use crate::env::Environment;
 use crate::image::ImageStore;
 use crate::instance::InstanceStore;
+use crate::models::Environment;
 
 pub struct Context {
     env: Environment,

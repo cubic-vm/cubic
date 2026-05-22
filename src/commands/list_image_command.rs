@@ -1,7 +1,6 @@
 use crate::commands::{Command, Context, fetch_image_list};
 use crate::error::Result;
-use crate::image::get_default_arch;
-use crate::model::DataSize;
+use crate::models::{DataSize, get_default_arch};
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
 

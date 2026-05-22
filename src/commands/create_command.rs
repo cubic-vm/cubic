@@ -5,9 +5,7 @@ use crate::commands::{
 };
 use crate::error::{Error, Result};
 use crate::fs::FS;
-use crate::image::ImageName;
-use crate::instance::{Instance, InstanceName, PortForward};
-use crate::model::DataSize;
+use crate::models::{DataSize, ImageName, Instance, InstanceName, PortForward};
 use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
 use crate::view::SpinnerView;

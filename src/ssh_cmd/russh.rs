@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::instance::{Instance, TargetInstancePath};
+use crate::models::{Instance, TargetInstancePath};
 use crate::ssh_cmd::SftpPath;
 use crate::util;
 use crate::view::{Console, SpinnerView};

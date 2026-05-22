@@ -1,6 +1,6 @@
 use crate::commands::Verbosity;
-use crate::env::Environment;
 use crate::error::Result;
+use crate::models::Environment;
 use crate::qemu::Qmp;
 
 pub struct Monitor {

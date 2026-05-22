@@ -1,6 +1,6 @@
 use crate::commands::{self, Command};
 use crate::error::Result;
-use crate::instance::Target;
+use crate::models::Target;
 use crate::view::Console;
 use clap::{self, Parser};
 

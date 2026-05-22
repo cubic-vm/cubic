@@ -1,4 +1,4 @@
-use crate::instance::Instance;
+use crate::models::Instance;
 use std::io::Read;
 
 pub trait InstanceDeserializer {

@@ -1,6 +1,5 @@
-use crate::arch::Arch;
 use crate::error::Result;
-use crate::instance::PortForward;
+use crate::models::{Arch, PortForward};
 use crate::util::SystemCommand;
 
 pub struct Emulator {

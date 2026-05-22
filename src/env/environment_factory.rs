@@ -1,5 +1,5 @@
-use crate::env::Environment;
 use crate::error::{Error, Result};
+use crate::models::Environment;
 use std::env;
 
 const ROOT_USERNAME: &str = "root";

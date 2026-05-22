@@ -1,4 +1,4 @@
-use crate::instance::InstanceName;
+use crate::models::InstanceName;
 use std::fmt;
 use std::str::FromStr;
 

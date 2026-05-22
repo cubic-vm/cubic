@@ -1,7 +1,7 @@
-use crate::env::Environment;
 use crate::error::Result;
 use crate::fs::FS;
-use crate::image::{Image, ImageFactory, ImageFetcher, ImageName, ImageStore};
+use crate::image::{ImageFactory, ImageFetcher, ImageStore};
+use crate::models::{Environment, Image, ImageName};
 use crate::view::SpinnerView;
 
 pub fn fetch_image_list(env: &Environment) -> Vec<Image> {
