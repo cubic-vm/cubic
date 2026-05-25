@@ -53,7 +53,7 @@ impl Command for StartCommand {
             if !async_caller.call(russh.is_running(instance.ssh_port)) {
                 // Make SSH port is available
                 if PortChecker::new().is_open(instance.ssh_port) {
-                    instance.ssh_port = PortChecker::new().get_new_port();
+                    instance.ssh_port = PortChecker::new().get_new_port()?;
                     instance_store.store(instance)?;
                 }
 

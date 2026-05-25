@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use std::net::{TcpListener, TcpStream};
 use std::time::Duration;
 
@@ -18,11 +19,11 @@ impl PortChecker {
             .is_ok()
     }
 
-    pub fn get_new_port(&self) -> u16 {
+    pub fn get_new_port(&self) -> Result<u16> {
         TcpListener::bind("127.0.0.1:0")
-            .unwrap()
+            .map_err(|_| Error::NoPortAvailable)?
             .local_addr()
-            .unwrap()
-            .port()
+            .map(|addr| addr.port())
+            .map_err(|_| Error::NoPortAvailable)
     }
 }

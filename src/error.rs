@@ -114,4 +114,12 @@ Troubleshoot:
 
     #[error("Invalid path: {0}")]
     InvalidPath(String),
+
+    #[error(
+        "No available port found.\n\nAll ports are currently in use. Stop unused processes and try again."
+    )]
+    NoPortAvailable,
+
+    #[error("SFTP Error: {0}")]
+    Sftp(String),
 }

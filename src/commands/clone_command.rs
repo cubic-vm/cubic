@@ -50,7 +50,7 @@ impl Command for CloneCommand {
         // Setup target instance info
         let mut target = source.clone();
         target.name = self.new_name.to_string();
-        target.ssh_port = PortChecker::new().get_new_port();
+        target.ssh_port = PortChecker::new().get_new_port()?;
 
         // Create VM instance
         CreateInstanceAction::new().run(context, &FS::new(), image_path, target)?;
