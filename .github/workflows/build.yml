@@ -39,7 +39,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ${{ matrix.packages }}
 
       - name: Setup Rust
-        run: rustup target add ${{ matrix.target }}
+        run: |
+          rustup toolchain install 1.92.0
+          rustup override set 1.92.0
+          rustup target add ${{ matrix.target }}
 
       - name: Build Executable
         run: cargo build --locked --release --target ${{ matrix.target }}
@@ -88,7 +91,7 @@ jobs:
         run: cargo install cargo-deb
 
       - name: Build Debian Package
-        run: cargo deb
+        run: cargo deb -- --locked
 
       - uses: actions/upload-artifact@v4
         with:

@@ -22,11 +22,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Install Sphinx
-        run: sudo apt install -y python3-sphinx python3-sphinx-rtd-theme
-
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install Sphinx
+        run: sudo apt install -y python3-sphinx python3-sphinx-rtd-theme
 
       - name: Generate Docs
         run: ./scripts/generate-docs.sh ${{ github.ref_name }}
