@@ -3,6 +3,9 @@ use crate::models::{HashAlg, Image};
 use crate::view::{SpinnerView, TransferView};
 use crate::web::WebClient;
 use regex::Regex;
+use std::sync::LazyLock;
+
+static HEX_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new("^[0-9A-Fa-f]+$").unwrap());
 
 pub struct ImageFetcher {}
 
@@ -17,7 +20,6 @@ impl ImageFetcher {
         image: &Image,
     ) -> Result<Option<(HashAlg, String)>> {
         if let Some(pos) = image.image_url.rfind("/") {
-            let regex = Regex::new("^[0-9A-Fa-f]+$").unwrap();
             let file_name = &image.image_url[pos + 1..image.image_url.len()];
             let content = client.download_content(&image.checksum_url)?;
             for line in content.lines() {
@@ -35,7 +37,7 @@ impl ImageFetcher {
                     .collect::<Vec<_>>();
                 let hashsums = tokens
                     .iter()
-                    .filter(|i| regex.is_match(i))
+                    .filter(|i| HEX_REGEX.is_match(i))
                     .collect::<Vec<_>>();
 
                 if let (&[_], &[hashsum]) = (file_names.as_slice(), hashsums.as_slice()) {

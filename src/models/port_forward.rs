@@ -4,6 +4,12 @@ use std::fmt::{Display, Error, Formatter};
 use std::net::IpAddr;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
+use std::sync::LazyLock;
+
+static QEMU_PORT_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(\w+)?:([\d.:]+)?:(\d+)-:(\d+)$").unwrap());
+static PORT_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(([\d.:]+):)?(\d+):(\d+)(/(\w+))?$").unwrap());
 
 const FORMAT_ERROR: &str = "Must comply with format: [host_ip:]host_port:guest_port[/(udp|tcp)] (e.g. -p 8000:80 or -p 127.0.0.1:9000:90/tcp)";
 const QEMU_FORMAT_ERROR: &str = "Must comply with format: [tcp|udp]:[hostaddr]:hostport-[guestaddr]:guestport (e.g. ::8000-:80 or -p tcp:127.0.0.1:9000-:90)";
@@ -96,8 +102,7 @@ impl PortForward {
     }
 
     pub fn from_qemu(value: &str) -> Result<Self, String> {
-        let re = Regex::new(r"^(\w+)?:([\d.:]+)?:(\d+)-:(\d+)$").unwrap();
-        let caps: Vec<_> = re
+        let caps: Vec<_> = QEMU_PORT_REGEX
             .captures(value)
             .ok_or(QEMU_FORMAT_ERROR.to_string())?
             .iter()
@@ -138,8 +143,7 @@ impl FromStr for PortForward {
     type Err = String;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let re = Regex::new(r"^(([\d.:]+):)?(\d+):(\d+)(/(\w+))?$").unwrap();
-        let caps: Vec<_> = re
+        let caps: Vec<_> = PORT_REGEX
             .captures(value)
             .ok_or(FORMAT_ERROR.to_string())?
             .iter()
