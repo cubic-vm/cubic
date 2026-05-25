@@ -91,7 +91,7 @@ impl WebClient {
         }
 
         if Path::new(&file_path).exists() {
-            return Result::Ok(Checksum::default());
+            return Ok(Checksum::default());
         }
 
         let mut resp = self.client.get(url).send().map_err(Error::from)?;

@@ -27,7 +27,7 @@ impl InstanceDao {
         fs.setup_directory_access(env.get_cache_dir())?;
         fs.setup_directory_access(env.get_runtime_dir())?;
 
-        Result::Ok(InstanceDao {
+        Ok(InstanceDao {
             fs,
             env: env.clone(),
         })
@@ -63,7 +63,7 @@ impl InstanceStore for InstanceDao {
 
     fn load(&self, name: &str) -> Result<Instance> {
         if !self.exists(name) {
-            return Result::Err(Error::UnknownInstance(name.to_string()));
+            return Err(Error::UnknownInstance(name.to_string()));
         }
 
         let yaml_path = &self.env.get_instance_yaml_config_file(name);
@@ -117,24 +117,24 @@ impl InstanceStore for InstanceDao {
 
     fn rename(&self, instance: &mut Instance, new_name: &str) -> Result<()> {
         if self.exists(new_name) {
-            Result::Err(Error::InstanceAlreadyExists(new_name.to_string()))
+            Err(Error::InstanceAlreadyExists(new_name.to_string()))
         } else if self.is_running(instance) {
-            Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
+            Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
             self.fs.rename_file(
                 &self.env.get_instance_dir2(&instance.name),
                 &self.env.get_instance_dir2(new_name),
             )?;
             instance.name = new_name.to_string();
-            Result::Ok(())
+            Ok(())
         }
     }
 
     fn resize(&self, instance: &mut Instance, size: u64) -> Result<()> {
         if self.is_running(instance) {
-            Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
+            Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else if instance.disk_capacity.get_bytes() >= size as usize {
-            Result::Err(Error::CannotShrinkDisk(instance.name.to_string()))
+            Err(Error::CannotShrinkDisk(instance.name.to_string()))
         } else {
             SystemCommand::new("qemu-img")
                 .arg("resize")
@@ -142,13 +142,13 @@ impl InstanceStore for InstanceDao {
                 .arg(size.to_string())
                 .run()?;
             instance.disk_capacity = DataSize::new(size as usize);
-            Result::Ok(())
+            Ok(())
         }
     }
 
     fn delete(&self, instance: &Instance) -> Result<()> {
         if self.is_running(instance) {
-            Result::Err(Error::InstanceNotStopped(instance.name.to_string()))
+            Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
             self.fs
                 .remove_dir(&self.env.get_instance_runtime_dir(&instance.name))

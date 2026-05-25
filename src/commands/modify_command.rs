@@ -95,6 +95,6 @@ impl Command for ModifyCommand {
         instance.hostfwd.retain(|p| !self.rm_port.contains(p));
 
         instance_store.store(&instance)?;
-        Result::Ok(())
+        Ok(())
     }
 }

@@ -14,7 +14,7 @@ impl Arch {
         match arch {
             "amd64" => Ok(Arch::AMD64),
             "arm64" => Ok(Arch::ARM64),
-            _ => Result::Err(Error::UnknownArch(arch.to_string())),
+            _ => Err(Error::UnknownArch(arch.to_string())),
         }
     }
 

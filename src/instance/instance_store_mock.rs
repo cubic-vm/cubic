@@ -33,19 +33,19 @@ pub mod tests {
         }
 
         fn store(&self, _instance: &Instance) -> Result<()> {
-            Result::Ok(())
+            Ok(())
         }
 
         fn rename(&self, _instance: &mut Instance, _new_name: &str) -> Result<()> {
-            Result::Ok(())
+            Ok(())
         }
 
         fn resize(&self, _instance: &mut Instance, _size: u64) -> Result<()> {
-            Result::Ok(())
+            Ok(())
         }
 
         fn delete(&self, _instance: &Instance) -> Result<()> {
-            Result::Ok(())
+            Ok(())
         }
 
         fn is_running(&self, _instance: &Instance) -> bool {

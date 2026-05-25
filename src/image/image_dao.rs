@@ -11,7 +11,7 @@ pub struct ImageDao {
 impl ImageDao {
     pub fn new(env: &Environment) -> Result<Self> {
         FS::new().setup_directory_access(&env.get_image_dir())?;
-        Result::Ok(ImageDao { env: env.clone() })
+        Ok(ImageDao { env: env.clone() })
     }
 }
 
