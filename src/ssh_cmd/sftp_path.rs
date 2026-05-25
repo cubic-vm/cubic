@@ -32,7 +32,7 @@ impl SftpPath {
             Some(sftp) => sftp
                 .try_exists(self.to_str())
                 .await
-                .map_err(|e| Error::FS(e.to_string())),
+                .map_err(|e| Error::Sftp(e.to_string())),
         }
     }
 
@@ -97,7 +97,7 @@ impl SftpPath {
                 .open(self.to_str())
                 .await
                 .map(|f| Box::new(f) as Box<dyn AsyncRead + Unpin>)
-                .map_err(|e| Error::FS(e.to_string())),
+                .map_err(|e| Error::Sftp(e.to_string())),
         }
     }
 
@@ -111,7 +111,7 @@ impl SftpPath {
                 .create(self.to_str())
                 .await
                 .map(|f| Box::new(f) as Box<dyn AsyncWrite + Unpin>)
-                .map_err(|e| Error::FS(e.to_string())),
+                .map_err(|e| Error::Sftp(e.to_string())),
         }
     }
 
@@ -146,7 +146,7 @@ impl SftpPath {
                 for entry in sftp
                     .read_dir(self.to_str())
                     .await
-                    .map_err(|e| Error::FS(e.to_string()))?
+                    .map_err(|e| Error::Sftp(e.to_string()))?
                 {
                     children.push(Self {
                         sftp: Some(sftp.clone()),
@@ -165,7 +165,7 @@ impl SftpPath {
             Some(sftp) => sftp
                 .create_dir(self.to_str())
                 .await
-                .map_err(|e| Error::FS(e.to_string())),
+                .map_err(|e| Error::Sftp(e.to_string())),
         }
     }
 

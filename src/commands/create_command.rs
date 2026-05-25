@@ -85,6 +85,7 @@ impl Command for CreateCommand {
         fetch_image(env, context.get_image_store(), image)?;
 
         let mut create_spinner = SpinnerView::new("Creating virtual machine instance".to_string());
+        let ssh_port = PortChecker::new().get_new_port()?;
 
         let instance = Instance {
             name: self.instance_name.to_string(),
@@ -97,7 +98,7 @@ impl Command for CreateCommand {
             cpus: self.cpus,
             mem: self.memory.clone(),
             disk_capacity: self.disk.clone(),
-            ssh_port: PortChecker::new().get_new_port(),
+            ssh_port,
             hostfwd: self.port.clone(),
             execute: self.execute.clone(),
             isolate: self.isolate,

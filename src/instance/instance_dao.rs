@@ -76,7 +76,7 @@ impl InstanceStore for InstanceDao {
                 (yaml_path, Box::new(YamlInstanceDeserializer::new()))
             };
 
-        Ok(self
+        let instance = self
             .fs
             .open_file(path)
             .ok()
@@ -87,16 +87,20 @@ impl InstanceStore for InstanceDao {
                     .map(|info| DataSize::new(info.actual_size as usize));
                 instance.disk_used = size;
                 instance
-            })
-            .unwrap_or(Instance {
+            });
+
+        Ok(match instance {
+            Some(i) => i,
+            None => Instance {
                 name: name.to_string(),
                 user: self.env.get_username().to_string(),
                 cpus: 1,
                 mem: DataSize::from_str("1G").unwrap(),
                 disk_capacity: DataSize::from_str("1G").unwrap(),
-                ssh_port: PortChecker::new().get_new_port(),
+                ssh_port: PortChecker::new().get_new_port()?,
                 ..Instance::default()
-            }))
+            },
+        })
     }
 
     fn store(&self, instance: &Instance) -> Result<()> {
