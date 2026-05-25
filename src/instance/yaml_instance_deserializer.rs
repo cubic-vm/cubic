@@ -51,7 +51,7 @@ machine:
 
         let instance = YamlInstanceDeserializer::new()
             .deserialize("test", reader)
-            .expect("Cannot parser config");
+            .expect("Cannot parse config");
         assert_eq!(instance.name, "test");
         assert_eq!(instance.user, "cubic");
         assert_eq!(instance.cpus, 1);
@@ -78,7 +78,7 @@ machine:
 
         let instance = YamlInstanceDeserializer::new()
             .deserialize("test", reader)
-            .expect("Cannot parser config");
+            .expect("Cannot parse config");
         assert_eq!(instance.name, "test");
         assert_eq!(instance.user, "tux");
         assert_eq!(instance.cpus, 1);
@@ -112,7 +112,7 @@ machine:
 
         let instance = YamlInstanceDeserializer::new()
             .deserialize("test", reader)
-            .expect("Cannot parser config");
+            .expect("Cannot parse config");
         assert_eq!(instance.name, "test");
         assert_eq!(instance.user, "tux");
         assert_eq!(instance.cpus, 1);
