@@ -2,6 +2,10 @@ use crate::models::Arch;
 use regex::Regex;
 use std::fmt;
 use std::str::FromStr;
+use std::sync::LazyLock;
+
+static IMAGE_NAME_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new("^(\\w+):([\\w\\.]+)(:(amd64|arm64))?$").unwrap());
 
 #[cfg(target_arch = "aarch64")]
 pub fn get_default_arch() -> Arch {
@@ -38,10 +42,7 @@ impl FromStr for ImageName {
     type Err = String;
 
     fn from_str(name: &str) -> Result<Self, Self::Err> {
-        if Regex::new("^(\\w+):([\\w\\.]+)(:(amd64|arm64))?$")
-            .unwrap()
-            .is_match(name)
-        {
+        if IMAGE_NAME_REGEX.is_match(name) {
             let mut tokens = name.split(':');
             let vendor = tokens.next().unwrap().to_string();
             let name = tokens.next().unwrap().to_string();
