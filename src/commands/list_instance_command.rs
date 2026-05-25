@@ -62,7 +62,7 @@ impl Command for ListInstanceCommand {
                 );
         }
         view.print(console);
-        Result::Ok(())
+        Ok(())
     }
 }
 

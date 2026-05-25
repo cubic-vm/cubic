@@ -73,6 +73,6 @@ impl Command for StartCommand {
             spinner.stop()
         }
 
-        Result::Ok(())
+        Ok(())
     }
 }

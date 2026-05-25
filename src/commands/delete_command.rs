@@ -36,7 +36,7 @@ impl Command for DeleteCommand {
         // Check if the instance names are valid
         for instance in &self.instances {
             if !instance_store.exists(instance) {
-                return Result::Err(Error::UnknownInstance(instance.clone()));
+                return Err(Error::UnknownInstance(instance.clone()));
             }
         }
 

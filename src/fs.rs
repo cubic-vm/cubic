@@ -15,7 +15,7 @@ impl FS {
                 .map_err(|e| Error::FS(format!("Cannot create directory '{path}' ({e})")));
         }
 
-        Result::Ok(())
+        Ok(())
     }
 
     pub fn read_dir(&self, path: &str) -> Result<fs::ReadDir> {
@@ -43,7 +43,7 @@ impl FS {
             return Err(Error::FS(format!("Cannot write directory '{path}'")));
         }
 
-        Result::Ok(())
+        Ok(())
     }
 
     pub fn create_file(&self, path: &str) -> Result<fs::File> {

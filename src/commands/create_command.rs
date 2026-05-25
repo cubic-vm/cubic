@@ -77,7 +77,7 @@ impl Command for CreateCommand {
         let instance_store = context.get_instance_store();
 
         if instance_store.exists(self.instance_name.as_str()) {
-            return Result::Err(Error::InstanceAlreadyExists(self.instance_name.to_string()));
+            return Err(Error::InstanceAlreadyExists(self.instance_name.to_string()));
         }
 
         // Fetch image
@@ -108,6 +108,6 @@ impl Command for CreateCommand {
         CreateInstanceAction::new().run(context, &FS::new(), image_path, instance)?;
 
         create_spinner.stop();
-        Result::Ok(())
+        Ok(())
     }
 }

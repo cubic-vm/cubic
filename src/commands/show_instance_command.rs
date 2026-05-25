@@ -16,7 +16,7 @@ impl Command for ShowInstanceCommand {
         let instance_store = context.get_instance_store();
 
         if !instance_store.exists(self.instance.as_str()) {
-            return Result::Err(Error::UnknownInstance(self.instance.to_string()));
+            return Err(Error::UnknownInstance(self.instance.to_string()));
         }
 
         let instance = instance_store.load(self.instance.as_str())?;
@@ -170,7 +170,7 @@ SSH:        ssh -p 8000 john@localhost
                 instance: InstanceName::from_str("test").unwrap()
             }
             .run(console, &context),
-            Result::Err(Error::UnknownInstance(_))
+            Err(Error::UnknownInstance(_))
         ));
     }
 }
