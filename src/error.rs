@@ -112,6 +112,37 @@ Troubleshoot:
     #[error("SSH Error: {0}")]
     Ssh(#[from] ssh_key::Error),
 
+    #[error(
+        "OVMF firmware not found. Cubic requires UEFI firmware to run AMD64 virtual machines.
+
+Install it with:
+  - Debian/Ubuntu:  sudo apt install ovmf
+  - Fedora/RHEL:    sudo dnf install edk2-ovmf
+  - Arch Linux:     sudo pacman -S edk2-ovmf
+  - openSUSE:       sudo zypper install qemu-ovmf-x86_64
+  - macOS:          brew install qemu
+  - Windows:        install QEMU from https://www.qemu.org/download/#windows
+
+After installing, rerun your Cubic command.
+"
+    )]
+    OvmfNotFound,
+
+    #[error(
+        "ARM64 EFI firmware not found. Cubic requires UEFI firmware to run ARM64 virtual machines.
+
+Install it with:
+  - Debian/Ubuntu:  sudo apt install qemu-efi-aarch64
+  - Fedora/RHEL:    sudo dnf install edk2-aarch64
+  - Arch Linux:     sudo pacman -S edk2-armvirt
+  - macOS:          brew install qemu
+  - Windows:        install QEMU from https://www.qemu.org/download/#windows
+
+After installing, rerun your Cubic command.
+"
+    )]
+    ArmFirmwareNotFound,
+
     #[error("Invalid path: {0}")]
     InvalidPath(String),
 

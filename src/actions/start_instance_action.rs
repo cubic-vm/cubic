@@ -2,6 +2,7 @@ use crate::cloudinit::UserDataImageFactory;
 use crate::commands::Context;
 use crate::emulator::Emulator;
 use crate::error::Result;
+use crate::firmware::FirmwareFinder;
 use crate::fs::FS;
 use crate::models::Instance;
 use crate::ssh_cmd::PortChecker;
@@ -31,10 +32,12 @@ impl StartInstanceAction {
         FS::new().setup_directory_access(&env.get_instance_runtime_dir(&self.instance.name))?;
         UserDataImageFactory.create_rust(env, &self.instance)?;
 
-        let mut emulator = Emulator::from(
-            self.instance.arch,
-            std::env::var("SNAP").as_deref().unwrap_or_default(),
-        )?;
+        let snap = std::env::var("SNAP").ok();
+        let snap_str = snap.as_deref();
+
+        let mut emulator = Emulator::from(self.instance.arch)?;
+        let firmware = FirmwareFinder::new(self.instance.arch, snap_str).find()?;
+        emulator.set_firmware(&firmware);
         emulator.set_cpus(self.instance.cpus);
         emulator.set_memory(self.instance.mem.get_bytes() as u64);
         emulator.set_console(&env.get_console_file(&self.instance.name));
@@ -51,7 +54,7 @@ impl StartInstanceAction {
         emulator.set_verbose(verbose);
         emulator.set_pid_file(&env.get_qemu_pid_file(&self.instance.name));
 
-        if let Ok(qemu_root) = std::env::var("SNAP") {
+        if let Some(qemu_root) = snap_str {
             emulator.add_env(
                 "QEMU_MODULE_DIR",
                 "/snap/cubic/current/usr/lib/x86_64-linux-gnu/qemu",
