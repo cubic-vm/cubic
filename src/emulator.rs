@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::error::Result;
 use crate::models::{Arch, PortForward};
 use crate::util::SystemCommand;
@@ -27,26 +29,17 @@ impl Emulator {
         }
     }
 
-    pub fn from(arch: Arch, rootdir: &str) -> Result<Emulator> {
+    pub fn from(arch: Arch) -> Result<Emulator> {
         let mut command = match arch {
             Arch::AMD64 => {
                 let mut command = SystemCommand::new("qemu-system-x86_64");
-                // Set machine type
                 command.arg("-machine").arg("q35");
-                command.arg("-drive").arg(format!(
-                    "if=pflash,readonly=on,file={rootdir}/usr/share/OVMF/OVMF_CODE_4M.fd"
-                ));
-                command.arg("-drive").arg(format!(
-                    "if=pflash,readonly=on,file={rootdir}/usr/share/OVMF/OVMF_VARS_4M.fd"
-                ));
                 command.arg("-smbios").arg("type=0,uefi=on");
                 command
             }
             Arch::ARM64 => {
                 let mut command = SystemCommand::new("qemu-system-aarch64");
-                // Set machine type
                 command.arg("-machine").arg("virt");
-                command.arg("-bios").arg("QEMU_EFI.fd");
                 command
             }
         };
@@ -135,6 +128,12 @@ impl Emulator {
         for arg in args.split(' ') {
             self.command.arg(arg);
         }
+    }
+
+    pub fn set_firmware(&mut self, path: &Path) {
+        self.command
+            .arg("-drive")
+            .arg(format!("if=pflash,readonly=on,file={}", path.display()));
     }
 
     pub fn add_search_path(&mut self, path: &str) {
