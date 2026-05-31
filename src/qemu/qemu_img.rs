@@ -18,7 +18,8 @@ impl QemuImg {
     }
 
     pub fn get_image_info(&self, env: &Environment, instance: &Instance) -> Option<ImageInfo> {
-        SystemCommand::new("qemu-img")
+        let qemu_img = std::env::var("CUBIC_QEMU_IMG").unwrap_or_else(|_| "qemu-img".to_owned());
+        SystemCommand::new(&qemu_img)
             .arg("info")
             .arg("--output")
             .arg("json")

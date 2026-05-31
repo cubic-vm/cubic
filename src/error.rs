@@ -48,11 +48,27 @@ Troubleshoot:
   - Make sure '{0}' is available on your PATH
   - Linux/WSL2: install the qemu-system and qemu-utils packages for your distribution
   - macOS: install QEMU with Homebrew: `brew install qemu`
+  - Or set CUBIC_QEMU=/path/to/binary to override the QEMU binary location
 
 After installing QEMU, rerun your Cubic command.
 "
     )]
     QemuNotFound(String),
+
+    #[error(
+        "qemu-img not found. Cubic requires qemu-img to manage virtual machine disk images.
+
+Troubleshoot:
+  - Install QEMU for your platform (qemu-img is included with QEMU)
+  - Make sure 'qemu-img' is available on your PATH
+  - Linux/WSL2: install the qemu-utils package for your distribution
+  - macOS: install QEMU with Homebrew: `brew install qemu`
+  - Or set CUBIC_QEMU_IMG=/path/to/qemu-img to override the qemu-img binary location
+
+After installing qemu-img, rerun your Cubic command.
+"
+    )]
+    QemuImgNotFound,
 
     #[error("System command '{0}' was not found on PATH")]
     SystemCommandNotFound(String),
@@ -122,6 +138,7 @@ Install it with:
   - openSUSE:       sudo zypper install qemu-ovmf-x86_64
   - macOS:          brew install qemu
   - Windows:        install QEMU from https://www.qemu.org/download/#windows
+  - Or set CUBIC_FW=/path/to/firmware.fd to override the firmware path
 
 After installing, rerun your Cubic command.
 "
@@ -137,6 +154,7 @@ Install it with:
   - Arch Linux:     sudo pacman -S edk2-armvirt
   - macOS:          brew install qemu
   - Windows:        install QEMU from https://www.qemu.org/download/#windows
+  - Or set CUBIC_FW=/path/to/firmware.fd to override the firmware path
 
 After installing, rerun your Cubic command.
 "

@@ -30,15 +30,20 @@ impl Emulator {
     }
 
     pub fn from(arch: Arch) -> Result<Emulator> {
+        let default_binary = match arch {
+            Arch::AMD64 => "qemu-system-x86_64",
+            Arch::ARM64 => "qemu-system-aarch64",
+        };
+        let binary = std::env::var("CUBIC_QEMU").unwrap_or_else(|_| default_binary.to_owned());
         let mut command = match arch {
             Arch::AMD64 => {
-                let mut command = SystemCommand::new("qemu-system-x86_64");
+                let mut command = SystemCommand::new(&binary);
                 command.arg("-machine").arg("q35");
                 command.arg("-smbios").arg("type=0,uefi=on");
                 command
             }
             Arch::ARM64 => {
-                let mut command = SystemCommand::new("qemu-system-aarch64");
+                let mut command = SystemCommand::new(&binary);
                 command.arg("-machine").arg("virt");
                 command
             }
