@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
 use std::ffi::OsStr;
-use std::io::ErrorKind;
+use std::io::{ErrorKind, Read};
 use std::process::{Command, Output, Stdio};
 use std::str::from_utf8;
 
@@ -93,6 +93,54 @@ impl SystemCommand {
             })
     }
 
+    pub fn run_daemonized(&mut self) -> Result<()> {
+        #[cfg(unix)]
+        unsafe {
+            use std::os::unix::process::CommandExt;
+            self.cmd.pre_exec(detach_from_session);
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            const DETACHED_PROCESS: u32 = 0x0000_0008;
+            self.cmd.creation_flags(DETACHED_PROCESS);
+        }
+
+        let mut child = self
+            .cmd
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| self.map_spawn_error(e))?;
+
+        // Check immediately for instant failures, then again after a brief window
+        // to catch startup errors (KVM permission denied, bad firmware, port conflicts).
+        for ms in [0, 100] {
+            std::thread::sleep(std::time::Duration::from_millis(ms));
+            if let Ok(Some(_)) = child.try_wait() {
+                let stderr = child
+                    .stderr
+                    .take()
+                    .map(|mut s| {
+                        let mut buf = Vec::new();
+                        s.read_to_end(&mut buf).unwrap_or(0);
+                        from_utf8(&buf).unwrap_or_default().to_owned()
+                    })
+                    .unwrap_or_default();
+                return Err(Error::SystemCommandFailed(self.get_command(), stderr));
+            }
+        }
+
+        // Reap the child when it eventually exits to avoid a zombie process.
+        std::thread::spawn(move || {
+            let _ = child.wait();
+        });
+
+        Ok(())
+    }
+
     pub fn output(&mut self) -> Result<Output> {
         self.cmd
             .stdout(Stdio::piped())
@@ -100,6 +148,17 @@ impl SystemCommand {
             .output()
             .map_err(|e| self.map_spawn_error(e))
     }
+}
+
+#[cfg(unix)]
+fn detach_from_session() -> std::io::Result<()> {
+    unsafe extern "C" {
+        fn setsid() -> i32;
+    }
+    if unsafe { setsid() } == -1 {
+        return Err(std::io::Error::last_os_error());
+    }
+    Ok(())
 }
 
 #[cfg(test)]

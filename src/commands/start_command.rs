@@ -1,13 +1,13 @@
 use crate::actions::StartInstanceAction;
 use crate::commands::{self, Command};
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::ssh_cmd::{PortChecker, Russh};
 use crate::util;
 use crate::view::Console;
 use crate::view::SpinnerView;
 use clap::Parser;
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 /// Start VM instances
 ///
@@ -67,7 +67,12 @@ impl Command for StartCommand {
         // Wait for virtual machine instances to be started
         if self.wait && !verbosity.is_quiet() {
             let mut spinner = SpinnerView::new("Starting instance(s)".to_string());
+            let deadline = Instant::now() + Duration::from_secs(300);
             while actions.iter().any(|a| !a.is_done()) {
+                if Instant::now() >= deadline {
+                    spinner.stop();
+                    return Err(Error::StartTimeout);
+                }
                 sleep(Duration::from_secs(1));
             }
             spinner.stop()

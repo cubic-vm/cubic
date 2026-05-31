@@ -27,6 +27,11 @@ pub enum Error {
     InstanceNotRunning(String),
 
     #[error(
+        "Timed out waiting for instance(s) to start.\n\nTroubleshoot:\n  - Run with --verbose to see the QEMU command\n  - Check that QEMU can open /dev/kvm and firmware files\n  - Try again; the system may be under load\n"
+    )]
+    StartTimeout,
+
+    #[error(
         "Instance name '{0}' is already taken.\n\nOptions:\n  - Choose a different name\n  - Connect to existing instance: `cubic ssh {0}`"
     )]
     InstanceAlreadyExists(String),
