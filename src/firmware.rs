@@ -17,6 +17,9 @@ impl FirmwareFinder {
     }
 
     pub fn find(&self) -> Result<PathBuf> {
+        if let Ok(fw) = std::env::var("CUBIC_FW") {
+            return Ok(PathBuf::from(fw));
+        }
         let share = self.qemu_share_dir();
         let err = match self.arch {
             Arch::AMD64 => Error::OvmfNotFound,

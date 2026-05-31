@@ -32,8 +32,10 @@ impl CreateInstanceAction {
         // Create SSH key
         SshKeyGenerator::new().generate_key(&Path::new(tmp_dir).join("ssh_client_key"))?;
 
+        let qemu_img = std::env::var("CUBIC_QEMU_IMG").unwrap_or_else(|_| "qemu-img".to_owned());
+
         // Create virtual machine instance image file
-        SystemCommand::new("qemu-img")
+        SystemCommand::new(&qemu_img)
             .arg("convert")
             .arg("-f")
             .arg("qcow2")
@@ -44,7 +46,7 @@ impl CreateInstanceAction {
             .run()?;
 
         // Set disk capacity
-        SystemCommand::new("qemu-img")
+        SystemCommand::new(&qemu_img)
             .arg("resize")
             .arg(tmp_image)
             .arg(instance.disk_capacity.get_bytes().to_string())

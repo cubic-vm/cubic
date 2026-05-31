@@ -38,7 +38,10 @@ impl SystemCommand {
     fn map_spawn_error(&self, error: std::io::Error) -> Error {
         if error.kind() == ErrorKind::NotFound {
             let program = self.get_program();
-            if program.starts_with("qemu-") {
+            if program == "qemu-img" || program.ends_with("/qemu-img") {
+                return Error::QemuImgNotFound;
+            }
+            if program.starts_with("qemu-") || program.contains("/qemu-") {
                 return Error::QemuNotFound(program);
             }
 
@@ -146,6 +149,18 @@ mod tests {
         let err = SystemCommand::new(program).output().unwrap_err();
 
         assert!(matches!(err, Error::QemuNotFound(ref missing) if missing == program));
+    }
+
+    #[test]
+    fn test_output_reports_missing_qemu_img_binary() {
+        let err = SystemCommand::new("/nonexistent/path/qemu-img")
+            .output()
+            .unwrap_err();
+
+        assert!(matches!(err, Error::QemuImgNotFound));
+        let message = err.to_string();
+        assert!(message.contains("qemu-img not found"));
+        assert!(message.contains("CUBIC_QEMU_IMG"));
     }
 
     #[test]
