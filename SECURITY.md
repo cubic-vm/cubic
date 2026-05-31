@@ -2,13 +2,14 @@
 
 ## Supported Versions
 
-Security fixes are applied to the latest release only.
-Older versions do not receive backported security patches.
+Security fixes are applied to the `main` branch and the latest release.
+Older releases do not receive backported security patches.
 
-| Version | Supported |
-| ------- | --------- |
-| latest  | ✅        |
-| older   | ❌        |
+| Version        | Supported |
+| -------------- | --------- |
+| main           | ✅        |
+| latest release | ✅        |
+| older releases | ❌        |
 
 ## Reporting a Vulnerability
 
