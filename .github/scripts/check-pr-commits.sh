@@ -30,10 +30,23 @@ while read -r commit_hash; do
     last_line="$(printf '%s\n' "$message" | sed '/^[[:space:]]*$/d' | tail -n 1)"
     line_count="$(wc -l <<< "$message")"
 
-    if ! printf '%s\n' "$subject" | grep -Eq "$commit_subject" ||
-        [[ "$line_count" -lt 4 ]] ||
-        [[ "$last_line" != Signed-off-by:* ]]; then
-        echo "::error::${short_sha} is not formatted according to the CONTRIBUTING.md."
+    if ! printf '%s\n' "$subject" | grep -Eq "$commit_subject"; then
+        echo "::error::${short_sha}: subject '${subject}' does not match 'type: description' (e.g. 'fix: correct typo') - see CONTRIBUTING.md"
+        has_error=1
+    fi
+
+    if [[ "${#subject}" -gt 72 ]]; then
+        echo "::error::${short_sha}: subject is ${#subject} characters, max is 72 - see CONTRIBUTING.md"
+        has_error=1
+    fi
+
+    if [[ "$line_count" -lt 4 ]]; then
+        echo "::error::${short_sha}: commit message is too short - body is required (subject, blank line, body, Signed-off-by) - see CONTRIBUTING.md"
+        has_error=1
+    fi
+
+    if [[ "$last_line" != Signed-off-by:* ]]; then
+        echo "::error::${short_sha}: last line must be 'Signed-off-by: Name <email>' (got: '${last_line}') - see CONTRIBUTING.md"
         has_error=1
     fi
 done < <(git log "${base_sha}..${head_sha}" --pretty=tformat:"%H")
