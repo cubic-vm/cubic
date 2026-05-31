@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - 'release/v*'
     tags:
       - 'v*'
 
@@ -168,7 +169,10 @@ jobs:
         run: cubic --help
 
   publish-snap:
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+    if: >
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/heads/release/') ||
+      startsWith(github.ref, 'refs/tags/')
     needs: validate-packages
     strategy:
       matrix:
@@ -194,7 +198,10 @@ jobs:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAP_STORE_LOGIN }}
         with:
           snap: ${{ env.SNAP_FILE }}
-          release: ${{ startsWith(github.ref, 'refs/tags/') && 'candidate' || 'edge'}}
+          release: >-
+            ${{ (startsWith(github.ref, 'refs/tags/') ||
+            startsWith(github.ref, 'refs/heads/release/')) &&
+            'candidate' || 'edge' }}
 
   publish-crate:
     if: startsWith(github.ref, 'refs/tags/v')
