@@ -150,12 +150,10 @@ impl Emulator {
     }
 
     pub fn run(&mut self) -> Result<()> {
-        self.command.arg("-daemonize");
-
         if self.verbose {
             println!("{}", self.command.get_command());
         }
 
-        self.command.run()
+        self.command.run_daemonized()
     }
 }
