@@ -28,7 +28,7 @@ jobs:
 
           - name: cubic-windows-amd64
             target: x86_64-pc-windows-gnu
-            packages: gcc-mingw-w64-x86-64 nasm
+            packages: gcc-mingw-w64-x86-64
             suffix: .exe
 
     runs-on: ubuntu-22.04
