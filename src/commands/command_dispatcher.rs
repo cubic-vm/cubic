@@ -4,7 +4,7 @@ use crate::error::Result;
 use crate::image::ImageDao;
 use crate::instance::InstanceDao;
 use crate::view::Console;
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -79,13 +79,12 @@ The source code is located at: https://github.com/cubic-vm/cubic";
     author,
     version,
     about = ABOUT,
-    arg_required_else_help = true,
     infer_subcommands = true,
     disable_help_subcommand = true
 )]
 pub struct CommandDispatcher {
     #[command(subcommand)]
-    pub command: commands::Commands,
+    pub command: Option<commands::Commands>,
 
     #[clap(flatten)]
     global: GlobalOptions,
@@ -93,6 +92,11 @@ pub struct CommandDispatcher {
 
 impl CommandDispatcher {
     pub fn dispatch(self, console: &mut dyn Console) -> Result<()> {
+        let Some(command) = self.command else {
+            println!("{}", CommandDispatcher::command().render_long_help());
+            return Ok(());
+        };
+
         console.set_verbosity(commands::Verbosity::new(
             self.global.verbose,
             self.global.quiet,
@@ -104,7 +108,7 @@ impl CommandDispatcher {
             Box::new(InstanceDao::new(&env)?),
         );
 
-        match &self.command {
+        match &command {
             Commands::Run(cmd) => cmd as &dyn Command,
             Commands::Instances(cmd) => cmd,
             Commands::Images(cmd) => cmd,
