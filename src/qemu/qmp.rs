@@ -2,36 +2,34 @@ use crate::commands::Verbosity;
 use crate::error::{Error, Result};
 use crate::qemu;
 use serde_json::Value;
-use std::io::{BufReader, BufWriter, Read, Write, prelude::*};
-use std::os::unix::net::UnixStream;
+use std::io::{BufRead, BufReader, Read, Write};
+use std::net::TcpStream;
 use std::time::Duration;
 
 const QMP_TIMEOUT_MS: u64 = 100;
 
+trait ReadWrite: Read + Write {}
+impl<T: Read + Write> ReadWrite for T {}
+
 pub struct Qmp {
     counter: u64,
     verbosity: Verbosity,
-    reader: BufReader<Box<dyn Read>>,
-    writer: BufWriter<Box<dyn Write>>,
+    stream: BufReader<Box<dyn ReadWrite>>,
 }
 
 impl Qmp {
-    pub fn new(path: &str, verbosity: Verbosity) -> Result<Self> {
-        let socket = UnixStream::connect(path).map_err(Error::from)?;
-
-        let get_timeout = || Some(Duration::from_millis(QMP_TIMEOUT_MS));
+    pub fn new(port: u16, verbosity: Verbosity) -> Result<Self> {
+        let socket = TcpStream::connect(format!("127.0.0.1:{port}")).map_err(Error::from)?;
         socket
-            .set_read_timeout(get_timeout())
+            .set_read_timeout(Some(Duration::from_millis(QMP_TIMEOUT_MS)))
             .map_err(Error::from)?;
         socket
-            .set_write_timeout(get_timeout())
+            .set_write_timeout(Some(Duration::from_millis(QMP_TIMEOUT_MS)))
             .map_err(Error::from)?;
-
         Ok(Qmp {
             counter: 0,
             verbosity,
-            reader: BufReader::new(Box::new(socket.try_clone().map_err(Error::from)?)),
-            writer: BufWriter::new(Box::new(socket.try_clone().map_err(Error::from)?)),
+            stream: BufReader::new(Box::new(socket)),
         })
     }
 
@@ -41,13 +39,16 @@ impl Qmp {
         if self.verbosity.is_verbose() {
             println!("QMP send: {request}");
         }
-        self.writer.write(request.as_bytes()).map_err(Error::from)?;
-        self.writer.flush().map_err(Error::from)
+        self.stream
+            .get_mut()
+            .write_all(request.as_bytes())
+            .map_err(Error::from)?;
+        self.stream.get_mut().flush().map_err(Error::from)
     }
 
     pub fn recv(&mut self) -> Result<qemu::QmpMessage> {
         let mut response = String::new();
-        self.reader.read_line(&mut response).map_err(Error::from)?;
+        self.stream.read_line(&mut response).map_err(Error::from)?;
 
         if self.verbosity.is_verbose() {
             println!("QMP recv: {response}");

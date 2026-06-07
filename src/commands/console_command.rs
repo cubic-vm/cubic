@@ -1,10 +1,9 @@
 use crate::commands::{self, Command};
-use crate::error::Result;
-#[cfg(not(windows))]
+use crate::error::{Error, Result};
 use crate::util::Terminal;
 use crate::view::Console;
 use clap::Parser;
-use std::path::Path;
+use std::net::TcpStream;
 use std::thread;
 use std::time::Duration;
 
@@ -37,14 +36,17 @@ impl Command for ConsoleCommand {
 
         console.info("Default credentials: cubic / cubic");
         console.info("Press CTRL+W to exit the console.");
-        let console_path = context.get_env().get_console_file(&self.instance);
-        while !Path::new(&console_path).exists() {
-            thread::sleep(Duration::new(1, 0));
+        let instance = context.get_instance_store().load(&self.instance)?;
+        let port = instance
+            .console_port
+            .ok_or_else(|| Error::InstanceNotRunning(self.instance.clone()))?;
+
+        while TcpStream::connect(format!("127.0.0.1:{port}")).is_err() {
+            thread::sleep(Duration::from_secs(1));
         }
 
         console.raw_mode();
-        #[cfg(not(windows))]
-        if let Ok(mut term) = Terminal::open(&console_path) {
+        if let Ok(mut term) = Terminal::open(port) {
             term.wait();
         } else {
             console.error("Cannot open shell");

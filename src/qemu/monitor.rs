@@ -1,6 +1,6 @@
 use crate::commands::Verbosity;
-use crate::error::Result;
-use crate::models::Environment;
+use crate::error::{Error, Result};
+use crate::models::{Environment, Instance};
 use crate::qemu::Qmp;
 
 pub struct Monitor {
@@ -8,9 +8,12 @@ pub struct Monitor {
 }
 
 impl Monitor {
-    pub fn new(env: &Environment, instance: &str) -> Result<Self> {
+    pub fn new(_env: &Environment, instance: &Instance) -> Result<Self> {
+        let port = instance
+            .monitor_port
+            .ok_or_else(|| Error::InstanceNotRunning(instance.name.clone()))?;
         let mut monitor = Monitor {
-            qmp: Qmp::new(&env.get_monitor_file(instance), Verbosity::Normal)?,
+            qmp: Qmp::new(port, Verbosity::Normal)?,
         };
         monitor.init()?;
         Ok(monitor)

@@ -4,6 +4,7 @@ pub mod tests {
     use crate::error::{Error, Result};
     use crate::instance::InstanceStore;
     use crate::models::Instance;
+    use crate::qemu::Monitor;
 
     pub struct InstanceStoreMock {
         instances: Vec<Instance>,
@@ -54,6 +55,10 @@ pub mod tests {
 
         fn get_pid(&self, _instance: &Instance) -> std::result::Result<u64, ()> {
             std::result::Result::Err(())
+        }
+
+        fn get_monitor(&self, instance: &Instance) -> Result<Monitor> {
+            Err(Error::InstanceNotRunning(instance.name.clone()))
         }
     }
 }

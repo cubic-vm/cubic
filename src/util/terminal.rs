@@ -1,9 +1,7 @@
 use crate::error::{Error, Result};
 
-use std::io::{self, prelude::*};
-use std::net::Shutdown;
-use std::os::unix::net::UnixStream;
-
+use std::io::{self, Read, Write};
+use std::net::TcpStream;
 use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
@@ -28,8 +26,8 @@ fn spawn_stdin_thread(sender: Sender<u8>, running: Arc<AtomicBool>) -> thread::J
     })
 }
 
-fn spawn_stream_thread(
-    mut stream: UnixStream,
+fn spawn_stream_thread<S: Read + Write + Send + 'static>(
+    mut stream: S,
     receiver: Receiver<u8>,
     running: Arc<AtomicBool>,
 ) -> thread::JoinHandle<()> {
@@ -51,30 +49,29 @@ fn spawn_stream_thread(
             thread::sleep(Duration::from_millis(10));
         }
 
-        stream.shutdown(Shutdown::Both).ok();
-        out.write_all("\n".as_bytes()).ok();
+        drop(stream);
+        out.write_all(b"\n").ok();
         out.flush().ok();
     })
 }
 
 impl Terminal {
-    pub fn open(path: &str) -> Result<Self> {
-        UnixStream::connect(path)
-            .map(|stream| {
-                stream.set_nonblocking(true).ok();
-                stream
-                    .set_read_timeout(Some(Duration::from_millis(10)))
-                    .ok();
-                let running = Arc::new(AtomicBool::new(true));
-                let (tx, rx) = mpsc::channel::<u8>();
-                Terminal {
-                    threads: vec![
-                        spawn_stdin_thread(tx, running.clone()),
-                        spawn_stream_thread(stream, rx, running.clone()),
-                    ],
-                }
-            })
-            .map_err(|_| Error::CannotOpenTerminal(path.to_string()))
+    pub fn open(port: u16) -> Result<Self> {
+        let stream = TcpStream::connect(format!("127.0.0.1:{port}"))
+            .map_err(|_| Error::CannotOpenTerminal(port.to_string()))?;
+        stream.set_nonblocking(true).ok();
+        stream
+            .set_read_timeout(Some(Duration::from_millis(10)))
+            .ok();
+
+        let running = Arc::new(AtomicBool::new(true));
+        let (tx, rx) = mpsc::channel::<u8>();
+        Ok(Terminal {
+            threads: vec![
+                spawn_stdin_thread(tx, running.clone()),
+                spawn_stream_thread(stream, rx, running.clone()),
+            ],
+        })
     }
 
     pub fn wait(&mut self) {
