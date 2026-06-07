@@ -89,20 +89,32 @@ impl Emulator {
         self.command.arg("-m").arg(format!("{}B", memory));
     }
 
-    pub fn set_monitor(&mut self, port: u16) {
+    pub fn set_monitor(&mut self, port: u16, instance_dir: &Path) {
+        let dir = instance_dir.display();
         self.command
             .args([
+                "-object",
+                &format!("tls-creds-x509,id=qmp-tls,dir={dir},endpoint=server,verify-peer=yes"),
+            ])
+            .args([
                 "-chardev",
-                &format!("socket,id=qmp,host=127.0.0.1,port={port},server=on,wait=off"),
+                &format!(
+                    "socket,id=qmp,host=127.0.0.1,port={port},server=on,wait=off,tls-creds=qmp-tls"
+                ),
             ])
             .args(["-mon", "chardev=qmp,mode=control,pretty=off"]);
     }
 
-    pub fn set_console(&mut self, port: u16) {
+    pub fn set_console(&mut self, port: u16, instance_dir: &Path) {
+        let dir = instance_dir.display();
         self.command
+            .args([
+                "-object",
+                &format!("tls-creds-x509,id=con-tls,dir={dir},endpoint=server,verify-peer=yes"),
+            ])
             .arg("-chardev")
             .arg(format!(
-                "socket,host=127.0.0.1,port={port},server=on,wait=off,id=console"
+                "socket,host=127.0.0.1,port={port},server=on,wait=off,id=console,tls-creds=con-tls"
             ))
             .arg("-serial")
             .arg("chardev:console");

@@ -4,8 +4,10 @@ use crate::emulator::Emulator;
 use crate::error::Result;
 use crate::firmware::FirmwareFinder;
 use crate::fs::FS;
-use crate::models::Instance;
+use crate::instance::InstanceCertGenerator;
+use crate::models::{Instance, InstanceCertPaths};
 use crate::ssh_cmd::PortChecker;
+use std::path::PathBuf;
 
 pub struct StartInstanceAction {
     instance: Instance,
@@ -32,6 +34,12 @@ impl StartInstanceAction {
         FS::new().setup_directory_access(&env.get_instance_runtime_dir(&self.instance.name))?;
         UserDataImageFactory.create_rust(env, &self.instance)?;
 
+        let instance_dir = PathBuf::from(env.get_instance_dir2(&self.instance.name));
+        let certs = InstanceCertPaths::load(&instance_dir);
+        if !certs.exists() {
+            InstanceCertGenerator::new(instance_dir.clone()).generate()?;
+        }
+
         let port_checker = PortChecker::new();
         self.instance.monitor_port = Some(port_checker.get_new_port()?);
         self.instance.console_port = Some(port_checker.get_new_port()?);
@@ -45,7 +53,7 @@ impl StartInstanceAction {
         emulator.set_firmware(&firmware);
         emulator.set_cpus(self.instance.cpus);
         emulator.set_memory(self.instance.mem.get_bytes() as u64);
-        emulator.set_console(self.instance.console_port.unwrap());
+        emulator.set_console(self.instance.console_port.unwrap(), &instance_dir);
         emulator.add_drive(&env.get_instance_image_file(&self.instance.name), "qcow2");
         emulator.add_drive(&env.get_user_data_image_file(&self.instance.name), "raw");
         emulator.set_network(
@@ -70,7 +78,7 @@ impl StartInstanceAction {
             emulator.add_search_path(&format!("{qemu_root}/usr/lib/ipxe/qemu"));
         }
 
-        emulator.set_monitor(self.instance.monitor_port.unwrap());
+        emulator.set_monitor(self.instance.monitor_port.unwrap(), &instance_dir);
         emulator.run()
     }
 

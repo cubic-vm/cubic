@@ -1,7 +1,4 @@
-use crate::error::{Error, Result};
-
 use std::io::{self, Read, Write};
-use std::net::TcpStream;
 use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
@@ -56,22 +53,15 @@ fn spawn_stream_thread<S: Read + Write + Send + 'static>(
 }
 
 impl Terminal {
-    pub fn open(port: u16) -> Result<Self> {
-        let stream = TcpStream::connect(format!("127.0.0.1:{port}"))
-            .map_err(|_| Error::CannotOpenTerminal(port.to_string()))?;
-        stream.set_nonblocking(true).ok();
-        stream
-            .set_read_timeout(Some(Duration::from_millis(10)))
-            .ok();
-
+    pub fn open<S: Read + Write + Send + 'static>(stream: S) -> Self {
         let running = Arc::new(AtomicBool::new(true));
         let (tx, rx) = mpsc::channel::<u8>();
-        Ok(Terminal {
+        Terminal {
             threads: vec![
                 spawn_stdin_thread(tx, running.clone()),
                 spawn_stream_thread(stream, rx, running.clone()),
             ],
-        })
+        }
     }
 
     pub fn wait(&mut self) {
