@@ -1,5 +1,6 @@
 use crate::fs::FS;
 use std::env;
+use std::path::PathBuf;
 
 #[derive(Default, Clone)]
 pub struct Environment {
@@ -32,63 +33,111 @@ impl Environment {
     }
 
     pub fn get_instance_dir(&self) -> String {
-        format!("{}/machines", self.data_dir)
+        PathBuf::from(&self.data_dir)
+            .join("machines")
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_image_dir(&self) -> String {
-        format!("{}/images", self.cache_dir)
+        PathBuf::from(&self.cache_dir)
+            .join("images")
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_image_file(&self, image: &str) -> String {
-        format!("{}/{image}", self.get_image_dir())
+        PathBuf::from(self.get_image_dir())
+            .join(image)
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_image_cache_file(&self) -> String {
-        format!("{}/images.cache", self.cache_dir)
+        PathBuf::from(&self.cache_dir)
+            .join("images.cache")
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_instance_dir2(&self, instance: &str) -> String {
-        format!("{}/{instance}", &self.get_instance_dir())
+        PathBuf::from(self.get_instance_dir())
+            .join(instance)
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_instance_yaml_config_file(&self, instance: &str) -> String {
-        format!("{}/machine.yaml", &self.get_instance_dir2(instance))
+        PathBuf::from(self.get_instance_dir2(instance))
+            .join("machine.yaml")
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_instance_toml_config_file(&self, instance: &str) -> String {
-        format!("{}/instance.toml", &self.get_instance_dir2(instance))
+        PathBuf::from(self.get_instance_dir2(instance))
+            .join("instance.toml")
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_instance_image_file(&self, instance: &str) -> String {
-        format!("{}/machine.img", &self.get_instance_dir2(instance))
+        PathBuf::from(self.get_instance_dir2(instance))
+            .join("machine.img")
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_instance_cache_dir(&self, instance: &str) -> String {
-        format!("{}/instances/{instance}", &self.get_cache_dir())
+        PathBuf::from(&self.cache_dir)
+            .join("instances")
+            .join(instance)
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_user_data_image_file(&self, instance: &str) -> String {
-        format!("{}/user-data.img", &self.get_instance_cache_dir(instance))
+        PathBuf::from(self.get_instance_cache_dir(instance))
+            .join("user-data.img")
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_instance_runtime_dir(&self, instance: &str) -> String {
-        format!("{}/instances/{instance}", self.runtime_dir)
+        PathBuf::from(&self.runtime_dir)
+            .join("instances")
+            .join(instance)
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_qemu_pid_file(&self, instance: &str) -> String {
-        format!("{}/qemu.pid", self.get_instance_runtime_dir(instance))
+        PathBuf::from(self.get_instance_runtime_dir(instance))
+            .join("qemu.pid")
+            .to_string_lossy()
+            .into_owned()
     }
 
     pub fn get_ssh_private_key_paths(&self, fs: &FS, instances: Vec<String>) -> Vec<String> {
         let mut private_keys = instances
             .iter()
-            .map(|name| format!("{}/ssh_client_key", self.get_instance_dir2(name)))
+            .map(|name| {
+                PathBuf::from(self.get_instance_dir2(name))
+                    .join("ssh_client_key")
+                    .to_string_lossy()
+                    .into_owned()
+            })
             .collect::<Vec<String>>();
 
         let search_dirs: Vec<String> = ["SNAP_REAL_HOME", "HOME"]
             .iter()
             .filter_map(|var| env::var(var).ok())
-            .map(|dir| format!("{dir}/.ssh"))
+            .map(|dir| {
+                PathBuf::from(dir)
+                    .join(".ssh")
+                    .to_string_lossy()
+                    .into_owned()
+            })
             .collect();
 
         for dir in search_dirs {
