@@ -58,9 +58,9 @@ impl EnvironmentFactory {
 
         Ok(Environment::new(
             Self::get_username(),
-            format!("{local_app_data_dir}/cubic"),
-            format!("{temp_dir}/cubic"),
-            format!("{temp_dir}/cubic"),
+            format!("{local_app_data_dir}\\cubic"),
+            format!("{temp_dir}\\cubic"),
+            format!("{temp_dir}\\cubic"),
         ))
     }
 }
