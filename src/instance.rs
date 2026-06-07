@@ -1,3 +1,4 @@
+mod instance_cert_generator;
 mod instance_dao;
 mod instance_deserializer;
 mod instance_serializer;
@@ -7,6 +8,7 @@ mod target_path;
 mod toml_instance_deserializer;
 mod yaml_instance_deserializer;
 
+pub use instance_cert_generator::*;
 pub use instance_dao::*;
 pub use instance_deserializer::*;
 pub use instance_serializer::*;

@@ -110,8 +110,11 @@ Troubleshoot:
     #[error("Cannot shrink the disk of the instance '{0}'")]
     CannotShrinkDisk(String),
 
-    #[error("Failed to open terminal on port: '{0}'")]
-    CannotOpenTerminal(String),
+    #[error("TLS certificate generation error: {0}")]
+    TlsCertGeneration(String),
+
+    #[error("TLS connection error: {0}")]
+    TlsConnection(String),
 
     #[error("Web Error: {0}")]
     Web(#[from] reqwest::Error),

@@ -3,10 +3,6 @@ use crate::error::{Error, Result};
 use crate::qemu;
 use serde_json::Value;
 use std::io::{BufRead, BufReader, Read, Write};
-use std::net::TcpStream;
-use std::time::Duration;
-
-const QMP_TIMEOUT_MS: u64 = 100;
 
 trait ReadWrite: Read + Write {}
 impl<T: Read + Write> ReadWrite for T {}
@@ -18,19 +14,12 @@ pub struct Qmp {
 }
 
 impl Qmp {
-    pub fn new(port: u16, verbosity: Verbosity) -> Result<Self> {
-        let socket = TcpStream::connect(format!("127.0.0.1:{port}")).map_err(Error::from)?;
-        socket
-            .set_read_timeout(Some(Duration::from_millis(QMP_TIMEOUT_MS)))
-            .map_err(Error::from)?;
-        socket
-            .set_write_timeout(Some(Duration::from_millis(QMP_TIMEOUT_MS)))
-            .map_err(Error::from)?;
-        Ok(Qmp {
+    pub fn new(stream: impl Read + Write + 'static, verbosity: Verbosity) -> Self {
+        Qmp {
             counter: 0,
             verbosity,
-            stream: BufReader::new(Box::new(socket)),
-        })
+            stream: BufReader::new(Box::new(stream)),
+        }
     }
 
     pub fn send(&mut self, message: &qemu::QmpMessage) -> Result<()> {
