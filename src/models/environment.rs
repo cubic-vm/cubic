@@ -79,14 +79,6 @@ impl Environment {
         format!("{}/qemu.pid", self.get_instance_runtime_dir(instance))
     }
 
-    pub fn get_console_file(&self, instance: &str) -> String {
-        format!("{}/console", self.get_instance_runtime_dir(instance))
-    }
-
-    pub fn get_monitor_file(&self, instance: &str) -> String {
-        format!("{}/monitor.socket", self.get_instance_runtime_dir(instance))
-    }
-
     pub fn get_ssh_private_key_paths(&self, fs: &FS, instances: Vec<String>) -> Vec<String> {
         let mut private_keys = instances
             .iter()
@@ -175,14 +167,6 @@ mod tests {
         assert_eq!(
             env.get_qemu_pid_file("mymachine"),
             "/runtime/cubic/instances/mymachine/qemu.pid"
-        );
-        assert_eq!(
-            env.get_console_file("mymachine"),
-            "/runtime/cubic/instances/mymachine/console"
-        );
-        assert_eq!(
-            env.get_monitor_file("mymachine"),
-            "/runtime/cubic/instances/mymachine/monitor.socket"
         );
     }
 }

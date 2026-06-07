@@ -89,19 +89,21 @@ impl Emulator {
         self.command.arg("-m").arg(format!("{}B", memory));
     }
 
-    pub fn add_qmp(&mut self, name: &str, path: &str) {
+    pub fn set_monitor(&mut self, port: u16) {
         self.command
             .args([
                 "-chardev",
-                &format!("socket,id={name},path={path},server=on,wait=off"),
+                &format!("socket,id=qmp,host=127.0.0.1,port={port},server=on,wait=off"),
             ])
-            .args(["-mon", &format!("chardev={name},mode=control,pretty=off")]);
+            .args(["-mon", "chardev=qmp,mode=control,pretty=off"]);
     }
 
-    pub fn set_console(&mut self, path: &str) {
+    pub fn set_console(&mut self, port: u16) {
         self.command
             .arg("-chardev")
-            .arg(format!("socket,path={path},server=on,wait=off,id=console"))
+            .arg(format!(
+                "socket,host=127.0.0.1,port={port},server=on,wait=off,id=console"
+            ))
             .arg("-serial")
             .arg("chardev:console");
     }

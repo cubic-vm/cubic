@@ -110,15 +110,13 @@ Troubleshoot:
     #[error("Cannot shrink the disk of the instance '{0}'")]
     CannotShrinkDisk(String),
 
-    #[cfg(not(windows))]
-    #[error("Failed to open terminal from path: '{0}'")]
+    #[error("Failed to open terminal on port: '{0}'")]
     CannotOpenTerminal(String),
 
     #[error("Web Error: {0}")]
     Web(#[from] reqwest::Error),
 
     #[error("JSON Error: {0}")]
-    #[cfg(not(windows))]
     SerdeJson(#[from] serde_json::Error),
 
     #[error("TOML Error: {0}")]

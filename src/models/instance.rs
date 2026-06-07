@@ -21,6 +21,10 @@ pub struct Instance {
     pub disk_capacity: DataSize,
     pub ssh_port: u16,
     #[serde(default)]
+    pub monitor_port: Option<u16>,
+    #[serde(default)]
+    pub console_port: Option<u16>,
+    #[serde(default)]
     pub hostfwd: Vec<PortForward>,
     #[serde(default)]
     pub execute: Option<String>,
