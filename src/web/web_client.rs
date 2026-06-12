@@ -10,7 +10,7 @@ use std::io;
 use std::path::Path;
 use std::time::Duration;
 
-const REQUEST_TIMEOUT_SEC: u64 = 10;
+const REQUEST_TIMEOUT_SEC: u64 = 30;
 
 struct ProgressWriter {
     file: File,
