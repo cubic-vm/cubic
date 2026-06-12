@@ -10,7 +10,7 @@ impl ImageProvider for FedoraImageProvider {
     }
 
     fn get_base_url(&self) -> &str {
-        "https://download.fedoraproject.org/pub/fedora/linux/releases/"
+        "https://dl.fedoraproject.org/pub/fedora/linux/releases/"
     }
 
     fn find_image_names(&self, content: &str) -> Vec<String> {
