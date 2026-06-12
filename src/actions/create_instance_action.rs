@@ -2,8 +2,8 @@ use crate::commands::Context;
 use crate::error::Result;
 use crate::fs::FS;
 use crate::models::Instance;
+use crate::qemu::QemuImg;
 use crate::ssh_cmd::SshKeyGenerator;
-use crate::util::SystemCommand;
 use std::path::Path;
 
 #[derive(Default)]
@@ -32,25 +32,13 @@ impl CreateInstanceAction {
         // Create SSH key
         SshKeyGenerator::new().generate_key(&Path::new(tmp_dir).join("ssh_client_key"))?;
 
-        let qemu_img = std::env::var("CUBIC_QEMU_IMG").unwrap_or_else(|_| "qemu-img".to_owned());
+        let qemu_img = QemuImg::new();
 
         // Create virtual machine instance image file
-        SystemCommand::new(&qemu_img)
-            .arg("convert")
-            .arg("-f")
-            .arg("qcow2")
-            .arg("-O")
-            .arg("qcow2")
-            .arg(image_path)
-            .arg(tmp_image)
-            .run()?;
+        qemu_img.convert(image_path, tmp_image)?;
 
         // Set disk capacity
-        SystemCommand::new(&qemu_img)
-            .arg("resize")
-            .arg(tmp_image)
-            .arg(instance.disk_capacity.get_bytes().to_string())
-            .run()?;
+        qemu_img.resize(tmp_image, instance.disk_capacity.get_bytes() as u64)?;
 
         // Write configuration file
         instance.name = format!("{instance_name}.tmp");

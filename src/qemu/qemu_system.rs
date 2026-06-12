@@ -1,15 +1,15 @@
 use std::path::Path;
 
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::models::{Arch, PortForward};
 use crate::util::SystemCommand;
 
-pub struct Emulator {
+pub struct QemuSystem {
     command: SystemCommand,
     verbose: bool,
 }
 
-impl Emulator {
+impl QemuSystem {
     fn get_accelerator() -> Option<&'static str> {
         if cfg!(any(target_os = "linux", target_os = "android")) {
             Some("kvm")
@@ -29,7 +29,7 @@ impl Emulator {
         }
     }
 
-    pub fn from(arch: Arch) -> Result<Emulator> {
+    pub fn from(arch: Arch) -> Result<QemuSystem> {
         let default_binary = match arch {
             Arch::AMD64 => "qemu-system-x86_64",
             Arch::ARM64 => "qemu-system-aarch64",
@@ -67,7 +67,7 @@ impl Emulator {
         #[cfg(feature = "qemu-sandbox")]
         command.arg("-sandbox").arg("on");
 
-        Ok(Emulator {
+        Ok(QemuSystem {
             command,
             verbose: false,
         })
@@ -163,11 +163,42 @@ impl Emulator {
         self.command.arg("-pidfile").arg(path);
     }
 
+    fn map_error(error: Error) -> Error {
+        match error {
+            Error::SystemCommandNotFound(program) => Error::QemuNotFound(program),
+            other => other,
+        }
+    }
+
     pub fn run(&mut self) -> Result<()> {
         if self.verbose {
             println!("{}", self.command.get_command());
         }
 
-        self.command.run_daemonized()
+        self.command.run_daemonized().map_err(Self::map_error)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_map_error_translates_not_found() {
+        assert!(matches!(
+            QemuSystem::map_error(Error::SystemCommandNotFound("qemu-system-x86_64".to_string())),
+            Error::QemuNotFound(program) if program == "qemu-system-x86_64"
+        ));
+    }
+
+    #[test]
+    fn test_map_error_passes_other_errors_through() {
+        assert!(matches!(
+            QemuSystem::map_error(Error::SystemCommandFailed(
+                "cmd".to_string(),
+                "boom".to_string()
+            )),
+            Error::SystemCommandFailed(..)
+        ));
     }
 }

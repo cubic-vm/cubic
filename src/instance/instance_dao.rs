@@ -8,7 +8,6 @@ use crate::models::{DataSize, Environment, Instance, InstanceName};
 use crate::qemu::Monitor;
 use crate::qemu::QemuImg;
 use crate::ssh_cmd::PortChecker;
-use crate::util::SystemCommand;
 use std::fs::DirEntry;
 use std::path::Path;
 use std::str;
@@ -139,13 +138,7 @@ impl InstanceStore for InstanceDao {
         } else if instance.disk_capacity.get_bytes() >= size as usize {
             Err(Error::CannotShrinkDisk(instance.name.to_string()))
         } else {
-            let qemu_img =
-                std::env::var("CUBIC_QEMU_IMG").unwrap_or_else(|_| "qemu-img".to_owned());
-            SystemCommand::new(&qemu_img)
-                .arg("resize")
-                .arg(self.env.get_instance_image_file(&instance.name))
-                .arg(size.to_string())
-                .run()?;
+            QemuImg::new().resize(&self.env.get_instance_image_file(&instance.name), size)?;
             instance.disk_capacity = DataSize::new(size as usize);
             Ok(())
         }

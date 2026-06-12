@@ -37,15 +37,7 @@ impl SystemCommand {
 
     fn map_spawn_error(&self, error: std::io::Error) -> Error {
         if error.kind() == ErrorKind::NotFound {
-            let program = self.get_program();
-            if program == "qemu-img" || program.ends_with("/qemu-img") {
-                return Error::QemuImgNotFound;
-            }
-            if program.starts_with("qemu-") || program.contains("/qemu-") {
-                return Error::QemuNotFound(program);
-            }
-
-            return Error::SystemCommandNotFound(program);
+            return Error::SystemCommandNotFound(self.get_program());
         }
 
         Error::SystemCommandFailed(self.get_command(), error.to_string())
@@ -190,36 +182,12 @@ mod tests {
     }
 
     #[test]
-    fn test_run_reports_missing_qemu_binary() {
-        let program = "qemu-system-x86_64-cubic-missing-test";
+    fn test_run_reports_missing_system_command() {
+        let program = "cubic-missing-command-test";
 
         let err = SystemCommand::new(program).run().unwrap_err();
 
-        assert!(matches!(err, Error::QemuNotFound(ref missing) if missing == program));
-        let message = err.to_string();
-        assert!(message.contains("QEMU not found"));
-        assert!(message.contains("brew install qemu"));
-    }
-
-    #[test]
-    fn test_output_reports_missing_qemu_binary() {
-        let program = "qemu-img-cubic-missing-test";
-
-        let err = SystemCommand::new(program).output().unwrap_err();
-
-        assert!(matches!(err, Error::QemuNotFound(ref missing) if missing == program));
-    }
-
-    #[test]
-    fn test_output_reports_missing_qemu_img_binary() {
-        let err = SystemCommand::new("/nonexistent/path/qemu-img")
-            .output()
-            .unwrap_err();
-
-        assert!(matches!(err, Error::QemuImgNotFound));
-        let message = err.to_string();
-        assert!(message.contains("qemu-img not found"));
-        assert!(message.contains("CUBIC_QEMU_IMG"));
+        assert!(matches!(err, Error::SystemCommandNotFound(ref missing) if missing == program));
     }
 
     #[test]

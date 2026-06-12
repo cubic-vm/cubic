@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use crate::models::{Environment, Instance};
 use crate::util::SystemCommand;
 use serde::{Deserialize, Serialize};
@@ -17,9 +18,20 @@ impl QemuImg {
         Self {}
     }
 
-    pub fn get_image_info(&self, env: &Environment, instance: &Instance) -> Option<ImageInfo> {
+    fn command() -> SystemCommand {
         let qemu_img = std::env::var("CUBIC_QEMU_IMG").unwrap_or_else(|_| "qemu-img".to_owned());
         SystemCommand::new(&qemu_img)
+    }
+
+    fn map_error(error: Error) -> Error {
+        match error {
+            Error::SystemCommandNotFound(_) => Error::QemuImgNotFound,
+            other => other,
+        }
+    }
+
+    pub fn get_image_info(&self, env: &Environment, instance: &Instance) -> Option<ImageInfo> {
+        Self::command()
             .arg("info")
             .arg("--output")
             .arg("json")
@@ -28,6 +40,28 @@ impl QemuImg {
             .ok()
             .and_then(|output| String::from_utf8(output.stdout).ok())
             .and_then(|stdout| serde_json::from_str(&stdout).ok())
+    }
+
+    pub fn convert(&self, src: &str, dst: &str) -> Result<()> {
+        Self::command()
+            .arg("convert")
+            .arg("-f")
+            .arg("qcow2")
+            .arg("-O")
+            .arg("qcow2")
+            .arg(src)
+            .arg(dst)
+            .run()
+            .map_err(Self::map_error)
+    }
+
+    pub fn resize(&self, image: &str, size: u64) -> Result<()> {
+        Self::command()
+            .arg("resize")
+            .arg(image)
+            .arg(size.to_string())
+            .run()
+            .map_err(Self::map_error)
     }
 }
 
@@ -62,5 +96,24 @@ mod tests {
         println!("{input}");
         let result: ImageInfo = serde_json::from_str(input).unwrap();
         assert_eq!(result.actual_size, 200704);
+    }
+
+    #[test]
+    fn test_map_error_translates_not_found() {
+        assert!(matches!(
+            QemuImg::map_error(Error::SystemCommandNotFound("qemu-img".to_string())),
+            Error::QemuImgNotFound
+        ));
+    }
+
+    #[test]
+    fn test_map_error_passes_other_errors_through() {
+        assert!(matches!(
+            QemuImg::map_error(Error::SystemCommandFailed(
+                "cmd".to_string(),
+                "boom".to_string()
+            )),
+            Error::SystemCommandFailed(..)
+        ));
     }
 }
