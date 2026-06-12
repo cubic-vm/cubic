@@ -63,10 +63,11 @@ Cubic
    howto/recover_disk
 
 .. toctree::
-   :caption: Architecture
+   :caption: Internals
    :hidden:
 
-   concepts/how_it_works
+   internals/how_it_works
+   internals/security
 
 .. toctree::
    :caption: Command Reference
