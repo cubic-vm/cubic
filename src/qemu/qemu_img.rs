@@ -33,6 +33,7 @@ impl QemuImg {
     pub fn get_image_info(&self, env: &Environment, instance: &Instance) -> Option<ImageInfo> {
         Self::command()
             .arg("info")
+            .arg("--force-share")
             .arg("--output")
             .arg("json")
             .arg(env.get_instance_image_file(&instance.name))
