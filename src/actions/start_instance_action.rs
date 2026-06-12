@@ -1,11 +1,10 @@
 use crate::cloudinit::UserDataImageFactory;
 use crate::commands::Context;
-use crate::emulator::Emulator;
 use crate::error::Result;
-use crate::firmware::FirmwareFinder;
 use crate::fs::FS;
 use crate::instance::InstanceCertGenerator;
 use crate::models::{Instance, InstanceCertPaths};
+use crate::qemu::{FirmwareFinder, QemuSystem};
 use crate::ssh_cmd::PortChecker;
 use std::path::PathBuf;
 
@@ -48,38 +47,38 @@ impl StartInstanceAction {
         let snap = std::env::var("SNAP").ok();
         let snap_str = snap.as_deref();
 
-        let mut emulator = Emulator::from(self.instance.arch)?;
+        let mut qemu_system = QemuSystem::from(self.instance.arch)?;
         let firmware = FirmwareFinder::new(self.instance.arch, snap_str).find()?;
-        emulator.set_firmware(&firmware);
-        emulator.set_cpus(self.instance.cpus);
-        emulator.set_memory(self.instance.mem.get_bytes() as u64);
-        emulator.set_console(self.instance.console_port.unwrap(), &instance_dir);
-        emulator.add_drive(&env.get_instance_image_file(&self.instance.name), "qcow2");
-        emulator.add_drive(&env.get_user_data_image_file(&self.instance.name), "raw");
-        emulator.set_network(
+        qemu_system.set_firmware(&firmware);
+        qemu_system.set_cpus(self.instance.cpus);
+        qemu_system.set_memory(self.instance.mem.get_bytes() as u64);
+        qemu_system.set_console(self.instance.console_port.unwrap(), &instance_dir);
+        qemu_system.add_drive(&env.get_instance_image_file(&self.instance.name), "qcow2");
+        qemu_system.add_drive(&env.get_user_data_image_file(&self.instance.name), "raw");
+        qemu_system.set_network(
             &self.instance.hostfwd,
             self.instance.ssh_port,
             self.instance.isolate,
         );
         if let Some(args) = qemu_args {
-            emulator.set_qemu_args(args);
+            qemu_system.set_qemu_args(args);
         }
-        emulator.set_verbose(verbose);
-        emulator.set_pid_file(&env.get_qemu_pid_file(&self.instance.name));
+        qemu_system.set_verbose(verbose);
+        qemu_system.set_pid_file(&env.get_qemu_pid_file(&self.instance.name));
 
         if let Some(qemu_root) = snap_str {
-            emulator.add_env(
+            qemu_system.add_env(
                 "QEMU_MODULE_DIR",
                 "/snap/cubic/current/usr/lib/x86_64-linux-gnu/qemu",
             );
-            emulator.add_search_path(&format!("{qemu_root}/usr/share/qemu"));
-            emulator.add_search_path(&format!("{qemu_root}/usr/share/qemu-efi-aarch64"));
-            emulator.add_search_path(&format!("{qemu_root}/usr/share/seabios"));
-            emulator.add_search_path(&format!("{qemu_root}/usr/lib/ipxe/qemu"));
+            qemu_system.add_search_path(&format!("{qemu_root}/usr/share/qemu"));
+            qemu_system.add_search_path(&format!("{qemu_root}/usr/share/qemu-efi-aarch64"));
+            qemu_system.add_search_path(&format!("{qemu_root}/usr/share/seabios"));
+            qemu_system.add_search_path(&format!("{qemu_root}/usr/lib/ipxe/qemu"));
         }
 
-        emulator.set_monitor(self.instance.monitor_port.unwrap(), &instance_dir);
-        emulator.run()
+        qemu_system.set_monitor(self.instance.monitor_port.unwrap(), &instance_dir);
+        qemu_system.run()
     }
 
     pub fn is_done(&self) -> bool {

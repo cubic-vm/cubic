@@ -1,10 +1,8 @@
 mod actions;
 mod cloudinit;
 mod commands;
-mod emulator;
 mod env;
 mod error;
-mod firmware;
 mod fs;
 mod image;
 mod instance;
