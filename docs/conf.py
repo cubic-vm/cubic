@@ -5,7 +5,7 @@
 
 # -- Project information -----------------------------------------------------
 project = 'cubic'
-copyright = '2025, Cubic'
+copyright = '2024 - 2026, Cubic VM'
 author = 'Roger Knecht'
 release = 'v0.0.0-dev'
 
