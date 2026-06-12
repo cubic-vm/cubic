@@ -24,7 +24,7 @@ impl UserDataFactory {
             \u{20}\u{20}- name: {user}\n\
             \u{20}\u{20}\u{20}\u{20}lock_passwd: false\n\
             \u{20}\u{20}\u{20}\u{20}hashed_passwd: $y$j9T$wifmOLBedd7NSaH2IqG4L.$2J.8E.qE57lxapsWosOFod37djHePHg7Go03iDNsRe4\n\
-            \u{20}\u{20}\u{20}\u{20}ssh-authorized-keys: [{pubkey}]\n\
+            \u{20}\u{20}\u{20}\u{20}ssh_authorized_keys: [{pubkey}]\n\
             \u{20}\u{20}\u{20}\u{20}shell: /bin/bash\n\
             \u{20}\u{20}\u{20}\u{20}sudo: ALL=(ALL) NOPASSWD:ALL\n\
             write_files:\n\
@@ -47,7 +47,7 @@ users:
   - name: tux
     lock_passwd: false
     hashed_passwd: $y$j9T$wifmOLBedd7NSaH2IqG4L.$2J.8E.qE57lxapsWosOFod37djHePHg7Go03iDNsRe4
-    ssh-authorized-keys: [pubkey]
+    ssh_authorized_keys: [pubkey]
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
 write_files:
@@ -69,7 +69,7 @@ users:
   - name: tux
     lock_passwd: false
     hashed_passwd: $y$j9T$wifmOLBedd7NSaH2IqG4L.$2J.8E.qE57lxapsWosOFod37djHePHg7Go03iDNsRe4
-    ssh-authorized-keys: [pubkey]
+    ssh_authorized_keys: [pubkey]
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
 write_files:
