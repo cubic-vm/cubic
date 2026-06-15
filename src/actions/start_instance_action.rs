@@ -1,10 +1,10 @@
 use crate::cloudinit::UserDataImageFactory;
 use crate::commands::Context;
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::fs::FS;
 use crate::instance::InstanceCertGenerator;
 use crate::models::{Instance, InstanceCertPaths};
-use crate::qemu::{FirmwareFinder, QemuSystem};
+use crate::qemu::{QemuFirmware, QemuPathBuilder, QemuSystem};
 use crate::ssh_cmd::PortChecker;
 use std::path::PathBuf;
 
@@ -44,11 +44,9 @@ impl StartInstanceAction {
         self.instance.console_port = Some(port_checker.get_new_port()?);
         context.get_instance_store().store(&self.instance)?;
 
-        let snap = std::env::var("SNAP").ok();
-        let snap_str = snap.as_deref();
-
         let mut qemu_system = QemuSystem::from(self.instance.arch)?;
-        let firmware = FirmwareFinder::new(self.instance.arch, snap_str).find()?;
+        let firmware = QemuFirmware::locate(QemuPathBuilder::new().get_dirs(), self.instance.arch)
+            .ok_or(Error::QemuNotFound)?;
         qemu_system.set_firmware(&firmware);
         qemu_system.set_cpus(self.instance.cpus);
         qemu_system.set_memory(self.instance.mem.get_bytes() as u64);
@@ -65,17 +63,6 @@ impl StartInstanceAction {
         }
         qemu_system.set_verbose(verbose);
         qemu_system.set_pid_file(&env.get_qemu_pid_file(&self.instance.name));
-
-        if let Some(qemu_root) = snap_str {
-            qemu_system.add_env(
-                "QEMU_MODULE_DIR",
-                "/snap/cubic/current/usr/lib/x86_64-linux-gnu/qemu",
-            );
-            qemu_system.add_search_path(&format!("{qemu_root}/usr/share/qemu"));
-            qemu_system.add_search_path(&format!("{qemu_root}/usr/share/qemu-efi-aarch64"));
-            qemu_system.add_search_path(&format!("{qemu_root}/usr/share/seabios"));
-            qemu_system.add_search_path(&format!("{qemu_root}/usr/lib/ipxe/qemu"));
-        }
 
         qemu_system.set_monitor(self.instance.monitor_port.unwrap(), &instance_dir);
         qemu_system.run()

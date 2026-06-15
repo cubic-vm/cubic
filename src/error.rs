@@ -41,39 +41,8 @@ pub enum Error {
     )]
     UnsetEnvVar(String),
 
-    #[error(
-        "QEMU not found. Cubic requires QEMU to create and run virtual machines.
-
-Missing executable:
-
-{0}
-
-Troubleshoot:
-  - Install QEMU for your platform
-  - Make sure '{0}' is available on your PATH
-  - Linux/WSL2: install the qemu-system and qemu-utils packages for your distribution
-  - macOS: install QEMU with Homebrew: `brew install qemu`
-  - Or set CUBIC_QEMU=/path/to/binary to override the QEMU binary location
-
-After installing QEMU, rerun your Cubic command.
-"
-    )]
-    QemuNotFound(String),
-
-    #[error(
-        "qemu-img not found. Cubic requires qemu-img to manage virtual machine disk images.
-
-Troubleshoot:
-  - Install QEMU for your platform (qemu-img is included with QEMU)
-  - Make sure 'qemu-img' is available on your PATH
-  - Linux/WSL2: install the qemu-utils package for your distribution
-  - macOS: install QEMU with Homebrew: `brew install qemu`
-  - Or set CUBIC_QEMU_IMG=/path/to/qemu-img to override the qemu-img binary location
-
-After installing qemu-img, rerun your Cubic command.
-"
-    )]
-    QemuImgNotFound,
+    #[error("{}", format_qemu_not_found_help())]
+    QemuNotFound,
 
     #[error("System command '{0}' was not found on PATH")]
     SystemCommandNotFound(String),
@@ -134,39 +103,6 @@ Troubleshoot:
     #[error("SSH Error: {0}")]
     Ssh(#[from] ssh_key::Error),
 
-    #[error(
-        "OVMF firmware not found. Cubic requires UEFI firmware to run AMD64 virtual machines.
-
-Install it with:
-  - Debian/Ubuntu:  sudo apt install ovmf
-  - Fedora/RHEL:    sudo dnf install edk2-ovmf
-  - Arch Linux:     sudo pacman -S edk2-ovmf
-  - openSUSE:       sudo zypper install qemu-ovmf-x86_64
-  - macOS:          brew install qemu
-  - Windows:        install QEMU from https://www.qemu.org/download/#windows
-  - Or set CUBIC_FW=/path/to/firmware.fd to override the firmware path
-
-After installing, rerun your Cubic command.
-"
-    )]
-    OvmfNotFound,
-
-    #[error(
-        "ARM64 EFI firmware not found. Cubic requires UEFI firmware to run ARM64 virtual machines.
-
-Install it with:
-  - Debian/Ubuntu:  sudo apt install qemu-efi-aarch64
-  - Fedora/RHEL:    sudo dnf install edk2-aarch64
-  - Arch Linux:     sudo pacman -S edk2-armvirt
-  - macOS:          brew install qemu
-  - Windows:        install QEMU from https://www.qemu.org/download/#windows
-  - Or set CUBIC_FW=/path/to/firmware.fd to override the firmware path
-
-After installing, rerun your Cubic command.
-"
-    )]
-    ArmFirmwareNotFound,
-
     #[error("Invalid path: {0}")]
     InvalidPath(String),
 
@@ -177,4 +113,34 @@ After installing, rerun your Cubic command.
 
     #[error("SFTP Error: {0}")]
     Sftp(String),
+}
+
+fn format_qemu_not_found_help() -> String {
+    let install = if cfg!(target_os = "macos") {
+        "  - brew install qemu"
+    } else if cfg!(target_os = "windows") {
+        "  - winget install SoftwareFreedomConservancy.QEMU
+  - or download QEMU from https://www.qemu.org/download/#windows"
+    } else {
+        "  - Debian/Ubuntu:  sudo apt install qemu-system qemu-utils ovmf qemu-efi-aarch64
+  - Fedora/RHEL:    sudo dnf install qemu-system-x86 qemu-img edk2-ovmf edk2-aarch64
+  - Arch Linux:     sudo pacman -S qemu-full edk2-ovmf edk2-armvirt
+  - openSUSE:       sudo zypper install qemu qemu-tools qemu-ovmf-x86_64 qemu-uefi-aarch64"
+    };
+    format!(
+        "QEMU or its UEFI firmware was not found.
+
+Cubic needs the following to run virtual machines:
+  - qemu-system-x86_64  (amd64 VMs)
+  - qemu-system-aarch64 (arm64 VMs)
+  - qemu-img            (disk image management)
+  - UEFI firmware
+
+Install QEMU and its UEFI firmware:
+{install}
+
+Or set CUBIC_QEMU_DIR to the directory that contains your QEMU install
+(CUBIC_QEMU_FW_AMD64 / CUBIC_QEMU_FW_ARM64 override just the UEFI firmware path).
+"
+    )
 }

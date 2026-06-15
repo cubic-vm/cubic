@@ -1,5 +1,6 @@
 use crate::error::{Error, Result};
 use crate::models::{Environment, Instance};
+use crate::qemu::QemuPathBuilder;
 use crate::util::SystemCommand;
 use serde::{Deserialize, Serialize};
 
@@ -19,13 +20,14 @@ impl QemuImg {
     }
 
     fn command() -> SystemCommand {
-        let qemu_img = std::env::var("CUBIC_QEMU_IMG").unwrap_or_else(|_| "qemu-img".to_owned());
-        SystemCommand::new(&qemu_img)
+        let mut cmd = SystemCommand::new("qemu-img");
+        cmd.set_env("PATH", QemuPathBuilder::new().build());
+        cmd
     }
 
     fn map_error(error: Error) -> Error {
         match error {
-            Error::SystemCommandNotFound(_) => Error::QemuImgNotFound,
+            Error::SystemCommandNotFound(_) => Error::QemuNotFound,
             other => other,
         }
     }
@@ -103,7 +105,7 @@ mod tests {
     fn test_map_error_translates_not_found() {
         assert!(matches!(
             QemuImg::map_error(Error::SystemCommandNotFound("qemu-img".to_string())),
-            Error::QemuImgNotFound
+            Error::QemuNotFound
         ));
     }
 
