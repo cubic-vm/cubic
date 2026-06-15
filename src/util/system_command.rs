@@ -43,7 +43,7 @@ impl SystemCommand {
         Error::SystemCommandFailed(self.get_command(), error.to_string())
     }
 
-    pub fn env(&mut self, key: &str, value: &str) -> &mut Self {
+    pub fn set_env<K: AsRef<OsStr>, V: AsRef<OsStr>>(&mut self, key: K, value: V) -> &mut Self {
         self.cmd.env(key, value);
         self
     }

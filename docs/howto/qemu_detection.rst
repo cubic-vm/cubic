@@ -8,11 +8,29 @@ When you start a VM, Cubic automatically searches for these tools in standard
 locations. This page explains where Cubic looks and how to override the
 detected paths when needed.
 
+How Cubic looks
+---------------
+
+Cubic builds a single ordered list of directories where QEMU may live:
+
+#. ``CUBIC_QEMU_DIR`` (if set),
+#. every directory on your ``PATH``,
+#. the built-in fallback locations:
+   ``C:\Program Files\qemu`` on Windows, and ``/usr/bin``,
+   ``/usr/local/bin``, ``/opt/homebrew/bin``,
+   ``/home/linuxbrew/.linuxbrew/bin`` and ``/opt/local/bin`` on Unix.
+
+That list is used two ways. For the **binaries**, Cubic hands the list to QEMU
+as its ``PATH`` (only for the child process, your own environment is left
+untouched) and launches ``qemu-system-x86_64`` / ``qemu-system-aarch64`` /
+``qemu-img`` by name, letting the operating system resolve them. For the
+**firmware**, Cubic finds the QEMU install from the same list and reads its
+firmware descriptors (see below).
+
 QEMU Binary
 -----------
 
-Cubic searches for the QEMU system emulator on your ``PATH``. The binary name
-depends on the architecture of the virtual machine:
+The binary name depends on the architecture of the virtual machine:
 
 .. list-table::
    :header-rows: 1
@@ -34,184 +52,90 @@ Install QEMU if it is not already present:
    * - Platform
      - Command
    * - Debian / Ubuntu
-     - ``sudo apt install qemu-system``
+     - ``sudo apt install qemu-system qemu-utils ovmf qemu-efi-aarch64``
    * - Fedora / RHEL
-     - ``sudo dnf install qemu-system-x86``
+     - ``sudo dnf install qemu-system-x86 qemu-img edk2-ovmf edk2-aarch64``
    * - Arch Linux
-     - ``sudo pacman -S qemu-full``
+     - ``sudo pacman -S qemu-full edk2-ovmf edk2-armvirt``
    * - openSUSE
-     - ``sudo zypper install qemu``
+     - ``sudo zypper install qemu qemu-tools qemu-ovmf-x86_64 qemu-uefi-aarch64``
    * - macOS (Homebrew)
      - ``brew install qemu``
    * - Windows
-     - Install from https://www.qemu.org/download/#windows
+     - ``winget install SoftwareFreedomConservancy.QEMU``
+
+On Linux the UEFI firmware (OVMF for amd64, AAVMF for arm64) is a separate
+package. The commands above install it alongside QEMU. On macOS (Homebrew) and
+Windows the firmware is bundled with QEMU.
 
 Override
 ~~~~~~~~
 
-Set ``CUBIC_QEMU`` to use a QEMU binary that is not on ``PATH``:
+Set ``CUBIC_QEMU_DIR`` to the directory that holds your QEMU binaries. Cubic
+puts it at the front of the search list (for the binaries and the firmware
+lookup below):
 
 .. code-block::
 
-    $ CUBIC_QEMU=/opt/qemu/bin/qemu-system-x86_64 cubic start my-vm
+    $ CUBIC_QEMU_DIR=/opt/qemu/bin cubic start my-vm
 
 qemu-img
 --------
 
-Cubic searches for ``qemu-img`` on your ``PATH``. This tool is used to create
-and resize virtual machine disk images. It is included with QEMU on all
-platforms.
-
-Install ``qemu-img`` if it is not already present:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 50
-
-   * - Platform
-     - Command
-   * - Debian / Ubuntu
-     - ``sudo apt install qemu-utils``
-   * - Fedora / RHEL
-     - ``sudo dnf install qemu-img``
-   * - Arch Linux
-     - ``sudo pacman -S qemu-img``
-   * - openSUSE
-     - ``sudo zypper install qemu-tools``
-   * - macOS (Homebrew)
-     - ``brew install qemu``
-   * - Windows
-     - Install from https://www.qemu.org/download/#windows
-
-Override
-~~~~~~~~
-
-Set ``CUBIC_QEMU_IMG`` to use a ``qemu-img`` binary that is not on ``PATH``:
-
-.. code-block::
-
-    $ CUBIC_QEMU_IMG=/opt/qemu/bin/qemu-img cubic create my-vm --image ubuntu:noble
+Cubic runs ``qemu-img`` from the same QEMU install as the emulator. This tool is
+used to create and resize virtual machine disk images. It is included with QEMU
+on all platforms, so installing QEMU (see above) is enough.
 
 UEFI Firmware
 -------------
 
-Cubic requires a UEFI firmware image (OVMF for amd64, AAVMF for arm64) to
-boot virtual machines. Cubic searches a list of well-known paths in order and
-uses the first file that exists.
+Cubic requires UEFI firmware to boot virtual machines. Rather than guessing
+filenames, Cubic reads QEMU's **firmware descriptor** files
+(``share/qemu/firmware/*.json``, shipped by QEMU on Linux, Homebrew and Windows)
+and selects the plain UEFI (pflash) firmware whose target matches the VM's
+architecture and machine (``q35`` for amd64, ``virt`` for arm64). Other
+special-purpose variants (such as secure boot) are skipped.
 
-AMD64 (OVMF)
-~~~~~~~~~~~~
+The firmware file named by the chosen descriptor is then resolved **relative to
+the QEMU install** (anchored on its ``share/`` directory). This lets the
+firmware that ships next to QEMU resolve even when the descriptor records an
+absolute path that is not reachable, for example inside a confined snap, or in
+a relocated Windows build. On Linux the firmware and its descriptor ship in a
+separate package (``ovmf`` / ``edk2``, installed by the commands above). On
+macOS (Homebrew) and Windows they are bundled with QEMU.
 
-.. list-table::
-   :header-rows: 1
-   :widths: 40 40
-
-   * - Path
-     - Platform
-   * - ``$SNAP/usr/share/OVMF/OVMF_CODE_4M.fd``
-     - Snap package
-   * - ``<qemu-root>/share/qemu/edk2-x86_64-code.fd``
-     - QEMU install directory
-   * - ``/usr/share/OVMF/OVMF_CODE_4M.fd``
-     - Debian / Ubuntu
-   * - ``/usr/share/edk2/ovmf/OVMF_CODE.4m.fd``
-     - Fedora / RHEL
-   * - ``/usr/share/edk2-ovmf/OVMF_CODE.fd``
-     - Fedora (older)
-   * - ``/usr/share/edk2/x64/OVMF_CODE.4m.fd``
-     - Arch Linux
-   * - ``/usr/share/qemu/ovmf-x86_64-code.bin``
-     - openSUSE
-   * - ``/opt/homebrew/share/qemu/edk2-x86_64-code.fd``
-     - Homebrew (Apple Silicon)
-   * - ``/usr/local/share/qemu/edk2-x86_64-code.fd``
-     - Homebrew (Intel)
-   * - ``/home/linuxbrew/.linuxbrew/share/qemu/edk2-x86_64-code.fd``
-     - Linux Homebrew (non-root)
-   * - ``C:/Program Files/QEMU/share/edk2-x86_64-code.fd``
-     - Windows
-
-Install OVMF if it is not already present:
+Where the firmware comes from, per setup:
 
 .. list-table::
    :header-rows: 1
-   :widths: 30 50
+   :widths: 30 30 40
 
-   * - Platform
-     - Command
-   * - Debian / Ubuntu
-     - ``sudo apt install ovmf``
-   * - Fedora / RHEL
-     - ``sudo dnf install edk2-ovmf``
-   * - Arch Linux
-     - ``sudo pacman -S edk2-ovmf``
-   * - openSUSE
-     - ``sudo zypper install qemu-ovmf-x86_64``
-   * - macOS (Homebrew)
-     - ``brew install qemu``
-   * - Windows
-     - Install from https://www.qemu.org/download/#windows
-
-ARM64 (AAVMF)
-~~~~~~~~~~~~~
-
-.. list-table::
-   :header-rows: 1
-   :widths: 40 40
-
-   * - Path
-     - Platform
-   * - ``$SNAP/usr/share/AAVMF/AAVMF_CODE.fd``
-     - Snap package
-   * - ``<qemu-root>/share/qemu/edk2-aarch64-code.fd``
-     - QEMU install directory
-   * - ``/usr/share/AAVMF/AAVMF_CODE.fd``
-     - Debian / Ubuntu
-   * - ``/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw``
-     - Fedora / RHEL
-   * - ``/usr/share/edk2-armvirt/aarch64/QEMU_EFI.fd``
-     - Arch Linux
-   * - ``/usr/share/qemu/aavmf-aarch64-code.bin``
-     - openSUSE
-   * - ``/opt/homebrew/share/qemu/edk2-aarch64-code.fd``
-     - Homebrew (Apple Silicon)
-   * - ``/usr/local/share/qemu/edk2-aarch64-code.fd``
-     - Homebrew (Intel)
-   * - ``/home/linuxbrew/.linuxbrew/share/qemu/edk2-aarch64-code.fd``
-     - Linux Homebrew (non-root)
-   * - ``C:/Program Files/QEMU/share/edk2-aarch64-code.fd``
-     - Windows
-
-Install AAVMF if it is not already present:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 50
-
-   * - Platform
-     - Command
-   * - Debian / Ubuntu
-     - ``sudo apt install qemu-efi-aarch64``
-   * - Fedora / RHEL
-     - ``sudo dnf install edk2-aarch64``
-   * - Arch Linux
-     - ``sudo pacman -S edk2-armvirt``
-   * - openSUSE
-     - ``sudo zypper install qemu-uefi-aarch64``
-   * - macOS (Homebrew)
-     - ``brew install qemu``
-   * - Windows
-     - Install from https://www.qemu.org/download/#windows
+   * - Setup
+     - QEMU install prefix
+     - Firmware file
+   * - Linux package manager
+     - ``/usr``
+     - ``/usr/share/OVMF/OVMF_CODE_4M.fd`` (and distro equivalents)
+   * - snap (strict confinement)
+     - ``$SNAP/usr``
+     - ``$SNAP/usr/share/OVMF/OVMF_CODE_4M.fd``
+   * - macOS Homebrew / MacPorts
+     - ``/opt/homebrew``, ``/usr/local``, ``/opt/local``
+     - ``<prefix>/share/qemu/edk2-<arch>-code.fd``
+   * - Windows (winget)
+     - ``C:\Program Files\qemu``
+     - ``C:\Program Files\qemu\share\edk2-<arch>-code.fd``
 
 Override
 ~~~~~~~~
 
-Set ``CUBIC_FW`` to use a firmware file that was not found by autodetection.
-This bypasses the entire candidate search:
+Point ``CUBIC_QEMU_DIR`` at a QEMU install and Cubic reads its firmware
+descriptors, or set the per-architecture ``CUBIC_QEMU_FW_AMD64`` /
+``CUBIC_QEMU_FW_ARM64`` to use a specific firmware file directly:
 
 .. code-block::
 
-    $ CUBIC_FW=/usr/share/OVMF/OVMF_CODE.fd cubic start my-vm
+    $ CUBIC_QEMU_FW_AMD64=/opt/qemu/share/qemu/edk2-x86_64-code.fd cubic start my-vm
 
 Environment Variable Reference
 -------------------------------
@@ -223,15 +147,15 @@ Environment Variable Reference
    * - Variable
      - Tool
      - Description
-   * - ``CUBIC_QEMU``
-     - QEMU emulator
-     - Path to the ``qemu-system-*`` binary to use instead of the one found on
-       ``PATH``
-   * - ``CUBIC_QEMU_IMG``
-     - qemu-img
-     - Path to the ``qemu-img`` binary to use instead of the one found on
-       ``PATH``
-   * - ``CUBIC_FW``
-     - UEFI firmware
-     - Path to the OVMF or AAVMF firmware file to use instead of the
-       autodetected path
+   * - ``CUBIC_QEMU_DIR``
+     - QEMU emulator, qemu-img and UEFI firmware
+     - Directory of the QEMU install. Placed at the front of the search list for
+       the binaries, and used to locate the ``share/qemu/firmware`` descriptors.
+   * - ``CUBIC_QEMU_FW_AMD64``
+     - UEFI firmware (amd64)
+     - Path to a specific amd64 UEFI firmware (CODE) file. Overrides
+       descriptor-based firmware selection for amd64 VMs.
+   * - ``CUBIC_QEMU_FW_ARM64``
+     - UEFI firmware (arm64)
+     - Path to a specific arm64 UEFI firmware (CODE) file. Overrides
+       descriptor-based firmware selection for arm64 VMs.

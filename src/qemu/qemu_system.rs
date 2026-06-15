@@ -2,6 +2,7 @@ use std::path::Path;
 
 use crate::error::{Error, Result};
 use crate::models::{Arch, PortForward};
+use crate::qemu::QemuPathBuilder;
 use crate::util::SystemCommand;
 
 pub struct QemuSystem {
@@ -30,11 +31,7 @@ impl QemuSystem {
     }
 
     pub fn from(arch: Arch) -> Result<QemuSystem> {
-        let default_binary = match arch {
-            Arch::AMD64 => "qemu-system-x86_64",
-            Arch::ARM64 => "qemu-system-aarch64",
-        };
-        let binary = std::env::var("CUBIC_QEMU").unwrap_or_else(|_| default_binary.to_owned());
+        let binary = format!("qemu-system-{}", arch.as_canonical_str());
         let mut command = match arch {
             Arch::AMD64 => {
                 let mut command = SystemCommand::new(&binary);
@@ -48,6 +45,9 @@ impl QemuSystem {
                 command
             }
         };
+
+        // Resolve the QEMU binary by name from the extended PATH.
+        command.set_env("PATH", QemuPathBuilder::new().build());
 
         // Set CPU type
         command.arg("-cpu").arg("max");
@@ -75,10 +75,6 @@ impl QemuSystem {
 
     pub fn set_verbose(&mut self, flag: bool) {
         self.verbose = flag;
-    }
-
-    pub fn add_env(&mut self, name: &str, value: &str) {
-        self.command.env(name, value);
     }
 
     pub fn set_cpus(&mut self, cpus: u16) {
@@ -155,17 +151,13 @@ impl QemuSystem {
             .arg(format!("if=pflash,readonly=on,file={}", path.display()));
     }
 
-    pub fn add_search_path(&mut self, path: &str) {
-        self.command.arg("-L").arg(path);
-    }
-
     pub fn set_pid_file(&mut self, path: &str) {
         self.command.arg("-pidfile").arg(path);
     }
 
     fn map_error(error: Error) -> Error {
         match error {
-            Error::SystemCommandNotFound(program) => Error::QemuNotFound(program),
+            Error::SystemCommandNotFound(_) => Error::QemuNotFound,
             other => other,
         }
     }
@@ -186,8 +178,10 @@ mod tests {
     #[test]
     fn test_map_error_translates_not_found() {
         assert!(matches!(
-            QemuSystem::map_error(Error::SystemCommandNotFound("qemu-system-x86_64".to_string())),
-            Error::QemuNotFound(program) if program == "qemu-system-x86_64"
+            QemuSystem::map_error(Error::SystemCommandNotFound(
+                "qemu-system-x86_64".to_string()
+            )),
+            Error::QemuNotFound
         ));
     }
 
