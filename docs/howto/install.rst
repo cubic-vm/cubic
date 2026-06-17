@@ -8,25 +8,25 @@ Install on Linux
 
 You can install Cubic on Linux with the following methods:
 
-* `Install with Snap`_  (**recommend**)
-* `Install with Cargo`_ 
-* `Install with Homebrew`_ 
+* `Install with Snap`_  (**recommended**)
+* `Install with Cargo`_
+* `Install with Homebrew`_
 
 Install on macOS
 ----------------
 
 You can install Cubic on macOS with the following methods:
 
-* `Install with Homebrew`_ (**recommend**)
-* `Install with Cargo`_ 
+* `Install with Homebrew`_ (**recommended**)
+* `Install with Cargo`_
 
 Install on Windows
 ------------------
 
 You can install Cubic on Windows with the following methods:
 
-* `Install with Snap`_ (in WSL; **recommend**)
-* `Install with Cargo`_ 
+* `Install with Snap`_ (in WSL; **recommended**)
+* `Install with Cargo`_
 * `Install with Homebrew`_ (in WSL)
 
 Install with Cargo
@@ -35,36 +35,55 @@ Install with Cargo
 1. Install Dependencies
 ^^^^^
 
-Install rustup and Cubic dependencies.
+Cubic needs QEMU and its UEFI firmware on the host. Install them with your
+package manager:
 
 For Debian, Ubuntu and derivatives:
 
 .. code-block::
 
-    sudo apt install build-essential rustup qemu-system-x86 qemu-system-arm
+    sudo apt install qemu-system qemu-utils ovmf qemu-efi-aarch64
 
 For Fedora and derivatives:
 
 .. code-block::
 
-    sudo dnf install @development-tools rustup qemu-system-x86 qemu-system-arm qemu-img
-    rustup-init -y
-    . "$HOME/.cargo/env"
+    sudo dnf install qemu-system-x86 qemu-img edk2-ovmf edk2-aarch64
 
-For OpenSUSE and derivatives:
+For Arch Linux and derivatives:
 
 .. code-block::
 
-    sudo zypper install rustup qemu-x86 qemu-arm
+    sudo pacman -S qemu-full edk2-ovmf edk2-armvirt
+
+For openSUSE and derivatives:
+
+.. code-block::
+
+    sudo zypper install qemu qemu-tools qemu-ovmf-x86_64 qemu-uefi-aarch64
+
+For macOS:
+
+.. code-block::
+
+    brew install qemu
+
+For Windows:
+
+.. code-block::
+
+    winget install SoftwareFreedomConservancy.QEMU
 
 2. Install Rust toolchain
 ^^^^^
 
-Install the Rust toolchain:
+Install the `Rust toolchain`_:
 
 .. code-block::
 
     rustup toolchain add 1.92.0
+
+.. _Rust toolchain: https://rustup.rs
 
 3. Install Cubic
 ^^^^^
@@ -82,13 +101,13 @@ For Linux distributions:
 
 .. code-block::
 
-    echo 'export PATH="$PATH:~/.cargo/bin"' >> ~/.profile
+    echo 'export PATH="$PATH:$HOME/.cargo/bin"' >> ~/.profile
     source ~/.profile
 
 5. Allow KVM Acceleration (Linux only, Optional)
 ^^^^^
 
-It is recommend to add Kernel-based Virtual Machine (KVM) permisson to your user for optimal VM performance:
+It is recommended to add Kernel-based Virtual Machine (KVM) permission to your user for optimal VM performance:
 
 .. code-block::
 
@@ -127,7 +146,7 @@ Use the following command to install Cubic with `Snap`_:
 
        $ sudo snap install cubic
 
-Connect the KVM interface to accelerate the virtual machine (recommend):
+Connect the KVM interface to accelerate the virtual machine (recommended):
 
 .. code-block::
 

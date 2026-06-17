@@ -136,7 +136,7 @@ Keeping Instances Apart
 
 Everything that belongs to a virtual machine, including its SSH private key, its
 TLS certificates, and its disk images, is stored under your own data directory,
-for example ``~/.local/share/cubic/instances/<name>/`` on Linux. Reaching a
+for example ``~/.local/share/cubic/machines/<name>/`` on Linux. Reaching a
 running machine therefore comes down to two things: the file permissions on that
 directory, and holding the SSH key or the TLS client certificate that is kept
 inside it.

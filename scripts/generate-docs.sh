@@ -59,8 +59,12 @@ Cubic
    howto/http_server
    howto/ssh_connect
    howto/environment_variables
-   howto/qemu_detection
-   howto/recover_disk
+
+.. toctree::
+   :caption: Troubleshooting
+   :hidden:
+
+   troubleshooting/recover_disk
 
 .. toctree::
    :caption: Internals
@@ -68,6 +72,7 @@ Cubic
 
    internals/how_it_works
    internals/security
+   internals/qemu_detection
 
 .. toctree::
    :caption: Command Reference
@@ -81,18 +86,20 @@ done
 
 cat >> docs/index.rst << 'EOF'
 
-Cubic is a lightweight command-line manager for virtual machines with focus on simplicity and security.
+Cubic spins up Linux virtual machines on Linux, macOS and Windows with a single command.
 
-It has a simple, daemon-less and rootless design. All Cubic virtual machines run isolated in the user context.
-Cubic is built on top of ``QEMU``, ``KVM`` and ``cloud-init``.
+Every distribution comes as a prebuilt cloud image and is ready to use within seconds, so you skip the long installation. Cubic keeps things simple and secure by acting as lightweight glue over proven tools. No privileged system service is required and every VM runs as your normal user, so you never need admin or root rights.
+Cubic is built on top of ``QEMU``, ``EDK2``, official cloud images and ``cloud-init``.
 
 Features
 ---------
 * Simple command-line interface
 * Supports Alma Linux, Arch Linux, Debian, Fedora, Gentoo, OpenSUSE, Rocky Linux and Ubuntu guest images
+* Uses official, checksum-verified cloud images downloaded straight from each distribution
 * Supports Linux, macOS and Windows hosts with amd64 and arm64 architecture
 * Supports hardware acceleration with KVM (Linux), Hypervisor (macOS) and Hyper-V (Windows)
-* Daemon-less design which does not require root rights
+* Boots each VM with EDK2 UEFI firmware, discovered automatically per architecture
+* No background privileged service and runs with standard user rights, no admin or root needed
 * Written in Rust
 
 Source Code

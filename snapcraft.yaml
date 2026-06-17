@@ -5,14 +5,17 @@ license: MIT OR Apache-2.0
 website: https://cubic-vm.org
 source-code: https://github.com/cubic-vm/cubic
 issues: https://github.com/cubic-vm/cubic/issues
-summary: Cubic is a lightweight command line manager for virtual machines.
+summary: Run Linux VMs with a single command on Linux, macOS and Windows.
 description: |
-  Cubic is a lightweight command line manager for virtual machines with focus on
-  simplicity and security.
+  Cubic spins up Linux virtual machines on Linux, macOS and Windows with a
+  single command.
 
-  It has a daemon-less and rootless design. All Cubic virtual machines run
-  unprivileged in the user context. Cubic is built on top of QEMU, KVM and
-  cloud-init.
+  Every distribution comes as a prebuilt cloud image and is ready to use within
+  seconds, so you skip the long installation. Cubic keeps things simple and
+  secure by acting as lightweight glue over proven tools. No privileged system
+  service is required and every VM runs as your normal user, so you never need
+  admin or root rights. Cubic is built on top of QEMU, EDK2, official cloud
+  images and cloud-init.
 base: core24
 platforms:
   amd64:
