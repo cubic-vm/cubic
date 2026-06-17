@@ -2,8 +2,8 @@ How Cubic Works
 ===============
 
 Cubic is intentionally simple. It has no background daemon, requires no root
-privileges, and builds on three established tools: official cloud images,
-cloud-init, and QEMU.
+privileges, and builds on four established tools: official cloud images,
+cloud-init, QEMU, and EDK2 UEFI firmware.
 
 What Happens When You Run Cubic
 --------------------------------
@@ -61,8 +61,18 @@ on the host platform:
 * **TCG** (software emulation) as a fallback
 
 Each instance stores its own disk image under
-``~/.local/share/cubic/instances/<name>/``, keeping instances fully isolated
+``~/.local/share/cubic/machines/<name>/``, keeping instances fully isolated
 from each other and from the shared image cache.
+
+UEFI Firmware (EDK2)
+--------------------
+
+Cloud images boot through UEFI, so Cubic boots every VM with `EDK2
+<https://github.com/tianocore/edk2>`_ UEFI firmware. Cubic finds the firmware
+automatically in the host's QEMU installation and picks the right build for the
+guest architecture. When the firmware lives somewhere unusual you can point Cubic
+at it with the ``CUBIC_QEMU_FW_AMD64`` and ``CUBIC_QEMU_FW_ARM64`` environment
+variables. See :ref:`qemu detection` for details.
 
 Daemonless and Rootless Security
 ---------------------------------

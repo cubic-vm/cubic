@@ -6,20 +6,35 @@
 [![snapcraft.io](https://snapcraft.io/cubic/badge.svg)](https://snapcraft.io/cubic)
 
 
-Cubic is a lightweight command-line manager for virtual machines with a focus on simplicity and security.
+Cubic spins up Linux virtual machines on Linux, macOS and Windows with a single
+command.
 
-It has a simple, daemonless, and rootless design. All Cubic virtual machines run isolated in the user context.
-Cubic is built on top of `QEMU`, `KVM`, and `cloud-init`.
+Every distribution comes as a prebuilt cloud image and is ready to use within
+seconds, so you skip the long installation. Cubic keeps things simple and secure
+by acting as lightweight glue over proven tools. No privileged system service is
+required and every VM runs as your normal user, so you never need admin or root
+rights.
+Cubic is built on top of `QEMU`, `EDK2`, official cloud images and `cloud-init`.
 
 [![Get it from the Snap Store](https://snapcraft.io/en/dark/install.svg)](https://snapcraft.io/cubic)
 
 # :monocle_face: Why use Cubic?
 
-Cubic is a simple tool that may be used for various purposes, such as:
+One command takes you from nothing to a shell inside a fresh Linux VM. The images
+are official and verified, downloaded straight from each distribution. Every
+machine is a real VM, so you get stronger isolation than containers can offer.
+The same workflow runs on Linux, macOS and Windows across amd64 and arm64.
+No privileged system service is required and you never need admin or root rights.
 
-- Developing and testing software on different Linux distributions
-- Installing software on a virtual machine to avoid polluting the host system
-- Running untrusted software on an isolated virtual machine
+Cubic fits a lot of everyday workflows:
+
+- Spin up disposable VMs that are ready in seconds and easy to throw away
+- Compare many Linux distributions side by side on any host
+- Develop and test across distributions and CPU architectures
+- Try or build software without polluting your host
+- Run untrusted or experimental software inside an isolated VM
+- Reproduce CI or production Linux environments locally
+- Run local services such as HTTP servers and databases with port forwarding
 
 # :fire: Features
 
@@ -70,21 +85,39 @@ Use `cubic images` to list all supported images.
 
 # :dizzy: How to install Cubic?
 
-**Linux** (Snap) and **Windows** (WSL2):
+**Ubuntu** (Snap)
 ```
-sudo snap install cubic
+sudo snap install cubic && \
 sudo snap connect cubic:kvm
 ```
 
-**macOS** (homebrew)
+**macOS** (Homebrew)
 ```
 brew install cubic-vm/cubic/cubic
 ```
 
-**Cargo** (requires *qemu-system-x86*, *qemu-system-arm* and *qemu-img* on the host)
+**Others** (Cargo)
+
+Install the [Rust toolchain](https://rustup.rs) and then build Cubic:
 ```
-rustup toolchain add 1.92.0
 cargo install cubic
+```
+
+Cubic needs QEMU and its UEFI firmware on the host. Install them with your
+package manager:
+```
+# Debian/Ubuntu
+sudo apt install qemu-system qemu-utils ovmf qemu-efi-aarch64
+# Fedora/RHEL
+sudo dnf install qemu-system-x86 qemu-img edk2-ovmf edk2-aarch64
+# Arch Linux
+sudo pacman -S qemu-full edk2-ovmf edk2-armvirt
+# openSUSE
+sudo zypper install qemu qemu-tools qemu-ovmf-x86_64 qemu-uefi-aarch64
+# macOS
+brew install qemu
+# Windows
+winget install SoftwareFreedomConservancy.QEMU
 ```
 
 See the [install](https://cubic-vm.org/install.html) instructions for more information.
@@ -94,9 +127,13 @@ See the [install](https://cubic-vm.org/install.html) instructions for more infor
 Cubic has a simple CLI:
 ```
 $ cubic --help
-Cubic is a lightweight command line manager for virtual machines. It has a
-simple, daemonless and rootless design. All Cubic virtual machines run isolated
-in the user context. Cubic is built on top of QEMU, KVM and cloud-init.
+Cubic runs Linux virtual machines on Linux, macOS and Windows with a single
+command. Every distribution comes as a prebuilt cloud image and is ready to use
+within seconds, so you skip the long installation. Cubic keeps things simple and
+secure by acting as lightweight glue over proven tools. No privileged system
+service is required and every VM runs as your normal user, so you never need
+admin or root rights. Cubic is built on top of QEMU, EDK2, official cloud images
+and cloud-init.
 
 Examples:
 

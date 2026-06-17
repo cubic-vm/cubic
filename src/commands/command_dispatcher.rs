@@ -40,9 +40,14 @@ pub struct GlobalOptions {
 }
 
 const ABOUT: &str = "\
-Cubic is a lightweight command line manager for virtual machines. It
-has a simple, daemonless and rootless design. All Cubic virtual machines
-run isolated in the user context. Cubic is built on top of QEMU, KVM and
+Cubic runs Linux virtual machines on Linux, macOS and Windows with a single
+command.
+
+Every distribution comes as a prebuilt cloud image and is ready to use within
+seconds, so you skip the long installation. Cubic keeps things simple and secure
+by acting as lightweight glue over proven tools. No privileged system service is
+required and every VM runs as your normal user, so you never need admin or root
+rights. Cubic is built on top of QEMU, EDK2, official cloud images and
 cloud-init.
 
 Examples:

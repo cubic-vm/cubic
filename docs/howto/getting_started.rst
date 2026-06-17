@@ -20,7 +20,6 @@ You can list all supported distributions with:
     debian:{10, buster}        amd64   301.7 MiB       no
     debian:{13, trixie}        amd64   411.2 MiB       no
     fedora:41                  amd64   468.9 MiB       no
-    fedora:41                  amd64   468.9 MiB       no
     fedora:42                  amd64   507.6 MiB       no
     fedora:43                  amd64   556.3 MiB       no
     opensuse:15.2              amd64   544.1 MiB       no
@@ -57,10 +56,10 @@ In the next step you can create the virtual machine with a single command:
 
     $ cubic create example --image debian:bookworm
 
-List all Virtual Machine
-------------------------
+List all Virtual Machines
+-------------------------
 
-You can list all your virtual machine with the following command:
+You can list all your virtual machines with the following command:
 
 .. code-block::
 

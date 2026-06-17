@@ -3,11 +3,11 @@ name = "cubic"
 version = "0.0.0-dev"
 authors = ["Roger Knecht <rknecht@pm.me>"]
 license = "MIT OR Apache-2.0"
-description = "Daemonless, rootless CLI virtual machine manager built on QEMU, KVM and cloud-init"
+description = "Cubic spins up Linux virtual machines on Linux, macOS and Windows with a single command."
 readme = "README.md"
 homepage = "https://cubic-vm.org"
 repository = "https://github.com/cubic-vm/cubic"
-keywords = ["cli", "vm"]
+keywords = ["cli", "vm", "qemu", "virtual-machine", "cloud-init"]
 categories = ["command-line-utilities"]
 edition = "2024"
 
