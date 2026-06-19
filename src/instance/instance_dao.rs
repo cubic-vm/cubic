@@ -176,6 +176,24 @@ impl InstanceStore for InstanceDao {
         pid.trim().parse::<u64>().map_err(|_| ())
     }
 
+    fn kill(&self, instance: &Instance) -> Result<()> {
+        let pid = self
+            .get_pid(instance)
+            .map_err(|_| Error::InstanceNotRunning(instance.name.clone()))?;
+
+        let sys_pid = sysinfo::Pid::from_u32(pid as u32);
+        let mut system = sysinfo::System::new();
+        system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[sys_pid]), true);
+        if let Some(process) = system.process(sys_pid) {
+            process.kill();
+        }
+
+        self.fs
+            .remove_file(&self.env.get_qemu_pid_file(&instance.name))
+            .ok();
+        Ok(())
+    }
+
     fn get_monitor(&self, instance: &Instance) -> Result<Monitor> {
         Monitor::new(&self.env, instance)
     }

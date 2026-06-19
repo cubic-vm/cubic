@@ -13,13 +13,17 @@ impl StopInstanceAction {
         }
     }
 
-    pub fn run(&mut self, instance_dao: &dyn InstanceStore) -> Result<()> {
+    pub fn run(&mut self, instance_dao: &dyn InstanceStore, kill: bool) -> Result<()> {
         if !instance_dao.exists(&self.instance.name) {
             return Err(Error::UnknownInstance(self.instance.name.clone()));
         }
 
         if instance_dao.is_running(&self.instance) {
-            instance_dao.get_monitor(&self.instance)?.shutdown()?;
+            if kill {
+                instance_dao.kill(&self.instance)?;
+            } else {
+                instance_dao.get_monitor(&self.instance)?.shutdown()?;
+            }
         }
 
         Ok(())

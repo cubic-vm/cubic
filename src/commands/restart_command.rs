@@ -25,6 +25,7 @@ impl Command for RestartCommand {
         commands::StopCommand {
             all: false,
             wait: true,
+            kill: false,
             instances: self.instances.to_vec(),
         }
         .run(console, context)?;
