@@ -30,6 +30,32 @@ impl InstanceDao {
             env: env.clone(),
         })
     }
+
+    fn is_process_alive(&self, pid: u64) -> bool {
+        let sys_pid = sysinfo::Pid::from_u32(pid as u32);
+        let mut system = sysinfo::System::new();
+        system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[sys_pid]), true);
+        system.process(sys_pid).is_some()
+    }
+
+    fn read_running_pid(&self, instance: &Instance) -> Option<u64> {
+        let pid = self
+            .fs
+            .read_file_to_string(&self.env.get_qemu_pid_file(&instance.name))
+            .ok()?
+            .trim()
+            .parse::<u64>()
+            .ok()?;
+
+        if self.is_process_alive(pid) {
+            Some(pid)
+        } else {
+            self.fs
+                .remove_file(&self.env.get_qemu_pid_file(&instance.name))
+                .ok();
+            None
+        }
+    }
 }
 
 impl InstanceStore for InstanceDao {
@@ -163,17 +189,11 @@ impl InstanceStore for InstanceDao {
     }
 
     fn is_running(&self, instance: &Instance) -> bool {
-        self.fs
-            .path_exists(&self.env.get_qemu_pid_file(&instance.name))
+        self.read_running_pid(instance).is_some()
     }
 
     fn get_pid(&self, instance: &Instance) -> std::result::Result<u64, ()> {
-        let pid = self
-            .fs
-            .read_file_to_string(&self.env.get_qemu_pid_file(&instance.name))
-            .map_err(|_| ())?;
-
-        pid.trim().parse::<u64>().map_err(|_| ())
+        self.read_running_pid(instance).ok_or(())
     }
 
     fn kill(&self, instance: &Instance) -> Result<()> {
