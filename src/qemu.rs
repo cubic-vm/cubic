@@ -9,7 +9,7 @@ mod qmp_message;
 mod tls_client;
 
 pub use monitor::*;
-pub use qemu_firmware::QemuFirmware;
+pub use qemu_firmware::{QemuFirmware, QemuInstall};
 pub use qemu_img::*;
 pub use qemu_path_builder::QemuPathBuilder;
 pub use qemu_system::*;

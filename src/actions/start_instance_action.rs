@@ -4,7 +4,7 @@ use crate::error::{Error, Result};
 use crate::fs::FS;
 use crate::instance::InstanceCertGenerator;
 use crate::models::{Instance, InstanceCertPaths};
-use crate::qemu::{QemuFirmware, QemuPathBuilder, QemuSystem};
+use crate::qemu::{QemuFirmware, QemuInstall, QemuPathBuilder, QemuSystem};
 use crate::ssh_cmd::PortChecker;
 use std::path::PathBuf;
 
@@ -45,9 +45,23 @@ impl StartInstanceAction {
         context.get_instance_store().store(&self.instance)?;
 
         let mut qemu_system = QemuSystem::from(self.instance.arch)?;
-        let firmware = QemuFirmware::locate(QemuPathBuilder::new().get_dirs(), self.instance.arch)
+
+        let path_builder = QemuPathBuilder::new();
+        let install = QemuInstall::find(path_builder.get_dirs());
+
+        let firmware = QemuFirmware::locate(path_builder.get_dirs(), self.instance.arch)
             .ok_or(Error::QemuNotFound)?;
         qemu_system.set_firmware(&firmware);
+
+        if let Some(install) = &install {
+            if let Some(module_dir) = install.find_module_dir() {
+                qemu_system.set_module_dir(&module_dir);
+            }
+            if let Some(datadir) = install.find_datadir() {
+                qemu_system.add_datadir(&datadir);
+            }
+        }
+
         qemu_system.set_cpus(self.instance.cpus);
         qemu_system.set_memory(self.instance.mem.get_bytes() as u64);
         qemu_system.set_console(self.instance.console_port.unwrap(), &instance_dir);
