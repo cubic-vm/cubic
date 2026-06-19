@@ -20,6 +20,9 @@ use std::time::Duration;
 ///   Stop all VM instances:
 ///   $ cubic stop --all --wait
 ///
+///   Force-kill the VM instance 'my-instance':
+///   $ cubic stop --kill my-instance
+///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
 pub struct StopCommand {
@@ -29,6 +32,9 @@ pub struct StopCommand {
     /// Wait for the virtual machine instance to be stopped
     #[clap(short, long, default_value_t = false)]
     pub wait: bool,
+    /// Kill the virtual machine instance
+    #[clap(short, long, default_value_t = false)]
+    pub kill: bool,
     /// Name of the virtual machine instances to stop
     pub instances: Vec<String>,
 }
@@ -46,7 +52,7 @@ impl Command for StopCommand {
         let mut actions = Vec::new();
         for instance in &stop_instances {
             let mut action = StopInstanceAction::new(&instance_store.load(instance)?);
-            action.run(instance_store)?;
+            action.run(instance_store, self.kill)?;
             actions.push(action);
         }
 

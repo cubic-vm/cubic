@@ -57,6 +57,10 @@ pub mod tests {
             std::result::Result::Err(())
         }
 
+        fn kill(&self, _instance: &Instance) -> Result<()> {
+            Ok(())
+        }
+
         fn get_monitor(&self, instance: &Instance) -> Result<Monitor> {
             Err(Error::InstanceNotRunning(instance.name.clone()))
         }
