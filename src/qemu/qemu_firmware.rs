@@ -17,12 +17,12 @@ impl QemuFirmware {
     }
 }
 
-struct QemuInstall {
+pub struct QemuInstall {
     prefix: PathBuf,
 }
 
 impl QemuInstall {
-    fn find(dirs: &[PathBuf]) -> Option<Self> {
+    pub fn find(dirs: &[PathBuf]) -> Option<Self> {
         let names = ["qemu-system-x86_64", "qemu-system-aarch64"];
         let dir = dirs
             .iter()
@@ -33,6 +33,45 @@ impl QemuInstall {
             dir.parent().unwrap_or(dir).to_path_buf()
         };
         Some(Self { prefix })
+    }
+
+    pub fn find_module_dir(&self) -> Option<PathBuf> {
+        self.build_module_dir_candidates()
+            .into_iter()
+            .find(|dir| Self::contains_shared_object(dir))
+    }
+
+    pub fn find_datadir(&self) -> Option<PathBuf> {
+        let dir = self.prefix.join("share/qemu");
+        dir.is_dir().then_some(dir)
+    }
+
+    fn build_module_dir_candidates(&self) -> Vec<PathBuf> {
+        let mut candidates = Vec::new();
+        if let Some(triplet) = self.find_lib_triplet() {
+            candidates.push(self.prefix.join("lib").join(triplet).join("qemu"));
+        }
+        candidates.push(self.prefix.join("lib/qemu"));
+        candidates.push(self.prefix.join("lib64/qemu"));
+        candidates
+    }
+
+    fn find_lib_triplet(&self) -> Option<PathBuf> {
+        let entries = std::fs::read_dir(self.prefix.join("lib")).ok()?;
+        entries
+            .flatten()
+            .map(|entry| entry.path())
+            .filter(|path| path.join("qemu").is_dir())
+            .find_map(|path| path.file_name().map(PathBuf::from))
+    }
+
+    fn contains_shared_object(dir: &Path) -> bool {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return false;
+        };
+        entries
+            .flatten()
+            .any(|entry| entry.path().extension().is_some_and(|ext| ext == "so"))
     }
 
     fn find_firmware(&self, arch: Arch) -> Option<PathBuf> {
@@ -81,5 +120,25 @@ impl QemuInstall {
             .map(|entry| entry.path())
             .filter(|path| path.extension().is_some_and(|ext| ext == "json"))
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_module_dir_candidates_cover_lib_layouts() {
+        let candidates = QemuInstall {
+            prefix: PathBuf::from("/snap/cubic/current/usr"),
+        }
+        .build_module_dir_candidates();
+        assert_eq!(
+            candidates,
+            vec![
+                PathBuf::from("/snap/cubic/current/usr/lib/qemu"),
+                PathBuf::from("/snap/cubic/current/usr/lib64/qemu"),
+            ]
+        );
     }
 }

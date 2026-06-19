@@ -62,6 +62,8 @@ impl QemuSystem {
         command.arg("-boot").arg("c");
         // Disable display
         command.arg("-display").arg("none");
+        // Disable VGA
+        command.arg("-vga").arg("none");
 
         // Sandbox
         #[cfg(feature = "qemu-sandbox")]
@@ -126,7 +128,7 @@ impl QemuSystem {
         let restrict = if isolate { "on" } else { "off" };
         self.command
             .arg("-device")
-            .arg("virtio-net-pci,netdev=net0")
+            .arg("virtio-net-pci,netdev=net0,romfile=")
             .arg("-netdev")
             .arg(format!(
                 "user,id=net0,restrict={restrict},hostfwd=tcp:127.0.0.1:{ssh_port}-:22{hostfwd_options}"
@@ -149,6 +151,14 @@ impl QemuSystem {
         self.command
             .arg("-drive")
             .arg(format!("if=pflash,readonly=on,file={}", path.display()));
+    }
+
+    pub fn set_module_dir(&mut self, dir: &Path) {
+        self.command.set_env("QEMU_MODULE_DIR", dir);
+    }
+
+    pub fn add_datadir(&mut self, dir: &Path) {
+        self.command.arg("-L").arg(dir);
     }
 
     pub fn set_pid_file(&mut self, path: &str) {
@@ -183,6 +193,17 @@ mod tests {
             )),
             Error::QemuNotFound
         ));
+    }
+
+    #[test]
+    fn test_add_datadir_appends_dash_l() {
+        let mut qemu = QemuSystem::from(Arch::AMD64).unwrap();
+        qemu.add_datadir(Path::new("/snap/cubic/current/usr/share/qemu"));
+        assert!(
+            qemu.command
+                .get_command()
+                .contains("-L /snap/cubic/current/usr/share/qemu")
+        );
     }
 
     #[test]

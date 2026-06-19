@@ -65,7 +65,6 @@ parts:
       - qemu-system-x86:$CRAFT_ARCH_BUILD_FOR
       - qemu-system-arm:$CRAFT_ARCH_BUILD_FOR
       - qemu-efi-aarch64:$CRAFT_ARCH_BUILD_FOR
-      - seabios:$CRAFT_ARCH_BUILD_FOR
       - ovmf:$CRAFT_ARCH_BUILD_FOR
     override-build: |
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/*/libicudata*
@@ -81,6 +80,8 @@ parts:
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-ppc
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc32
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/qemu/openbios-sparc64
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/ipxe
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/seabios
   cleanup:
     after:
       - cubic
