@@ -93,12 +93,12 @@ impl InstanceStore for InstanceDao {
         let yaml_path = &self.env.get_instance_yaml_config_file(name);
         let toml_path = &self.env.get_instance_toml_config_file(name);
 
-        let (path, deserializer): (&str, Box<dyn InstanceDeserializer>) =
-            if Path::new(toml_path).exists() {
-                (toml_path, Box::new(TomlInstanceDeserializer::new()))
-            } else {
-                (yaml_path, Box::new(YamlInstanceDeserializer::new()))
-            };
+        let from_yaml = !Path::new(toml_path).exists();
+        let (path, deserializer): (&str, Box<dyn InstanceDeserializer>) = if from_yaml {
+            (yaml_path, Box::new(YamlInstanceDeserializer::new()))
+        } else {
+            (toml_path, Box::new(TomlInstanceDeserializer::new()))
+        };
 
         let instance = self
             .fs
@@ -106,6 +106,11 @@ impl InstanceStore for InstanceDao {
             .ok()
             .and_then(|mut file| deserializer.deserialize(name, &mut file))
             .map(|mut instance| {
+                // migrate the deprecated yaml config to the toml format
+                if from_yaml {
+                    self.store(&instance).ok();
+                }
+
                 let size = QemuImg::new()
                     .get_image_info(&self.env, &instance)
                     .map(|info| DataSize::new(info.actual_size as usize));
