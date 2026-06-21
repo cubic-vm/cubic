@@ -1,6 +1,7 @@
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::InstanceName;
+use crate::util;
 use crate::view::{Console, MapView};
 use clap::Parser;
 
@@ -9,10 +10,15 @@ use clap::Parser;
 pub struct ShowInstanceCommand {
     /// Name of the virtual machine instance
     pub instance: InstanceName,
+
+    /// Show all available information
+    #[arg(short = 'a', long = "all")]
+    pub all: bool,
 }
 
 impl Command for ShowInstanceCommand {
     fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        let env = context.get_env();
         let instance_store = context.get_instance_store();
 
         if !instance_store.exists(self.instance.as_str()) {
@@ -20,8 +26,24 @@ impl Command for ShowInstanceCommand {
         }
 
         let instance = instance_store.load(self.instance.as_str())?;
+        let ssh_key = env.get_ssh_private_key_file(&instance.name);
 
         let mut view = MapView::new();
+        view.add(
+            "Status",
+            if instance_store.is_running(&instance) {
+                "running"
+            } else {
+                "stopped"
+            },
+        );
+        view.add(
+            "PID",
+            &instance_store
+                .get_pid(&instance)
+                .map(|pid| pid.to_string())
+                .unwrap_or("n/a".to_string()),
+        );
         view.add("Arch", &instance.arch.to_string());
         view.add("CPUs", &instance.cpus.to_string());
         view.add("Memory", &instance.mem.to_size());
@@ -34,16 +56,38 @@ impl Command for ShowInstanceCommand {
         );
         view.add("Disk Total", &instance.disk_capacity.to_size());
         view.add("User", &instance.user);
-        view.add("Isolated", if instance.isolate { "yes" } else { "no" });
+        view.add("Isolated", util::to_yes_no(instance.isolate));
         view.add("SSH Port", &instance.ssh_port.to_string());
         view.add(
-            "SSH",
-            &format!("ssh -p {} {}@localhost", instance.ssh_port, instance.user),
+            "Monitor Port",
+            &instance
+                .monitor_port
+                .map(|port| port.to_string())
+                .unwrap_or("n/a".to_string()),
         );
+        view.add(
+            "Console Port",
+            &instance
+                .console_port
+                .map(|port| port.to_string())
+                .unwrap_or("n/a".to_string()),
+        );
+        if self.all {
+            view.add("Disk Image", &env.get_instance_image_file(&instance.name));
+            view.add("Config", &env.get_instance_toml_config_file(&instance.name));
+            view.add("SSH Key", &ssh_key);
+            view.add(
+                "SSH",
+                &format!(
+                    "ssh -i {} -p {} {}@localhost",
+                    ssh_key, instance.ssh_port, instance.user
+                ),
+            );
 
-        for (index, rule) in instance.hostfwd.iter().enumerate() {
-            let key = if index == 0 { "Forward" } else { "" };
-            view.add(key, &rule.to_string());
+            for (index, rule) in instance.hostfwd.iter().enumerate() {
+                let key = if index == 0 { "Forward" } else { "" };
+                view.add(key, &rule.to_string());
+            }
         }
 
         view.print(console);
@@ -86,6 +130,7 @@ mod tests {
 
         ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap(),
+            all: false,
         }
         .run(console, &context)
         .unwrap();
@@ -93,15 +138,18 @@ mod tests {
         assert_eq!(
             console.get_output(),
             "\
-Arch:       amd64
-CPUs:       1
-Memory:     1.0 KiB
-Disk Used:  n/a
-Disk Total: 1.0 MiB
-User:       myuser
-Isolated:   no
-SSH Port:   9000
-SSH:        ssh -p 9000 myuser@localhost
+Status:       stopped
+PID:          n/a
+Arch:         amd64
+CPUs:         1
+Memory:       1.0 KiB
+Disk Used:    n/a
+Disk Total:   1.0 MiB
+User:         myuser
+Isolated:     no
+SSH Port:     9000
+Monitor Port: n/a
+Console Port: n/a
 "
         );
     }
@@ -124,7 +172,9 @@ SSH:        ssh -p 9000 myuser@localhost
             mem: DataSize::new(1),
             disk_capacity: DataSize::new(1),
             ssh_port: 8000,
-            hostfwd: Vec::new(),
+            monitor_port: Some(8001),
+            console_port: Some(8002),
+            hostfwd: vec!["127.0.0.1:4000:40/tcp".parse().unwrap()],
             isolate: true,
             ..Instance::default()
         }]);
@@ -132,6 +182,7 @@ SSH:        ssh -p 9000 myuser@localhost
 
         ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap(),
+            all: true,
         }
         .run(console, &context)
         .unwrap();
@@ -139,15 +190,23 @@ SSH:        ssh -p 9000 myuser@localhost
         assert_eq!(
             console.get_output(),
             "\
-Arch:       arm64
-CPUs:       2
-Memory:     1   B
-Disk Used:  n/a
-Disk Total: 1   B
-User:       john
-Isolated:   yes
-SSH Port:   8000
-SSH:        ssh -p 8000 john@localhost
+Status:       stopped
+PID:          n/a
+Arch:         arm64
+CPUs:         2
+Memory:       1   B
+Disk Used:    n/a
+Disk Total:   1   B
+User:         john
+Isolated:     yes
+SSH Port:     8000
+Monitor Port: 8001
+Console Port: 8002
+Disk Image:   machines/test/machine.img
+Config:       machines/test/instance.toml
+SSH Key:      machines/test/ssh_client_key
+SSH:          ssh -i machines/test/ssh_client_key -p 8000 john@localhost
+Forward:      127.0.0.1:4000:40/tcp
 "
         );
     }
@@ -167,7 +226,8 @@ SSH:        ssh -p 8000 john@localhost
 
         assert!(matches!(
             ShowInstanceCommand {
-                instance: InstanceName::from_str("test").unwrap()
+                instance: InstanceName::from_str("test").unwrap(),
+                all: false,
             }
             .run(console, &context),
             Err(Error::UnknownInstance(_))

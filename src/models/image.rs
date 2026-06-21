@@ -1,11 +1,22 @@
 use crate::models::Arch;
 use serde::{Deserialize, Serialize};
 use std::cmp::{Ord, Ordering};
+use std::fmt;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum HashAlg {
     Sha512,
     Sha256,
+}
+
+impl fmt::Display for HashAlg {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let name = match self {
+            HashAlg::Sha512 => "sha512",
+            HashAlg::Sha256 => "sha256",
+        };
+        write!(f, "{name}")
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize)]

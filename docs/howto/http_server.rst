@@ -54,22 +54,29 @@ You can also open ``http://localhost:8080`` in a browser.
 Show VM Settings
 ----------------
 
-Use ``cubic show`` to inspect the VM configuration including all active port
-forwarding rules:
+Use ``cubic show --all`` to inspect the full VM configuration including all
+active port forwarding rules:
 
 .. code-block::
 
-    $ cubic show webserver
-    Arch:        amd64
-    CPUs:        4
-    Memory:      4.0 GiB
-    Disk Used:   1.2 GiB
-    Disk Total:  100.0 GiB
-    User:        alice
-    Isolated:    no
-    SSH Port:    10022
-    SSH:         ssh -p 10022 alice@localhost
-    Forward:     127.0.0.1:8080:80/tcp
+    $ cubic show --all webserver
+    Status:       stopped
+    PID:          n/a
+    Arch:         amd64
+    CPUs:         4
+    Memory:       4.0 GiB
+    Disk Used:    1.2 GiB
+    Disk Total:   100.0 GiB
+    User:         alice
+    Isolated:     no
+    SSH Port:     10022
+    Monitor Port: 10023
+    Console Port: 10024
+    Disk Image:   ~/.local/share/cubic/machines/webserver/machine.img
+    Config:       ~/.local/share/cubic/machines/webserver/instance.toml
+    SSH Key:      ~/.local/share/cubic/machines/webserver/ssh_client_key
+    SSH:          ssh -i .../webserver/ssh_client_key -p 10022 alice@localhost
+    Forward:      127.0.0.1:8080:80/tcp
 
 Modify VM Settings
 ------------------
