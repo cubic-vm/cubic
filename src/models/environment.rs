@@ -118,6 +118,13 @@ impl Environment {
             .into_owned()
     }
 
+    pub fn get_ssh_private_key_file(&self, instance: &str) -> String {
+        PathBuf::from(self.get_instance_dir2(instance))
+            .join("ssh_client_key")
+            .to_string_lossy()
+            .into_owned()
+    }
+
     pub fn get_ssh_private_key_paths(&self, fs: &FS, instances: Vec<String>) -> Vec<String> {
         let mut private_keys = instances
             .iter()
