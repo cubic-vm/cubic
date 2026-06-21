@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::models::{Instance, TargetInstancePath};
-use crate::ssh_cmd::SftpPath;
+use crate::ssh_cmd::{SftpPath, SshKeyGenerator};
 use crate::util;
 use crate::view::{Console, SpinnerView};
 use russh::keys::*;
@@ -8,9 +8,16 @@ use russh::*;
 use russh_sftp::client::SftpSession;
 use std::env;
 use std::io::{Cursor, Write};
+use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
 use tokio::{io::AsyncReadExt, sync::Mutex};
+
+#[derive(PartialEq)]
+enum AuthMethod {
+    ClientKey,
+    Deprecated,
+}
 
 async fn read_password(console: &mut dyn Console, user: &str) -> Result<String, ()> {
     let mut stdout = std::io::stdout();
@@ -143,18 +150,18 @@ impl Russh {
         if let Ok(true) = auth { Ok(()) } else { Err(()) }
     }
 
-    async fn authenticate_with_pubkey(
+    async fn authenticate_with_keys(
         &self,
         session: &mut russh::client::Handle<Client>,
         user: &str,
-    ) -> Result<(), ()> {
-        let hash_alg = session
-            .best_supported_rsa_hash()
-            .await
-            .map_err(|_| ())?
-            .flatten();
+        keys: &[String],
+    ) -> bool {
+        let Ok(hash_alg) = session.best_supported_rsa_hash().await else {
+            return false;
+        };
+        let hash_alg = hash_alg.flatten();
 
-        for key in &self.private_keys {
+        for key in keys {
             if let Ok(key_pair) = load_secret_key(key, None)
                 && let Ok(auth) = session
                     .authenticate_publickey(
@@ -164,11 +171,11 @@ impl Russh {
                     .await
                 && auth.success()
             {
-                return Ok(());
+                return true;
             }
         }
 
-        Err(())
+        false
     }
 
     async fn authenticate_with_password(
@@ -198,26 +205,72 @@ impl Russh {
         console: &mut dyn Console,
         session: &mut russh::client::Handle<Client>,
         user: &str,
-    ) -> Result<(), ()> {
+        client_key: &str,
+    ) -> Result<AuthMethod, ()> {
+        // The cubic per-instance ssh_client_key is the only supported method.
+        // Everything below is a deprecated fallback.
+        if self
+            .authenticate_with_keys(session, user, &[client_key.to_string()])
+            .await
+        {
+            return Ok(AuthMethod::ClientKey);
+        }
+
+        if self
+            .authenticate_with_keys(session, user, &self.private_keys)
+            .await
+        {
+            return Ok(AuthMethod::Deprecated);
+        }
+
         if self
             .authenticate_with_default_password(session, user)
             .await
             .is_ok()
         {
-            return Ok(());
-        }
-
-        if self.authenticate_with_pubkey(session, user).await.is_ok() {
-            return Ok(());
+            return Ok(AuthMethod::Deprecated);
         }
 
         self.authenticate_with_password(console, session, user)
             .await
+            .map(|_| AuthMethod::Deprecated)
+    }
+
+    fn warn_deprecated_auth(
+        &self,
+        console: &mut dyn Console,
+        machine: &str,
+        client_key: &str,
+    ) -> Result<(), ()> {
+        // create the cubic ssh key if it does not exist yet
+        if !Path::new(client_key).exists() {
+            SshKeyGenerator::new()
+                .generate_key(Path::new(client_key))
+                .map_err(|_| ())?;
+        }
+
+        let pubkey = SshKeyGenerator::new()
+            .generate_public_key(Path::new(client_key))
+            .map_err(|_| ())?;
+
+        console.info(&format!(
+            "WARN: Connected to '{machine}' using a deprecated authentication method."
+        ));
+        console.info(&format!(
+            "Add the following cubic SSH key on '{machine}' to ~/.ssh/authorized_keys:"
+        ));
+        console.info("");
+        console.info(&pubkey);
+        console.info("");
+
+        Ok(())
     }
 
     async fn open_channel(
         &self,
         console: &mut dyn Console,
+        machine: &str,
+        client_key: &str,
         user: &str,
         port: u16,
     ) -> Result<Channel<russh::client::Msg>, ()> {
@@ -239,7 +292,13 @@ impl Russh {
             s.stop()
         }
 
-        self.authenticate(console, &mut session, user).await?;
+        if self
+            .authenticate(console, &mut session, user, client_key)
+            .await?
+            == AuthMethod::Deprecated
+        {
+            self.warn_deprecated_auth(console, machine, client_key).ok();
+        }
 
         session.channel_open_session().await.map_err(|_| ())
     }
@@ -247,10 +306,14 @@ impl Russh {
     async fn handle_interactive_shell(
         &self,
         console: &mut dyn Console,
+        machine: &str,
+        client_key: &str,
         user: &str,
         port: u16,
     ) -> Result<(), ()> {
-        let channel = self.open_channel(console, user, port).await?;
+        let channel = self
+            .open_channel(console, machine, client_key, user, port)
+            .await?;
         let (w, h) = console.get_geometry().unwrap();
         channel
             .request_pty(
@@ -300,10 +363,11 @@ impl Russh {
         console: &mut dyn Console,
         instance: &Instance,
         user: &Option<String>,
+        client_key: &str,
     ) -> Rc<SftpSession> {
         let user = user.as_ref().unwrap_or(&instance.user);
         let channel = self
-            .open_channel(console, user, instance.ssh_port)
+            .open_channel(console, &instance.name, client_key, user, instance.ssh_port)
             .await
             .unwrap();
         channel.request_subsystem(true, "sftp").await.unwrap();
@@ -314,9 +378,18 @@ impl Russh {
         &self,
         console: &mut dyn Console,
         path: &TargetInstancePath,
+        client_key: Option<&str>,
     ) -> SftpPath {
         let sftp = if let Some(instance) = &path.instance {
-            Some(self.open_sftp(console, instance, &path.user).await)
+            Some(
+                self.open_sftp(
+                    console,
+                    instance,
+                    &path.user,
+                    client_key.unwrap_or_default(),
+                )
+                .await,
+            )
         } else {
             None
         };
@@ -331,10 +404,12 @@ impl Russh {
         console: &mut dyn Console,
         _root_dir: &str,
         from: &TargetInstancePath,
+        from_key: Option<&str>,
         to: &TargetInstancePath,
+        to_key: Option<&str>,
     ) -> Result<(), Error> {
-        let source = self.open_target_fs(console, from).await;
-        let target = self.open_target_fs(console, to).await;
+        let source = self.open_target_fs(console, from, from_key).await;
+        let target = self.open_target_fs(console, to, to_key).await;
 
         source.copy(target).await
     }
@@ -351,9 +426,16 @@ impl Russh {
         self.env_vars = env_vars;
     }
 
-    pub fn shell(&mut self, console: &mut dyn Console, user: &str, port: u16) -> bool {
+    pub fn shell(
+        &mut self,
+        console: &mut dyn Console,
+        machine: &str,
+        client_key: &str,
+        user: &str,
+        port: u16,
+    ) -> bool {
         util::AsyncCaller::new()
-            .call(self.handle_interactive_shell(console, user, port))
+            .call(self.handle_interactive_shell(console, machine, client_key, user, port))
             .is_ok()
     }
 
@@ -362,8 +444,11 @@ impl Russh {
         console: &mut dyn Console,
         root_dir: &str,
         from: &TargetInstancePath,
+        from_key: Option<&str>,
         to: &TargetInstancePath,
+        to_key: Option<&str>,
     ) -> Result<(), Error> {
-        util::AsyncCaller::new().call(self.async_copy(console, root_dir, from, to))
+        util::AsyncCaller::new()
+            .call(self.async_copy(console, root_dir, from, from_key, to, to_key))
     }
 }

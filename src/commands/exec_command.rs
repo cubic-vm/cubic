@@ -43,11 +43,12 @@ impl Command for ExecCommand {
             .map(|user| user.to_string())
             .unwrap_or(instance.user.to_string());
         let ssh_port = instance.ssh_port;
+        let client_key = env.get_ssh_private_key_file(name.as_str());
         let mut ssh = Russh::new();
-        ssh.set_private_keys(env.get_ssh_private_key_paths(&FS::new(), vec![name.to_string()]));
+        ssh.set_private_keys(env.get_home_ssh_private_key_paths(&FS::new()));
         ssh.set_cmd(Some(self.cmd.clone()));
         ssh.set_env_vars(self.env_args.env_vars.clone());
-        ssh.shell(console, &user, ssh_port);
+        ssh.shell(console, name.as_str(), &client_key, &user, ssh_port);
         Ok(())
     }
 }

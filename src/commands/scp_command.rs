@@ -52,27 +52,29 @@ impl Command for ScpCommand {
         check_target_is_running(instance_store, &self.from)?;
         check_target_is_running(instance_store, &self.to)?;
 
+        let env = context.get_env();
         let root_dir = env::var("SNAP").unwrap_or_default();
+
+        let from = resolve_target_path(&self.from, instance_store)?;
+        let to = resolve_target_path(&self.to, instance_store)?;
+        let from_key = from
+            .instance
+            .as_ref()
+            .map(|instance| env.get_ssh_private_key_file(&instance.name));
+        let to_key = to
+            .instance
+            .as_ref()
+            .map(|instance| env.get_ssh_private_key_file(&instance.name));
+
         let mut ssh = Russh::new();
-
-        let pubkeys = context.get_env().get_ssh_private_key_paths(
-            &FS::new(),
-            [&self.from, &self.to]
-                .iter()
-                .filter_map(|target_path| {
-                    target_path
-                        .get_target()
-                        .map(|target| target.get_instance().to_string())
-                })
-                .collect(),
-        );
-
-        ssh.set_private_keys(pubkeys);
+        ssh.set_private_keys(env.get_home_ssh_private_key_paths(&FS::new()));
         ssh.copy(
             console,
             &root_dir,
-            &resolve_target_path(&self.from, instance_store)?,
-            &resolve_target_path(&self.to, instance_store)?,
+            &from,
+            from_key.as_deref(),
+            &to,
+            to_key.as_deref(),
         )?;
         Ok(())
     }
