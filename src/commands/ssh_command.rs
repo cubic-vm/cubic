@@ -21,21 +21,12 @@ pub struct SshCommand {
     pub target: Target,
     #[clap(flatten)]
     pub env_args: commands::EnvArgs,
-    /// Command to execute in the virtual machine instance
-    #[clap(hide = true)]
-    pub cmd: Option<String>,
 }
 
 impl Command for SshCommand {
     fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
         let env = context.get_env();
         let instance_store = context.get_instance_store();
-
-        if self.cmd.is_some() {
-            console.info(
-                "Note: cubic ssh with cmd is deprecated - use 'cubic exec <instance> <cmd>' instead",
-            );
-        }
 
         let name = self.target.get_instance();
 
@@ -55,7 +46,6 @@ impl Command for SshCommand {
         let ssh_port = instance.ssh_port;
         let mut ssh = Russh::new();
         ssh.set_private_keys(env.get_ssh_private_key_paths(&FS::new(), vec![name.to_string()]));
-        ssh.set_cmd(self.cmd.clone());
         ssh.set_env_vars(self.env_args.env_vars.clone());
         ssh.shell(console, &user, ssh_port);
         Ok(())
