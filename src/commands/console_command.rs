@@ -37,10 +37,11 @@ impl Command for ConsoleCommand {
         }
         .run(console, context)?;
 
-        console.info("Default credentials: cubic / cubic");
+        let instance = context.get_instance_store().load(&self.instance)?;
+
+        console.info(&format!("Default credentials: {} / cubic", instance.user));
         console.info("Press CTRL+W to exit the console.");
 
-        let instance = context.get_instance_store().load(&self.instance)?;
         let port = instance
             .console_port
             .ok_or_else(|| Error::InstanceNotRunning(self.instance.clone()))?;
