@@ -58,8 +58,6 @@ impl WebClient {
             client: reqwest::blocking::Client::builder()
                 .user_agent("cubic")
                 .timeout(Duration::from_secs(REQUEST_TIMEOUT_SEC))
-                .gzip(true)
-                .brotli(true)
                 .build()
                 .map_err(Error::from)?,
         })
