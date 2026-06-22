@@ -101,7 +101,7 @@ Troubleshoot:
     CouldNotDetectShell,
 
     #[error("SSH Error: {0}")]
-    Ssh(#[from] ssh_key::Error),
+    Ssh(#[from] russh::keys::ssh_key::Error),
 
     #[error("Invalid path: {0}")]
     InvalidPath(String),

@@ -1,5 +1,7 @@
 use crate::error::{Error, Result};
-use ssh_key::{Algorithm, LineEnding, PrivateKey, rand_core::OsRng};
+use getrandom::SysRng;
+use getrandom::rand_core::UnwrapErr;
+use russh::keys::ssh_key::{Algorithm, LineEnding, PrivateKey};
 use std::path::Path;
 
 #[derive(Default)]
@@ -11,7 +13,7 @@ impl SshKeyGenerator {
     }
 
     pub fn generate_key(&self, private_key_path: &Path) -> Result<()> {
-        PrivateKey::random(&mut OsRng, Algorithm::Ed25519)
+        PrivateKey::random(&mut UnwrapErr(SysRng), Algorithm::Ed25519)
             .map_err(Error::from)?
             .write_openssh_file(private_key_path, LineEnding::LF)
             .map(|_| ())
