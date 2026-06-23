@@ -674,7 +674,7 @@ dependencies = [
 
 [[package]]
 name = "cubic"
-version = "0.0.0-dev"
+version = "0.24.0"
 dependencies = [
  "clap",
  "clap_complete",
