@@ -203,6 +203,47 @@ jobs:
             startsWith(github.ref, 'refs/heads/release/')) &&
             'candidate' || 'edge' }}
 
+  publish-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: validate-packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Linux AMD64
+        uses: actions/download-artifact@v4
+        with:
+          name: cubic-linux-amd64
+          path: linux-amd64
+
+      - name: Download Linux ARM64
+        uses: actions/download-artifact@v4
+        with:
+          name: cubic-linux-arm64
+          path: linux-arm64
+
+      - name: Download Windows AMD64
+        uses: actions/download-artifact@v4
+        with:
+          name: cubic-windows-amd64
+          path: windows-amd64
+
+      - name: Stage Release Assets
+        run: |
+          mkdir -p dist
+          cp linux-amd64/cubic "dist/cubic-${GITHUB_REF_NAME}-linux-amd64"
+          cp linux-arm64/cubic "dist/cubic-${GITHUB_REF_NAME}-linux-arm64"
+          cp windows-amd64/cubic.exe "dist/cubic-${GITHUB_REF_NAME}-windows-amd64.exe"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
+
   publish-crate:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: validate-packages
