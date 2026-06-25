@@ -30,12 +30,8 @@ impl Command for ShowInstanceCommand {
 
         let mut view = MapView::new();
         view.add(
-            "Status",
-            if instance_store.is_running(&instance) {
-                "running"
-            } else {
-                "stopped"
-            },
+            "Running",
+            util::to_yes_no(instance_store.is_running(&instance)),
         );
         view.add(
             "PID",
@@ -72,6 +68,13 @@ impl Command for ShowInstanceCommand {
                 .map(|port| port.to_string())
                 .unwrap_or("n/a".to_string()),
         );
+
+        // Port forwarding
+        for (index, rule) in instance.hostfwd.iter().enumerate() {
+            let key = if index == 0 { "Forward" } else { "" };
+            view.add(key, &rule.to_string());
+        }
+
         if self.all {
             view.add("Disk Image", &env.get_instance_image_file(&instance.name));
             view.add("Config", &env.get_instance_toml_config_file(&instance.name));
@@ -83,11 +86,6 @@ impl Command for ShowInstanceCommand {
                     ssh_key, instance.ssh_port, instance.user
                 ),
             );
-
-            for (index, rule) in instance.hostfwd.iter().enumerate() {
-                let key = if index == 0 { "Forward" } else { "" };
-                view.add(key, &rule.to_string());
-            }
         }
 
         view.print(console);
@@ -123,7 +121,7 @@ mod tests {
             mem: DataSize::new(1024),
             disk_capacity: DataSize::new(1048576),
             ssh_port: 9000,
-            hostfwd: Vec::new(),
+            hostfwd: vec!["127.0.0.1:4000:40/tcp".parse().unwrap()],
             ..Instance::default()
         }]);
         let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
@@ -138,7 +136,7 @@ mod tests {
         assert_eq!(
             console.get_output(),
             "\
-Status:       stopped
+Running:      no
 PID:          n/a
 Arch:         amd64
 CPUs:         1
@@ -150,6 +148,7 @@ Isolated:     no
 SSH Port:     9000
 Monitor Port: n/a
 Console Port: n/a
+Forward:      127.0.0.1:4000:40/tcp
 "
         );
     }
@@ -174,7 +173,10 @@ Console Port: n/a
             ssh_port: 8000,
             monitor_port: Some(8001),
             console_port: Some(8002),
-            hostfwd: vec!["127.0.0.1:4000:40/tcp".parse().unwrap()],
+            hostfwd: vec![
+                "127.0.0.1:4000:40/tcp".parse().unwrap(),
+                "0.0.0.0:80:8000/udp".parse().unwrap(),
+            ],
             isolate: true,
             ..Instance::default()
         }]);
@@ -190,7 +192,7 @@ Console Port: n/a
         assert_eq!(
             console.get_output(),
             "\
-Status:       stopped
+Running:      no
 PID:          n/a
 Arch:         arm64
 CPUs:         2
@@ -202,11 +204,12 @@ Isolated:     yes
 SSH Port:     8000
 Monitor Port: 8001
 Console Port: 8002
+Forward:      127.0.0.1:4000:40/tcp
+              0.0.0.0:80:8000/udp
 Disk Image:   machines/test/machine.img
 Config:       machines/test/instance.toml
 SSH Key:      machines/test/ssh_client_key
 SSH:          ssh -i machines/test/ssh_client_key -p 8000 john@localhost
-Forward:      127.0.0.1:4000:40/tcp
 "
         );
     }
