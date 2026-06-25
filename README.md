@@ -211,6 +211,36 @@ We are actively looking for help to improve Cubic. You can help in various ways:
 - :construction_worker: If you are a developer and you want to submit a change, please have a look at the [contribution page](CONTRIBUTING.md)!
 - :pencil: If you are a technical writer and you want to improve the documentation, please have a look at the [contribution page](CONTRIBUTING.md)!
 
+# :package: Dependencies
+
+Cubic keeps its dependency tree small and lean, acting as thin glue over proven
+tools rather than reinventing them.
+
+At runtime Cubic has a single dependency: **QEMU**, the virtualization engine it
+drives to run every VM.
+
+| Rust Crate | Usage |
+|------------|-------|
+| clap | Parse CLI commands, arguments, and flags |
+| clap_complete | Generate shell completion scripts |
+| crossterm | Terminal control for the interactive console and views |
+| getrandom | Secure randomness for SSH key generation |
+| regex | Parse image and instance names and scrape image version listings |
+| rcgen | Generate the per-instance self-signed certificates for QEMU mTLS |
+| reqwest | Download cloud images over HTTPS |
+| russh | Pure-Rust SSH client to connect into VMs |
+| russh-sftp | SFTP file transfer over the SSH connection |
+| rustls | TLS for the QEMU mTLS control channel |
+| rustls-pki-types | Shared certificate and key types backing rustls |
+| serde | Derive serialization for config and QMP messages |
+| serde_json | QMP protocol and firmware descriptor parsing |
+| serde_yaml | Parse cloud-init and instance YAML |
+| sha2 | Verify downloaded image checksums |
+| sysinfo | Read the host username and detect running QEMU processes |
+| thiserror | Derive the crate's error types |
+| tokio | Async runtime for SSH and SFTP transfers |
+| toml | Read and write the `instance.toml` config |
+
 # :page_with_curl: License
 
 Cubic is dual-licensed under [Apache](LICENSE-APACHE) and [MIT](LICENSE-MIT).
