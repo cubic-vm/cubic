@@ -3,6 +3,7 @@
 
 [![github.com](https://github.com/cubic-vm/cubic/actions/workflows/build.yml/badge.svg)](https://github.com/cubic-vm/cubic/actions/workflows/build.yml)
 [![crates.io](https://img.shields.io/crates/v/cubic.svg)](https://crates.io/crates/cubic)
+[![MSRV](https://img.shields.io/crates/msrv/cubic.svg)](https://crates.io/crates/cubic)
 [![snapcraft.io](https://snapcraft.io/cubic/badge.svg)](https://snapcraft.io/cubic)
 
 
