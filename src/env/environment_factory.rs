@@ -1,6 +1,7 @@
 use crate::error::{Error, Result};
 use crate::models::Environment;
 use std::env;
+use sysinfo::{ProcessesToUpdate, System, Users};
 
 const ROOT_USERNAME: &str = "root";
 pub const DEFAULT_USERNAME: &str = "cubic";
@@ -12,8 +13,19 @@ impl EnvironmentFactory {
         env::var(var).map_err(|_| Error::UnsetEnvVar(var.to_string()))
     }
 
+    fn read_current_username() -> Option<String> {
+        let pid = sysinfo::get_current_pid().ok()?;
+        let mut system = System::new();
+        system.refresh_processes(ProcessesToUpdate::Some(&[pid]), false);
+        let uid = system.process(pid)?.user_id()?;
+        let users = Users::new_with_refreshed_list();
+        users
+            .get_user_by_id(uid)
+            .map(|user| user.name().to_string())
+    }
+
     pub fn get_username() -> String {
-        let username = whoami::username().unwrap_or(DEFAULT_USERNAME.to_string());
+        let username = Self::read_current_username().unwrap_or(DEFAULT_USERNAME.to_string());
         if username == ROOT_USERNAME {
             DEFAULT_USERNAME.to_string()
         } else {
