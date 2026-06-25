@@ -81,7 +81,7 @@ Install the `Rust toolchain`_:
 
 .. code-block::
 
-    rustup toolchain add 1.92.0
+    rustup toolchain install stable
 
 .. _Rust toolchain: https://rustup.rs
 

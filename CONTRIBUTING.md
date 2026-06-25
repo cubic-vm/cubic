@@ -40,7 +40,7 @@ Then clone the repository:
 ```bash
 git clone https://github.com/cubic-vm/cubic.git
 cd cubic/
-rustup toolchain add 1.92.0
+rustup toolchain install stable
 ```
 
 ## How to build?
