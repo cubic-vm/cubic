@@ -111,10 +111,10 @@ impl InstanceStore for InstanceDao {
                     self.store(&instance).ok();
                 }
 
-                let size = QemuImg::new()
-                    .get_image_info(&self.env, &instance)
-                    .map(|info| DataSize::new(info.actual_size as usize));
-                instance.disk_used = size;
+                if let Some(info) = QemuImg::new().get_image_info(&self.env, &instance) {
+                    instance.disk_used = Some(DataSize::new(info.actual_size as usize));
+                    instance.disk_capacity = DataSize::new(info.virtual_size as usize);
+                }
                 instance
             });
 
