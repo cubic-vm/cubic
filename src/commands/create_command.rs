@@ -5,14 +5,12 @@ use crate::commands::{
 };
 use crate::error::{Error, Result};
 use crate::fs::FS;
-use crate::models::{DataSize, ImageName, Instance, InstanceName, PortForward};
+use crate::models::{DataSize, ImageName, Instance, InstanceName, PortForward, ResourceAllocator};
 use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
 use crate::view::SpinnerView;
 use clap::{ArgAction, Parser};
 
-pub const DEFAULT_CPU_COUNT: u16 = 4;
-pub const DEFAULT_MEM_SIZE: &str = "4G";
 pub const DEFAULT_DISK_SIZE: &str = "100G";
 
 /// Create VM instances
@@ -51,12 +49,12 @@ pub struct CreateCommand {
     /// Username (default: 'cubic')
     #[clap(short, long)]
     user: Option<String>,
-    /// Number of vCPUs for the VM instance
-    #[clap(short, long, default_value_t = DEFAULT_CPU_COUNT)]
-    cpus: u16,
-    /// Memory amount of the VM instance
-    #[clap(alias = "mem", short, long, default_value = DEFAULT_MEM_SIZE)]
-    memory: DataSize,
+    /// Number of vCPUs for the VM instance (default: derived from host resources)
+    #[clap(short, long)]
+    cpus: Option<u16>,
+    /// Memory amount of the VM instance (default: derived from host resources)
+    #[clap(alias = "mem", short, long)]
+    memory: Option<DataSize>,
     /// Disk size of the VM instance
     #[clap(short, long, default_value = DEFAULT_DISK_SIZE)]
     disk: DataSize,
@@ -87,6 +85,9 @@ impl Command for CreateCommand {
         let mut create_spinner = SpinnerView::new("Creating virtual machine instance".to_string());
         let ssh_port = PortChecker::new().get_new_port()?;
 
+        let (default_cpus, default_mem) =
+            ResourceAllocator::read_from_host().get_default_resources();
+
         let instance = Instance {
             name: self.instance_name.to_string(),
             arch: image.arch,
@@ -95,8 +96,8 @@ impl Command for CreateCommand {
                 .as_deref()
                 .unwrap_or(context.get_env().get_username())
                 .to_string(),
-            cpus: self.cpus,
-            mem: self.memory.clone(),
+            cpus: self.cpus.unwrap_or(default_cpus),
+            mem: self.memory.clone().unwrap_or(default_mem),
             disk_capacity: self.disk.clone(),
             ssh_port,
             hostfwd: self.port.clone(),
