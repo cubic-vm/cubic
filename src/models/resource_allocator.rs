@@ -4,6 +4,10 @@ use sysinfo::System;
 const MIB: usize = 1024 * 1024;
 const GIB: usize = 1024 * MIB;
 
+/// Memory kept aside for the host and QEMU overhead so a machine never claims
+/// all of the available memory.
+pub const HOST_MEMORY_RESERVE: usize = GIB;
+
 /// Decides the default vCPU count and memory for a new machine based on the
 /// resources of the host it runs on.
 ///
@@ -60,7 +64,21 @@ impl ResourceAllocator {
     pub fn get_default_resources(&self) -> (u16, DataSize) {
         let by_threads = self.host_threads as usize / 4;
         let by_memory = self.host_mem_bytes / (4 * GIB);
-        let level = by_threads.min(by_memory).saturating_sub(1);
+        Self::resources_for_level(by_threads.min(by_memory).saturating_sub(1))
+    }
+
+    /// Return the largest level whose memory fits in `available_bytes` after
+    /// holding back the host reserve. Level N is 2N vCPUs and N GiB, so the
+    /// level is the budget in whole GiB. Falls back to 1 vCPU and 512 MiB and
+    /// returns None when not even that fits.
+    pub fn get_resources_for_budget(available_bytes: usize) -> Option<(u16, DataSize)> {
+        let budget = available_bytes.saturating_sub(HOST_MEMORY_RESERVE);
+        (budget >= 512 * MIB).then(|| Self::resources_for_level(budget / GIB))
+    }
+
+    /// Map a level to its machine size. Level N is 2N vCPUs and N GiB, and the
+    /// level 0 floor is 1 vCPU and 512 MiB.
+    fn resources_for_level(level: usize) -> (u16, DataSize) {
         if level == 0 {
             (1, DataSize::new(512 * MIB))
         } else {
@@ -151,5 +169,38 @@ mod tests {
     fn test_small_host_falls_back_to_one_core() {
         assert_resources(4, 4, 1, 512 * MIB);
         assert_resources(1, 1, 1, 512 * MIB);
+    }
+
+    #[test]
+    fn test_budget_reserves_host_memory() {
+        // 5 GiB available minus the 1 GiB reserve leaves a 4 GiB budget.
+        assert_eq!(
+            ResourceAllocator::get_resources_for_budget(5 * GIB),
+            Some((8, DataSize::new(4 * GIB)))
+        );
+    }
+
+    #[test]
+    fn test_budget_rounds_down_to_whole_gib() {
+        // 3.5 GiB available, 2.5 GiB budget, fits level 2.
+        assert_eq!(
+            ResourceAllocator::get_resources_for_budget(3 * GIB + 512 * MIB),
+            Some((4, DataSize::new(2 * GIB)))
+        );
+    }
+
+    #[test]
+    fn test_budget_falls_back_to_512_mib() {
+        // Budget between 512 MiB and 1 GiB yields the smallest machine.
+        assert_eq!(
+            ResourceAllocator::get_resources_for_budget(GIB + 512 * MIB),
+            Some((1, DataSize::new(512 * MIB)))
+        );
+    }
+
+    #[test]
+    fn test_budget_too_small_returns_none() {
+        assert_eq!(ResourceAllocator::get_resources_for_budget(GIB), None);
+        assert_eq!(ResourceAllocator::get_resources_for_budget(0), None);
     }
 }

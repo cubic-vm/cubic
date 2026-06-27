@@ -32,6 +32,7 @@ impl Command for RestartCommand {
         commands::StartCommand {
             qemu_args: None,
             wait: true,
+            yes: commands::YesArg { value: false },
             instances: self.instances.to_vec(),
         }
         .run(console, context)
