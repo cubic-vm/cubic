@@ -6,7 +6,6 @@
 [![MSRV](https://img.shields.io/crates/msrv/cubic.svg)](https://crates.io/crates/cubic)
 [![snapcraft.io](https://snapcraft.io/cubic/badge.svg)](https://snapcraft.io/cubic)
 
-
 Cubic spins up Linux virtual machines on Linux, macOS and Windows with a single
 command.
 
@@ -17,7 +16,7 @@ required and every VM runs as your normal user, so you never need admin or root
 rights.
 Cubic is built on top of `QEMU`, `EDK2`, official cloud images and `cloud-init`.
 
-[![Get it from the Snap Store](https://snapcraft.io/en/dark/install.svg)](https://snapcraft.io/cubic)
+![Cubic Demo](docs/cubic.gif)
 
 # :monocle_face: Why use Cubic?
 
@@ -129,12 +128,14 @@ Cubic has a simple CLI:
 ```
 $ cubic --help
 Cubic runs Linux virtual machines on Linux, macOS and Windows with a single
-command. Every distribution comes as a prebuilt cloud image and is ready to use
-within seconds, so you skip the long installation. Cubic keeps things simple and
-secure by acting as lightweight glue over proven tools. No privileged system
-service is required and every VM runs as your normal user, so you never need
-admin or root rights. Cubic is built on top of QEMU, EDK2, official cloud images
-and cloud-init.
+command.
+
+Every distribution comes as a prebuilt cloud image and is ready to use within
+seconds, so you skip the long installation. Cubic keeps things simple and secure
+by acting as lightweight glue over proven tools. No privileged system service is
+required and every VM runs as your normal user, so you never need admin or root
+rights. Cubic is built on top of QEMU, EDK2, official cloud images and
+cloud-init.
 
 Examples:
 
@@ -165,8 +166,7 @@ Examples:
 For more information, visit: https://cubic-vm.org/
 The source code is located at: https://github.com/cubic-vm/cubic
 
-
-Usage: cubic [OPTIONS] <COMMAND>
+Usage: cubic [OPTIONS] [COMMAND]
 
 Commands:
   run          Create and start VM instances
