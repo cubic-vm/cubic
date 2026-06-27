@@ -33,6 +33,7 @@ impl Command for ConsoleCommand {
         commands::StartCommand {
             qemu_args: None,
             wait: false,
+            yes: commands::YesArg { value: false },
             instances: vec![self.instance.to_string()],
         }
         .run(console, context)?;

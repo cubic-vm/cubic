@@ -32,6 +32,11 @@ pub enum Error {
     StartTimeout,
 
     #[error(
+        "Not enough free memory to start instance '{0}'.\n\nTroubleshoot:\n  - Free up memory by stopping other instances or processes\n  - Reduce the instance memory: `cubic modify {0} --memory <size>`\n  - Accept the proposed smaller size by running with --yes\n"
+    )]
+    NotEnoughMemory(String),
+
+    #[error(
         "Instance name '{0}' is already taken.\n\nOptions:\n  - Choose a different name\n  - Connect to existing instance: `cubic ssh {0}`"
     )]
     InstanceAlreadyExists(String),
