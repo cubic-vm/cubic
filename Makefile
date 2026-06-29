@@ -60,9 +60,8 @@ build: build-image
 	${DOCKER_CMD} ${IMAGE} cargo build
 
 doc: build-image
-	@${DOCKER_CMD} -it ${IMAGE} ./scripts/generate-docs.sh v0.0.0-dev
-	@${DOCKER_CMD} -it ${IMAGE} sphinx-build docs target/doc
-	@${DOCKER_CMD} -it ${IMAGE} python3 -m http.server -d target/doc 4000
+	@${DOCKER_CMD} -it ${IMAGE} ./scripts/generate-page.sh v0.0.0-dev
+	@${DOCKER_CMD} -it ${IMAGE} python3 -m http.server -d target/page 4000
 
 suppress: build-image
 	@${DOCKER_CMD} -it ${IMAGE} /root/bin/vulnlog suppress vulnlog.yml -o .cargo/audit.toml

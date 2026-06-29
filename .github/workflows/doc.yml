@@ -28,11 +28,8 @@ jobs:
       - name: Install Sphinx
         run: sudo apt install -y python3-sphinx python3-sphinx-rtd-theme
 
-      - name: Generate Docs
-        run: ./scripts/generate-docs.sh ${{ github.ref_name }}
-
-      - name: Generate HTML
-        run: sphinx-build docs target/doc
+      - name: Generate Page
+        run: ./scripts/generate-page.sh ${{ github.ref_name }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -40,7 +37,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'target/doc'
+          path: 'target/page'
 
       - name: Deploy to GitHub Pages
         id: deployment

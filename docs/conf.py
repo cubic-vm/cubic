@@ -21,4 +21,5 @@ html_theme_options = {
 }
 html_sidebars = { '**': ['globaltoc.html', 'searchbox.html'] }
 html_static_path = ['_static']
+html_js_files = ['home-link.js']
 html_logo = "logo.svg"
