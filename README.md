@@ -1,5 +1,5 @@
 [![Cubic](https://github.com/cubic-vm/cubic/blob/main/cubic.svg)](https://github.com/cubic-vm/cubic)
-:star: Please star us on [GitHub](https://github.com/cubic-vm/cubic) to promote the project!
+⭐ Please star us on [GitHub](https://github.com/cubic-vm/cubic) to promote the project!
 
 [![github.com](https://github.com/cubic-vm/cubic/actions/workflows/build.yml/badge.svg)](https://github.com/cubic-vm/cubic/actions/workflows/build.yml)
 [![crates.io](https://img.shields.io/crates/v/cubic.svg)](https://crates.io/crates/cubic)
@@ -18,7 +18,7 @@ Cubic is built on top of `QEMU`, `EDK2`, official cloud images and `cloud-init`.
 
 ![Cubic Demo](docs/cubic.gif)
 
-# :monocle_face: Why use Cubic?
+# 🧐 Why use Cubic?
 
 One command takes you from nothing to a shell inside a fresh Linux VM. The images
 are official and verified, downloaded straight from each distribution. Every
@@ -36,7 +36,7 @@ Cubic fits a lot of everyday workflows:
 - Reproduce CI or production Linux environments locally
 - Run local services such as HTTP servers and databases with port forwarding
 
-# :fire: Features
+# 🔥 Features
 
 - Simple command-line interface
 - Supports the following guest OS:
@@ -54,7 +54,7 @@ Cubic fits a lot of everyday workflows:
 - Daemonless design which does not require root privileges
 - Written in Rust
 
-# :rocket: Quick Start
+# 🚀 Quick Start
 
 A virtual machine instance can be created with a single command. This example
 creates an instance from a Ubuntu image with the name `quickstart`.
@@ -83,7 +83,7 @@ cubic@quickstart:~$
 
 Use `cubic images` to list all supported images.
 
-# :dizzy: How to install Cubic?
+# 💫 How to install Cubic?
 
 **Ubuntu** (Snap)
 ```
@@ -122,7 +122,7 @@ winget install SoftwareFreedomConservancy.QEMU
 
 See the [install](https://cubic-vm.org/install.html) instructions for more information.
 
-# :bulb: How to use Cubic?
+# 💡 How to use Cubic?
 
 Cubic has a simple CLI:
 ```
@@ -196,22 +196,22 @@ Options:
   -V, --version  Print version
 ```
 
-# :hammer: How to Build Cubic from Source?
+# 🔨 How to Build Cubic from Source?
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on setting up a development
 environment and building the project.
 
-# :speech_balloon: How to contribute to Cubic?
+# 💬 How to contribute to Cubic?
 
 We are actively looking for help to improve Cubic. You can help in various ways:
 
-- :girl: Increase Cubic's user base by installing and using it!
-- :star: Star us on [Github](https://github.com/cubic-vm/cubic) to promote the project!
-- :beetle: If you found a bug or you are interested in a feature, please create an [issue on Github](https://github.com/cubic-vm/cubic/issues)!
-- :construction_worker: If you are a developer and you want to submit a change, please have a look at the [contribution page](CONTRIBUTING.md)!
-- :pencil: If you are a technical writer and you want to improve the documentation, please have a look at the [contribution page](CONTRIBUTING.md)!
+- 👧 Increase Cubic's user base by installing and using it!
+- ⭐ Star us on [Github](https://github.com/cubic-vm/cubic) to promote the project!
+- 🪲 If you found a bug or you are interested in a feature, please create an [issue on Github](https://github.com/cubic-vm/cubic/issues)!
+- 👷 If you are a developer and you want to submit a change, please have a look at the [contribution page](CONTRIBUTING.md)!
+- 📝 If you are a technical writer and you want to improve the documentation, please have a look at the [contribution page](CONTRIBUTING.md)!
 
-# :package: Dependencies
+# 📦 Dependencies
 
 Cubic keeps its dependency tree small and lean, acting as thin glue over proven
 tools rather than reinventing them.
@@ -241,6 +241,6 @@ drives to run every VM.
 | tokio | Async runtime for SSH and SFTP transfers |
 | toml | Read and write the `instance.toml` config |
 
-# :page_with_curl: License
+# 📃 License
 
 Cubic is dual-licensed under [Apache](LICENSE-APACHE) and [MIT](LICENSE-MIT).
