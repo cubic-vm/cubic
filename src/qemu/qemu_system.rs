@@ -62,8 +62,18 @@ impl QemuSystem {
         command.arg("-boot").arg("c");
         // Disable display
         command.arg("-display").arg("none");
-        // Disable VGA
-        command.arg("-vga").arg("none");
+        // Do not create emulated default devices (NIC, VGA, serial, parallel,
+        // floppy, CD-ROM, monitor). Every device cubic needs is declared
+        // explicitly, so only virtio devices plus the explicit serial console
+        // remain.
+        command.arg("-nodefaults");
+
+        // Provide guest entropy via virtio-rng. Pin the builtin backend so it
+        // never falls back to /dev/urandom, which is absent on Windows.
+        command.arg("-object").arg("rng-builtin,id=rng0");
+        command.arg("-device").arg("virtio-rng-pci,rng=rng0");
+        // Allow memory reclaim via virtio-balloon.
+        command.arg("-device").arg("virtio-balloon-pci");
 
         // Sandbox
         #[cfg(feature = "qemu-sandbox")]
@@ -204,6 +214,28 @@ mod tests {
                 .get_command()
                 .contains("-L /snap/cubic/current/usr/share/qemu")
         );
+    }
+
+    #[test]
+    fn test_from_suppresses_emulated_default_devices() {
+        let qemu = QemuSystem::from(Arch::AMD64).unwrap();
+        let command = qemu.command.get_command();
+        assert!(command.contains("-nodefaults"));
+        assert!(!command.contains("-vga none"));
+    }
+
+    #[test]
+    fn test_from_adds_virtio_rng_with_builtin_backend() {
+        let qemu = QemuSystem::from(Arch::AMD64).unwrap();
+        let command = qemu.command.get_command();
+        assert!(command.contains("rng-builtin,id=rng0"));
+        assert!(command.contains("virtio-rng-pci,rng=rng0"));
+    }
+
+    #[test]
+    fn test_from_adds_virtio_balloon() {
+        let qemu = QemuSystem::from(Arch::ARM64).unwrap();
+        assert!(qemu.command.get_command().contains("virtio-balloon-pci"));
     }
 
     #[test]
