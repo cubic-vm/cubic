@@ -41,9 +41,9 @@ impl Command for DeleteCommand {
         }
 
         // Print instances to be deleted
-        console.info("The following VM instances are going to be deleted:");
+        console.print("The following VM instances are going to be deleted:");
         for instance in &self.instances {
-            console.info(&format!("  - {instance}"));
+            console.print(&format!("  - {instance}"));
         }
 
         // Ask for confirmation

@@ -2,14 +2,41 @@ use crate::commands::Verbosity;
 use crate::view::{Animation, Console};
 use crossterm::QueueableCommand;
 use crossterm::cursor::MoveToColumn;
-use crossterm::style::Print;
+use crossterm::style::{Attribute, Color, Print, SetAttribute, SetForegroundColor};
 use crossterm::terminal::{Clear, ClearType};
-use std::io::{IsTerminal, Stdout, Write, stdout};
+use std::io::{IsTerminal, Stdout, Write, stderr, stdout};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 const ANIMATION_TICK_MS: u64 = 100;
+
+fn is_no_color() -> bool {
+    std::env::var_os("NO_COLOR").is_some()
+}
+
+// On Windows, ANSI escape codes are only interpreted once virtual terminal
+// processing is turned on for the console; this call is a no-op elsewhere.
+#[cfg(windows)]
+fn enable_ansi_support() {
+    crossterm::ansi_support::supports_ansi();
+}
+
+#[cfg(not(windows))]
+fn enable_ansi_support() {}
+
+fn colorize(label: &str, color: Color, enabled: bool) -> String {
+    if enabled {
+        format!(
+            "{}{}{label}{}",
+            SetForegroundColor(color),
+            SetAttribute(Attribute::Bold),
+            SetAttribute(Attribute::Reset)
+        )
+    } else {
+        label.to_string()
+    }
+}
 
 struct AnimationState {
     inner: Mutex<AnimationInner>,
@@ -27,10 +54,22 @@ enum Stream {
 }
 
 impl Stream {
-    fn print(self, msg: &str) {
+    fn is_terminal(&self) -> bool {
         match self {
-            Stream::Stdout => println!("{msg}"),
-            Stream::Stderr => eprintln!("{msg}"),
+            Stream::Stdout => stdout().is_terminal(),
+            Stream::Stderr => stderr().is_terminal(),
+        }
+    }
+
+    fn print(self, msg: &str, style: Option<(&str, Color)>) {
+        let enabled = style.is_some() && self.is_terminal() && !is_no_color();
+        let text = match style {
+            Some((label, color)) => format!("{} {msg}", colorize(label, color, enabled)),
+            None => msg.to_string(),
+        };
+        match self {
+            Stream::Stdout => println!("{text}"),
+            Stream::Stderr => eprintln!("{text}"),
         }
     }
 }
@@ -44,6 +83,7 @@ pub struct Stdio {
 
 impl Stdio {
     pub fn new() -> Self {
+        enable_ansi_support();
         Self {
             verbosity: Verbosity::new(false, false),
             is_tty: stdout().is_terminal(),
@@ -62,14 +102,14 @@ impl Stdio {
     // animation is playing the render thread is held off (it only writes while
     // holding the state lock): clear its line, print the message, then redraw a
     // fresh frame immediately so the live line stays just below the output.
-    fn emit(&self, stream: Stream, msg: &str) {
+    fn emit(&self, stream: Stream, msg: &str, style: Option<(&str, Color)>) {
         let inner = self.state.inner.lock().unwrap();
         let animation = inner.animation.clone();
         let mut stdout = stdout();
         if animation.is_some() {
             AnimationState::clear_line(&mut stdout);
         }
-        stream.print(msg);
+        stream.print(msg, style);
         if let Some(animation) = animation {
             AnimationState::draw_frame(&mut stdout, &animation);
         }
@@ -129,14 +169,22 @@ impl Console for Stdio {
         self.verbosity = verbosity;
     }
 
+    fn print(&mut self, msg: &str) {
+        self.emit(Stream::Stdout, msg, None);
+    }
+
     fn info(&mut self, msg: &str) {
         if !self.verbosity.is_quiet() {
-            self.emit(Stream::Stdout, msg);
+            self.emit(Stream::Stdout, msg, Some(("info:", Color::Blue)));
         }
     }
 
+    fn warn(&mut self, msg: &str) {
+        self.emit(Stream::Stderr, msg, Some(("warn:", Color::Yellow)));
+    }
+
     fn error(&mut self, msg: &str) {
-        self.emit(Stream::Stderr, msg);
+        self.emit(Stream::Stderr, msg, Some(("error:", Color::Red)));
     }
 
     fn get_geometry(&self) -> Option<(u32, u32)> {
@@ -185,5 +233,23 @@ impl Drop for Stdio {
         if let Some(thread) = self.thread.take() {
             thread.join().ok();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_colorize_wraps_label_when_enabled() {
+        let text = colorize("error:", Color::Red, true);
+        assert!(text.starts_with("\u{1b}["));
+        assert!(text.contains("error:"));
+        assert!(text.ends_with("\u{1b}[0m"));
+    }
+
+    #[test]
+    fn test_colorize_leaves_label_unchanged_when_disabled() {
+        assert_eq!(colorize("error:", Color::Red, false), "error:");
     }
 }

@@ -30,12 +30,20 @@ pub mod tests {
             Verbosity::Normal
         }
 
-        fn info(&mut self, msg: &str) {
+        fn print(&mut self, msg: &str) {
             self.log(msg)
         }
 
+        fn info(&mut self, msg: &str) {
+            self.log(&format!("info: {msg}"))
+        }
+
+        fn warn(&mut self, msg: &str) {
+            self.log(&format!("warn: {msg}"))
+        }
+
         fn error(&mut self, msg: &str) {
-            self.log(msg)
+            self.log(&format!("error: {msg}"))
         }
 
         fn get_geometry(&self) -> Option<(u32, u32)> {

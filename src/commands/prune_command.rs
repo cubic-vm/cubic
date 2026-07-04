@@ -31,12 +31,12 @@ impl Command for PruneCommand {
         )
         .to_size();
 
-        console.info("The following items will be deleted:");
-        console.info("  - VM image list cache");
-        console.info("  - Downloaded VM images");
+        console.print("The following items will be deleted:");
+        console.print("  - VM image list cache");
+        console.print("  - Downloaded VM images");
 
         // Print size of files to be deleted
-        console.info(&format!("\nTotal size: {total}\n"));
+        console.print(&format!("\nTotal size: {total}\n"));
 
         if self.yes.value || util::confirm("Are you sure you want to continue? [y/N]") {
             // Delete files
@@ -44,7 +44,7 @@ impl Command for PruneCommand {
             fs.remove_dir(&env.get_image_dir()).ok();
 
             // Print size of deleted files
-            console.info(&format!("Successfully freed {total} of disk space."));
+            console.print(&format!("Successfully freed {total} of disk space."));
         }
 
         Ok(())

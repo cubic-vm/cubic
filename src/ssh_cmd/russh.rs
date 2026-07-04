@@ -253,15 +253,15 @@ impl Russh {
             .generate_public_key(Path::new(client_key))
             .map_err(|_| ())?;
 
-        console.info(&format!(
-            "WARN: Connected to '{machine}' using a deprecated authentication method."
+        console.warn(&format!(
+            "Connected to '{machine}' using a deprecated authentication method."
         ));
-        console.info(&format!(
+        console.warn(&format!(
             "Add the following cubic SSH key on '{machine}' to ~/.ssh/authorized_keys:"
         ));
-        console.info("");
-        console.info(&pubkey);
-        console.info("");
+        console.print("");
+        console.print(&pubkey);
+        console.print("");
 
         Ok(())
     }
