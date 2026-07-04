@@ -27,7 +27,7 @@ impl MapView {
             if !key.is_empty() {
                 key += ":";
             }
-            console.info(&format!("{key:max_key_length$} {value}"));
+            console.print(&format!("{key:max_key_length$} {value}"));
         });
     }
 }

@@ -58,7 +58,7 @@ impl TableView {
                 })
                 .collect::<Vec<_>>()
                 .join("   ");
-            console.info(line.trim_end());
+            console.print(line.trim_end());
             thread::sleep(Duration::from_millis(10));
         }
     }

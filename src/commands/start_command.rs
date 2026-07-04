@@ -116,7 +116,7 @@ impl StartCommand {
             .ok_or_else(|| Error::NotEnoughMemory(instance.name.clone()))?;
         let cpus = cpus.min(instance.cpus);
 
-        console.info(&format!(
+        console.warn(&format!(
             "Instance '{}' requests {} vCPUs and {} but only {} is available.\nIt can be started with {} vCPUs and {} instead.",
             instance.name,
             instance.cpus,

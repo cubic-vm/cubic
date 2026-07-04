@@ -5,7 +5,9 @@ use std::sync::{Arc, Mutex};
 pub trait Console {
     fn get_verbosity(&mut self) -> Verbosity;
     fn set_verbosity(&mut self, verbosity: Verbosity);
+    fn print(&mut self, msg: &str);
     fn info(&mut self, msg: &str);
+    fn warn(&mut self, msg: &str);
     fn error(&mut self, msg: &str);
 
     fn get_geometry(&self) -> Option<(u32, u32)>;
