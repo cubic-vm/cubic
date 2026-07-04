@@ -1,4 +1,6 @@
 use crate::commands::Verbosity;
+use crate::view::Animation;
+use std::sync::{Arc, Mutex};
 
 pub trait Console {
     fn get_verbosity(&mut self) -> Verbosity;
@@ -10,4 +12,7 @@ pub trait Console {
 
     fn raw_mode(&mut self);
     fn reset(&mut self);
+
+    fn play(&mut self, animation: Arc<Mutex<dyn Animation>>);
+    fn stop(&mut self);
 }

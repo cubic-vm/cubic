@@ -1,9 +1,10 @@
 use crate::error::{Error, Result};
-use crate::view::AsyncTransferView;
+use crate::view::{AsyncTransferView, Console, TransferView};
 use russh_sftp::{self, client::SftpSession};
 use std::cmp::max;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 use std::{self, fs};
 use tokio::io::{AsyncRead, AsyncWrite};
 
@@ -117,16 +118,21 @@ impl SftpPath {
 
     pub async fn write_file(
         &self,
+        console: &mut dyn Console,
         name: &str,
         size: usize,
         content: Box<dyn AsyncRead + Unpin>,
     ) -> Result<()> {
         let name = &format!("{:30}", &name[max(30, name.len()) - 30..name.len()]);
-        let read = &mut AsyncTransferView::new(name, std::pin::Pin::new(content), size);
-        tokio::io::copy(read, &mut self.create_file().await?)
+        let view = Arc::new(Mutex::new(TransferView::new(name)));
+        console.play(view.clone());
+        let read = &mut AsyncTransferView::new(view, std::pin::Pin::new(content), size);
+        let result = tokio::io::copy(read, &mut self.create_file().await?)
             .await
             .map(|_| ())
-            .map_err(Error::Io)
+            .map_err(Error::Io);
+        console.stop();
+        result
     }
 
     pub async fn read_dir(&self) -> Result<Vec<SftpPath>> {
@@ -169,7 +175,7 @@ impl SftpPath {
         }
     }
 
-    pub async fn recursive_copy(&self, target: SftpPath) -> Result<()> {
+    pub async fn recursive_copy(&self, console: &mut dyn Console, target: SftpPath) -> Result<()> {
         if self.is_file().await? {
             let name = &self.path.display().to_string();
             let size = self.get_file_size().await?;
@@ -177,33 +183,33 @@ impl SftpPath {
             if target.exists().await? && target.is_dir().await? {
                 target
                     .append(&self.name()?)
-                    .write_file(name, size, reader)
+                    .write_file(console, name, size, reader)
                     .await?;
             } else {
-                target.write_file(name, size, reader).await?;
+                target.write_file(console, name, size, reader).await?;
             }
         } else if self.is_dir().await? {
             let target_dir = target.append(&self.name()?);
             target_dir.create_path().await?;
             for entry in self.read_dir().await? {
-                Box::pin(entry.recursive_copy(target_dir.clone())).await?;
+                Box::pin(entry.recursive_copy(console, target_dir.clone())).await?;
             }
         }
 
         Ok(())
     }
 
-    pub async fn copy(&self, target: SftpPath) -> Result<()> {
+    pub async fn copy(&self, console: &mut dyn Console, target: SftpPath) -> Result<()> {
         if !self.exists().await? {
             return Err(Error::InvalidPath(self.path.display().to_string()));
         }
 
         if target.exists().await? || self.is_file().await? {
-            self.recursive_copy(target).await?;
+            self.recursive_copy(console, target).await?;
         } else if self.is_dir().await? {
             target.create_path().await?;
             for entry in self.read_dir().await? {
-                entry.recursive_copy(target.clone()).await?;
+                entry.recursive_copy(console, target.clone()).await?;
             }
         }
 

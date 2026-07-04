@@ -8,8 +8,9 @@ use crate::fs::FS;
 use crate::models::{DataSize, ImageName, Instance, InstanceName, PortForward, ResourceAllocator};
 use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
-use crate::view::SpinnerView;
+use crate::view::Spinner;
 use clap::{ArgAction, Parser};
+use std::sync::{Arc, Mutex};
 
 pub const DEFAULT_DISK_SIZE: &str = "100G";
 
@@ -70,7 +71,7 @@ pub struct CreateCommand {
 }
 
 impl Command for CreateCommand {
-    fn run(&self, _console: &mut dyn Console, context: &Context) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &Context) -> Result<()> {
         let env = context.get_env();
         let instance_store = context.get_instance_store();
 
@@ -79,10 +80,12 @@ impl Command for CreateCommand {
         }
 
         // Fetch image
-        let image = &fetch_image_info(env, &self.image)?;
-        fetch_image(env, context.get_image_store(), image)?;
+        let image = &fetch_image_info(console, env, &self.image)?;
+        fetch_image(console, env, context.get_image_store(), image)?;
 
-        let mut create_spinner = SpinnerView::new("Creating virtual machine instance".to_string());
+        console.play(Arc::new(Mutex::new(Spinner::new(
+            "Creating virtual machine instance".to_string(),
+        ))));
         let ssh_port = PortChecker::new().get_new_port()?;
 
         let (default_cpus, default_mem) =
@@ -109,7 +112,7 @@ impl Command for CreateCommand {
         let image_path = &env.get_image_file(&image.to_file_name());
         CreateInstanceAction::new().run(context, &FS::new(), image_path, instance)?;
 
-        create_spinner.stop();
+        console.stop();
         Ok(())
     }
 }

@@ -2,7 +2,8 @@
 pub mod tests {
 
     use crate::commands::Verbosity;
-    use crate::view::Console;
+    use crate::view::{Animation, Console};
+    use std::sync::{Arc, Mutex};
 
     #[derive(Default)]
     pub struct ConsoleMock {
@@ -43,5 +44,8 @@ pub mod tests {
 
         fn raw_mode(&mut self) {}
         fn reset(&mut self) {}
+
+        fn play(&mut self, _animation: Arc<Mutex<dyn Animation>>) {}
+        fn stop(&mut self) {}
     }
 }

@@ -113,7 +113,7 @@ impl CommandDispatcher {
             Box::new(InstanceDao::new(&env)?),
         );
 
-        match &command {
+        let result = match &command {
             Commands::Run(cmd) => cmd as &dyn Command,
             Commands::Instances(cmd) => cmd,
             Commands::Images(cmd) => cmd,
@@ -134,6 +134,10 @@ impl CommandDispatcher {
             Commands::Prune(cmd) => cmd,
             Commands::Completions(cmd) => cmd,
         }
-        .run(console, context)
+        .run(console, context);
+
+        // Clear any animation the command left running, including on error.
+        console.stop();
+        result
     }
 }

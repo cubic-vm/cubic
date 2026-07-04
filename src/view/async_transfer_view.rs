@@ -1,6 +1,7 @@
 use crate::view::TransferView;
 use std::io;
 use std::pin::Pin;
+use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, ReadBuf};
 
@@ -8,16 +9,20 @@ pub struct AsyncTransferView {
     pub read: Pin<Box<dyn AsyncRead + Unpin>>,
     pub size: usize,
     pub transfered: usize,
-    pub view: TransferView,
+    pub view: Arc<Mutex<TransferView>>,
 }
 
 impl AsyncTransferView {
-    pub fn new(name: &str, read: Pin<Box<dyn AsyncRead + Unpin>>, size: usize) -> Self {
+    pub fn new(
+        view: Arc<Mutex<TransferView>>,
+        read: Pin<Box<dyn AsyncRead + Unpin>>,
+        size: usize,
+    ) -> Self {
         Self {
             read,
             size,
             transfered: 0,
-            view: TransferView::new(name),
+            view,
         }
     }
 }
@@ -38,7 +43,10 @@ impl AsyncRead for AsyncTransferView {
         let size = self.size;
 
         if !is_done {
-            self.view.update(transfered as u64, Some(size as u64));
+            self.view
+                .lock()
+                .unwrap()
+                .set_progress(transfered as u64, Some(size as u64));
         }
         result
     }

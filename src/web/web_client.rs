@@ -8,6 +8,7 @@ use sha2::{Digest, Sha256, Sha512};
 use std::fs::File;
 use std::io;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 const REQUEST_TIMEOUT_SEC: u64 = 30;
@@ -16,13 +17,13 @@ struct ProgressWriter {
     file: File,
     size: Option<u64>,
     written: u64,
-    view: TransferView,
+    view: Arc<Mutex<TransferView>>,
     sha512: Sha512,
     sha256: Sha256,
 }
 
 impl ProgressWriter {
-    pub fn new(file: File, size: Option<u64>, view: TransferView) -> Self {
+    pub fn new(file: File, size: Option<u64>, view: Arc<Mutex<TransferView>>) -> Self {
         Self {
             file,
             size,
@@ -39,7 +40,10 @@ impl io::Write for ProgressWriter {
         self.written += buf.len() as u64;
         self.sha512.update(buf);
         self.sha256.update(buf);
-        self.view.update(self.written, self.size);
+        self.view
+            .lock()
+            .unwrap()
+            .set_progress(self.written, self.size);
         self.file.write(buf)
     }
 
@@ -79,7 +83,7 @@ impl WebClient {
         &self,
         url: &str,
         file_path: &str,
-        view: TransferView,
+        view: Arc<Mutex<TransferView>>,
     ) -> Result<Checksum> {
         let fs = FS::new();
 

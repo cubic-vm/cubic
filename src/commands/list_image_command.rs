@@ -40,7 +40,7 @@ pub struct ListImageCommand {
 
 impl Command for ListImageCommand {
     fn run(&self, console: &mut dyn Console, context: &Context) -> Result<()> {
-        let images = fetch_image_list(context.get_env());
+        let images = fetch_image_list(console, context.get_env());
 
         let mut view = TableView::new();
         view.add_row()

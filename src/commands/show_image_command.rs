@@ -19,7 +19,7 @@ pub struct ShowImageCommand {
 impl Command for ShowImageCommand {
     fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
         let env = context.get_env();
-        let image = fetch_image_info(env, &self.name)?;
+        let image = fetch_image_info(console, env, &self.name)?;
 
         let size = image
             .size

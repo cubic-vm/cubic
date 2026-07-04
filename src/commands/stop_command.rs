@@ -2,8 +2,9 @@ use crate::actions::StopInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::view::Console;
-use crate::view::SpinnerView;
+use crate::view::Spinner;
 use clap::Parser;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -56,12 +57,14 @@ impl Command for StopCommand {
             actions.push(action);
         }
 
-        if self.wait && !console.get_verbosity().is_quiet() {
-            let mut spinner = SpinnerView::new("Stopping instance(s)".to_string());
+        if self.wait {
+            console.play(Arc::new(Mutex::new(Spinner::new(
+                "Stopping instance(s)".to_string(),
+            ))));
             while actions.iter().any(|action| !action.is_done(instance_store)) {
                 thread::sleep(Duration::from_secs(1))
             }
-            spinner.stop();
+            console.stop();
         }
 
         Ok(())

@@ -4,8 +4,9 @@ use crate::error::{Error, Result};
 use crate::fs::FS;
 use crate::models::InstanceName;
 use crate::ssh_cmd::PortChecker;
-use crate::view::{Console, SpinnerView};
+use crate::view::{Console, Spinner};
 use clap::Parser;
+use std::sync::{Arc, Mutex};
 
 /// Clone VM instances
 ///
@@ -24,7 +25,7 @@ pub struct CloneCommand {
 }
 
 impl Command for CloneCommand {
-    fn run(&self, _console: &mut dyn Console, context: &Context) -> Result<()> {
+    fn run(&self, console: &mut dyn Console, context: &Context) -> Result<()> {
         let instance_store = context.get_instance_store();
 
         // Verify that the target name is available
@@ -40,7 +41,9 @@ impl Command for CloneCommand {
             return Err(Error::InstanceNotStopped(source.name.to_string()));
         }
 
-        let mut spinner = SpinnerView::new("Cloning VM instance".to_string());
+        console.play(Arc::new(Mutex::new(Spinner::new(
+            "Cloning VM instance".to_string(),
+        ))));
 
         // Load source instance info
         let image_path = &context
@@ -55,7 +58,7 @@ impl Command for CloneCommand {
         // Create VM instance
         CreateInstanceAction::new().run(context, &FS::new(), image_path, target)?;
 
-        spinner.stop();
+        console.stop();
         Ok(())
     }
 }
