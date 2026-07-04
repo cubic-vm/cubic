@@ -99,7 +99,10 @@ impl AnimationState {
     }
 
     fn draw_frame(stdout: &mut Stdout, animation: &Arc<Mutex<dyn Animation>>) {
-        let line = animation.lock().unwrap().render();
+        let width = crossterm::terminal::size()
+            .map(|(w, _)| w as usize)
+            .unwrap_or(80);
+        let line = animation.lock().unwrap().render(width);
         Self::draw_line(stdout, &line);
     }
 
