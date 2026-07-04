@@ -34,12 +34,10 @@ impl FromStr for DataSize {
             "Cannot parse data size '{value}'. The input should be a number followed by a letter (B, K, M, G or T) for bytes, kilobytes, etc. Example: 1G for one gigabyte."
         );
 
-        if value.is_empty() {
+        let Some((suffix_start, suffix)) = value.char_indices().next_back() else {
             return Err(error);
-        }
-
-        let suffix: char = value.bytes().last().unwrap() as char;
-        let size = &value[..value.len() - 1];
+        };
+        let size = &value[..suffix_start];
         let power = match suffix {
             'B' => 0,
             'K' => 1,
@@ -49,11 +47,11 @@ impl FromStr for DataSize {
             _ => return Err(error),
         };
 
-        size.parse()
-            .map(|size: usize| Self {
-                bytes: size * 1024_usize.pow(power),
-            })
-            .map_err(|_| error)
+        let multiplier = 1024_usize.checked_pow(power).ok_or_else(|| error.clone())?;
+        let size = size.parse::<usize>().map_err(|_| error.clone())?;
+        let bytes = size.checked_mul(multiplier).ok_or(error)?;
+
+        Ok(Self { bytes })
     }
 }
 
@@ -138,5 +136,20 @@ mod tests {
             DataSize::from_str("1T").unwrap().get_bytes(),
             1024_usize.pow(4)
         )
+    }
+
+    #[test]
+    fn test_rejects_multibyte_suffix() {
+        let result = DataSize::from_str("10€");
+
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn test_rejects_overflowing_size() {
+        let value = format!("{}T", usize::MAX);
+        let result = DataSize::from_str(&value);
+
+        assert!(result.is_err())
     }
 }
