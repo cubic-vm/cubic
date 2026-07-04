@@ -72,9 +72,10 @@ impl Command for StartCommand {
 
         // Wait for virtual machine instances to be started
         if self.wait {
-            console.play(Arc::new(Mutex::new(Spinner::new(
-                "Starting instance(s)".to_string(),
-            ))));
+            console.play(Arc::new(Mutex::new(Spinner::new(format!(
+                "Starting {}",
+                self.instances.join(", ")
+            )))));
             let deadline = Instant::now() + Duration::from_secs(300);
             while actions.iter().any(|a| !a.is_done()) {
                 if Instant::now() >= deadline {

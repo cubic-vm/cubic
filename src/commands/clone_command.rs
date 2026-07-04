@@ -41,9 +41,10 @@ impl Command for CloneCommand {
             return Err(Error::InstanceNotStopped(source.name.to_string()));
         }
 
-        console.play(Arc::new(Mutex::new(Spinner::new(
-            "Cloning VM instance".to_string(),
-        ))));
+        console.play(Arc::new(Mutex::new(Spinner::new(format!(
+            "Cloning {} to {}",
+            self.name, self.new_name
+        )))));
 
         // Load source instance info
         let image_path = &context
