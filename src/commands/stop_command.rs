@@ -58,9 +58,10 @@ impl Command for StopCommand {
         }
 
         if self.wait {
-            console.play(Arc::new(Mutex::new(Spinner::new(
-                "Stopping instance(s)".to_string(),
-            ))));
+            console.play(Arc::new(Mutex::new(Spinner::new(format!(
+                "Stopping {}",
+                stop_instances.join(", ")
+            )))));
             while actions.iter().any(|action| !action.is_done(instance_store)) {
                 thread::sleep(Duration::from_secs(1))
             }

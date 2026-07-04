@@ -83,9 +83,10 @@ impl Command for CreateCommand {
         let image = &fetch_image_info(console, env, &self.image)?;
         fetch_image(console, env, context.get_image_store(), image)?;
 
-        console.play(Arc::new(Mutex::new(Spinner::new(
-            "Creating virtual machine instance".to_string(),
-        ))));
+        console.play(Arc::new(Mutex::new(Spinner::new(format!(
+            "Creating {}",
+            self.instance_name
+        )))));
         let ssh_port = PortChecker::new().get_new_port()?;
 
         let (default_cpus, default_mem) =

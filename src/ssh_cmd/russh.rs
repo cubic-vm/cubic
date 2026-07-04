@@ -276,9 +276,9 @@ impl Russh {
     ) -> Result<Channel<russh::client::Msg>, ()> {
         let mut session;
 
-        console.play(Arc::new(std::sync::Mutex::new(Spinner::new(
-            "Connecting".to_string(),
-        ))));
+        console.play(Arc::new(std::sync::Mutex::new(Spinner::new(format!(
+            "Connecting to {machine}"
+        )))));
         loop {
             let sh = Client {};
             let addrs = ("127.0.0.1", port);
