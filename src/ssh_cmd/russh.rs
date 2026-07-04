@@ -2,7 +2,7 @@ use crate::error::Error;
 use crate::models::{Instance, TargetInstancePath};
 use crate::ssh_cmd::{SftpPath, SshKeyGenerator};
 use crate::util;
-use crate::view::{Console, SpinnerView};
+use crate::view::{Console, Spinner};
 use russh::keys::*;
 use russh::*;
 use russh_sftp::client::SftpSession;
@@ -276,8 +276,9 @@ impl Russh {
     ) -> Result<Channel<russh::client::Msg>, ()> {
         let mut session;
 
-        let spinner = (!console.get_verbosity().is_quiet())
-            .then(|| SpinnerView::new("Connecting".to_string()));
+        console.play(Arc::new(std::sync::Mutex::new(Spinner::new(
+            "Connecting".to_string(),
+        ))));
         loop {
             let sh = Client {};
             let addrs = ("127.0.0.1", port);
@@ -288,9 +289,7 @@ impl Russh {
             }
         }
 
-        if let Some(mut s) = spinner {
-            s.stop()
-        }
+        console.stop();
 
         if self
             .authenticate(console, &mut session, user, client_key)
@@ -411,7 +410,7 @@ impl Russh {
         let source = self.open_target_fs(console, from, from_key).await;
         let target = self.open_target_fs(console, to, to_key).await;
 
-        source.copy(target).await
+        source.copy(console, target).await
     }
 
     pub fn set_private_keys(&mut self, private_keys: Vec<String>) {
