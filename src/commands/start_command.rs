@@ -40,12 +40,14 @@ pub struct StartCommand {
     pub wait: bool,
     #[clap(flatten)]
     pub yes: commands::YesArg,
-    /// Name of the virtual machine instances to start
-    pub instances: Vec<String>,
+    #[clap(flatten)]
+    pub instances: commands::InstancesArg,
 }
 
 impl Command for StartCommand {
     fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+        self.instances.require_names()?;
+
         let instance_store = context.get_instance_store();
 
         let verbosity = console.get_verbosity();
@@ -53,8 +55,8 @@ impl Command for StartCommand {
 
         // Launch virtual machine instances
         let mut actions = Vec::new();
-        for name in &self.instances {
-            let instance = &mut instance_store.load(name)?;
+        for name in &self.instances.value {
+            let instance = &mut instance_store.load(name.as_str())?;
             if !instance_store.is_running(instance) {
                 if port_checker.is_open(instance.ssh_port) {
                     instance.ssh_port = port_checker.get_new_port()?;
@@ -74,7 +76,7 @@ impl Command for StartCommand {
         if self.wait {
             console.play(Arc::new(Mutex::new(Spinner::new(format!(
                 "Starting {}",
-                self.instances.join(", ")
+                self.instances.get_names().join(", ")
             )))));
             let deadline = Instant::now() + Duration::from_secs(300);
             while actions.iter().any(|a| !a.is_done()) {
@@ -134,5 +136,20 @@ impl StartCommand {
         } else {
             Err(Error::NotEnoughMemory(instance.name.clone()))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_valid_names() {
+        assert!(StartCommand::try_parse_from(["start", "trixie", "noble"]).is_ok());
+    }
+
+    #[test]
+    fn test_reject_path_traversal() {
+        assert!(StartCommand::try_parse_from(["start", "../../etc"]).is_err());
     }
 }

@@ -70,7 +70,7 @@ impl Command for ShowCommand {
             }
             .run(console, context),
             InstanceImageName::Instance(instance) => commands::ShowInstanceCommand {
-                instance: instance.clone(),
+                instance: instance.clone().into(),
                 all: self.all,
             }
             .run(console, context),

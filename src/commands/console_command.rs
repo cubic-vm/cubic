@@ -24,8 +24,8 @@ use std::time::Duration;
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
 pub struct ConsoleCommand {
-    /// Name of the virtual machine instance
-    instance: String,
+    #[clap(flatten)]
+    instance: commands::InstanceArg,
 }
 
 impl Command for ConsoleCommand {
@@ -34,19 +34,25 @@ impl Command for ConsoleCommand {
             qemu_args: None,
             wait: false,
             yes: commands::YesArg { value: false },
-            instances: vec![self.instance.to_string()],
+            instances: self.instance.value.clone().into(),
         }
         .run(console, context)?;
 
-        let instance = context.get_instance_store().load(&self.instance)?;
+        let instance = context
+            .get_instance_store()
+            .load(self.instance.value.as_str())?;
 
         console.info(&format!("Default credentials: {} / cubic", instance.user));
         console.info("Press CTRL+W to exit the console.");
 
         let port = instance
             .console_port
-            .ok_or_else(|| Error::InstanceNotRunning(self.instance.clone()))?;
-        let instance_dir = PathBuf::from(context.get_env().get_instance_dir2(&self.instance));
+            .ok_or_else(|| Error::InstanceNotRunning(self.instance.value.to_string()))?;
+        let instance_dir = PathBuf::from(
+            context
+                .get_env()
+                .get_instance_dir2(self.instance.value.as_str()),
+        );
         let certs = InstanceCertPaths::load(&instance_dir);
 
         while TcpStream::connect(format!("127.0.0.1:{port}")).is_err() {
@@ -65,5 +71,20 @@ impl Command for ConsoleCommand {
         }
         console.reset();
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_valid_name() {
+        assert!(ConsoleCommand::try_parse_from(["console", "my-instance"]).is_ok());
+    }
+
+    #[test]
+    fn test_reject_path_traversal() {
+        assert!(ConsoleCommand::try_parse_from(["console", "../../etc"]).is_err());
     }
 }

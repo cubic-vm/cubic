@@ -36,18 +36,22 @@ pub struct StopCommand {
     /// Kill the virtual machine instance
     #[clap(short, long, default_value_t = false)]
     pub kill: bool,
-    /// Name of the virtual machine instances to stop
-    pub instances: Vec<String>,
+    #[clap(flatten)]
+    pub instances: commands::InstancesArg,
 }
 
 impl Command for StopCommand {
     fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
 
+        if !self.all {
+            self.instances.require_names()?;
+        }
+
         let stop_instances = if self.all {
             instance_store.get_instances()
         } else {
-            self.instances.clone()
+            self.instances.get_names()
         };
 
         let mut actions = Vec::new();
@@ -57,7 +61,7 @@ impl Command for StopCommand {
             actions.push(action);
         }
 
-        if self.wait {
+        if self.wait && !stop_instances.is_empty() {
             console.play(Arc::new(Mutex::new(Spinner::new(format!(
                 "Stopping {}",
                 stop_instances.join(", ")
@@ -69,5 +73,79 @@ impl Command for StopCommand {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::Error;
+    use crate::image::ImageStoreMock;
+    use crate::instance::InstanceStoreMock;
+    use crate::models::Environment;
+    use crate::view::ConsoleMock;
+
+    #[test]
+    fn test_parse_valid_names() {
+        assert!(StopCommand::try_parse_from(["stop", "trixie", "noble"]).is_ok());
+    }
+
+    #[test]
+    fn test_reject_path_traversal() {
+        assert!(StopCommand::try_parse_from(["stop", "../../etc"]).is_err());
+    }
+
+    #[test]
+    fn test_reject_empty_instance_list_without_all() {
+        let console = &mut ConsoleMock::new();
+        let env = Environment::new(
+            "myuser".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
+        let context = commands::Context::new(
+            env,
+            Box::new(ImageStoreMock::default()),
+            Box::new(InstanceStoreMock::new(Vec::new())),
+        );
+
+        assert!(matches!(
+            StopCommand {
+                all: false,
+                wait: false,
+                kill: false,
+                instances: Vec::new().into(),
+            }
+            .run(console, &context),
+            Err(Error::MissingInstanceName)
+        ));
+    }
+
+    #[test]
+    fn test_allow_empty_instance_list_with_all() {
+        let console = &mut ConsoleMock::new();
+        let env = Environment::new(
+            "myuser".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
+        let context = commands::Context::new(
+            env,
+            Box::new(ImageStoreMock::default()),
+            Box::new(InstanceStoreMock::new(Vec::new())),
+        );
+
+        assert!(
+            StopCommand {
+                all: true,
+                wait: false,
+                kill: false,
+                instances: Vec::new().into(),
+            }
+            .run(console, &context)
+            .is_ok()
+        );
     }
 }

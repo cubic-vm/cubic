@@ -1,11 +1,11 @@
 use crate::actions::CreateInstanceAction;
 use crate::commands::{
-    Command, Context,
+    self, Command, Context,
     image::{fetch_image, fetch_image_info},
 };
 use crate::error::{Error, Result};
 use crate::fs::FS;
-use crate::models::{DataSize, ImageName, Instance, InstanceName, PortForward, ResourceAllocator};
+use crate::models::{DataSize, ImageName, Instance, PortForward, ResourceAllocator};
 use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
 use crate::view::Spinner;
@@ -42,8 +42,8 @@ pub const DEFAULT_DISK_SIZE: &str = "100G";
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
 pub struct CreateCommand {
-    /// VM instance name (e.g. 'my-instance')
-    pub instance_name: InstanceName,
+    #[clap(flatten)]
+    pub instance_name: commands::InstanceArg,
     /// VM image name (e.g. 'debian:trixie')
     #[clap(short, long)]
     image: ImageName,
@@ -75,8 +75,10 @@ impl Command for CreateCommand {
         let env = context.get_env();
         let instance_store = context.get_instance_store();
 
-        if instance_store.exists(self.instance_name.as_str()) {
-            return Err(Error::InstanceAlreadyExists(self.instance_name.to_string()));
+        if instance_store.exists(self.instance_name.value.as_str()) {
+            return Err(Error::InstanceAlreadyExists(
+                self.instance_name.value.to_string(),
+            ));
         }
 
         // Fetch image
@@ -85,7 +87,7 @@ impl Command for CreateCommand {
 
         console.play(Arc::new(Mutex::new(Spinner::new(format!(
             "Creating {}",
-            self.instance_name
+            self.instance_name.value
         )))));
         let ssh_port = PortChecker::new().get_new_port()?;
 
@@ -93,7 +95,7 @@ impl Command for CreateCommand {
             ResourceAllocator::read_from_host().get_default_resources();
 
         let instance = Instance {
-            name: self.instance_name.to_string(),
+            name: self.instance_name.value.to_string(),
             arch: image.arch,
             user: self
                 .user

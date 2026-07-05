@@ -1,6 +1,5 @@
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
-use crate::models::InstanceName;
 use crate::util;
 use crate::view::{Console, MapView};
 use clap::Parser;
@@ -8,8 +7,8 @@ use clap::Parser;
 /// Show VM instances
 #[derive(Parser)]
 pub struct ShowInstanceCommand {
-    /// Name of the virtual machine instance
-    pub instance: InstanceName,
+    #[clap(flatten)]
+    pub instance: commands::InstanceArg,
 
     /// Show all available information
     #[arg(short = 'a', long = "all")]
@@ -21,11 +20,11 @@ impl Command for ShowInstanceCommand {
         let env = context.get_env();
         let instance_store = context.get_instance_store();
 
-        if !instance_store.exists(self.instance.as_str()) {
-            return Err(Error::UnknownInstance(self.instance.to_string()));
+        if !instance_store.exists(self.instance.value.as_str()) {
+            return Err(Error::UnknownInstance(self.instance.value.to_string()));
         }
 
-        let instance = instance_store.load(self.instance.as_str())?;
+        let instance = instance_store.load(self.instance.value.as_str())?;
         let ssh_key = env.get_ssh_private_key_file(&instance.name);
 
         let mut view = MapView::new();
@@ -99,7 +98,7 @@ mod tests {
     use super::*;
     use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
-    use crate::models::{Arch, DataSize, Environment, Instance};
+    use crate::models::{Arch, DataSize, Environment, Instance, InstanceName};
     use crate::view::ConsoleMock;
     use std::str::FromStr;
 
@@ -127,7 +126,7 @@ mod tests {
         let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
 
         ShowInstanceCommand {
-            instance: InstanceName::from_str("test").unwrap(),
+            instance: InstanceName::from_str("test").unwrap().into(),
             all: false,
         }
         .run(console, &context)
@@ -183,7 +182,7 @@ Forward:      127.0.0.1:4000:40/tcp
         let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
 
         ShowInstanceCommand {
-            instance: InstanceName::from_str("test").unwrap(),
+            instance: InstanceName::from_str("test").unwrap().into(),
             all: true,
         }
         .run(console, &context)
@@ -229,7 +228,7 @@ SSH:          ssh -i machines/test/ssh_client_key -p 8000 john@localhost
 
         assert!(matches!(
             ShowInstanceCommand {
-                instance: InstanceName::from_str("test").unwrap(),
+                instance: InstanceName::from_str("test").unwrap().into(),
                 all: false,
             }
             .run(console, &context),
