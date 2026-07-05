@@ -72,4 +72,19 @@ mod tests {
     fn test_invalid_name() {
         assert!(InstanceName::from_str("foo/bar").is_err());
     }
+
+    #[test]
+    fn test_accept_unicode_letter() {
+        InstanceName::from_str("caf\u{e9}").unwrap();
+    }
+
+    #[test]
+    fn test_reject_path_traversal() {
+        assert!(InstanceName::from_str("../../etc").is_err());
+    }
+
+    #[test]
+    fn test_reject_absolute_path() {
+        assert!(InstanceName::from_str("/abs/path").is_err());
+    }
 }

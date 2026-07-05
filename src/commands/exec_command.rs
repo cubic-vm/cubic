@@ -33,7 +33,7 @@ impl Command for ExecCommand {
             qemu_args: None,
             wait: true,
             yes: commands::YesArg { value: false },
-            instances: vec![name.to_string()],
+            instances: name.clone().into(),
         }
         .run(console, context)?;
 

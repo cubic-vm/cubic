@@ -25,24 +25,26 @@ pub struct DeleteCommand {
     force: bool,
     #[clap(flatten)]
     yes: commands::YesArg,
-    /// Name of the VM instances to delete
-    instances: Vec<String>,
+    #[clap(flatten)]
+    instances: commands::InstancesArg,
 }
 
 impl Command for DeleteCommand {
     fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
 
+        self.instances.require_names()?;
+
         // Check if the instance names are valid
-        for instance in &self.instances {
-            if !instance_store.exists(instance) {
-                return Err(Error::UnknownInstance(instance.clone()));
+        for instance in &self.instances.value {
+            if !instance_store.exists(instance.as_str()) {
+                return Err(Error::UnknownInstance(instance.to_string()));
             }
         }
 
         // Print instances to be deleted
         console.print("The following VM instances are going to be deleted:");
-        for instance in &self.instances {
+        for instance in &self.instances.value {
             console.print(&format!("  - {instance}"));
         }
 
@@ -53,17 +55,62 @@ impl Command for DeleteCommand {
                 all: false,
                 wait: true,
                 kill: false,
-                instances: self.instances.clone(),
+                instances: self.instances.value.clone().into(),
             }
             .run(console, context)?;
 
             // Delete the VM instances
-            for instance in &self.instances {
-                instance_store.delete(&instance_store.load(instance)?)?;
-                println!("Deleted instance {instance}");
+            for instance in &self.instances.value {
+                instance_store.delete(&instance_store.load(instance.as_str())?)?;
+                console.print(&format!("Deleted instance {instance}"));
             }
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::image::ImageStoreMock;
+    use crate::instance::InstanceStoreMock;
+    use crate::models::Environment;
+    use crate::view::ConsoleMock;
+
+    #[test]
+    fn test_parse_valid_names() {
+        assert!(DeleteCommand::try_parse_from(["delete", "trixie", "noble"]).is_ok());
+    }
+
+    #[test]
+    fn test_reject_path_traversal() {
+        assert!(DeleteCommand::try_parse_from(["delete", "../../etc"]).is_err());
+    }
+
+    #[test]
+    fn test_reject_empty_instance_list() {
+        let console = &mut ConsoleMock::new();
+        let env = Environment::new(
+            "myuser".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
+        let context = commands::Context::new(
+            env,
+            Box::new(ImageStoreMock::default()),
+            Box::new(InstanceStoreMock::new(Vec::new())),
+        );
+
+        assert!(matches!(
+            DeleteCommand {
+                force: false,
+                yes: commands::YesArg { value: true },
+                instances: Vec::new().into(),
+            }
+            .run(console, &context),
+            Err(Error::MissingInstanceName)
+        ));
     }
 }

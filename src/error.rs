@@ -18,6 +18,9 @@ pub enum Error {
     #[error("Image '{0}' not found.\n\nList available images with: `cubic images`")]
     UnknownImage(String),
 
+    #[error("No instance name was given.\n\nProvide at least one instance name.")]
+    MissingInstanceName,
+
     #[error(
         "Instance '{0}' must be stopped to proceed.\n\nRun `cubic stop --wait {0}` to stop it now."
     )]

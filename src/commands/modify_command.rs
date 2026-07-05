@@ -39,8 +39,8 @@ use clap::{ArgAction, Parser};
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
 pub struct ModifyCommand {
-    /// Name of the virtual machine instance
-    instance: String,
+    #[clap(flatten)]
+    instance: commands::InstanceArg,
     /// Number of CPUs for the virtual machine instance
     #[clap(short, long)]
     cpus: Option<u16>,
@@ -67,7 +67,7 @@ pub struct ModifyCommand {
 impl Command for ModifyCommand {
     fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
-        let mut instance = instance_store.load(&self.instance)?;
+        let mut instance = instance_store.load(self.instance.value.as_str())?;
 
         if instance_store.is_running(&instance) {
             console.info("Note: changes will be applied after the next restart.");
@@ -96,5 +96,20 @@ impl Command for ModifyCommand {
 
         instance_store.store(&instance)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_valid_name() {
+        assert!(ModifyCommand::try_parse_from(["modify", "my-instance", "--cpus", "2"]).is_ok());
+    }
+
+    #[test]
+    fn test_reject_path_traversal() {
+        assert!(ModifyCommand::try_parse_from(["modify", "../../etc"]).is_err());
     }
 }

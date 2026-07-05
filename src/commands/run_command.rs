@@ -41,7 +41,7 @@ impl Command for RunCommand {
     fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
         self.create_cmd.run(console, context)?;
         commands::SshCommand {
-            target: Target::from_instance_name(self.create_cmd.instance_name.clone()),
+            target: Target::from_instance_name(self.create_cmd.instance_name.value.clone()),
             env_args: self.env_args.clone(),
         }
         .run(console, context)
