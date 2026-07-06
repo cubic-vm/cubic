@@ -10,7 +10,6 @@ ENV XDG_RUNTIME_DIR=/tmp/runtime
 RUN apt update && \
     apt install -y \
         qemu-utils \
-        genisoimage \
         qemu-system-x86 \
         qemu-system-arm \
         python3-sphinx \
