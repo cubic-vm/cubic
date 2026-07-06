@@ -6,8 +6,7 @@ DOCKER_CMD=docker run --rm -v .:/usr/local/app \
 	-v ${IMAGE_VOLUME}:/tmp/cache \
 	-v ${INSTANCE_VOLUME}:/tmp/data \
 	-v ${BUILD_VOLUME}:/usr/local/app/target \
-	-v ${CARGO_VOLUME}:/usr/local/cargo \
-	-p 4000:4000
+	-v ${CARGO_VOLUME}:/usr/local/cargo
 IMAGE=cubic:latest
 
 CMDS= run create instances images ports show modify console ssh scp start stop \
@@ -61,7 +60,7 @@ build: build-image
 
 doc: build-image
 	@${DOCKER_CMD} -it ${IMAGE} ./scripts/generate-page.sh v0.0.0-dev
-	@${DOCKER_CMD} -it ${IMAGE} python3 -m http.server -d target/page 4000
+	@${DOCKER_CMD} -p 4000:4000 -it ${IMAGE} python3 -m http.server -d target/page 4000
 
 suppress: build-image
 	@${DOCKER_CMD} -it ${IMAGE} /root/bin/vulnlog suppress vulnlog.yml -o .cargo/audit.toml
