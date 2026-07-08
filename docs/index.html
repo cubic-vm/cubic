@@ -103,7 +103,7 @@
     /* Install */
     .install-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
     }
     .install-block h3 {
@@ -222,6 +222,13 @@ sudo snap connect cubic:kvm</code></pre>
         <h3>macOS (Homebrew)</h3>
         <div class="cmd">
           <pre><code>brew install cubic-vm/cubic/cubic</code></pre>
+          <button class="copy" type="button" aria-label="Copy command">Copy</button>
+        </div>
+      </div>
+      <div class="install-block">
+        <h3>Windows (winget)</h3>
+        <div class="cmd">
+          <pre><code>winget install cubic-vm.cubic</code></pre>
           <button class="copy" type="button" aria-label="Copy command">Copy</button>
         </div>
       </div>
