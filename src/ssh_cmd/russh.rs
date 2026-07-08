@@ -307,14 +307,17 @@ impl Russh {
             }
         }
 
-        console.stop();
         console.debug(&format!("Connected to 127.0.0.1:{port}"));
+        console.play(Arc::new(std::sync::Mutex::new(Spinner::new(format!(
+            "Authenticating on {machine}"
+        )))));
 
-        if self
+        let auth_method = self
             .authenticate(console, &mut session, user, client_key)
-            .await?
-            == AuthMethod::Deprecated
-        {
+            .await;
+        console.stop();
+
+        if auth_method? == AuthMethod::Deprecated {
             self.warn_deprecated_auth(console, machine, client_key).ok();
         }
 
@@ -333,6 +336,10 @@ impl Russh {
             .open_channel(console, machine, client_key, user, port)
             .await?;
         let (w, h) = console.get_geometry().unwrap();
+
+        console.play(Arc::new(std::sync::Mutex::new(Spinner::new(format!(
+            "Opening shell on {machine}"
+        )))));
         channel
             .request_pty(
                 false,
@@ -366,6 +373,7 @@ impl Russh {
 
         let ssh_out = Arc::new(Mutex::new(ssh_out));
 
+        console.stop();
         console.raw_mode();
         tokio::select!(
             _ = ssh_geometry(console, ssh_out.clone()) => { console.reset(); std::process::exit(0); },
