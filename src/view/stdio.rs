@@ -7,6 +7,9 @@ pub struct Stdio {
 
 impl Stdio {
     pub fn new() -> Self {
+        #[cfg(windows)]
+        crossterm::ansi_support::supports_ansi();
+
         Self {
             verbosity: Verbosity::new(false, false),
         }
