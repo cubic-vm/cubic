@@ -23,11 +23,51 @@ You can install Cubic on macOS with the following methods:
 Install on Windows
 ------------------
 
-You can install Cubic on Windows with the following methods:
+You can install Cubic on Windows with the following method:
 
-* `Install with Snap`_ (in WSL; **recommended**)
+* `Install with Winget`_  (**recommended**)
 * `Install with Cargo`_
-* `Install with Homebrew`_ (in WSL)
+
+Install with Snap
+-----------------
+
+Use the following command to install Cubic with `Snap`_:
+
+.. code-block::
+
+       $ sudo snap install cubic
+
+Connect the KVM interface to accelerate the virtual machine (recommended):
+
+.. code-block::
+
+       $ sudo snap connect cubic:kvm
+
+.. _Snap: https://snapcraft.io/cubic
+
+Install with Homebrew
+---------------------
+
+Use the following command to install Cubic via `Homebrew`_:
+
+.. code-block::
+
+       $ brew install cubic-vm/cubic/cubic
+
+.. _Homebrew: https://github.com/cubic-vm/homebrew-cubic
+
+Install with Winget
+-------------------
+
+Use the following command to install Cubic via `Winget`_:
+
+.. code-block::
+
+       $ winget install cubic-vm.cubic
+
+QEMU is installed automatically as a dependency.
+
+.. _Winget: https://learn.microsoft.com/windows/package-manager/winget/
 
 Install with Cargo
 ------------------
@@ -123,33 +163,3 @@ Check if Cubic is installed correctly:
 .. code-block::
 
     cubic --help
-
-Install with Homebrew
----------------------
-
-Use the following command to install Cubic via `Homebrew`_:
-
-.. code-block::
-
-       $ brew install cubic-vm/cubic/cubic
-
-.. _Homebrew: https://github.com/cubic-vm/homebrew-cubic
-
-
-
-Install with Snap
------------------
-
-Use the following command to install Cubic with `Snap`_:
-
-.. code-block::
-
-       $ sudo snap install cubic
-
-Connect the KVM interface to accelerate the virtual machine (recommended):
-
-.. code-block::
-
-       $ sudo snap connect cubic:kvm
-
-.. _Snap: https://snapcraft.io/cubic

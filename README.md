@@ -96,6 +96,11 @@ sudo snap connect cubic:kvm
 brew install cubic-vm/cubic/cubic
 ```
 
+**Windows** (winget)
+```
+winget install cubic-vm.cubic
+```
+
 **Others** (Cargo)
 
 Install the [Rust toolchain](https://rustup.rs) and then build Cubic:
