@@ -209,28 +209,40 @@ impl Russh {
     ) -> Result<AuthMethod, ()> {
         // The cubic per-instance ssh_client_key is the only supported method.
         // Everything below is a deprecated fallback.
+        console.debug(&format!(
+            "Authenticating '{user}' with client key '{client_key}'"
+        ));
         if self
             .authenticate_with_keys(session, user, &[client_key.to_string()])
             .await
         {
+            console.debug("Authenticated with client key");
             return Ok(AuthMethod::ClientKey);
         }
 
+        console.debug(&format!(
+            "Client key failed, trying {} deprecated key(s)",
+            self.private_keys.len()
+        ));
         if self
             .authenticate_with_keys(session, user, &self.private_keys)
             .await
         {
+            console.debug("Authenticated with a deprecated private key");
             return Ok(AuthMethod::Deprecated);
         }
 
+        console.debug("Deprecated keys failed, trying the default password");
         if self
             .authenticate_with_default_password(session, user)
             .await
             .is_ok()
         {
+            console.debug("Authenticated with the default password");
             return Ok(AuthMethod::Deprecated);
         }
 
+        console.debug("Default password failed, prompting for a password");
         self.authenticate_with_password(console, session, user)
             .await
             .map(|_| AuthMethod::Deprecated)
@@ -279,6 +291,8 @@ impl Russh {
         console.play(Arc::new(std::sync::Mutex::new(Spinner::new(format!(
             "Connecting to {machine}"
         )))));
+        console.debug(&format!("Connecting to 127.0.0.1:{port}"));
+        let mut failed = false;
         loop {
             let sh = Client {};
             let addrs = ("127.0.0.1", port);
@@ -287,9 +301,14 @@ impl Russh {
                 session = s;
                 break;
             }
+            if !failed {
+                failed = true;
+                console.debug(&format!("Connection to 127.0.0.1:{port} failed, retrying"));
+            }
         }
 
         console.stop();
+        console.debug(&format!("Connected to 127.0.0.1:{port}"));
 
         if self
             .authenticate(console, &mut session, user, client_key)

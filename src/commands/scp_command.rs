@@ -66,6 +66,8 @@ impl Command for ScpCommand {
             .as_ref()
             .map(|instance| env.get_ssh_private_key_file(&instance.name));
 
+        console.debug(&format!("Copying '{}' to '{}'", self.from, self.to));
+
         let mut ssh = Russh::new();
         ssh.set_private_keys(env.get_home_ssh_private_key_paths(&FS::new()));
         ssh.copy(

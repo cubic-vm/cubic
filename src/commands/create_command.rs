@@ -112,6 +112,15 @@ impl Command for CreateCommand {
             ..Instance::default()
         };
 
+        console.debug(&format!(
+            "Resolved instance '{}': {} vCPUs, {} memory, {} disk, ssh_port={}",
+            instance.name,
+            instance.cpus,
+            instance.mem.to_size(),
+            instance.disk_capacity.to_size(),
+            instance.ssh_port,
+        ));
+
         let image_path = &env.get_image_file(&image.to_file_name());
         CreateInstanceAction::new().run(context, &FS::new(), image_path, instance)?;
 

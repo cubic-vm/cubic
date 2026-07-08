@@ -6,6 +6,7 @@ use crate::instance::InstanceCertGenerator;
 use crate::models::{Instance, InstanceCertPaths};
 use crate::qemu::{QemuFirmware, QemuInstall, QemuPathBuilder, QemuSystem};
 use crate::ssh_cmd::PortChecker;
+use crate::view::Console;
 use std::path::PathBuf;
 
 pub struct StartInstanceAction {
@@ -23,7 +24,7 @@ impl StartInstanceAction {
         &mut self,
         context: &Context,
         qemu_args: &Option<String>,
-        verbose: bool,
+        console: &mut dyn Console,
     ) -> Result<()> {
         if context.get_instance_store().is_running(&self.instance) {
             return Ok(());
@@ -47,18 +48,43 @@ impl StartInstanceAction {
         let mut qemu_system = QemuSystem::from(self.instance.arch)?;
 
         let path_builder = QemuPathBuilder::new();
+        console.debug(&format!(
+            "Searching for QEMU in: {}",
+            path_builder
+                .get_dirs()
+                .iter()
+                .map(|dir| dir.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
         let install = QemuInstall::find(path_builder.get_dirs());
+        match &install {
+            Some(install) => console.debug(&format!(
+                "Found QEMU install at '{}'",
+                install.get_prefix().display()
+            )),
+            None => console.debug("No QEMU install found"),
+        }
 
         let firmware = QemuFirmware::locate(path_builder.get_dirs(), self.instance.arch)
             .ok_or(Error::QemuNotFound)?;
+        console.debug(&format!("Using firmware '{}'", firmware.display()));
         qemu_system.set_firmware(&firmware);
 
         if let Some(install) = &install {
-            if let Some(module_dir) = install.find_module_dir() {
-                qemu_system.set_module_dir(&module_dir);
+            match install.find_module_dir() {
+                Some(module_dir) => {
+                    console.debug(&format!("Using module dir '{}'", module_dir.display()));
+                    qemu_system.set_module_dir(&module_dir);
+                }
+                None => console.debug("No module dir found"),
             }
-            if let Some(datadir) = install.find_datadir() {
-                qemu_system.add_datadir(&datadir);
+            match install.find_datadir() {
+                Some(datadir) => {
+                    console.debug(&format!("Using data dir '{}'", datadir.display()));
+                    qemu_system.add_datadir(&datadir);
+                }
+                None => console.debug("No data dir found"),
             }
         }
 
@@ -75,11 +101,10 @@ impl StartInstanceAction {
         if let Some(args) = qemu_args {
             qemu_system.set_qemu_args(args);
         }
-        qemu_system.set_verbose(verbose);
         qemu_system.set_pid_file(&env.get_qemu_pid_file(&self.instance.name));
 
         qemu_system.set_monitor(self.instance.monitor_port.unwrap(), &instance_dir);
-        qemu_system.run()
+        qemu_system.run(console)
     }
 
     pub fn is_done(&self) -> bool {

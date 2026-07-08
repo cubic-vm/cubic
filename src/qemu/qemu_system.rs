@@ -4,10 +4,10 @@ use crate::error::{Error, Result};
 use crate::models::{Arch, PortForward};
 use crate::qemu::QemuPathBuilder;
 use crate::util::SystemCommand;
+use crate::view::Console;
 
 pub struct QemuSystem {
     command: SystemCommand,
-    verbose: bool,
 }
 
 impl QemuSystem {
@@ -79,14 +79,7 @@ impl QemuSystem {
         #[cfg(feature = "qemu-sandbox")]
         command.arg("-sandbox").arg("on");
 
-        Ok(QemuSystem {
-            command,
-            verbose: false,
-        })
-    }
-
-    pub fn set_verbose(&mut self, flag: bool) {
-        self.verbose = flag;
+        Ok(QemuSystem { command })
     }
 
     pub fn set_cpus(&mut self, cpus: u16) {
@@ -182,10 +175,8 @@ impl QemuSystem {
         }
     }
 
-    pub fn run(&mut self) -> Result<()> {
-        if self.verbose {
-            println!("{}", self.command.get_command());
-        }
+    pub fn run(&mut self, console: &mut dyn Console) -> Result<()> {
+        console.debug(&self.command.get_command());
 
         self.command.run_daemonized().map_err(Self::map_error)
     }

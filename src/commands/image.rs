@@ -9,7 +9,9 @@ pub fn fetch_image_list(console: &mut dyn Console, env: &Environment) -> Vec<Ima
     console.play(Arc::new(Mutex::new(Spinner::new(
         "Fetching image list".to_string(),
     ))));
-    let images: Vec<Image> = ImageFactory::new(env).get_all_images().unwrap_or_default();
+    let images: Vec<Image> = ImageFactory::new(env)
+        .get_all_images(console)
+        .unwrap_or_default();
     console.stop();
     images
 }
@@ -24,7 +26,7 @@ pub fn fetch_image_info(
         image.get_vendor(),
         image.get_name()
     )))));
-    let image = ImageFactory::new(env).find_image(image);
+    let image = ImageFactory::new(env).find_image(console, image);
     console.stop();
     image
 }
