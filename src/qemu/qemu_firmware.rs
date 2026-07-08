@@ -35,6 +35,10 @@ impl QemuInstall {
         Some(Self { prefix })
     }
 
+    pub fn get_prefix(&self) -> &Path {
+        &self.prefix
+    }
+
     pub fn find_module_dir(&self) -> Option<PathBuf> {
         self.build_module_dir_candidates()
             .into_iter()

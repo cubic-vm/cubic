@@ -161,16 +161,18 @@ impl AnimationState {
 }
 
 impl Console for Stdio {
-    fn get_verbosity(&mut self) -> Verbosity {
-        self.verbosity
-    }
-
     fn set_verbosity(&mut self, verbosity: Verbosity) {
         self.verbosity = verbosity;
     }
 
     fn print(&mut self, msg: &str) {
         self.emit(Stream::Stdout, msg, None);
+    }
+
+    fn debug(&mut self, msg: &str) {
+        if self.verbosity.is_verbose() {
+            self.emit(Stream::Stdout, msg, Some(("debug:", Color::Green)));
+        }
     }
 
     fn info(&mut self, msg: &str) {

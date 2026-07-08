@@ -26,12 +26,13 @@ pub mod tests {
 
     impl Console for ConsoleMock {
         fn set_verbosity(&mut self, _verbosity: Verbosity) {}
-        fn get_verbosity(&mut self) -> Verbosity {
-            Verbosity::Normal
-        }
 
         fn print(&mut self, msg: &str) {
             self.log(msg)
+        }
+
+        fn debug(&mut self, msg: &str) {
+            self.log(&format!("debug: {msg}"))
         }
 
         fn info(&mut self, msg: &str) {

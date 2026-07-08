@@ -50,7 +50,6 @@ impl Command for StartCommand {
 
         let instance_store = context.get_instance_store();
 
-        let verbosity = console.get_verbosity();
         let port_checker = PortChecker::new();
 
         // Launch virtual machine instances
@@ -59,14 +58,19 @@ impl Command for StartCommand {
             let instance = &mut instance_store.load(name.as_str())?;
             if !instance_store.is_running(instance) {
                 if port_checker.is_open(instance.ssh_port) {
+                    let old_port = instance.ssh_port;
                     instance.ssh_port = port_checker.get_new_port()?;
                     instance_store.store(instance)?;
+                    console.debug(&format!(
+                        "Instance '{}' ssh_port {} is taken, reassigned to {}",
+                        instance.name, old_port, instance.ssh_port
+                    ));
                 }
 
                 self.fit_to_available_memory(console, instance_store, instance)?;
 
                 let mut action = StartInstanceAction::new(instance);
-                action.run(context, &self.qemu_args, verbosity.is_verbose())?;
+                action.run(context, &self.qemu_args, console)?;
 
                 actions.push(action);
             }
@@ -109,6 +113,14 @@ impl StartCommand {
         let mut system = System::new();
         system.refresh_memory();
         let available = system.available_memory() as usize;
+
+        console.debug(&format!(
+            "Instance '{}' requests {}, host has {} available with {} reserved",
+            instance.name,
+            instance.mem.to_size(),
+            DataSize::new(available).to_size(),
+            DataSize::new(HOST_MEMORY_RESERVE).to_size(),
+        ));
 
         if available.saturating_sub(HOST_MEMORY_RESERVE) >= instance.mem.get_bytes() {
             return Ok(());
