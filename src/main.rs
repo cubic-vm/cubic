@@ -17,11 +17,15 @@ mod web;
 use crate::commands::CommandDispatcher;
 use crate::view::Console;
 use clap::Parser;
+use std::process::ExitCode;
 
-fn main() {
+fn main() -> ExitCode {
     let console = &mut view::Stdio::new();
-    CommandDispatcher::parse()
-        .dispatch(console)
-        .map_err(|e| console.error(&e.to_string()))
-        .ok();
+    match CommandDispatcher::parse().dispatch(console) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            console.error(&e.to_string());
+            ExitCode::FAILURE
+        }
+    }
 }
