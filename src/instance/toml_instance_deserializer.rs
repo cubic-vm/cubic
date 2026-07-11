@@ -15,15 +15,13 @@ impl TomlInstanceDeserializer {
 impl InstanceDeserializer for TomlInstanceDeserializer {
     fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Option<Instance> {
         let mut data = String::new();
-        match reader.read_to_string(&mut data).is_ok() {
-            true => toml::from_str(&data)
-                .map(|mut instance: Instance| {
-                    instance.name = name.to_string();
-                    instance
-                })
-                .ok(),
-            false => None,
-        }
+        reader.read_to_string(&mut data).ok()?;
+        toml::from_str(&data)
+            .map(|mut instance: Instance| {
+                instance.name = name.to_string();
+                instance
+            })
+            .ok()
     }
 }
 
