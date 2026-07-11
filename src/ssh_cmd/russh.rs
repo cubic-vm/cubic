@@ -7,7 +7,7 @@ use russh::keys::*;
 use russh::*;
 use russh_sftp::client::SftpSession;
 use std::env;
-use std::io::{Cursor, Write};
+use std::io::Cursor;
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -17,55 +17,6 @@ use tokio::{io::AsyncReadExt, sync::Mutex};
 enum AuthMethod {
     ClientKey,
     Deprecated,
-}
-
-async fn read_password(console: &mut dyn Console, user: &str) -> Result<String, ()> {
-    let mut stdout = std::io::stdout();
-    let mut stdin = tokio::io::stdin();
-
-    let mut password = Vec::new();
-    let c: &mut [u8] = &mut [0];
-
-    stdout
-        .write_all(format!("{user}@localhost's password: ").as_bytes())
-        .map_err(|_| ())?;
-
-    stdout.flush().map_err(|_| ())?;
-
-    console.raw_mode();
-    loop {
-        // read character from stdin
-        if stdin.read(c).await.map_err(|_| ())? == 0 {
-            continue;
-        }
-
-        match c[0] {
-            // Ctrl+C
-            0x03 => {
-                console.reset();
-                println!();
-                std::process::exit(1)
-            }
-
-            // Carriage return and line feed
-            0x0A | 0x0D => break,
-
-            // Delete and backspace
-            0x7E | 0x7F => {
-                password.pop();
-            }
-
-            byte => {
-                password.push(byte);
-            }
-        };
-    }
-    console.reset();
-
-    print!("\r\n");
-    str::from_utf8(&password)
-        .map(|password| password.to_string())
-        .map_err(|_| ())
 }
 
 async fn ssh_geometry(
@@ -185,7 +136,7 @@ impl Russh {
         user: &str,
     ) -> Result<(), ()> {
         loop {
-            let password = read_password(console, user).await?;
+            let password = console.prompt_password(&format!("{user}@localhost's password: "))?;
 
             if session
                 .authenticate_password(user, password)

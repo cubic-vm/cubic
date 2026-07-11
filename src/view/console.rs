@@ -13,6 +13,7 @@ pub trait Console {
     fn get_geometry(&self) -> Option<(u32, u32)>;
 
     fn prompt(&mut self, text: &str) -> String;
+    fn prompt_password(&mut self, text: &str) -> Result<String, ()>;
 
     fn raw_mode(&mut self);
     fn reset(&mut self);
