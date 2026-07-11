@@ -16,7 +16,7 @@ pub struct ImageCache {
 impl ImageCache {
     pub fn new(images: Vec<Image>) -> Self {
         ImageCache {
-            images: images.to_vec(),
+            images,
             timestamp: Self::get_timestamp(),
         }
     }
