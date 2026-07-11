@@ -104,7 +104,7 @@ impl PortForward {
     pub fn from_qemu(value: &str) -> Result<Self, String> {
         let caps: Vec<_> = QEMU_PORT_REGEX
             .captures(value)
-            .ok_or(QEMU_FORMAT_ERROR.to_string())?
+            .ok_or_else(|| QEMU_FORMAT_ERROR.to_string())?
             .iter()
             .collect();
 
@@ -145,7 +145,7 @@ impl FromStr for PortForward {
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let caps: Vec<_> = PORT_REGEX
             .captures(value)
-            .ok_or(FORMAT_ERROR.to_string())?
+            .ok_or_else(|| FORMAT_ERROR.to_string())?
             .iter()
             .collect();
 

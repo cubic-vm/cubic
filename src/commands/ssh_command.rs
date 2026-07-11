@@ -43,7 +43,7 @@ impl Command for SshCommand {
             .target
             .get_user()
             .map(|user| user.to_string())
-            .unwrap_or(instance.user.to_string());
+            .unwrap_or_else(|| instance.user.to_string());
         let ssh_port = instance.ssh_port;
         let client_key = env.get_ssh_private_key_file(name.as_str());
         console.debug(&format!(

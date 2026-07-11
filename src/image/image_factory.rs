@@ -209,7 +209,7 @@ impl ImageFactory {
                 images
                     .into_iter()
                     .next()
-                    .ok_or(Error::UnknownImage(name.to_string()))
+                    .ok_or_else(|| Error::UnknownImage(name.to_string()))
             })
     }
 }

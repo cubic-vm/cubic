@@ -52,7 +52,7 @@ impl SftpPath {
                     metadata
                         .size
                         .map(|size| size as usize)
-                        .ok_or(Error::InvalidPath(self.to_str().to_string()))
+                        .ok_or_else(|| Error::InvalidPath(self.to_str().to_string()))
                 }),
         }
     }

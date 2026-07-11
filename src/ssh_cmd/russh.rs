@@ -343,7 +343,7 @@ impl Russh {
         channel
             .request_pty(
                 false,
-                &env::var("TERM").unwrap_or("xterm".into()),
+                &env::var("TERM").unwrap_or_else(|_| "xterm".into()),
                 w,
                 h,
                 0,
