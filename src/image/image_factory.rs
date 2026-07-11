@@ -128,6 +128,17 @@ impl ImageFactory {
         images
     }
 
+    fn find_matching_image(images: &[Image], filter: &ImageName) -> Option<Image> {
+        images
+            .iter()
+            .find(|image| {
+                image.vendor == filter.get_vendor()
+                    && image.arch == filter.get_arch()
+                    && image.names.contains(&filter.get_name().to_string())
+            })
+            .cloned()
+    }
+
     fn read_images(&self, filter: Option<ImageName>) -> Result<Vec<Image>> {
         // Read cache
         let cache = ImageCache::read_from_file(&self.env.get_image_cache_file());
@@ -136,19 +147,12 @@ impl ImageFactory {
         if let Some(cache) = &cache
             && cache.is_valid()
         {
-            if let Some(name) = filter {
-                if let Some(image) = cache.images.iter().find(|image| {
-                    (image.vendor == name.get_vendor())
-                        && (image.arch == name.get_arch())
-                        && image.names.contains(&name.get_name().to_string())
-                }) {
-                    return Ok(vec![image.clone()]);
-                } else {
-                    return Ok(Vec::new());
-                }
-            } else {
-                return Ok(cache.images.clone());
-            }
+            return Ok(match &filter {
+                Some(name) => Self::find_matching_image(&cache.images, name)
+                    .into_iter()
+                    .collect(),
+                None => cache.images.clone(),
+            });
         }
 
         // Fetch image info
@@ -159,7 +163,12 @@ impl ImageFactory {
             if images.is_empty()
                 && let Some(cache) = &cache
             {
-                cache.images.clone()
+                match &filter {
+                    Some(name) => Self::find_matching_image(&cache.images, name)
+                        .into_iter()
+                        .collect(),
+                    None => cache.images.clone(),
+                }
             } else {
                 // Write cache
                 if filter.is_none() {
@@ -181,5 +190,68 @@ impl ImageFactory {
                 .next()
                 .ok_or(Error::UnknownImage(name.to_string()))
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::HashAlg;
+    use std::str::FromStr;
+
+    fn build_image(vendor: &str, names: &[&str], arch: Arch) -> Image {
+        Image {
+            vendor: vendor.to_string(),
+            names: names.iter().map(|n| n.to_string()).collect(),
+            arch,
+            image_url: "image_url".to_string(),
+            checksum_url: "checksum_url".to_string(),
+            hash_alg: HashAlg::Sha256,
+            size: None,
+        }
+    }
+
+    #[test]
+    fn test_find_matching_image_matches_vendor_arch_and_name() {
+        let images = vec![
+            build_image("almalinux", &["9"], Arch::AMD64),
+            build_image("debian", &["12", "bookworm"], Arch::AMD64),
+        ];
+        let filter = ImageName::from_str("debian:bookworm:amd64").unwrap();
+
+        let found = ImageFactory::find_matching_image(&images, &filter);
+
+        assert_eq!(found, Some(images[1].clone()));
+    }
+
+    #[test]
+    fn test_find_matching_image_returns_none_on_vendor_mismatch() {
+        let images = vec![build_image("debian", &["12", "bookworm"], Arch::AMD64)];
+        let filter = ImageName::from_str("ubuntu:bookworm:amd64").unwrap();
+
+        assert_eq!(ImageFactory::find_matching_image(&images, &filter), None);
+    }
+
+    #[test]
+    fn test_find_matching_image_returns_none_on_arch_mismatch() {
+        let images = vec![build_image("debian", &["12", "bookworm"], Arch::AMD64)];
+        let filter = ImageName::from_str("debian:bookworm:arm64").unwrap();
+
+        assert_eq!(ImageFactory::find_matching_image(&images, &filter), None);
+    }
+
+    #[test]
+    fn test_find_matching_image_returns_none_on_name_mismatch() {
+        let images = vec![build_image("debian", &["12", "bookworm"], Arch::AMD64)];
+        let filter = ImageName::from_str("debian:bullseye:amd64").unwrap();
+
+        assert_eq!(ImageFactory::find_matching_image(&images, &filter), None);
+    }
+
+    #[test]
+    fn test_find_matching_image_returns_none_for_empty_images() {
+        let filter = ImageName::from_str("debian:bookworm:amd64").unwrap();
+
+        assert_eq!(ImageFactory::find_matching_image(&[], &filter), None);
     }
 }
