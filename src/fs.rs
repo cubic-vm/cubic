@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub struct FS;
 
@@ -10,12 +10,8 @@ impl FS {
     }
 
     pub fn create_dir(&self, path: &str) -> Result<()> {
-        if !Path::new(path).exists() {
-            return fs::create_dir_all(path)
-                .map_err(|e| Error::FS(format!("Cannot create directory '{path}' ({e})")));
-        }
-
-        Ok(())
+        fs::create_dir_all(path)
+            .map_err(|e| Error::FS(format!("Cannot create directory '{path}' ({e})")))
     }
 
     pub fn read_dir(&self, path: &str) -> Result<fs::ReadDir> {
