@@ -48,11 +48,7 @@ impl Command for ListInstanceCommand {
                 .add(&instance.cpus.to_string(), Alignment::Right)
                 .add(&instance.mem.to_size(), Alignment::Right)
                 .add(
-                    &instance
-                        .disk_used
-                        .as_ref()
-                        .map(|size| size.to_size())
-                        .unwrap_or("n/a".to_string()),
+                    &util::format_or_na(instance.disk_used.as_ref().map(|size| size.to_size())),
                     Alignment::Right,
                 )
                 .add(&instance.disk_capacity.to_size(), Alignment::Right)
