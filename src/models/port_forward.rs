@@ -89,7 +89,7 @@ impl PortForward {
             if let Some(ip) = host_ip {
                 ip.parse::<IpAddr>().map_err(|_| ())?
             } else {
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))
+                IpAddr::V4(Ipv4Addr::LOCALHOST)
             },
             host_port.parse::<u16>().map_err(|_| ())?,
             guest_port.parse::<u16>().map_err(|_| ())?,
