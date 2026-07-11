@@ -39,10 +39,8 @@ impl ImageCache {
 
     fn deserialize(reader: &mut dyn Read) -> Option<ImageCache> {
         let mut data = String::new();
-        match reader.read_to_string(&mut data).is_ok() {
-            true => toml::from_str(&data).ok(),
-            false => None,
-        }
+        reader.read_to_string(&mut data).ok()?;
+        toml::from_str(&data).ok()
     }
 
     fn serialize(&self, writer: &mut dyn Write) -> Result<()> {
