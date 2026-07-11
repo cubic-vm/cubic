@@ -20,6 +20,16 @@ use clap::Parser;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
+    // Disable raw mode before the default panic hook runs, so a panic during
+    // an interactive session (ssh, console) does not leave the terminal
+    // broken. This also covers panic = 'abort' builds, since the hook runs
+    // before the process aborts.
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        crossterm::terminal::disable_raw_mode().ok();
+        default_hook(info);
+    }));
+
     let console = &mut view::Stdio::new();
     match CommandDispatcher::parse().dispatch(console) {
         Ok(()) => ExitCode::SUCCESS,
