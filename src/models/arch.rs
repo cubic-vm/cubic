@@ -12,14 +12,14 @@ pub enum Arch {
 
 impl Arch {
     pub fn as_vendor_str(&self) -> &str {
-        match &self {
+        match self {
             Arch::AMD64 => "amd64",
             Arch::ARM64 => "arm64",
         }
     }
 
     pub fn as_canonical_str(&self) -> &str {
-        match &self {
+        match self {
             Arch::AMD64 => "x86_64",
             Arch::ARM64 => "aarch64",
         }
