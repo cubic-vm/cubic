@@ -14,7 +14,7 @@ pub trait InstanceStore {
     fn delete(&self, instance: &Instance) -> Result<()>;
 
     fn is_running(&self, instance: &Instance) -> bool;
-    fn get_pid(&self, instance: &Instance) -> std::result::Result<u64, ()>;
+    fn get_pid(&self, instance: &Instance) -> Option<u64>;
     fn kill(&self, instance: &Instance) -> Result<()>;
 
     fn get_monitor(&self, instance: &Instance) -> Result<Monitor>;

@@ -197,14 +197,14 @@ impl InstanceStore for InstanceDao {
         self.read_running_pid(instance).is_some()
     }
 
-    fn get_pid(&self, instance: &Instance) -> std::result::Result<u64, ()> {
-        self.read_running_pid(instance).ok_or(())
+    fn get_pid(&self, instance: &Instance) -> Option<u64> {
+        self.read_running_pid(instance)
     }
 
     fn kill(&self, instance: &Instance) -> Result<()> {
         let pid = self
             .get_pid(instance)
-            .map_err(|_| Error::InstanceNotRunning(instance.name.clone()))?;
+            .ok_or_else(|| Error::InstanceNotRunning(instance.name.clone()))?;
 
         let sys_pid = sysinfo::Pid::from_u32(pid as u32);
         let mut system = sysinfo::System::new();
