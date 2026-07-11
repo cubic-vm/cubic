@@ -25,7 +25,8 @@ impl EnvironmentFactory {
     }
 
     pub fn get_username() -> String {
-        let username = Self::read_current_username().unwrap_or(DEFAULT_USERNAME.to_string());
+        let username =
+            Self::read_current_username().unwrap_or_else(|| DEFAULT_USERNAME.to_string());
         if username == ROOT_USERNAME {
             DEFAULT_USERNAME.to_string()
         } else {
@@ -36,7 +37,7 @@ impl EnvironmentFactory {
     #[cfg(target_os = "linux")]
     pub fn create_env() -> Result<Environment> {
         let data_dir = Self::read_env("SNAP_USER_COMMON")
-            .or(Self::read_env("XDG_DATA_HOME"))
+            .or_else(|_| Self::read_env("XDG_DATA_HOME"))
             .or_else(|_| Self::read_env("HOME").map(|home| format!("{home}/.local/share")))?;
         let cache_dir = Self::read_env("XDG_CACHE_HOME")
             .or_else(|_| Self::read_env("HOME").map(|home| format!("{home}/.cache")))?;
