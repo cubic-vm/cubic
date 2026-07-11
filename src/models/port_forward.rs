@@ -14,7 +14,7 @@ static PORT_REGEX: LazyLock<Regex> =
 const FORMAT_ERROR: &str = "Must comply with format: [host_ip:]host_port:guest_port[/(udp|tcp)] (e.g. -p 8000:80 or -p 127.0.0.1:9000:90/tcp)";
 const QEMU_FORMAT_ERROR: &str = "Must comply with format: [tcp|udp]:[hostaddr]:hostport-[guestaddr]:guestport (e.g. ::8000-:80 or -p tcp:127.0.0.1:9000-:90)";
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Protocol {
     Udp,
     Tcp,
@@ -45,7 +45,7 @@ impl Display for Protocol {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PortForward {
     host_ip: IpAddr,
     host_port: u16,
@@ -76,7 +76,7 @@ impl PortForward {
     }
 
     pub fn get_protocol(&self) -> Protocol {
-        self.protocol.clone()
+        self.protocol
     }
 
     fn from_value(
