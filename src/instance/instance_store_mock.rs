@@ -53,8 +53,8 @@ pub mod tests {
             false
         }
 
-        fn get_pid(&self, _instance: &Instance) -> std::result::Result<u64, ()> {
-            std::result::Result::Err(())
+        fn get_pid(&self, _instance: &Instance) -> Option<u64> {
+            None
         }
 
         fn kill(&self, _instance: &Instance) -> Result<()> {

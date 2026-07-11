@@ -34,7 +34,7 @@ impl Command for ShowInstanceCommand {
         );
         view.add(
             "PID",
-            &util::format_or_na(instance_store.get_pid(&instance).ok()),
+            &util::format_or_na(instance_store.get_pid(&instance)),
         );
         view.add("Arch", &instance.arch.to_string());
         view.add("CPUs", &instance.cpus.to_string());
