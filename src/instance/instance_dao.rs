@@ -8,7 +8,6 @@ use crate::models::{DataSize, Environment, Instance, InstanceName};
 use crate::qemu::Monitor;
 use crate::qemu::QemuImg;
 use crate::ssh_cmd::PortChecker;
-use std::fs::DirEntry;
 use std::path::Path;
 use std::str;
 use std::str::FromStr;
@@ -63,21 +62,17 @@ impl InstanceStore for InstanceDao {
         let mut instances: Vec<String> = self
             .fs
             .read_dir(&self.env.get_instance_dir())
-            .map_err(|_| ())
-            .and_then(|entries| {
-                entries
-                    .collect::<std::result::Result<Vec<DirEntry>, _>>()
-                    .map_err(|_| ())
-            })
+            .ok()
+            .and_then(|entries| entries.collect::<std::io::Result<Vec<_>>>().ok())
             .map(|entries| {
                 entries
                     .iter()
-                    .filter_map(|entry| entry.file_name().to_str().map(|x| x.to_string()))
-                    .filter(|entry| InstanceName::from_str(entry).is_ok())
-                    .collect::<Vec<String>>()
+                    .filter_map(|entry| entry.file_name().into_string().ok())
+                    .filter(|name| InstanceName::from_str(name).is_ok())
+                    .collect()
             })
             .unwrap_or_default();
-        instances.sort_by_key(|a| a.to_lowercase());
+        instances.sort_by_key(|name| name.to_lowercase());
         instances
     }
 
