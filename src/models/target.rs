@@ -46,12 +46,10 @@ impl FromStr for Target {
 
 impl fmt::Display for Target {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        let mut result = Ok(());
-
         if let Some(user) = self.user.as_ref() {
-            result = write!(f, "{user}@")
+            write!(f, "{user}@")?;
         }
-        result.or(write!(f, "{}", self.instance))
+        write!(f, "{}", self.instance)
     }
 }
 
