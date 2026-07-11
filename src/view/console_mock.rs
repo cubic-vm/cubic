@@ -61,6 +61,11 @@ pub mod tests {
             self.input.pop_front().unwrap_or_default()
         }
 
+        fn prompt_password(&mut self, text: &str) -> Result<String, ()> {
+            self.log(text);
+            Ok(self.input.pop_front().unwrap_or_default())
+        }
+
         fn raw_mode(&mut self) {}
         fn reset(&mut self) {}
 

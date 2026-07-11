@@ -4,7 +4,7 @@ use crossterm::QueueableCommand;
 use crossterm::cursor::MoveToColumn;
 use crossterm::style::{Attribute, Color, Print, SetAttribute, SetForegroundColor};
 use crossterm::terminal::{Clear, ClearType};
-use std::io::{IsTerminal, Stdout, Write, stderr, stdin, stdout};
+use std::io::{IsTerminal, Read, Stdout, Write, stderr, stdin, stdout};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
@@ -116,6 +116,25 @@ impl Stdio {
             AnimationState::draw_frame(&mut stdout, &animation);
         }
     }
+
+    // Mute the animation render thread and clear its line so a prompt can
+    // hold it. Pairs with unmute().
+    fn mute(&self) {
+        let mut inner = self.state.inner.lock().unwrap();
+        if inner.animation.is_some() {
+            inner.muted = true;
+            AnimationState::clear_line(&mut stdout());
+        }
+    }
+
+    // Unmute the animation render thread and redraw its current frame.
+    fn unmute(&self) {
+        let mut inner = self.state.inner.lock().unwrap();
+        if let Some(animation) = inner.animation.clone() {
+            inner.muted = false;
+            AnimationState::draw_frame(&mut stdout(), &animation);
+        }
+    }
 }
 
 impl AnimationState {
@@ -201,28 +220,87 @@ impl Console for Stdio {
     }
 
     fn prompt(&mut self, text: &str) -> String {
-        let animation = {
-            let mut inner = self.state.inner.lock().unwrap();
-            let animation = inner.animation.clone();
-            if animation.is_some() {
-                inner.muted = true;
-                AnimationState::clear_line(&mut stdout());
-            }
-            animation
-        };
+        self.mute();
 
         print!("{text}");
         stdout().flush().unwrap();
         let mut reply = String::new();
         stdin().read_line(&mut reply).unwrap();
 
-        if let Some(animation) = animation {
-            let mut inner = self.state.inner.lock().unwrap();
-            inner.muted = false;
-            AnimationState::draw_frame(&mut stdout(), &animation);
-        }
+        self.unmute();
 
         reply.trim().to_string()
+    }
+
+    // Reads a password character by character in raw mode, without echoing
+    // input back to the terminal (not even as masking characters).
+    fn prompt_password(&mut self, text: &str) -> Result<String, ()> {
+        self.mute();
+
+        print!("{text}");
+        if stdout().flush().is_err() {
+            self.unmute();
+            return Err(());
+        }
+
+        self.raw_mode();
+        let mut password = String::new();
+        let mut pending = Vec::new();
+        let mut stdin = stdin();
+        let mut failed = false;
+        loop {
+            let mut byte = [0u8];
+            match stdin.read(&mut byte) {
+                Ok(0) | Err(_) => {
+                    failed = true;
+                    break;
+                }
+                Ok(_) => {}
+            }
+
+            match byte[0] {
+                // Ctrl+C
+                0x03 => {
+                    self.reset();
+                    println!();
+                    std::process::exit(1)
+                }
+
+                // Carriage return and line feed
+                0x0A | 0x0D => break,
+
+                // Backspace and delete
+                0x08 | 0x7F => {
+                    pending.clear();
+                    password.pop();
+                }
+
+                byte => {
+                    pending.push(byte);
+                    match std::str::from_utf8(&pending) {
+                        Ok(text) => {
+                            password.push_str(text);
+                            pending.clear();
+                        }
+                        Err(err) if err.error_len().is_some() => {
+                            failed = true;
+                            break;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        self.reset();
+        print!("\r\n");
+
+        self.unmute();
+
+        if failed || !pending.is_empty() {
+            return Err(());
+        }
+
+        Ok(password)
     }
 
     fn raw_mode(&mut self) {
