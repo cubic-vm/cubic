@@ -134,9 +134,11 @@ impl Russh {
         console: &mut dyn Console,
         session: &mut russh::client::Handle<Client>,
         user: &str,
+        machine: &str,
     ) -> Result<(), ()> {
         loop {
-            let password = console.prompt_password(&format!("{user}@localhost's password: "))?;
+            let password =
+                console.prompt_password(&format!("Enter password for {user}@{machine}: "))?;
 
             if session
                 .authenticate_password(user, password)
@@ -156,6 +158,7 @@ impl Russh {
         console: &mut dyn Console,
         session: &mut russh::client::Handle<Client>,
         user: &str,
+        machine: &str,
         client_key: &str,
     ) -> Result<AuthMethod, ()> {
         // The cubic per-instance ssh_client_key is the only supported method.
@@ -194,7 +197,7 @@ impl Russh {
         }
 
         console.debug("Default password failed, prompting for a password");
-        self.authenticate_with_password(console, session, user)
+        self.authenticate_with_password(console, session, user, machine)
             .await
             .map(|_| AuthMethod::Deprecated)
     }
@@ -264,7 +267,7 @@ impl Russh {
         )))));
 
         let auth_method = self
-            .authenticate(console, &mut session, user, client_key)
+            .authenticate(console, &mut session, user, machine, client_key)
             .await;
         console.stop();
 
