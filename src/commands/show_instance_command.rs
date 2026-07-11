@@ -34,39 +34,21 @@ impl Command for ShowInstanceCommand {
         );
         view.add(
             "PID",
-            &instance_store
-                .get_pid(&instance)
-                .map(|pid| pid.to_string())
-                .unwrap_or("n/a".to_string()),
+            &util::format_or_na(instance_store.get_pid(&instance).ok()),
         );
         view.add("Arch", &instance.arch.to_string());
         view.add("CPUs", &instance.cpus.to_string());
         view.add("Memory", &instance.mem.to_size());
         view.add(
             "Disk Used",
-            &instance
-                .disk_used
-                .map(|size| size.to_size())
-                .unwrap_or("n/a".to_string()),
+            &util::format_or_na(instance.disk_used.map(|size| size.to_size())),
         );
         view.add("Disk Total", &instance.disk_capacity.to_size());
         view.add("User", &instance.user);
         view.add("Isolated", util::to_yes_no(instance.isolate));
         view.add("SSH Port", &instance.ssh_port.to_string());
-        view.add(
-            "Monitor Port",
-            &instance
-                .monitor_port
-                .map(|port| port.to_string())
-                .unwrap_or("n/a".to_string()),
-        );
-        view.add(
-            "Console Port",
-            &instance
-                .console_port
-                .map(|port| port.to_string())
-                .unwrap_or("n/a".to_string()),
-        );
+        view.add("Monitor Port", &util::format_or_na(instance.monitor_port));
+        view.add("Console Port", &util::format_or_na(instance.console_port));
 
         // Port forwarding
         for (index, rule) in instance.hostfwd.iter().enumerate() {

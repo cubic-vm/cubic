@@ -21,10 +21,11 @@ impl Command for ShowImageCommand {
         let env = context.get_env();
         let image = fetch_image_info(console, env, &self.name)?;
 
-        let size = image
-            .size
-            .map(|size| DataSize::new(size as usize).to_size())
-            .unwrap_or("n/a".to_string());
+        let size = util::format_or_na(
+            image
+                .size
+                .map(|size| DataSize::new(size as usize).to_size()),
+        );
 
         let mut view = MapView::new();
         view.add("Name", &image.get_image_names());

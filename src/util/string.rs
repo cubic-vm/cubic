@@ -13,6 +13,10 @@ pub fn to_yes_no(condition: bool) -> &'static str {
     if condition { "yes" } else { "no" }
 }
 
+pub fn format_or_na<T: ToString>(value: Option<T>) -> String {
+    value.map_or_else(|| "n/a".to_string(), |value| value.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -32,5 +36,12 @@ mod tests {
     fn test_to_yes_no() {
         assert_eq!(to_yes_no(true), "yes");
         assert_eq!(to_yes_no(false), "no");
+    }
+
+    #[test]
+    fn test_format_or_na() {
+        assert_eq!(format_or_na(Some(8001)), "8001");
+        assert_eq!(format_or_na(Some("1.0 GiB".to_string())), "1.0 GiB");
+        assert_eq!(format_or_na(None::<u16>), "n/a");
     }
 }
