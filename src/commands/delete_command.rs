@@ -1,7 +1,6 @@
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
-use crate::util;
-use crate::view::Console;
+use crate::view::{ConfirmDialog, Console};
 use clap::Parser;
 
 /// Delete VM instances
@@ -49,7 +48,7 @@ impl Command for DeleteCommand {
         }
 
         // Ask for confirmation
-        if self.yes.value || util::confirm(console, "\nDo you want to proceed? [y/n]: ") {
+        if self.yes.value || ConfirmDialog::new("\nDo you want to proceed?").confirm(console) {
             // Stop the VM instances
             commands::StopCommand {
                 all: false,
