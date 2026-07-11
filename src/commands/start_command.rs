@@ -4,9 +4,8 @@ use crate::error::{Error, Result};
 use crate::instance::InstanceStore;
 use crate::models::{DataSize, HOST_MEMORY_RESERVE, Instance, ResourceAllocator};
 use crate::ssh_cmd::PortChecker;
-use crate::util;
 use crate::view::Console;
-use crate::view::Spinner;
+use crate::view::{ConfirmDialog, Spinner};
 use clap::Parser;
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
@@ -140,7 +139,7 @@ impl StartCommand {
             mem.to_size(),
         ));
 
-        if self.yes.value || util::confirm(console, "Reduce and start? [y/n]: ") {
+        if self.yes.value || ConfirmDialog::new("Reduce and start?").confirm(console) {
             instance.cpus = cpus;
             instance.mem = mem;
             instance_store.store(instance)?;

@@ -1,5 +1,6 @@
 mod animation;
 mod async_transfer_view;
+mod confirm_dialog;
 mod console;
 mod console_mock;
 mod map_view;
@@ -12,6 +13,7 @@ mod transfer_view;
 
 pub use animation::*;
 pub use async_transfer_view::*;
+pub use confirm_dialog::*;
 pub use console::*;
 #[cfg(test)]
 pub use console_mock::tests::ConsoleMock;

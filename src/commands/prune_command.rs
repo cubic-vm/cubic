@@ -2,8 +2,7 @@ use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::fs::FS;
 use crate::models::DataSize;
-use crate::util;
-use crate::view::Console;
+use crate::view::{ConfirmDialog, Console};
 use clap::Parser;
 
 /// Clear caches
@@ -38,7 +37,9 @@ impl Command for PruneCommand {
         // Print size of files to be deleted
         console.print(&format!("\nTotal size: {total}\n"));
 
-        if self.yes.value || util::confirm(console, "Are you sure you want to continue? [y/N]") {
+        if self.yes.value
+            || ConfirmDialog::new("Are you sure you want to continue?").confirm(console)
+        {
             // Delete files
             fs.remove_file(&env.get_image_cache_file()).ok();
             fs.remove_dir(&env.get_image_dir()).ok();
