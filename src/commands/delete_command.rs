@@ -49,7 +49,7 @@ impl Command for DeleteCommand {
         }
 
         // Ask for confirmation
-        if self.yes.value || util::confirm("\nDo you want to proceed? [y/n]: ") {
+        if self.yes.value || util::confirm(console, "\nDo you want to proceed? [y/n]: ") {
             // Stop the VM instances
             commands::StopCommand {
                 all: false,

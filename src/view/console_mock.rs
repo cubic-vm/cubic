@@ -8,6 +8,7 @@ pub mod tests {
     #[derive(Default)]
     pub struct ConsoleMock {
         output: String,
+        input: std::collections::VecDeque<String>,
     }
 
     impl ConsoleMock {
@@ -17,6 +18,10 @@ pub mod tests {
 
         pub fn get_output(&self) -> String {
             self.output.clone()
+        }
+
+        pub fn push_input(&mut self, line: &str) {
+            self.input.push_back(line.to_string());
         }
 
         fn log(&mut self, msg: &str) {
@@ -49,6 +54,11 @@ pub mod tests {
 
         fn get_geometry(&self) -> Option<(u32, u32)> {
             None
+        }
+
+        fn prompt(&mut self, text: &str) -> String {
+            self.log(text);
+            self.input.pop_front().unwrap_or_default()
         }
 
         fn raw_mode(&mut self) {}

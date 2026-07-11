@@ -38,7 +38,7 @@ impl Command for PruneCommand {
         // Print size of files to be deleted
         console.print(&format!("\nTotal size: {total}\n"));
 
-        if self.yes.value || util::confirm("Are you sure you want to continue? [y/N]") {
+        if self.yes.value || util::confirm(console, "Are you sure you want to continue? [y/N]") {
             // Delete files
             fs.remove_file(&env.get_image_cache_file()).ok();
             fs.remove_dir(&env.get_image_dir()).ok();

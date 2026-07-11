@@ -4,7 +4,7 @@ use crossterm::QueueableCommand;
 use crossterm::cursor::MoveToColumn;
 use crossterm::style::{Attribute, Color, Print, SetAttribute, SetForegroundColor};
 use crossterm::terminal::{Clear, ClearType};
-use std::io::{IsTerminal, Stdout, Write, stderr, stdout};
+use std::io::{IsTerminal, Stdout, Write, stderr, stdin, stdout};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
@@ -45,6 +45,7 @@ struct AnimationState {
 
 struct AnimationInner {
     animation: Option<Arc<Mutex<dyn Animation>>>,
+    muted: bool,
     shutdown: bool,
 }
 
@@ -90,6 +91,7 @@ impl Stdio {
             state: Arc::new(AnimationState {
                 inner: Mutex::new(AnimationInner {
                     animation: None,
+                    muted: false,
                     shutdown: false,
                 }),
                 signal: Condvar::new(),
@@ -119,8 +121,9 @@ impl Stdio {
 impl AnimationState {
     // One reusable thread renders the current animation. It parks on the
     // condvar while idle and ticks every ANIMATION_TICK_MS while an animation
-    // is set. The state lock is held during a render so that stop() can clear
-    // the line without racing a write.
+    // is set, skipping the draw while muted so prompt() can hold the line.
+    // The state lock is held during a render so that stop() can clear the
+    // line without racing a write.
     fn run(self: Arc<Self>) {
         let mut stdout = stdout();
         let mut inner = self.inner.lock().unwrap();
@@ -130,7 +133,9 @@ impl AnimationState {
                     inner = self.signal.wait(inner).unwrap();
                 }
                 Some(animation) => {
-                    Self::draw_frame(&mut stdout, &animation);
+                    if !inner.muted {
+                        Self::draw_frame(&mut stdout, &animation);
+                    }
                     let timeout = Duration::from_millis(ANIMATION_TICK_MS);
                     inner = self.signal.wait_timeout(inner, timeout).unwrap().0;
                 }
@@ -193,6 +198,31 @@ impl Console for Stdio {
         crossterm::terminal::size()
             .map(|(w, h)| (w as u32, h as u32))
             .ok()
+    }
+
+    fn prompt(&mut self, text: &str) -> String {
+        let animation = {
+            let mut inner = self.state.inner.lock().unwrap();
+            let animation = inner.animation.clone();
+            if animation.is_some() {
+                inner.muted = true;
+                AnimationState::clear_line(&mut stdout());
+            }
+            animation
+        };
+
+        print!("{text}");
+        stdout().flush().unwrap();
+        let mut reply = String::new();
+        stdin().read_line(&mut reply).unwrap();
+
+        if let Some(animation) = animation {
+            let mut inner = self.state.inner.lock().unwrap();
+            inner.muted = false;
+            AnimationState::draw_frame(&mut stdout(), &animation);
+        }
+
+        reply.trim().to_string()
     }
 
     fn raw_mode(&mut self) {

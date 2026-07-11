@@ -140,7 +140,7 @@ impl StartCommand {
             mem.to_size(),
         ));
 
-        if self.yes.value || util::confirm("Reduce and start? [y/n]: ") {
+        if self.yes.value || util::confirm(console, "Reduce and start? [y/n]: ") {
             instance.cpus = cpus;
             instance.mem = mem;
             instance_store.store(instance)?;
