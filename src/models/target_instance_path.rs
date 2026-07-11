@@ -1,9 +1,5 @@
 use crate::models::Instance;
-use regex::Regex;
-use std::path::{Path, PathBuf};
-use std::sync::LazyLock;
-
-static HOME_DIR_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new("^~").unwrap());
+use std::path::PathBuf;
 
 #[derive(Clone)]
 pub struct TargetInstancePath {
@@ -14,19 +10,15 @@ pub struct TargetInstancePath {
 
 impl TargetInstancePath {
     pub fn to_pathbuf(&self) -> PathBuf {
-        let path = if let Some(user) = self
+        let user = self
             .user
-            .clone()
-            .or(self.instance.as_ref().map(|i| i.user.clone()))
-        {
-            HOME_DIR_REGEX
-                .replace_all(&self.path, &format!("/home/{user}"))
-                .to_string()
-        } else {
-            self.path.to_string()
-        };
+            .as_deref()
+            .or(self.instance.as_ref().map(|i| i.user.as_str()));
 
-        Path::new(&path).to_path_buf()
+        match (user, self.path.strip_prefix('~')) {
+            (Some(user), Some(rest)) => PathBuf::from(format!("/home/{user}{rest}")),
+            _ => PathBuf::from(&self.path),
+        }
     }
 }
 
