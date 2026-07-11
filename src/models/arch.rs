@@ -1,6 +1,7 @@
 use crate::error::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::str::FromStr;
 
 #[derive(Eq, Hash, PartialEq, Default, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Arch {
@@ -10,14 +11,6 @@ pub enum Arch {
 }
 
 impl Arch {
-    pub fn from_str(arch: &str) -> Result<Arch> {
-        match arch {
-            "amd64" => Ok(Arch::AMD64),
-            "arm64" => Ok(Arch::ARM64),
-            _ => Err(Error::UnknownArch(arch.to_string())),
-        }
-    }
-
     pub fn as_vendor_str(&self) -> &str {
         match &self {
             Arch::AMD64 => "amd64",
@@ -29,6 +22,18 @@ impl Arch {
         match &self {
             Arch::AMD64 => "x86_64",
             Arch::ARM64 => "aarch64",
+        }
+    }
+}
+
+impl FromStr for Arch {
+    type Err = Error;
+
+    fn from_str(arch: &str) -> Result<Arch> {
+        match arch {
+            "amd64" => Ok(Arch::AMD64),
+            "arm64" => Ok(Arch::ARM64),
+            _ => Err(Error::UnknownArch(arch.to_string())),
         }
     }
 }
