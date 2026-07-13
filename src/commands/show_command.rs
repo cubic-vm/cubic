@@ -77,3 +77,63 @@ impl Command for ShowCommand {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::Error;
+    use crate::image::ImageStoreMock;
+    use crate::instance::InstanceStoreMock;
+    use crate::models::{Environment, Instance};
+    use crate::view::ConsoleMock;
+    use std::str::FromStr;
+
+    fn build_context(instances: Vec<Instance>) -> commands::Context {
+        let env = Environment::new(
+            "cubic".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
+        commands::Context::new(
+            env,
+            Box::new(ImageStoreMock::default()),
+            Box::new(InstanceStoreMock::new(instances)),
+        )
+    }
+
+    #[test]
+    fn test_show_routes_plain_name_to_instance_view() {
+        let console = &mut ConsoleMock::new();
+        let context = build_context(vec![Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }]);
+
+        ShowCommand {
+            name: InstanceImageName::from_str("test").unwrap(),
+            all: false,
+        }
+        .run(console, &context)
+        .unwrap();
+
+        assert!(console.get_output().starts_with("Running:"));
+    }
+
+    #[test]
+    fn test_show_rejects_unknown_instance() {
+        let console = &mut ConsoleMock::new();
+        let context = build_context(Vec::new());
+
+        let result = ShowCommand {
+            name: InstanceImageName::from_str("missing").unwrap(),
+            all: false,
+        }
+        .run(console, &context);
+
+        assert!(matches!(
+            result,
+            Err(Error::UnknownInstance(ref name)) if name == "missing"
+        ));
+    }
+}

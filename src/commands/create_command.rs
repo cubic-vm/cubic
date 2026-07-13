@@ -128,3 +128,40 @@ impl Command for CreateCommand {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::image::ImageStoreMock;
+    use crate::instance::InstanceStoreMock;
+    use crate::models::Environment;
+    use crate::view::ConsoleMock;
+
+    #[test]
+    fn test_create_rejects_existing_instance_name() {
+        let console = &mut ConsoleMock::new();
+        let env = Environment::new(
+            "cubic".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
+        let context = Context::new(
+            env,
+            Box::new(ImageStoreMock::default()),
+            Box::new(InstanceStoreMock::new(vec![Instance {
+                name: "test".to_string(),
+                ..Instance::default()
+            }])),
+        );
+
+        let result = CreateCommand::try_parse_from(["create", "test", "-i", "debian:bookworm"])
+            .unwrap()
+            .run(console, &context);
+
+        assert!(matches!(
+            result,
+            Err(Error::InstanceAlreadyExists(ref name)) if name == "test"
+        ));
+    }
+}
