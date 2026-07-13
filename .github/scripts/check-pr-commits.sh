@@ -19,7 +19,7 @@ for revision in "$base_sha" "$head_sha"; do
 done
 
 # Match the commit type prefixes documented in CONTRIBUTING.md.
-commit_subject='^(feat|fix|refactor|docs|chore|revert): .+'
+commit_subject='^(feat|fix|perf|refactor|style|docs|test|build|ci|chore|revert): .+'
 
 has_error=0
 

@@ -150,8 +150,13 @@ General guideline:
 - Each Git commit message must start with either:
   - `feat: ...` for features
   - `fix: ...` for bug and security fixes
+  - `perf: ...` for performance improvements
   - `refactor: ...` for code refactorings
+  - `style: ...` for formatting or whitespace changes with no logic change
   - `docs: ...` for documentation changes
+  - `test: ...` for adding or correcting tests
+  - `build: ...` for build system or dependency changes
+  - `ci: ...` for CI/CD pipeline changes
   - `chore: ...` for changes not related to source code
   - `revert: ...` for reverting a previous commit
 
