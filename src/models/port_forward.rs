@@ -196,6 +196,63 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_reject_unparsable_forward() {
+        assert!("abc".parse::<PortForward>().is_err());
+    }
+
+    #[test]
+    fn test_reject_host_port_overflow() {
+        assert!("99999:80".parse::<PortForward>().is_err());
+    }
+
+    #[test]
+    fn test_reject_invalid_host_ip() {
+        assert!("999.0.0.1:8000:80".parse::<PortForward>().is_err());
+    }
+
+    #[test]
+    fn test_reject_unparsable_qemu_forward() {
+        assert!(PortForward::from_qemu("garbage").is_err());
+    }
+
+    #[test]
+    fn test_reject_qemu_guest_port_overflow() {
+        assert!(PortForward::from_qemu("tcp:127.0.0.1:8000-:99999").is_err());
+    }
+
+    #[test]
+    fn test_reject_unknown_protocol() {
+        assert!(Protocol::from_str("sctp").is_err());
+    }
+
+    #[test]
+    fn test_protocol_to_string() {
+        assert_eq!(Protocol::Udp.to_string(), "udp");
+        assert_eq!(Protocol::Tcp.to_string(), "tcp");
+    }
+
+    #[test]
+    fn test_serde_round_trip_uses_qemu_format() {
+        let forward = PortForward::new(
+            IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+            8000,
+            80,
+            Protocol::Tcp,
+        );
+
+        let serialized = serde_json::to_string(&forward).unwrap();
+        assert_eq!(serialized, "\"tcp:127.0.0.1:8000-:80\"");
+
+        let deserialized: PortForward = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(deserialized, forward);
+    }
+
+    #[test]
+    fn test_deserialize_rejects_invalid_forward() {
+        assert!(serde_json::from_str::<PortForward>("\"garbage\"").is_err());
+    }
+
+    #[test]
     fn test_basic_parsing() {
         assert_eq!(
             "1000:10".parse(),

@@ -275,4 +275,19 @@ mod tests {
 
         assert_eq!(ImageFactory::find_matching_image(&[], &filter), None);
     }
+
+    #[test]
+    fn test_filter_arch_without_filter_keeps_all_arches() {
+        assert_eq!(
+            ImageFactory::filter_arch(None),
+            vec![Arch::AMD64, Arch::ARM64]
+        );
+    }
+
+    #[test]
+    fn test_filter_arch_keeps_only_filtered_arch() {
+        let filter = ImageName::from_str("debian:bookworm:arm64").unwrap();
+
+        assert_eq!(ImageFactory::filter_arch(Some(filter)), vec![Arch::ARM64]);
+    }
 }

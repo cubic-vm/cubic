@@ -76,4 +76,18 @@ mod tests {
         assert_eq!(&result[33..39], &[102, 111, 111, 98, 97, 114]);
         assert_eq!(result[39], 0);
     }
+
+    #[test]
+    fn test_write_dir_record_with_odd_file_id_skips_padding() {
+        let writer = &mut BinaryWriter::new(Cursor::new(Vec::new()));
+        let mut dir = DirRecord::default();
+        dir.file_id_len = 5;
+        dir.file_id = "fooba".to_string();
+        dir.write(writer).unwrap();
+
+        let result = writer.get_writer().get_ref();
+        assert_eq!(result.len(), 38);
+        assert_eq!(result[32], 5);
+        assert_eq!(&result[33..38], "fooba".as_bytes());
+    }
 }

@@ -83,4 +83,17 @@ bootcmd:
             "\nActual: {actual}\nExpected: {expected}\n"
         )
     }
+
+    #[test]
+    fn test_write_user_data_escapes_execute() {
+        let actual = UserDataFactory::default().create("tux", "pubkey", Some("a\\b\t\"c\"\nd\re"));
+
+        let expected_bootcmd = r#"bootcmd:
+  - "a\\b\t\"c\"\nd\re"
+"#;
+        assert!(
+            actual.ends_with(expected_bootcmd),
+            "\nActual: {actual}\nExpected suffix: {expected_bootcmd}\n"
+        )
+    }
 }

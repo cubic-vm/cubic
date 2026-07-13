@@ -23,3 +23,31 @@ impl InstanceCertPaths {
         self.ca_cert.exists()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_load_builds_paths_in_instance_dir() {
+        let paths = InstanceCertPaths::load(Path::new("/data/machines/test"));
+
+        assert_eq!(paths.ca_cert, Path::new("/data/machines/test/ca-cert.pem"));
+        assert_eq!(
+            paths.server_cert,
+            Path::new("/data/machines/test/server-cert.pem")
+        );
+        assert_eq!(
+            paths.server_key,
+            Path::new("/data/machines/test/server-key.pem")
+        );
+        assert_eq!(
+            paths.client_cert,
+            Path::new("/data/machines/test/client-cert.pem")
+        );
+        assert_eq!(
+            paths.client_key,
+            Path::new("/data/machines/test/client-key.pem")
+        );
+    }
+}
