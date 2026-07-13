@@ -33,3 +33,81 @@ impl StopInstanceAction {
         !instance_dao.is_running(&self.instance)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::instance::InstanceStoreMock;
+
+    fn build_instance(name: &str) -> Instance {
+        Instance {
+            name: name.to_string(),
+            ..Instance::default()
+        }
+    }
+
+    #[test]
+    fn test_stop_rejects_unknown_instance() {
+        let store = InstanceStoreMock::new(Vec::new());
+
+        let result = StopInstanceAction::new(&build_instance("missing")).run(&store, false);
+
+        assert!(matches!(
+            result,
+            Err(Error::UnknownInstance(ref name)) if name == "missing"
+        ));
+    }
+
+    #[test]
+    fn test_stop_kills_running_instance() {
+        let instance = build_instance("test");
+        let store = InstanceStoreMock::new_with_running(vec![instance.clone()], &["test"]);
+
+        StopInstanceAction::new(&instance)
+            .run(&store, true)
+            .unwrap();
+
+        assert_eq!(store.get_killed(), ["test"]);
+    }
+
+    #[test]
+    fn test_stop_skips_stopped_instance() {
+        let instance = build_instance("test");
+        let store = InstanceStoreMock::new(vec![instance.clone()]);
+
+        StopInstanceAction::new(&instance)
+            .run(&store, true)
+            .unwrap();
+
+        assert!(store.get_killed().is_empty());
+    }
+
+    #[test]
+    fn test_stop_without_kill_requests_monitor_shutdown() {
+        let instance = build_instance("test");
+        let store = InstanceStoreMock::new_with_running(vec![instance.clone()], &["test"]);
+
+        // The mock has no monitor, so reaching the monitor path surfaces
+        // its InstanceNotRunning error instead of a kill.
+        let result = StopInstanceAction::new(&instance).run(&store, false);
+
+        assert!(result.is_err());
+        assert!(store.get_killed().is_empty());
+    }
+
+    #[test]
+    fn test_is_done_when_instance_is_stopped() {
+        let instance = build_instance("test");
+        let store = InstanceStoreMock::new(vec![instance.clone()]);
+
+        assert!(StopInstanceAction::new(&instance).is_done(&store));
+    }
+
+    #[test]
+    fn test_is_not_done_while_instance_is_running() {
+        let instance = build_instance("test");
+        let store = InstanceStoreMock::new_with_running(vec![instance.clone()], &["test"]);
+
+        assert!(!StopInstanceAction::new(&instance).is_done(&store));
+    }
+}
