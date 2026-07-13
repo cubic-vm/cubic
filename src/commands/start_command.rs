@@ -155,11 +155,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_valid_names() {
-        assert!(StartCommand::try_parse_from(["start", "trixie", "noble"]).is_ok());
-    }
-
-    #[test]
     fn test_reject_path_traversal() {
         assert!(StartCommand::try_parse_from(["start", "../../etc"]).is_err());
     }

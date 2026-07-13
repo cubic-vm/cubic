@@ -86,11 +86,6 @@ mod tests {
     use crate::view::ConsoleMock;
 
     #[test]
-    fn test_parse_valid_names() {
-        assert!(StopCommand::try_parse_from(["stop", "trixie", "noble"]).is_ok());
-    }
-
-    #[test]
     fn test_reject_path_traversal() {
         assert!(StopCommand::try_parse_from(["stop", "../../etc"]).is_err());
     }

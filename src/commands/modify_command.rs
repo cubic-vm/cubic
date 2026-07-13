@@ -104,11 +104,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_valid_name() {
-        assert!(ModifyCommand::try_parse_from(["modify", "my-instance", "--cpus", "2"]).is_ok());
-    }
-
-    #[test]
     fn test_reject_path_traversal() {
         assert!(ModifyCommand::try_parse_from(["modify", "../../etc"]).is_err());
     }

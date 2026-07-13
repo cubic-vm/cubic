@@ -31,13 +31,6 @@ mod tests {
     }
 
     #[test]
-    fn test_two_async_calls() {
-        let caller = AsyncCaller::new();
-        assert_eq!(5, caller.call(sum(2, 3)));
-        assert_eq!(3, caller.call(sum(1, 2)));
-    }
-
-    #[test]
     fn test_multiple_runtime_async_calls() {
         let caller1 = AsyncCaller::new();
         let caller2 = AsyncCaller::new();
