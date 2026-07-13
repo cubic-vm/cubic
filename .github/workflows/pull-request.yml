@@ -18,7 +18,6 @@ jobs:
         include:
           - check: rustup component add rustfmt && cargo fmt --check
           - check: rustup component add clippy && cargo clippy --version && cargo clippy --locked -- -D warnings
-          - check: cargo test --locked
           - check: cargo install cargo-audit && cargo audit
 
     runs-on: ubuntu-latest
@@ -79,6 +78,9 @@ jobs:
 
       - name: Build Source Code
         run: cargo build --locked
+
+      - name: Run Tests
+        run: cargo test --locked
 
       - name: Run Source Code
         run: cargo run --locked -- --help
