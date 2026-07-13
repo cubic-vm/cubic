@@ -80,4 +80,20 @@ mod tests {
     fn test_invalid_target() {
         assert!(Target::from_str("cubic@my@machine").is_err());
     }
+
+    #[test]
+    fn test_to_string_without_user() {
+        assert_eq!(
+            Target::from_str("mymachine").unwrap().to_string(),
+            "mymachine"
+        );
+    }
+
+    #[test]
+    fn test_to_string_with_user() {
+        assert_eq!(
+            Target::from_str("cubic@mymachine").unwrap().to_string(),
+            "cubic@mymachine"
+        );
+    }
 }

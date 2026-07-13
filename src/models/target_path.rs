@@ -65,4 +65,24 @@ mod tests {
         let path = TargetPath::from_str("cubic@mymachine:/home/cubic").unwrap();
         assert_eq!(path.to_string().as_str(), "cubic@mymachine:/home/cubic");
     }
+
+    #[test]
+    fn test_reject_too_many_colons() {
+        assert!(TargetPath::from_str("a:b:c").is_err());
+    }
+
+    #[test]
+    fn test_get_target_of_instance_path() {
+        let path = TargetPath::from_str("mymachine:/home/cubic").unwrap();
+        assert_eq!(
+            path.get_target().unwrap().get_instance().as_str(),
+            "mymachine"
+        );
+    }
+
+    #[test]
+    fn test_get_target_of_local_path() {
+        let path = TargetPath::from_str("/home/cubic").unwrap();
+        assert!(path.get_target().is_none());
+    }
 }

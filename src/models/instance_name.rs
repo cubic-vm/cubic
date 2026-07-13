@@ -5,7 +5,7 @@ use std::sync::LazyLock;
 
 static INSTANCE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new("^[\\w_-]+$").unwrap());
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct InstanceName {
     name: String,
 }
@@ -86,5 +86,10 @@ mod tests {
     #[test]
     fn test_reject_absolute_path() {
         assert!(InstanceName::from_str("/abs/path").is_err());
+    }
+
+    #[test]
+    fn test_reject_empty_name() {
+        assert!(InstanceName::from_str("").is_err());
     }
 }

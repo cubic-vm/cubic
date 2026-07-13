@@ -17,7 +17,7 @@ pub fn get_default_arch() -> Arch {
     Arch::AMD64
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ImageName {
     vendor: String,
     name: String,
@@ -92,5 +92,25 @@ mod tests {
         assert_eq!(image.get_vendor(), "debian");
         assert_eq!(image.get_name(), "bookworm");
         assert_eq!(image.get_arch(), Arch::ARM64);
+    }
+
+    #[test]
+    fn test_reject_name_without_vendor() {
+        assert!(ImageName::from_str("debian").is_err());
+    }
+
+    #[test]
+    fn test_reject_unknown_arch() {
+        assert!(ImageName::from_str("debian:bookworm:mips").is_err());
+    }
+
+    #[test]
+    fn test_to_string() {
+        assert_eq!(
+            ImageName::from_str("debian:bookworm:arm64")
+                .unwrap()
+                .to_string(),
+            "debian:bookworm:arm64"
+        );
     }
 }

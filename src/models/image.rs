@@ -90,3 +90,88 @@ impl PartialOrd for Image {
         Some(self.cmp(other))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn build_image(vendor: &str, names: &[&str]) -> Image {
+        Image {
+            vendor: vendor.to_string(),
+            names: names.iter().map(|name| name.to_string()).collect(),
+            arch: Arch::AMD64,
+            image_url: String::new(),
+            checksum_url: String::new(),
+            hash_alg: HashAlg::Sha512,
+            size: None,
+        }
+    }
+
+    #[test]
+    fn test_get_version_is_first_name() {
+        assert_eq!(
+            build_image("debian", &["12", "bookworm"]).get_version(),
+            "12"
+        );
+    }
+
+    #[test]
+    fn test_get_name_prefers_second_name() {
+        assert_eq!(
+            build_image("debian", &["12", "bookworm"]).get_name(),
+            "bookworm"
+        );
+    }
+
+    #[test]
+    fn test_get_name_falls_back_to_single_name() {
+        assert_eq!(build_image("debian", &["bookworm"]).get_name(), "bookworm");
+    }
+
+    #[test]
+    fn test_get_image_names_joins_multiple_names() {
+        assert_eq!(
+            build_image("debian", &["12", "bookworm"]).get_image_names(),
+            "debian:{12, bookworm}"
+        );
+    }
+
+    #[test]
+    fn test_get_image_names_with_single_name() {
+        assert_eq!(
+            build_image("debian", &["bookworm"]).get_image_names(),
+            "debian:bookworm"
+        );
+    }
+
+    #[test]
+    fn test_to_name_uses_version_and_arch() {
+        assert_eq!(
+            build_image("debian", &["12", "bookworm"]).to_name(),
+            "debian:12:amd64"
+        );
+    }
+
+    #[test]
+    fn test_to_file_name_uses_name_and_arch() {
+        assert_eq!(
+            build_image("debian", &["12", "bookworm"]).to_file_name(),
+            "debian_bookworm_amd64"
+        );
+    }
+
+    #[test]
+    fn test_ord_compares_numeric_versions_numerically() {
+        assert!(build_image("debian", &["10"]) > build_image("debian", &["9"]));
+    }
+
+    #[test]
+    fn test_ord_falls_back_to_lexical_comparison() {
+        assert!(build_image("ubuntu", &["noble"]) > build_image("ubuntu", &["jammy"]));
+    }
+
+    #[test]
+    fn test_ord_compares_vendor_first() {
+        assert!(build_image("alma", &["9"]) < build_image("debian", &["1"]));
+    }
+}

@@ -2,7 +2,7 @@ use crate::models::{ImageName, InstanceName};
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum InstanceImageName {
     Image(ImageName),
     Instance(InstanceName),
@@ -29,5 +29,49 @@ impl fmt::Display for InstanceImageName {
             InstanceImageName::Image(image) => image.fmt(f),
             InstanceImageName::Instance(instance) => instance.fmt(f),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_image_name_takes_precedence() {
+        assert!(matches!(
+            InstanceImageName::from_str("debian:bookworm").unwrap(),
+            InstanceImageName::Image(_)
+        ));
+    }
+
+    #[test]
+    fn test_plain_name_parses_as_instance() {
+        assert!(matches!(
+            InstanceImageName::from_str("mymachine").unwrap(),
+            InstanceImageName::Instance(_)
+        ));
+    }
+
+    #[test]
+    fn test_reject_name_combines_both_errors() {
+        let error = InstanceImageName::from_str("foo/bar").unwrap_err();
+        assert!(error.contains("Image name"));
+        assert!(error.contains("Instance name"));
+    }
+
+    #[test]
+    fn test_to_string() {
+        assert_eq!(
+            InstanceImageName::from_str("debian:bookworm:arm64")
+                .unwrap()
+                .to_string(),
+            "debian:bookworm:arm64"
+        );
+        assert_eq!(
+            InstanceImageName::from_str("mymachine")
+                .unwrap()
+                .to_string(),
+            "mymachine"
+        );
     }
 }

@@ -33,6 +33,11 @@ mod tests {
     }
 
     #[test]
+    fn test_find_extract_without_match() {
+        assert!(find_and_extract(">([a-z]+)/<", "no listing here").is_empty());
+    }
+
+    #[test]
     fn test_to_yes_no() {
         assert_eq!(to_yes_no(true), "yes");
         assert_eq!(to_yes_no(false), "no");
