@@ -175,7 +175,10 @@ mod tests {
 
         assert_eq!(env.get_username(), "testuser");
         assert_eq!(env.get_cache_dir(), "/cache/cubic");
-        assert_eq!(env.get_cache_dir(), "/cache/cubic");
+        assert_eq!(
+            env.get_ssh_private_key_file("mymachine"),
+            "/data/cubic/machines/mymachine/ssh_client_key"
+        );
         assert_eq!(env.get_runtime_dir(), "/runtime/cubic");
         assert_eq!(env.get_instance_dir(), "/data/cubic/machines");
         assert_eq!(env.get_image_dir(), "/cache/cubic/images");

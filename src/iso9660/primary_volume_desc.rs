@@ -93,7 +93,18 @@ mod tests {
         pvd.optional_lpath_table_loc = 0x789ABCDE;
         pvd.mpath_table_loc = 0x89ABCDEF;
         pvd.optional_mpath_table_loc = 0x9ABCDEF0;
-        pvd.root_dir = DirRecord::default();
+        pvd.root_dir = DirRecord {
+            len: 34,
+            extend_attr_len: 0x12,
+            extend_loc: 0x11223344,
+            data_len: 0x55667788,
+            file_flags: 0x02,
+            file_unit_size: 0x34,
+            interleave_gap_size: 0x56,
+            volume_sequence_number: 0x789A,
+            file_id_len: 1,
+            file_id: "A".to_string(),
+        };
         pvd.volume_set_id = "volume set id".to_string();
         pvd.publisher_id = "publisher id".to_string();
         pvd.data_prepare_id = "data prepare id".to_string();
@@ -135,7 +146,20 @@ mod tests {
         assert_eq!(&result[144..148], &[0xDE, 0xBC, 0x9A, 0x78]);
         assert_eq!(&result[148..152], &[0x89, 0xAB, 0xCD, 0xEF]);
         assert_eq!(&result[152..156], &[0x9A, 0xBC, 0xDE, 0xF0]);
-        //assert_eq!(&result[156..190], ...);
+        assert_eq!(result[156], 34);
+        assert_eq!(result[157], 0x12);
+        assert_eq!(&result[158..162], &[0x44, 0x33, 0x22, 0x11]);
+        assert_eq!(&result[162..166], &[0x11, 0x22, 0x33, 0x44]);
+        assert_eq!(&result[166..170], &[0x88, 0x77, 0x66, 0x55]);
+        assert_eq!(&result[170..174], &[0x55, 0x66, 0x77, 0x88]);
+        assert_eq!(&result[174..181], &[0u8; 7]);
+        assert_eq!(result[181], 0x02);
+        assert_eq!(result[182], 0x34);
+        assert_eq!(result[183], 0x56);
+        assert_eq!(&result[184..186], &[0x9A, 0x78]);
+        assert_eq!(&result[186..188], &[0x78, 0x9A]);
+        assert_eq!(result[188], 1);
+        assert_eq!(result[189], b'A');
         assert_eq!(&result[190..318], "volume set id                                                                                                                   ".as_bytes());
         assert_eq!(&result[318..446], "publisher id                                                                                                                    ".as_bytes());
         assert_eq!(&result[446..574], "data prepare id                                                                                                                 ".as_bytes());
@@ -160,5 +184,20 @@ mod tests {
         assert_eq!(result[882], 0);
         assert_eq!(&result[883..1395], &[0u8; 512]);
         assert_eq!(&result[1395..2048], &[0u8; 653]);
+    }
+
+    #[test]
+    fn test_new_sets_primary_volume_defaults() {
+        let pvd = PrimaryVolumeDesc::new();
+
+        let writer = &mut BinaryWriter::new(Cursor::new(Vec::new()));
+        pvd.write(writer).unwrap();
+
+        let result = writer.get_writer().get_ref();
+        assert_eq!(result[0], 1); // Volume descriptor type
+        assert_eq!(&result[1..6], "CD001".as_bytes());
+        assert_eq!(&result[128..130], &[0x00, 0x08]); // Block size 2048 LE
+        assert_eq!(&result[130..132], &[0x08, 0x00]); // Block size 2048 BE
+        assert_eq!(result[881], 1); // File structure version
     }
 }

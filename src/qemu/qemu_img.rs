@@ -96,7 +96,6 @@ mod tests {
         }
         "#;
 
-        println!("{input}");
         let result: ImageInfo = serde_json::from_str(input).unwrap();
         assert_eq!(result.actual_size, 200704);
     }

@@ -102,7 +102,7 @@ mod tests {
     }
 
     #[test]
-    fn test_terrabyte_to_size() {
+    fn test_terabyte_to_size() {
         assert_eq!(&DataSize::new(1024_usize.pow(4)).to_size(), "1.0 TiB")
     }
 
@@ -133,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_terrabyte() {
+    fn test_from_terabyte() {
         assert_eq!(
             DataSize::from_str("1T").unwrap().get_bytes(),
             1024_usize.pow(4)
