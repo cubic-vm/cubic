@@ -9,6 +9,12 @@ pub mod tests {
         images: Vec<Image>,
     }
 
+    impl ImageStoreMock {
+        pub fn new(images: Vec<Image>) -> Self {
+            Self { images }
+        }
+    }
+
     impl ImageStore for ImageStoreMock {
         fn exists(&self, image: &Image) -> bool {
             self.images.contains(image)

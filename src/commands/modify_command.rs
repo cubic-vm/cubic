@@ -102,9 +102,65 @@ impl Command for ModifyCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::image::ImageStoreMock;
+    use crate::instance::InstanceStoreMock;
+    use crate::models::{Environment, Instance};
+    use crate::view::ConsoleMock;
+
+    fn build_context(instance_store: InstanceStoreMock) -> commands::Context {
+        let env = Environment::new(
+            "cubic".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
+        commands::Context::new(
+            env,
+            Box::new(ImageStoreMock::default()),
+            Box::new(instance_store),
+        )
+    }
 
     #[test]
     fn test_reject_path_traversal() {
         assert!(ModifyCommand::try_parse_from(["modify", "../../etc"]).is_err());
+    }
+
+    #[test]
+    fn test_modify_stopped_instance_prints_nothing() {
+        let console = &mut ConsoleMock::new();
+        let context = build_context(InstanceStoreMock::new(vec![Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }]));
+
+        ModifyCommand::try_parse_from(["modify", "test", "--cpus", "2"])
+            .unwrap()
+            .run(console, &context)
+            .unwrap();
+
+        assert_eq!(console.get_output(), "");
+    }
+
+    #[test]
+    fn test_modify_running_instance_notes_restart() {
+        let console = &mut ConsoleMock::new();
+        let context = build_context(InstanceStoreMock::new_with_running(
+            vec![Instance {
+                name: "test".to_string(),
+                ..Instance::default()
+            }],
+            &["test"],
+        ));
+
+        ModifyCommand::try_parse_from(["modify", "test", "--cpus", "2"])
+            .unwrap()
+            .run(console, &context)
+            .unwrap();
+
+        assert_eq!(
+            console.get_output(),
+            "info: Note: changes will be applied after the next restart.\n"
+        );
     }
 }

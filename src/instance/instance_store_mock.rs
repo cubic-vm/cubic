@@ -5,14 +5,29 @@ pub mod tests {
     use crate::instance::InstanceStore;
     use crate::models::Instance;
     use crate::qemu::Monitor;
+    use std::sync::Mutex;
 
     pub struct InstanceStoreMock {
         instances: Vec<Instance>,
+        running: Vec<String>,
+        killed: Mutex<Vec<String>>,
     }
 
     impl InstanceStoreMock {
         pub fn new(instances: Vec<Instance>) -> Self {
-            Self { instances }
+            Self::new_with_running(instances, &[])
+        }
+
+        pub fn new_with_running(instances: Vec<Instance>, running: &[&str]) -> Self {
+            Self {
+                instances,
+                running: running.iter().map(|name| name.to_string()).collect(),
+                killed: Mutex::new(Vec::new()),
+            }
+        }
+
+        pub fn get_killed(&self) -> Vec<String> {
+            self.killed.lock().unwrap().clone()
         }
     }
 
@@ -49,15 +64,16 @@ pub mod tests {
             Ok(())
         }
 
-        fn is_running(&self, _instance: &Instance) -> bool {
-            false
+        fn is_running(&self, instance: &Instance) -> bool {
+            self.running.contains(&instance.name)
         }
 
         fn get_pid(&self, _instance: &Instance) -> Option<u64> {
             None
         }
 
-        fn kill(&self, _instance: &Instance) -> Result<()> {
+        fn kill(&self, instance: &Instance) -> Result<()> {
+            self.killed.lock().unwrap().push(instance.name.clone());
             Ok(())
         }
 

@@ -115,6 +115,39 @@ mod tests {
     }
 
     #[test]
+    fn test_clone_rejects_running_source() {
+        let console = &mut ConsoleMock::new();
+        let env = Environment::new(
+            "cubic".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
+        let context = Context::new(
+            env,
+            Box::new(ImageStoreMock::default()),
+            Box::new(InstanceStoreMock::new_with_running(
+                vec![Instance {
+                    name: "test".to_string(),
+                    ..Instance::default()
+                }],
+                &["test"],
+            )),
+        );
+
+        let result = CloneCommand {
+            name: InstanceName::from_str("test").unwrap(),
+            new_name: InstanceName::from_str("newname").unwrap(),
+        }
+        .run(console, &context);
+
+        assert!(matches!(
+            result,
+            Err(Error::InstanceNotStopped(ref name)) if name == "test"
+        ));
+    }
+
+    #[test]
     fn test_clone_rejects_unknown_source() {
         let console = &mut ConsoleMock::new();
         let context = build_context(Vec::new());

@@ -47,3 +47,36 @@ pub fn fetch_image(
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::image::ImageStoreMock;
+    use crate::models::{Arch, HashAlg};
+    use crate::view::ConsoleMock;
+
+    #[test]
+    fn test_fetch_image_skips_cached_image() {
+        let console = &mut ConsoleMock::new();
+        let env = Environment::new(
+            "cubic".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
+        let image = Image {
+            vendor: "debian".to_string(),
+            names: vec!["12".to_string(), "bookworm".to_string()],
+            arch: Arch::AMD64,
+            image_url: String::new(),
+            checksum_url: String::new(),
+            hash_alg: HashAlg::Sha512,
+            size: None,
+        };
+        let image_store = ImageStoreMock::new(vec![image.clone()]);
+
+        // A cached image must return without touching the image directory
+        // or the network.
+        fetch_image(console, &env, &image_store, &image).unwrap();
+    }
+}
