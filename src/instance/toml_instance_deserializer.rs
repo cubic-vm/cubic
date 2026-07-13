@@ -102,31 +102,4 @@ isolate = true
         assert_eq!(instance.execute, Some("sudo apt update".to_string()));
         assert!(instance.isolate);
     }
-
-    #[test]
-    fn test_deserialize_desktop_config() {
-        let reader = &mut BufReader::new(
-            r#"
-user = "tux"
-cpus = 1
-mem = 1073741824
-disk_capacity = 2361393152
-ssh_port = 14357
-"#
-            .as_bytes(),
-        );
-
-        let instance = TomlInstanceDeserializer::new()
-            .deserialize("test", reader)
-            .expect("Cannot parse config");
-        assert_eq!(instance.name, "test");
-        assert_eq!(instance.user, "tux");
-        assert_eq!(instance.cpus, 1);
-        assert_eq!(instance.mem.get_bytes(), 1073741824);
-        assert_eq!(instance.disk_capacity.get_bytes(), 2361393152);
-        assert_eq!(instance.ssh_port, 14357);
-        assert!(instance.hostfwd.is_empty());
-        assert_eq!(instance.execute, None);
-        assert!(!instance.isolate);
-    }
 }

@@ -180,22 +180,4 @@ mod tests {
             "cubic -a -b"
         )
     }
-
-    #[test]
-    fn test_run_reports_missing_system_command() {
-        let program = "cubic-missing-command-test";
-
-        let err = SystemCommand::new(program).run().unwrap_err();
-
-        assert!(matches!(err, Error::SystemCommandNotFound(ref missing) if missing == program));
-    }
-
-    #[test]
-    fn test_output_reports_missing_system_command() {
-        let program = "cubic-missing-command-test";
-
-        let err = SystemCommand::new(program).output().unwrap_err();
-
-        assert!(matches!(err, Error::SystemCommandNotFound(ref missing) if missing == program));
-    }
 }

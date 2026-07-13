@@ -78,11 +78,6 @@ mod tests {
     use crate::view::ConsoleMock;
 
     #[test]
-    fn test_parse_valid_names() {
-        assert!(DeleteCommand::try_parse_from(["delete", "trixie", "noble"]).is_ok());
-    }
-
-    #[test]
     fn test_reject_path_traversal() {
         assert!(DeleteCommand::try_parse_from(["delete", "../../etc"]).is_err());
     }

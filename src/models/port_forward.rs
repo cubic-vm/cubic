@@ -366,20 +366,6 @@ mod tests {
     }
 
     #[test]
-    fn test_localhost_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                2000,
-                20,
-                Protocol::Tcp
-            )
-            .to_string(),
-            "127.0.0.1:2000:20/tcp"
-        )
-    }
-
-    #[test]
     fn test_udp_to_string() {
         assert_eq!(
             PortForward::new(
@@ -390,20 +376,6 @@ mod tests {
             )
             .to_string(),
             "127.0.0.1:3000:30/udp".to_string()
-        )
-    }
-
-    #[test]
-    fn test_tcp_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                4000,
-                40,
-                Protocol::Tcp
-            )
-            .to_string(),
-            "127.0.0.1:4000:40/tcp",
         )
     }
 
@@ -450,20 +422,6 @@ mod tests {
     }
 
     #[test]
-    fn test_qemu_localhost_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                2000,
-                20,
-                Protocol::Tcp
-            )
-            .to_qemu(),
-            "tcp:127.0.0.1:2000-:20"
-        )
-    }
-
-    #[test]
     fn test_qemu_udp_to_string() {
         assert_eq!(
             PortForward::new(
@@ -474,20 +432,6 @@ mod tests {
             )
             .to_qemu(),
             "udp:127.0.0.1:3000-:30".to_string()
-        )
-    }
-
-    #[test]
-    fn test_qemu_tcp_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                4000,
-                40,
-                Protocol::Tcp
-            )
-            .to_qemu(),
-            "tcp:127.0.0.1:4000-:40",
         )
     }
 

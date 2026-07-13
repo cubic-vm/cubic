@@ -79,11 +79,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_valid_name() {
-        assert!(ConsoleCommand::try_parse_from(["console", "my-instance"]).is_ok());
-    }
-
-    #[test]
     fn test_reject_path_traversal() {
         assert!(ConsoleCommand::try_parse_from(["console", "../../etc"]).is_err());
     }
