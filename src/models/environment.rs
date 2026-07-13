@@ -164,6 +164,12 @@ impl Environment {
 mod tests {
     use super::*;
 
+    fn join_all(base: &str, segments: &[&str]) -> PathBuf {
+        segments
+            .iter()
+            .fold(PathBuf::from(base), |path, segment| path.join(segment))
+    }
+
     #[test]
     fn test_paths() {
         let env = Environment::new(
@@ -176,48 +182,57 @@ mod tests {
         assert_eq!(env.get_username(), "testuser");
         assert_eq!(env.get_cache_dir(), "/cache/cubic");
         assert_eq!(
-            env.get_ssh_private_key_file("mymachine"),
-            "/data/cubic/machines/mymachine/ssh_client_key"
+            PathBuf::from(env.get_ssh_private_key_file("mymachine")),
+            join_all("/data/cubic", &["machines", "mymachine", "ssh_client_key"])
         );
         assert_eq!(env.get_runtime_dir(), "/runtime/cubic");
-        assert_eq!(env.get_instance_dir(), "/data/cubic/machines");
-        assert_eq!(env.get_image_dir(), "/cache/cubic/images");
         assert_eq!(
-            env.get_image_file("debian_bookworm_amd64"),
-            "/cache/cubic/images/debian_bookworm_amd64"
-        );
-        assert_eq!(env.get_image_cache_file(), "/cache/cubic/images.cache");
-        assert_eq!(
-            env.get_instance_dir2("mymachine"),
-            "/data/cubic/machines/mymachine"
+            PathBuf::from(env.get_instance_dir()),
+            PathBuf::from("/data/cubic").join("machines")
         );
         assert_eq!(
-            env.get_instance_yaml_config_file("mymachine"),
-            "/data/cubic/machines/mymachine/machine.yaml"
+            PathBuf::from(env.get_image_dir()),
+            PathBuf::from("/cache/cubic").join("images")
         );
         assert_eq!(
-            env.get_instance_toml_config_file("mymachine"),
-            "/data/cubic/machines/mymachine/instance.toml"
+            PathBuf::from(env.get_image_file("debian_bookworm_amd64")),
+            join_all("/cache/cubic", &["images", "debian_bookworm_amd64"])
         );
         assert_eq!(
-            env.get_instance_image_file("mymachine"),
-            "/data/cubic/machines/mymachine/machine.img"
+            PathBuf::from(env.get_image_cache_file()),
+            PathBuf::from("/cache/cubic").join("images.cache")
         );
         assert_eq!(
-            env.get_instance_cache_dir("mymachine"),
-            "/cache/cubic/instances/mymachine"
+            PathBuf::from(env.get_instance_dir2("mymachine")),
+            join_all("/data/cubic", &["machines", "mymachine"])
         );
         assert_eq!(
-            env.get_user_data_image_file("mymachine"),
-            "/cache/cubic/instances/mymachine/user-data.img"
+            PathBuf::from(env.get_instance_yaml_config_file("mymachine")),
+            join_all("/data/cubic", &["machines", "mymachine", "machine.yaml"])
         );
         assert_eq!(
-            env.get_instance_runtime_dir("mymachine"),
-            "/runtime/cubic/instances/mymachine"
+            PathBuf::from(env.get_instance_toml_config_file("mymachine")),
+            join_all("/data/cubic", &["machines", "mymachine", "instance.toml"])
         );
         assert_eq!(
-            env.get_qemu_pid_file("mymachine"),
-            "/runtime/cubic/instances/mymachine/qemu.pid"
+            PathBuf::from(env.get_instance_image_file("mymachine")),
+            join_all("/data/cubic", &["machines", "mymachine", "machine.img"])
+        );
+        assert_eq!(
+            PathBuf::from(env.get_instance_cache_dir("mymachine")),
+            join_all("/cache/cubic", &["instances", "mymachine"])
+        );
+        assert_eq!(
+            PathBuf::from(env.get_user_data_image_file("mymachine")),
+            join_all("/cache/cubic", &["instances", "mymachine", "user-data.img"])
+        );
+        assert_eq!(
+            PathBuf::from(env.get_instance_runtime_dir("mymachine")),
+            join_all("/runtime/cubic", &["instances", "mymachine"])
+        );
+        assert_eq!(
+            PathBuf::from(env.get_qemu_pid_file("mymachine")),
+            join_all("/runtime/cubic", &["instances", "mymachine", "qemu.pid"])
         );
     }
 }
