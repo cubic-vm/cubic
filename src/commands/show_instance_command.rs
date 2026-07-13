@@ -82,6 +82,7 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Arch, DataSize, Environment, Instance, InstanceName};
     use crate::view::ConsoleMock;
+    use std::path::PathBuf;
     use std::str::FromStr;
 
     #[test]
@@ -163,6 +164,20 @@ Forward:      127.0.0.1:4000:40/tcp
         }]);
         let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
 
+        let instance_dir = PathBuf::from("machines").join("test");
+        let disk_image = instance_dir
+            .join("machine.img")
+            .to_string_lossy()
+            .into_owned();
+        let config = instance_dir
+            .join("instance.toml")
+            .to_string_lossy()
+            .into_owned();
+        let ssh_key = instance_dir
+            .join("ssh_client_key")
+            .to_string_lossy()
+            .into_owned();
+
         ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap().into(),
             all: true,
@@ -172,7 +187,8 @@ Forward:      127.0.0.1:4000:40/tcp
 
         assert_eq!(
             console.get_output(),
-            "\
+            format!(
+                "\
 Running:      no
 PID:          n/a
 Arch:         arm64
@@ -187,11 +203,12 @@ Monitor Port: 8001
 Console Port: 8002
 Forward:      127.0.0.1:4000:40/tcp
               0.0.0.0:80:8000/udp
-Disk Image:   machines/test/machine.img
-Config:       machines/test/instance.toml
-SSH Key:      machines/test/ssh_client_key
-SSH:          ssh -i machines/test/ssh_client_key -p 8000 john@localhost
+Disk Image:   {disk_image}
+Config:       {config}
+SSH Key:      {ssh_key}
+SSH:          ssh -i {ssh_key} -p 8000 john@localhost
 "
+            )
         );
     }
 
