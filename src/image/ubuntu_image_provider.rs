@@ -51,3 +51,40 @@ impl ImageProvider for UbuntuImageProvider {
         HashAlg::Sha256
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use regex::Regex;
+
+    #[test]
+    fn test_find_image_names_in_listing() {
+        let listing = r#"<a href="jammy/">jammy/</a>
+<a href="noble/">noble/</a>"#;
+
+        assert_eq!(
+            UbuntuImageProvider {}.find_image_names(listing),
+            ["jammy", "noble"]
+        );
+    }
+
+    #[test]
+    fn test_get_image_names_extracts_version() {
+        assert_eq!(
+            UbuntuImageProvider {}
+                .get_image_names("ubuntu-24.04-minimal-cloudimg-amd64.img", "noble"),
+            ["24.04", "noble"]
+        );
+    }
+
+    #[test]
+    fn test_image_file_pattern_matches_image_file() {
+        let pattern = UbuntuImageProvider {}.get_image_file_pattern("noble", Arch::ARM64);
+
+        assert!(
+            Regex::new(&pattern)
+                .unwrap()
+                .is_match("ubuntu-24.04-minimal-cloudimg-arm64.img")
+        );
+    }
+}

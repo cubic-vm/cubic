@@ -46,3 +46,54 @@ impl ImageProvider for FedoraImageProvider {
         HashAlg::Sha256
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use regex::Regex;
+
+    #[test]
+    fn test_find_image_names_keeps_versions_above_forty() {
+        let listing = r#"<a href="39/">39/</a>
+<a href="40/">40/</a>
+<a href="41/">41/</a>
+<a href="42/">42/</a>
+<a href="test/">test/</a>"#;
+
+        assert_eq!(
+            FedoraImageProvider {}.find_image_names(listing),
+            ["41", "42"]
+        );
+    }
+
+    #[test]
+    fn test_get_image_dir_path_uses_canonical_arch() {
+        assert_eq!(
+            FedoraImageProvider {}.get_image_dir_path("42", Arch::ARM64),
+            "42/Cloud/aarch64/images/"
+        );
+    }
+
+    #[test]
+    fn test_image_file_pattern_matches_image_file() {
+        let pattern = FedoraImageProvider {}.get_image_file_pattern("42", Arch::AMD64);
+
+        assert!(
+            Regex::new(&pattern)
+                .unwrap()
+                .is_match("Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2")
+        );
+    }
+
+    #[test]
+    fn test_get_checksum_file_rewrites_image_file() {
+        assert_eq!(
+            FedoraImageProvider {}.get_checksum_file(
+                "Fedora-Cloud-Base-Generic-42-1.1.x86_64.qcow2",
+                "42",
+                Arch::AMD64
+            ),
+            "Fedora-Cloud-42-1.1-x86_64-CHECKSUM"
+        );
+    }
+}

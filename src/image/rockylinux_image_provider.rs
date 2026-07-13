@@ -39,3 +39,52 @@ impl ImageProvider for RockyLinuxImageProvider {
         HashAlg::Sha256
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use regex::Regex;
+
+    #[test]
+    fn test_find_image_names_in_listing() {
+        let listing = r#"<a href="8/">8/</a>
+<a href="9/">9/</a>
+<a href="sig/">sig/</a>"#;
+
+        assert_eq!(
+            RockyLinuxImageProvider {}.find_image_names(listing),
+            ["8", "9"]
+        );
+    }
+
+    #[test]
+    fn test_get_image_dir_path_uses_canonical_arch() {
+        assert_eq!(
+            RockyLinuxImageProvider {}.get_image_dir_path("9", Arch::ARM64),
+            "9/images/aarch64/"
+        );
+    }
+
+    #[test]
+    fn test_image_file_pattern_matches_image_file() {
+        let pattern = RockyLinuxImageProvider {}.get_image_file_pattern("9", Arch::AMD64);
+
+        assert!(
+            Regex::new(&pattern)
+                .unwrap()
+                .is_match("Rocky-9-GenericCloud-Base.latest.x86_64.qcow2")
+        );
+    }
+
+    #[test]
+    fn test_get_checksum_file_appends_suffix() {
+        assert_eq!(
+            RockyLinuxImageProvider {}.get_checksum_file(
+                "Rocky-9-GenericCloud-Base.latest.x86_64.qcow2",
+                "9",
+                Arch::AMD64
+            ),
+            "Rocky-9-GenericCloud-Base.latest.x86_64.qcow2.CHECKSUM"
+        );
+    }
+}

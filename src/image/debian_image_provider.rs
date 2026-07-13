@@ -51,3 +51,40 @@ impl ImageProvider for DebianImageProvider {
         HashAlg::Sha512
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use regex::Regex;
+
+    #[test]
+    fn test_find_image_names_in_listing() {
+        let listing = r#"<a href="bookworm/">bookworm/</a>
+<a href="trixie/">trixie/</a>
+<a href="OpenStack/">OpenStack/</a>"#;
+
+        assert_eq!(
+            DebianImageProvider {}.find_image_names(listing),
+            ["bookworm", "trixie"]
+        );
+    }
+
+    #[test]
+    fn test_get_image_names_extracts_version() {
+        assert_eq!(
+            DebianImageProvider {}.get_image_names("debian-12-generic-amd64.qcow2", "bookworm"),
+            ["12", "bookworm"]
+        );
+    }
+
+    #[test]
+    fn test_image_file_pattern_matches_image_file() {
+        let pattern = DebianImageProvider {}.get_image_file_pattern("bookworm", Arch::AMD64);
+
+        assert!(
+            Regex::new(&pattern)
+                .unwrap()
+                .is_match("debian-12-generic-amd64.qcow2")
+        );
+    }
+}

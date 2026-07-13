@@ -38,3 +38,40 @@ impl ImageProvider for OpenSuseImageProvider {
         HashAlg::Sha256
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use regex::Regex;
+
+    #[test]
+    fn test_find_image_names_extracts_leap_versions() {
+        let listing = r#"<a href="Leap_15.5/">Leap_15.5/</a>
+<a href="Leap_15.6/">Leap_15.6/</a>
+<a href="Images/">Images/</a>"#;
+
+        assert_eq!(
+            OpenSuseImageProvider {}.find_image_names(listing),
+            ["15.5", "15.6"]
+        );
+    }
+
+    #[test]
+    fn test_get_image_dir_path_restores_leap_prefix() {
+        assert_eq!(
+            OpenSuseImageProvider {}.get_image_dir_path("15.6", Arch::AMD64),
+            "Leap_15.6/images/"
+        );
+    }
+
+    #[test]
+    fn test_image_file_pattern_matches_image_file() {
+        let pattern = OpenSuseImageProvider {}.get_image_file_pattern("15.6", Arch::AMD64);
+
+        assert!(
+            Regex::new(&pattern)
+                .unwrap()
+                .is_match("openSUSE-Leap-15.6.x86_64-NoCloud.qcow2")
+        );
+    }
+}
