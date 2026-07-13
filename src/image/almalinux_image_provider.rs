@@ -39,3 +39,40 @@ impl ImageProvider for AlmaLinuxImageProvider {
         HashAlg::Sha256
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use regex::Regex;
+
+    #[test]
+    fn test_find_image_names_in_listing() {
+        let listing = r#"<a href="8/">8/</a>
+<a href="9/">9/</a>
+<a href="almalinux/">almalinux/</a>"#;
+
+        assert_eq!(
+            AlmaLinuxImageProvider {}.find_image_names(listing),
+            ["8", "9"]
+        );
+    }
+
+    #[test]
+    fn test_get_image_dir_path_uses_canonical_arch() {
+        assert_eq!(
+            AlmaLinuxImageProvider {}.get_image_dir_path("9", Arch::AMD64),
+            "9/cloud/x86_64/images/"
+        );
+    }
+
+    #[test]
+    fn test_image_file_pattern_matches_image_file() {
+        let pattern = AlmaLinuxImageProvider {}.get_image_file_pattern("9", Arch::AMD64);
+
+        assert!(
+            Regex::new(&pattern)
+                .unwrap()
+                .is_match("AlmaLinux-9-GenericCloud-latest.x86_64.qcow2")
+        );
+    }
+}

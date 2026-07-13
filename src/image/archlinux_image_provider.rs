@@ -37,3 +37,37 @@ impl ImageProvider for ArchLinuxImageProvider {
         HashAlg::Sha256
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use regex::Regex;
+
+    #[test]
+    fn test_find_image_names_is_always_latest() {
+        assert_eq!(ArchLinuxImageProvider {}.find_image_names(""), ["latest"]);
+    }
+
+    #[test]
+    fn test_image_file_pattern_matches_image_file() {
+        let pattern = ArchLinuxImageProvider {}.get_image_file_pattern("latest", Arch::AMD64);
+
+        assert!(
+            Regex::new(&pattern)
+                .unwrap()
+                .is_match("Arch-Linux-x86_64-cloudimg.qcow2")
+        );
+    }
+
+    #[test]
+    fn test_get_checksum_file_appends_suffix() {
+        assert_eq!(
+            ArchLinuxImageProvider {}.get_checksum_file(
+                "Arch-Linux-x86_64-cloudimg.qcow2",
+                "latest",
+                Arch::AMD64
+            ),
+            "Arch-Linux-x86_64-cloudimg.qcow2.SHA256"
+        );
+    }
+}

@@ -38,3 +38,40 @@ impl ImageProvider for GentooImageProvider {
         HashAlg::Sha256
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use regex::Regex;
+
+    #[test]
+    fn test_get_image_dir_path_uses_vendor_arch() {
+        assert_eq!(
+            GentooImageProvider {}.get_image_dir_path("latest", Arch::AMD64),
+            "amd64/autobuilds/current-di-amd64-cloudinit/"
+        );
+    }
+
+    #[test]
+    fn test_image_file_pattern_matches_image_file() {
+        let pattern = GentooImageProvider {}.get_image_file_pattern("latest", Arch::AMD64);
+
+        assert!(
+            Regex::new(&pattern)
+                .unwrap()
+                .is_match("di-amd64-cloudinit-20250706T165243Z.qcow2")
+        );
+    }
+
+    #[test]
+    fn test_get_checksum_file_appends_suffix() {
+        assert_eq!(
+            GentooImageProvider {}.get_checksum_file(
+                "di-amd64-cloudinit-20250706T165243Z.qcow2",
+                "latest",
+                Arch::AMD64
+            ),
+            "di-amd64-cloudinit-20250706T165243Z.qcow2.sha256"
+        );
+    }
+}
