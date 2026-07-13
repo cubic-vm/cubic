@@ -63,3 +63,71 @@ impl Command for CloneCommand {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::image::ImageStoreMock;
+    use crate::instance::InstanceStoreMock;
+    use crate::models::Environment;
+    use crate::models::Instance;
+    use crate::view::ConsoleMock;
+    use std::str::FromStr;
+
+    fn build_context(instances: Vec<Instance>) -> Context {
+        let env = Environment::new(
+            "cubic".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
+        Context::new(
+            env,
+            Box::new(ImageStoreMock::default()),
+            Box::new(InstanceStoreMock::new(instances)),
+        )
+    }
+
+    #[test]
+    fn test_clone_rejects_existing_target_name() {
+        let console = &mut ConsoleMock::new();
+        let context = build_context(vec![
+            Instance {
+                name: "test".to_string(),
+                ..Instance::default()
+            },
+            Instance {
+                name: "test2".to_string(),
+                ..Instance::default()
+            },
+        ]);
+
+        let result = CloneCommand {
+            name: InstanceName::from_str("test").unwrap(),
+            new_name: InstanceName::from_str("test2").unwrap(),
+        }
+        .run(console, &context);
+
+        assert!(matches!(
+            result,
+            Err(Error::InstanceAlreadyExists(ref name)) if name == "test2"
+        ));
+    }
+
+    #[test]
+    fn test_clone_rejects_unknown_source() {
+        let console = &mut ConsoleMock::new();
+        let context = build_context(Vec::new());
+
+        let result = CloneCommand {
+            name: InstanceName::from_str("missing").unwrap(),
+            new_name: InstanceName::from_str("newname").unwrap(),
+        }
+        .run(console, &context);
+
+        assert!(matches!(
+            result,
+            Err(Error::UnknownInstance(ref name)) if name == "missing"
+        ));
+    }
+}

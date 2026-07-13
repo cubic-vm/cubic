@@ -81,3 +81,44 @@ impl Command for ScpCommand {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::instance::InstanceStoreMock;
+    use crate::models::Instance;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_check_local_path_needs_no_instance() {
+        let store = InstanceStoreMock::new(Vec::new());
+        let path = TargetPath::from_str("/home/cubic/file").unwrap();
+
+        assert!(check_target_is_running(&store, &path).is_ok());
+    }
+
+    #[test]
+    fn test_check_rejects_unknown_instance() {
+        let store = InstanceStoreMock::new(Vec::new());
+        let path = TargetPath::from_str("missing:~/file").unwrap();
+
+        assert!(matches!(
+            check_target_is_running(&store, &path),
+            Err(Error::UnknownInstance(ref name)) if name == "missing"
+        ));
+    }
+
+    #[test]
+    fn test_check_rejects_stopped_instance() {
+        let store = InstanceStoreMock::new(vec![Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }]);
+        let path = TargetPath::from_str("test:~/file").unwrap();
+
+        assert!(matches!(
+            check_target_is_running(&store, &path),
+            Err(Error::InstanceNotRunning(ref name)) if name == "test"
+        ));
+    }
+}

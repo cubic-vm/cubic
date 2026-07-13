@@ -30,3 +30,62 @@ impl Command for RenameCommand {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::Error;
+    use crate::image::ImageStoreMock;
+    use crate::instance::InstanceStoreMock;
+    use crate::models::{Environment, Instance};
+    use crate::view::ConsoleMock;
+    use std::str::FromStr;
+
+    fn build_context(instances: Vec<Instance>) -> commands::Context {
+        let env = Environment::new(
+            "cubic".to_string(),
+            String::new(),
+            String::new(),
+            String::new(),
+        );
+        commands::Context::new(
+            env,
+            Box::new(ImageStoreMock::default()),
+            Box::new(InstanceStoreMock::new(instances)),
+        )
+    }
+
+    #[test]
+    fn test_rename_rejects_unknown_instance() {
+        let console = &mut ConsoleMock::new();
+        let context = build_context(Vec::new());
+
+        let result = RenameCommand {
+            old_name: InstanceName::from_str("missing").unwrap(),
+            new_name: InstanceName::from_str("newname").unwrap(),
+        }
+        .run(console, &context);
+
+        assert!(matches!(
+            result,
+            Err(Error::UnknownInstance(ref name)) if name == "missing"
+        ));
+    }
+
+    #[test]
+    fn test_rename_delegates_to_store() {
+        let console = &mut ConsoleMock::new();
+        let context = build_context(vec![Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }]);
+
+        let result = RenameCommand {
+            old_name: InstanceName::from_str("test").unwrap(),
+            new_name: InstanceName::from_str("newname").unwrap(),
+        }
+        .run(console, &context);
+
+        assert!(result.is_ok());
+    }
+}
