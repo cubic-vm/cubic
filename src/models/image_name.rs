@@ -79,7 +79,7 @@ mod tests {
     }
 
     #[test]
-    fn test_debian_bookworm_amd64() {
+    fn test_debian_buster_amd64() {
         let image = ImageName::from_str("debian:buster:amd64").unwrap();
         assert_eq!(image.get_vendor(), "debian");
         assert_eq!(image.get_name(), "buster");

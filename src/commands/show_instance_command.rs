@@ -85,7 +85,7 @@ mod tests {
     use std::str::FromStr;
 
     #[test]
-    fn test_show_command1() {
+    fn test_show_basic_fields() {
         let console = &mut ConsoleMock::new();
         let env = Environment::new(
             "myuser".to_string(),
@@ -135,7 +135,7 @@ Forward:      127.0.0.1:4000:40/tcp
     }
 
     #[test]
-    fn test_show_command2() {
+    fn test_show_all_fields() {
         let console = &mut ConsoleMock::new();
         let env = Environment::new(
             "cubic".to_string(),

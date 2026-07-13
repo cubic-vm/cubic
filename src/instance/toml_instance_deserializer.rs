@@ -63,7 +63,7 @@ ssh_port = 14357
         assert_eq!(instance.ssh_port, 14357);
         assert!(instance.hostfwd.is_empty());
         assert_eq!(instance.execute, None);
-        assert_eq!(instance.isolate, false);
+        assert!(!instance.isolate);
     }
 
     #[test]
@@ -100,7 +100,7 @@ isolate = true
             ["tcp:127.0.0.1:8000-:8000", "tcp:127.0.0.1:9000-:10000"]
         );
         assert_eq!(instance.execute, Some("sudo apt update".to_string()));
-        assert_eq!(instance.isolate, true);
+        assert!(instance.isolate);
     }
 
     #[test]
@@ -127,6 +127,6 @@ ssh_port = 14357
         assert_eq!(instance.ssh_port, 14357);
         assert!(instance.hostfwd.is_empty());
         assert_eq!(instance.execute, None);
-        assert_eq!(instance.isolate, false);
+        assert!(!instance.isolate);
     }
 }
