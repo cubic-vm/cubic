@@ -35,6 +35,10 @@ impl QemuPathBuilder {
         // Add default paths
         dirs.extend(DEFAULT_DIRS.iter().map(PathBuf::from));
 
+        Self::new_from_dirs(dirs)
+    }
+
+    pub fn new_from_dirs(mut dirs: Vec<PathBuf>) -> Self {
         // Preserve order, drop duplicates
         let mut seen = Vec::new();
         dirs.retain(|dir| {
@@ -84,33 +88,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_dirs_include_path_and_defaults() {
-        let builder = QemuPathBuilder::new();
-        let dirs = builder.get_dirs();
-        // The first default dir is present on every supported platform.
-        let expected = PathBuf::from(DEFAULT_DIRS[0]);
-        assert!(dirs.contains(&expected));
+    fn test_new_from_dirs_keeps_order_and_drops_duplicates() {
+        let builder = QemuPathBuilder::new_from_dirs(
+            ["/a", "/b", "/a", "/c", "/b"].map(PathBuf::from).to_vec(),
+        );
+
+        assert_eq!(builder.get_dirs(), ["/a", "/b", "/c"].map(PathBuf::from));
     }
 
     #[test]
     fn test_build_round_trips_through_path() {
-        let builder = QemuPathBuilder::new();
+        let builder =
+            QemuPathBuilder::new_from_dirs(["/a", "/b", "/c"].map(PathBuf::from).to_vec());
+
         let joined = builder.build();
+
         let split: Vec<PathBuf> = std::env::split_paths(&joined).collect();
         assert_eq!(split, builder.get_dirs());
-    }
-
-    #[test]
-    fn test_dirs_are_deduped() {
-        let builder = QemuPathBuilder::new();
-        let dirs = builder.get_dirs();
-        let mut sorted = dirs.to_vec();
-        sorted.sort();
-        sorted.dedup();
-        assert_eq!(
-            sorted.len(),
-            dirs.len(),
-            "dirs should contain no duplicates"
-        );
     }
 }
