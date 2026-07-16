@@ -19,7 +19,7 @@ jobs:
           - check: rustup component add rustfmt && cargo fmt --check
           - check: rustup component add clippy && cargo clippy --version && cargo clippy -- -D warnings
           - check: cargo test
-          - check: cargo install cargo-audit && cargo audit
+          - check: cargo install cargo-audit --locked && cargo audit
 
     runs-on: ubuntu-latest
     steps:
