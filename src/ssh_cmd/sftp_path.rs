@@ -7,6 +7,21 @@ use std::rc::Rc;
 use std::{self, fs};
 use tokio::io::{AsyncRead, AsyncWrite};
 
+// SFTP always requires forward-slash paths, regardless of the host OS.
+// PathBuf::push/join would insert the compile-target's native separator
+// (backslash on Windows), corrupting remote paths, so remote joins are
+// built as plain strings instead.
+pub fn join_path_segment(base: &str, name: &str, is_remote: bool) -> String {
+    if is_remote {
+        format!("{}/{}", base.trim_end_matches('/'), name)
+    } else {
+        PathBuf::from(base)
+            .join(name)
+            .to_string_lossy()
+            .into_owned()
+    }
+}
+
 #[derive(Clone)]
 pub struct SftpPath {
     pub sftp: Option<Rc<SftpSession>>,
@@ -79,11 +94,10 @@ impl SftpPath {
     }
 
     pub fn append(&self, name: &str) -> Self {
-        let mut path = self.path.clone();
-        path.push(name);
+        let joined = join_path_segment(self.to_str(), name, self.sftp.is_some());
         Self {
             sftp: self.sftp.clone(),
-            path,
+            path: PathBuf::from(joined),
         }
     }
 
@@ -208,5 +222,44 @@ impl SftpPath {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_join_path_segment_remote_uses_forward_slash() {
+        assert_eq!(
+            join_path_segment("/home/cubic/dir1", "dir2", true),
+            "/home/cubic/dir1/dir2"
+        );
+    }
+
+    #[test]
+    fn test_join_path_segment_remote_nested_appends_contain_no_backslash() {
+        let first = join_path_segment("/home/cubic", "dir1", true);
+        let second = join_path_segment(&first, "file.txt", true);
+        assert_eq!(second, "/home/cubic/dir1/file.txt");
+        assert!(!second.contains('\\'));
+    }
+
+    #[test]
+    fn test_join_path_segment_remote_trailing_slash_base() {
+        assert_eq!(
+            join_path_segment("/home/cubic/", "dir1", true),
+            "/home/cubic/dir1"
+        );
+    }
+
+    #[test]
+    fn test_join_path_segment_local_matches_native_pathbuf_join() {
+        let result = join_path_segment("base", "child", false);
+        let expected = PathBuf::from("base")
+            .join("child")
+            .to_string_lossy()
+            .into_owned();
+        assert_eq!(result, expected);
     }
 }
