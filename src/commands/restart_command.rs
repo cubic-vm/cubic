@@ -21,7 +21,7 @@ pub struct RestartCommand {
 }
 
 impl Command for RestartCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         commands::StopCommand {
             all: false,
             wait: true,

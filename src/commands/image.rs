@@ -5,7 +5,7 @@ use crate::models::{Environment, Image, ImageName};
 use crate::view::{Console, Spinner};
 use std::sync::{Arc, Mutex};
 
-pub fn fetch_image_list(console: &mut dyn Console, env: &Environment) -> Vec<Image> {
+pub fn fetch_image_list(console: &mut Console<'_>, env: &Environment) -> Vec<Image> {
     console.play(Arc::new(Mutex::new(Spinner::new(
         "Fetching image list".to_string(),
     ))));
@@ -17,7 +17,7 @@ pub fn fetch_image_list(console: &mut dyn Console, env: &Environment) -> Vec<Ima
 }
 
 pub fn fetch_image_info(
-    console: &mut dyn Console,
+    console: &mut Console<'_>,
     env: &Environment,
     image: &ImageName,
 ) -> Result<Image> {
@@ -32,7 +32,7 @@ pub fn fetch_image_info(
 }
 
 pub fn fetch_image(
-    console: &mut dyn Console,
+    console: &mut Console<'_>,
     env: &Environment,
     image_store: &dyn ImageStore,
     image: &Image,
@@ -53,11 +53,12 @@ mod tests {
     use super::*;
     use crate::image::ImageStoreMock;
     use crate::models::{Arch, HashAlg};
-    use crate::view::ConsoleMock;
+    use crate::platform::SystemMock;
 
     #[test]
     fn test_fetch_image_skips_cached_image() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let env = Environment::new(
             "cubic".to_string(),
             String::new(),

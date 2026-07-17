@@ -17,7 +17,7 @@ pub struct ShowImageCommand {
 }
 
 impl Command for ShowImageCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let env = context.get_env();
         let image = fetch_image_info(console, env, &self.name)?;
 

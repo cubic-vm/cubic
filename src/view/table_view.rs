@@ -35,7 +35,7 @@ impl TableView {
         self.rows.last_mut().unwrap()
     }
 
-    pub fn print(&self, console: &mut dyn Console) {
+    pub fn print(&self, console: &mut Console<'_>) {
         let mut column_size = Vec::new();
         for row in &self.rows {
             for (index, (entry, _)) in row.entries.iter().enumerate() {

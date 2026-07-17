@@ -19,7 +19,7 @@ use clap::Parser;
 pub struct ListInstanceCommand;
 
 impl Command for ListInstanceCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
         let instance_names = instance_store.get_instances();
 
@@ -69,12 +69,12 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Arch, DataSize, Environment, Instance};
     use crate::platform::SystemMock;
-    use crate::view::ConsoleMock;
     use std::rc::Rc;
 
     #[test]
     fn test_list_instance_command() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let image_store = ImageStoreMock::default();
         let env = Environment::new(
             "cubic".to_string(),
@@ -116,7 +116,7 @@ mod tests {
         ListInstanceCommand {}.run(console, &context).unwrap();
 
         assert_eq!(
-            console.get_output(),
+            system.get_output(),
             "\
 PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   Running
       test    amd64      1   1.0 KiB         n/a      1.0 MiB        no
@@ -127,7 +127,8 @@ PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   Running
 
     #[test]
     fn test_list_instance_command_empty() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let instance_store = InstanceStoreMock::new(Vec::new());
         let image_store = ImageStoreMock::default();
         let env = Environment::new(
@@ -146,7 +147,7 @@ PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   Running
         ListInstanceCommand {}.run(console, &context).unwrap();
 
         assert_eq!(
-            console.get_output(),
+            system.get_output(),
             "PID   Name   Arch   CPUs   Memory   Disk Used   Disk Total   Running\n"
         );
     }

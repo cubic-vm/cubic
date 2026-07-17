@@ -24,7 +24,7 @@ pub struct SshCommand {
 }
 
 impl Command for SshCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let env = context.get_env();
         let instance_store = context.get_instance_store();
 

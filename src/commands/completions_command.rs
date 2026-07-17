@@ -22,7 +22,7 @@ pub struct CompletionsCommand {
 }
 
 impl Command for CompletionsCommand {
-    fn run(&self, _console: &mut dyn Console, _context: &Context) -> Result<()> {
+    fn run(&self, _console: &mut Console<'_>, _context: &Context) -> Result<()> {
         let Some(shell) = self.shell.or_else(Shell::from_env) else {
             return Err(Error::CouldNotDetectShell);
         };

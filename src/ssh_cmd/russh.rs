@@ -20,7 +20,7 @@ enum AuthMethod {
 }
 
 async fn ssh_geometry(
-    console: &mut dyn Console,
+    console: &mut Console<'_>,
     output: Arc<Mutex<ChannelWriteHalf<client::Msg>>>,
 ) -> Result<(), ()> {
     let mut geometry = console.get_geometry();
@@ -136,14 +136,14 @@ impl<'a> Russh<'a> {
 
     async fn authenticate_with_password(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         session: &mut russh::client::Handle<Client>,
         user: &str,
         machine: &str,
     ) -> Result<(), ()> {
         loop {
             let password =
-                console.prompt_password(&format!("Enter password for {user}@{machine}: "))?;
+                console.prompt_secret(&format!("Enter password for {user}@{machine}: "))?;
 
             if session
                 .authenticate_password(user, password)
@@ -160,7 +160,7 @@ impl<'a> Russh<'a> {
 
     async fn authenticate(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         session: &mut russh::client::Handle<Client>,
         user: &str,
         machine: &str,
@@ -209,7 +209,7 @@ impl<'a> Russh<'a> {
 
     fn warn_deprecated_auth(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         machine: &str,
         client_key: &str,
     ) -> Result<(), ()> {
@@ -239,7 +239,7 @@ impl<'a> Russh<'a> {
 
     async fn open_channel(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         machine: &str,
         client_key: &str,
         user: &str,
@@ -285,7 +285,7 @@ impl<'a> Russh<'a> {
 
     async fn handle_interactive_shell(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         machine: &str,
         client_key: &str,
         user: &str,
@@ -355,7 +355,7 @@ impl<'a> Russh<'a> {
 
     async fn open_sftp(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         instance: &Instance,
         user: &Option<String>,
         client_key: &str,
@@ -371,7 +371,7 @@ impl<'a> Russh<'a> {
 
     async fn open_target_fs(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         path: &TargetInstancePath,
         client_key: Option<&str>,
     ) -> SftpPath {
@@ -396,7 +396,7 @@ impl<'a> Russh<'a> {
 
     async fn async_copy(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         _root_dir: &str,
         from: &TargetInstancePath,
         from_key: Option<&str>,
@@ -423,7 +423,7 @@ impl<'a> Russh<'a> {
 
     pub fn shell(
         &mut self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         machine: &str,
         client_key: &str,
         user: &str,
@@ -436,7 +436,7 @@ impl<'a> Russh<'a> {
 
     pub fn copy(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         root_dir: &str,
         from: &TargetInstancePath,
         from_key: Option<&str>,

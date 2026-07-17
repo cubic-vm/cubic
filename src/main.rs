@@ -17,7 +17,6 @@ mod web;
 
 use crate::commands::CommandDispatcher;
 use crate::platform::{OsSystem, System};
-use crate::view::Console;
 use clap::Parser;
 use std::process::ExitCode;
 use std::rc::Rc;
@@ -34,7 +33,7 @@ fn main() -> ExitCode {
     }));
 
     let system: Rc<dyn System> = Rc::new(OsSystem::new());
-    let console = &mut view::Stdio::new(system.as_ref());
+    let console = &mut view::Console::new(system.as_ref());
     match CommandDispatcher::parse().dispatch(Rc::clone(&system), console) {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {

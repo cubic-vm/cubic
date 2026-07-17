@@ -29,7 +29,7 @@ pub struct DeleteCommand {
 }
 
 impl Command for DeleteCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
 
         self.instances.require_names()?;
@@ -76,7 +76,6 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::Environment;
     use crate::platform::SystemMock;
-    use crate::view::ConsoleMock;
     use std::rc::Rc;
 
     #[test]
@@ -86,7 +85,8 @@ mod tests {
 
     #[test]
     fn test_reject_empty_instance_list() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let env = Environment::new(
             "myuser".to_string(),
             String::new(),

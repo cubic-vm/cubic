@@ -44,7 +44,7 @@ pub struct StartCommand {
 }
 
 impl Command for StartCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         self.instances.require_names()?;
 
         let instance_store = context.get_instance_store();
@@ -105,7 +105,7 @@ impl StartCommand {
     /// is aborted when the user declines or nothing fits.
     fn fit_to_available_memory(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         instance_store: &dyn InstanceStore,
         instance: &mut Instance,
     ) -> Result<()> {

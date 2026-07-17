@@ -24,7 +24,7 @@ impl StartInstanceAction {
         &mut self,
         context: &Context,
         qemu_args: &Option<String>,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
     ) -> Result<()> {
         if context.get_instance_store().is_running(&self.instance) {
             return Ok(());

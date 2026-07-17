@@ -49,7 +49,7 @@ impl ImageFetcher {
         Ok(None)
     }
 
-    pub fn fetch(&self, console: &mut dyn Console, image: &Image, target_file: &str) -> Result<()> {
+    pub fn fetch(&self, console: &mut Console<'_>, image: &Image, target_file: &str) -> Result<()> {
         let mut client = WebClient::new()?;
 
         let view = Arc::new(Mutex::new(TransferView::new(&format!(

@@ -176,7 +176,7 @@ impl QemuSystem {
         }
     }
 
-    pub fn run(&mut self, console: &mut dyn Console) -> Result<()> {
+    pub fn run(&mut self, console: &mut Console<'_>) -> Result<()> {
         console.debug(&self.command.get_command());
 
         self.command.run_daemonized().map_err(Self::map_error)

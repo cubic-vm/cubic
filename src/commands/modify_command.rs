@@ -65,7 +65,7 @@ pub struct ModifyCommand {
 }
 
 impl Command for ModifyCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
         let mut instance = instance_store.load(self.instance.value.as_str())?;
 
@@ -106,7 +106,6 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, Instance};
     use crate::platform::SystemMock;
-    use crate::view::ConsoleMock;
     use std::rc::Rc;
 
     fn build_context(instance_store: InstanceStoreMock) -> commands::Context {
@@ -131,7 +130,8 @@ mod tests {
 
     #[test]
     fn test_modify_stopped_instance_prints_nothing() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let context = build_context(InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
@@ -142,12 +142,13 @@ mod tests {
             .run(console, &context)
             .unwrap();
 
-        assert_eq!(console.get_output(), "");
+        assert_eq!(system.get_output(), "");
     }
 
     #[test]
     fn test_modify_running_instance_notes_restart() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let context = build_context(InstanceStoreMock::new_with_running(
             vec![Instance {
                 name: "test".to_string(),
@@ -162,7 +163,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            console.get_output(),
+            system.get_output(),
             "info: Note: changes will be applied after the next restart.\n"
         );
     }

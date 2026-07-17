@@ -14,7 +14,7 @@ impl MapView {
         self.items.push((key.to_string(), value.to_string()));
     }
 
-    pub fn print(self, console: &mut dyn Console) {
+    pub fn print(self, console: &mut Console<'_>) {
         let max_key_length = self
             .items
             .iter()
