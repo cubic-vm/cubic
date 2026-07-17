@@ -71,7 +71,7 @@ pub struct CreateCommand {
 }
 
 impl Command for CreateCommand {
-    fn run(&self, console: &mut dyn Console, context: &Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &Context) -> Result<()> {
         let env = context.get_env();
         let instance_store = context.get_instance_store();
 
@@ -136,12 +136,12 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::Environment;
     use crate::platform::SystemMock;
-    use crate::view::ConsoleMock;
     use std::rc::Rc;
 
     #[test]
     fn test_create_rejects_existing_instance_name() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let env = Environment::new(
             "cubic".to_string(),
             String::new(),

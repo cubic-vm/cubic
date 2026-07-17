@@ -24,7 +24,7 @@ use clap::Parser;
 pub struct ListPortCommand;
 
 impl Command for ListPortCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
         let instance_names = instance_store.get_instances();
 
@@ -71,7 +71,6 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, Instance};
     use crate::platform::SystemMock;
-    use crate::view::ConsoleMock;
     use std::rc::Rc;
 
     fn build_context(instances: Vec<Instance>) -> commands::Context {
@@ -91,20 +90,22 @@ mod tests {
 
     #[test]
     fn test_list_ports_empty() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let context = build_context(Vec::new());
 
         ListPortCommand {}.run(console, &context).unwrap();
 
         assert_eq!(
-            console.get_output(),
+            system.get_output(),
             "Instance   Host   Guest   Protocol   In Use\n"
         );
     }
 
     #[test]
     fn test_list_ports_adds_row_per_forward_rule() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let context = build_context(vec![
             Instance {
                 name: "test".to_string(),
@@ -122,7 +123,7 @@ mod tests {
         ListPortCommand {}.run(console, &context).unwrap();
 
         assert_eq!(
-            console.get_output(),
+            system.get_output(),
             "\
 Instance   Host             Guest   Protocol   In Use
 test       127.0.0.1:9000   :22     /tcp       no

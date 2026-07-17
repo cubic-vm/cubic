@@ -62,7 +62,7 @@ pub struct ShowCommand {
 }
 
 impl Command for ShowCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         match &self.name {
             InstanceImageName::Image(name) => commands::ShowImageCommand {
                 name: name.clone(),
@@ -86,7 +86,6 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, Instance};
     use crate::platform::SystemMock;
-    use crate::view::ConsoleMock;
     use std::rc::Rc;
     use std::str::FromStr;
 
@@ -107,7 +106,8 @@ mod tests {
 
     #[test]
     fn test_show_routes_plain_name_to_instance_view() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let context = build_context(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
@@ -120,12 +120,13 @@ mod tests {
         .run(console, &context)
         .unwrap();
 
-        assert!(console.get_output().starts_with("Running:"));
+        assert!(system.get_output().starts_with("Running:"));
     }
 
     #[test]
     fn test_show_rejects_unknown_instance() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let context = build_context(Vec::new());
 
         let result = ShowCommand {

@@ -25,7 +25,7 @@ pub struct CloneCommand {
 }
 
 impl Command for CloneCommand {
-    fn run(&self, console: &mut dyn Console, context: &Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &Context) -> Result<()> {
         let instance_store = context.get_instance_store();
 
         // Verify that the target name is available
@@ -72,7 +72,6 @@ mod tests {
     use crate::models::Environment;
     use crate::models::Instance;
     use crate::platform::SystemMock;
-    use crate::view::ConsoleMock;
     use std::rc::Rc;
     use std::str::FromStr;
 
@@ -93,7 +92,8 @@ mod tests {
 
     #[test]
     fn test_clone_rejects_existing_target_name() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let context = build_context(vec![
             Instance {
                 name: "test".to_string(),
@@ -119,7 +119,8 @@ mod tests {
 
     #[test]
     fn test_clone_rejects_running_source() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let env = Environment::new(
             "cubic".to_string(),
             String::new(),
@@ -153,7 +154,8 @@ mod tests {
 
     #[test]
     fn test_clone_rejects_unknown_source() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let context = build_context(Vec::new());
 
         let result = CloneCommand {

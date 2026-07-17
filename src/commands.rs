@@ -60,5 +60,5 @@ use crate::error::Result;
 use crate::view::Console;
 
 trait Command {
-    fn run(&self, console: &mut dyn Console, context: &Context) -> Result<()>;
+    fn run(&self, console: &mut Console<'_>, context: &Context) -> Result<()>;
 }

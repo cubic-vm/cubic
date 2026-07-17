@@ -46,7 +46,7 @@ pub struct ScpCommand {
 }
 
 impl Command for ScpCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
         check_target_is_running(instance_store, &self.from)?;
         check_target_is_running(instance_store, &self.to)?;

@@ -29,7 +29,7 @@ pub struct ConsoleCommand {
 }
 
 impl Command for ConsoleCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         commands::StartCommand {
             qemu_args: None,
             wait: false,

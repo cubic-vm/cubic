@@ -36,7 +36,7 @@ impl ImageFactory {
     }
 
     fn get_images_from_provider_name_arch(
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         web: &mut WebClient,
         image_provider: &dyn image::ImageProvider,
         name: &str,
@@ -95,7 +95,7 @@ impl ImageFactory {
     }
 
     fn get_images_from_provider(
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         web: &mut WebClient,
         image_provider: &dyn image::ImageProvider,
         filter: Option<ImageName>,
@@ -126,7 +126,7 @@ impl ImageFactory {
     }
 
     fn get_images(
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         web: &mut WebClient,
         filter: Option<ImageName>,
     ) -> Vec<Image> {
@@ -154,7 +154,7 @@ impl ImageFactory {
 
     fn read_images(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         filter: Option<ImageName>,
     ) -> Result<Vec<Image>> {
         // Read cache
@@ -199,11 +199,11 @@ impl ImageFactory {
         )
     }
 
-    pub fn get_all_images(&self, console: &mut dyn Console) -> Result<Vec<Image>> {
+    pub fn get_all_images(&self, console: &mut Console<'_>) -> Result<Vec<Image>> {
         self.read_images(console, None)
     }
 
-    pub fn find_image(&self, console: &mut dyn Console, name: &ImageName) -> Result<Image> {
+    pub fn find_image(&self, console: &mut Console<'_>, name: &ImageName) -> Result<Image> {
         self.read_images(console, Some(name.clone()))
             .and_then(|images| {
                 images

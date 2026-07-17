@@ -21,7 +21,7 @@ pub struct RenameCommand {
 }
 
 impl Command for RenameCommand {
-    fn run(&self, _console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, _console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
 
         instance_store.rename(
@@ -39,7 +39,6 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, Instance};
     use crate::platform::SystemMock;
-    use crate::view::ConsoleMock;
     use std::rc::Rc;
     use std::str::FromStr;
 
@@ -60,7 +59,8 @@ mod tests {
 
     #[test]
     fn test_rename_rejects_unknown_instance() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let context = build_context(Vec::new());
 
         let result = RenameCommand {
@@ -77,7 +77,8 @@ mod tests {
 
     #[test]
     fn test_rename_delegates_to_store() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let context = build_context(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()

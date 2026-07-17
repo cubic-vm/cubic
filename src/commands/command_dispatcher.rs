@@ -98,7 +98,7 @@ pub struct CommandDispatcher {
 }
 
 impl CommandDispatcher {
-    pub fn dispatch(self, system: Rc<dyn System>, console: &mut dyn Console) -> Result<()> {
+    pub fn dispatch(self, system: Rc<dyn System>, console: &mut Console<'_>) -> Result<()> {
         let Some(command) = self.command else {
             println!("{}", CommandDispatcher::command().render_long_help());
             return Ok(());

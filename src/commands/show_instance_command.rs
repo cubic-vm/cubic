@@ -16,7 +16,7 @@ pub struct ShowInstanceCommand {
 }
 
 impl Command for ShowInstanceCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let env = context.get_env();
         let instance_store = context.get_instance_store();
 
@@ -82,14 +82,14 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Arch, DataSize, Environment, Instance, InstanceName};
     use crate::platform::SystemMock;
-    use crate::view::ConsoleMock;
     use std::path::PathBuf;
     use std::rc::Rc;
     use std::str::FromStr;
 
     #[test]
     fn test_show_basic_fields() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let env = Environment::new(
             "myuser".to_string(),
             String::new(),
@@ -123,7 +123,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            console.get_output(),
+            system.get_output(),
             "\
 Running:      no
 PID:          n/a
@@ -144,7 +144,8 @@ Forward:      127.0.0.1:4000:40/tcp
 
     #[test]
     fn test_show_all_fields() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let env = Environment::new(
             "cubic".to_string(),
             String::new(),
@@ -198,7 +199,7 @@ Forward:      127.0.0.1:4000:40/tcp
         .unwrap();
 
         assert_eq!(
-            console.get_output(),
+            system.get_output(),
             format!(
                 "\
 Running:      no
@@ -226,7 +227,8 @@ SSH:          ssh -i {ssh_key} -p 8000 john@localhost
 
     #[test]
     fn test_show_command_failed() {
-        let console = &mut ConsoleMock::new();
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
         let env = Environment::new(
             "testuser".to_string(),
             String::new(),

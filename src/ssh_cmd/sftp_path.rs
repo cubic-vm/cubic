@@ -132,7 +132,7 @@ impl SftpPath {
 
     pub async fn write_file(
         &self,
-        console: &mut dyn Console,
+        console: &mut Console<'_>,
         name: &str,
         size: usize,
         content: Box<dyn AsyncRead + Unpin>,
@@ -189,7 +189,7 @@ impl SftpPath {
         }
     }
 
-    pub async fn recursive_copy(&self, console: &mut dyn Console, target: SftpPath) -> Result<()> {
+    pub async fn recursive_copy(&self, console: &mut Console<'_>, target: SftpPath) -> Result<()> {
         if self.is_file().await? {
             let name = &self.path.display().to_string();
             let size = self.get_file_size().await?;
@@ -213,7 +213,7 @@ impl SftpPath {
         Ok(())
     }
 
-    pub async fn copy(&self, console: &mut dyn Console, target: SftpPath) -> Result<()> {
+    pub async fn copy(&self, console: &mut Console<'_>, target: SftpPath) -> Result<()> {
         if !self.exists().await? {
             return Err(Error::InvalidPath(self.path.display().to_string()));
         }

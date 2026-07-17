@@ -25,7 +25,7 @@ pub struct ExecCommand {
 }
 
 impl Command for ExecCommand {
-    fn run(&self, console: &mut dyn Console, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let env = context.get_env();
         let name = self.target.get_instance();
 
