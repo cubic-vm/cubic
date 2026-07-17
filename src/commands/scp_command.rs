@@ -6,7 +6,6 @@ use crate::models::TargetPath;
 use crate::ssh_cmd::Russh;
 use crate::view::Console;
 use clap::Parser;
-use std::env;
 
 fn check_target_is_running(instance_store: &dyn InstanceStore, target: &TargetPath) -> Result<()> {
     if let Some(target) = target.get_target() {
@@ -53,7 +52,10 @@ impl Command for ScpCommand {
         check_target_is_running(instance_store, &self.to)?;
 
         let env = context.get_env();
-        let root_dir = env::var("SNAP").unwrap_or_default();
+        let root_dir = context
+            .get_system()
+            .read_env_var("SNAP")
+            .unwrap_or_default();
 
         let from = resolve_target_path(&self.from, instance_store)?;
         let to = resolve_target_path(&self.to, instance_store)?;
@@ -68,8 +70,8 @@ impl Command for ScpCommand {
 
         console.debug(&format!("Copying '{}' to '{}'", self.from, self.to));
 
-        let mut ssh = Russh::new();
-        ssh.set_private_keys(env.get_home_ssh_private_key_paths(&FS::new()));
+        let mut ssh = Russh::new(context);
+        ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system(), &FS::new()));
         ssh.copy(
             console,
             &root_dir,

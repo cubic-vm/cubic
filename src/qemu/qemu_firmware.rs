@@ -2,18 +2,19 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::models::Arch;
+use crate::platform::System;
 use crate::qemu::qemu_firmware_descriptor::QemuFirmwareDescriptor;
 use crate::qemu::qemu_path_builder::find_in_dir;
 
 pub struct QemuFirmware;
 
 impl QemuFirmware {
-    pub fn locate(dirs: &[PathBuf], arch: Arch) -> Option<PathBuf> {
+    pub fn locate(system: &dyn System, dirs: &[PathBuf], arch: Arch) -> Option<PathBuf> {
         let var = format!("CUBIC_QEMU_FW_{}", arch.as_vendor_str().to_uppercase());
-        if let Some(fw) = std::env::var_os(&var) {
+        if let Some(fw) = system.read_env_var(&var) {
             return Some(PathBuf::from(fw)); // trust the override as-is
         }
-        QemuInstall::find(dirs)?.find_firmware(arch)
+        QemuInstall::find(dirs)?.find_firmware(system, arch)
     }
 }
 
@@ -78,17 +79,17 @@ impl QemuInstall {
             .any(|entry| entry.path().extension().is_some_and(|ext| ext == "so"))
     }
 
-    fn find_firmware(&self, arch: Arch) -> Option<PathBuf> {
-        self.collect_descriptors()
+    fn find_firmware(&self, system: &dyn System, arch: Arch) -> Option<PathBuf> {
+        self.collect_descriptors(system)
             .into_iter()
             .filter(|descriptor| descriptor.matches(arch))
             .map(|descriptor| descriptor.build_code_path(&self.prefix))
             .find(|code| code.exists())
     }
 
-    fn collect_descriptors(&self) -> Vec<QemuFirmwareDescriptor> {
+    fn collect_descriptors(&self, system: &dyn System) -> Vec<QemuFirmwareDescriptor> {
         let mut by_name: BTreeMap<String, PathBuf> = BTreeMap::new();
-        for dir in self.build_descriptor_dirs() {
+        for dir in self.build_descriptor_dirs(system) {
             for path in Self::find_json_files(&dir) {
                 if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                     by_name.entry(name.to_owned()).or_insert(path);
@@ -101,11 +102,11 @@ impl QemuInstall {
             .collect()
     }
 
-    fn build_descriptor_dirs(&self) -> Vec<PathBuf> {
+    fn build_descriptor_dirs(&self, system: &dyn System) -> Vec<PathBuf> {
         let mut dirs = Vec::new();
-        if let Some(config) = std::env::var_os("XDG_CONFIG_HOME") {
+        if let Some(config) = system.read_env_var("XDG_CONFIG_HOME") {
             dirs.push(PathBuf::from(config).join("qemu/firmware"));
-        } else if let Some(home) = std::env::var_os("HOME") {
+        } else if let Some(home) = system.read_env_var("HOME") {
             dirs.push(PathBuf::from(home).join(".config/qemu/firmware"));
         }
         dirs.push(PathBuf::from("/etc/qemu/firmware"));
@@ -130,6 +131,7 @@ impl QemuInstall {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::platform::SystemMock;
 
     #[test]
     fn test_module_dir_candidates_cover_lib_layouts() {
@@ -143,6 +145,53 @@ mod tests {
                 PathBuf::from("/snap/cubic/current/usr/lib/qemu"),
                 PathBuf::from("/snap/cubic/current/usr/lib64/qemu"),
             ]
+        );
+    }
+
+    #[test]
+    fn test_locate_trusts_override_env_var_without_scanning_dirs() {
+        let system = SystemMock::new().add_env_var("CUBIC_QEMU_FW_AMD64", "/custom/fw.bin");
+
+        let firmware = QemuFirmware::locate(&system, &[], Arch::AMD64);
+
+        assert_eq!(firmware, Some(PathBuf::from("/custom/fw.bin")));
+    }
+
+    #[test]
+    fn test_locate_returns_none_when_no_override_and_no_install_found() {
+        let system = SystemMock::new();
+
+        let firmware = QemuFirmware::locate(&system, &[], Arch::AMD64);
+
+        assert_eq!(firmware, None);
+    }
+
+    #[test]
+    fn test_build_descriptor_dirs_prefers_xdg_config_home_over_home() {
+        let system = SystemMock::new()
+            .add_env_var("XDG_CONFIG_HOME", "/xdg")
+            .add_env_var("HOME", "/home/user");
+        let install = QemuInstall {
+            prefix: PathBuf::from("/prefix"),
+        };
+
+        let dirs = install.build_descriptor_dirs(&system);
+
+        assert_eq!(dirs.first(), Some(&PathBuf::from("/xdg/qemu/firmware")));
+    }
+
+    #[test]
+    fn test_build_descriptor_dirs_falls_back_to_home() {
+        let system = SystemMock::new().add_env_var("HOME", "/home/user");
+        let install = QemuInstall {
+            prefix: PathBuf::from("/prefix"),
+        };
+
+        let dirs = install.build_descriptor_dirs(&system);
+
+        assert_eq!(
+            dirs.first(),
+            Some(&PathBuf::from("/home/user/.config/qemu/firmware"))
         );
     }
 }

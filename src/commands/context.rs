@@ -1,8 +1,11 @@
 use crate::image::ImageStore;
 use crate::instance::InstanceStore;
 use crate::models::Environment;
+use crate::platform::System;
+use std::rc::Rc;
 
 pub struct Context {
+    system: Rc<dyn System>,
     env: Environment,
     image_store: Box<dyn ImageStore>,
     instance_store: Box<dyn InstanceStore>,
@@ -10,15 +13,21 @@ pub struct Context {
 
 impl Context {
     pub fn new(
+        system: Rc<dyn System>,
         env: Environment,
         image_store: Box<dyn ImageStore>,
         instance_store: Box<dyn InstanceStore>,
     ) -> Self {
         Self {
+            system,
             env,
             image_store,
             instance_store,
         }
+    }
+
+    pub fn get_system(&self) -> &dyn System {
+        self.system.as_ref()
     }
 
     pub fn get_env(&self) -> &Environment {

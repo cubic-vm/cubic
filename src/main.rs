@@ -8,6 +8,7 @@ mod image;
 mod instance;
 mod iso9660;
 mod models;
+mod platform;
 mod qemu;
 mod ssh_cmd;
 mod util;
@@ -15,9 +16,11 @@ mod view;
 mod web;
 
 use crate::commands::CommandDispatcher;
+use crate::platform::{OsSystem, System};
 use crate::view::Console;
 use clap::Parser;
 use std::process::ExitCode;
+use std::rc::Rc;
 
 fn main() -> ExitCode {
     // Disable raw mode before the default panic hook runs, so a panic during
@@ -30,8 +33,9 @@ fn main() -> ExitCode {
         default_hook(info);
     }));
 
-    let console = &mut view::Stdio::new();
-    match CommandDispatcher::parse().dispatch(console) {
+    let system: Rc<dyn System> = Rc::new(OsSystem::new());
+    let console = &mut view::Stdio::new(system.as_ref());
+    match CommandDispatcher::parse().dispatch(Rc::clone(&system), console) {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             console.error(&e.to_string());

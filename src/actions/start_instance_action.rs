@@ -45,9 +45,10 @@ impl StartInstanceAction {
         self.instance.console_port = Some(port_checker.get_new_port()?);
         context.get_instance_store().store(&self.instance)?;
 
-        let mut qemu_system = QemuSystem::from(self.instance.arch)?;
+        let system = context.get_system();
+        let mut qemu_system = QemuSystem::from(system, self.instance.arch)?;
 
-        let path_builder = QemuPathBuilder::new();
+        let path_builder = QemuPathBuilder::new(system);
         console.debug(&format!(
             "Searching for QEMU in: {}",
             path_builder
@@ -66,7 +67,7 @@ impl StartInstanceAction {
             None => console.debug("No QEMU install found"),
         }
 
-        let firmware = QemuFirmware::locate(path_builder.get_dirs(), self.instance.arch)
+        let firmware = QemuFirmware::locate(system, path_builder.get_dirs(), self.instance.arch)
             .ok_or(Error::QemuNotFound)?;
         console.debug(&format!("Using firmware '{}'", firmware.display()));
         qemu_system.set_firmware(&firmware);

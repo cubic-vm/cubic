@@ -1,3 +1,4 @@
+use crate::commands::Context;
 use crate::error::Error;
 use crate::models::{Instance, TargetInstancePath};
 use crate::ssh_cmd::{SftpPath, SshKeyGenerator};
@@ -6,7 +7,6 @@ use crate::view::{Console, Spinner};
 use russh::keys::*;
 use russh::*;
 use russh_sftp::client::SftpSession;
-use std::env;
 use std::io::Cursor;
 use std::path::Path;
 use std::rc::Rc;
@@ -63,11 +63,11 @@ async fn ssh_output(output: Arc<Mutex<ChannelWriteHalf<client::Msg>>>) -> Result
     }
 }
 
-#[derive(Default)]
-pub struct Russh {
+pub struct Russh<'a> {
     private_keys: Vec<String>,
     cmd: Option<String>,
     env_vars: Vec<String>,
+    context: &'a Context,
 }
 
 struct Client {}
@@ -83,9 +83,14 @@ impl client::Handler for Client {
     }
 }
 
-impl Russh {
-    pub fn new() -> Self {
-        Self::default()
+impl<'a> Russh<'a> {
+    pub fn new(context: &'a Context) -> Self {
+        Self {
+            private_keys: Vec::new(),
+            cmd: None,
+            env_vars: Vec::new(),
+            context,
+        }
     }
 
     async fn authenticate_with_default_password(
@@ -297,7 +302,11 @@ impl Russh {
         channel
             .request_pty(
                 false,
-                &env::var("TERM").unwrap_or_else(|_| "xterm".into()),
+                &self
+                    .context
+                    .get_system()
+                    .read_env_var("TERM")
+                    .unwrap_or_else(|| "xterm".into()),
                 w,
                 h,
                 0,
@@ -311,7 +320,13 @@ impl Russh {
             let (name, value) = if let Some((k, v)) = var.split_once('=') {
                 (k.to_string(), v.to_string())
             } else {
-                (var.clone(), env::var(var).unwrap_or_default())
+                (
+                    var.clone(),
+                    self.context
+                        .get_system()
+                        .read_env_var(var)
+                        .unwrap_or_default(),
+                )
             };
             channel.set_env(false, name, value).await.map_err(|_| ())?;
         }

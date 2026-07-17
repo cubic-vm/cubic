@@ -1,5 +1,5 @@
 use crate::fs::FS;
-use std::env;
+use crate::platform::System;
 use std::path::PathBuf;
 
 #[derive(Default, Clone)]
@@ -125,12 +125,12 @@ impl Environment {
             .into_owned()
     }
 
-    pub fn get_home_ssh_private_key_paths(&self, fs: &FS) -> Vec<String> {
+    pub fn get_home_ssh_private_key_paths(&self, system: &dyn System, fs: &FS) -> Vec<String> {
         let mut private_keys = Vec::new();
 
         let search_dirs: Vec<String> = ["SNAP_REAL_HOME", "HOME"]
             .iter()
-            .filter_map(|var| env::var(var).ok())
+            .filter_map(|var| system.read_env_var(var))
             .map(|dir| {
                 PathBuf::from(dir)
                     .join(".ssh")

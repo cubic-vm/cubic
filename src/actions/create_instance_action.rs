@@ -32,7 +32,7 @@ impl CreateInstanceAction {
         // Create SSH key
         SshKeyGenerator::new().generate_key(&Path::new(tmp_dir).join("ssh_client_key"))?;
 
-        let qemu_img = QemuImg::new();
+        let qemu_img = QemuImg::new(context.get_system());
 
         // Create virtual machine instance image file
         qemu_img.convert(image_path, tmp_image)?;

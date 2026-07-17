@@ -3,8 +3,10 @@ use crate::env::EnvironmentFactory;
 use crate::error::Result;
 use crate::image::ImageDao;
 use crate::instance::InstanceDao;
+use crate::platform::System;
 use crate::view::Console;
 use clap::{CommandFactory, Parser, Subcommand};
+use std::rc::Rc;
 
 #[derive(Subcommand)]
 pub enum Commands {
@@ -96,7 +98,7 @@ pub struct CommandDispatcher {
 }
 
 impl CommandDispatcher {
-    pub fn dispatch(self, console: &mut dyn Console) -> Result<()> {
+    pub fn dispatch(self, system: Rc<dyn System>, console: &mut dyn Console) -> Result<()> {
         let Some(command) = self.command else {
             println!("{}", CommandDispatcher::command().render_long_help());
             return Ok(());
@@ -106,11 +108,12 @@ impl CommandDispatcher {
             self.global.verbose,
             self.global.quiet,
         ));
-        let env = EnvironmentFactory::create_env()?;
+        let env = EnvironmentFactory::create_env(system.as_ref())?;
         let context = &commands::Context::new(
+            Rc::clone(&system),
             env.clone(),
             Box::new(ImageDao::new(&env)?),
-            Box::new(InstanceDao::new(&env)?),
+            Box::new(InstanceDao::new(Rc::clone(&system), &env)?),
         );
 
         let result = match &command {

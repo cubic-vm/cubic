@@ -2,6 +2,7 @@ use std::path::Path;
 
 use crate::error::{Error, Result};
 use crate::models::{Arch, PortForward};
+use crate::platform::System;
 use crate::qemu::QemuPathBuilder;
 use crate::util::SystemCommand;
 use crate::view::Console;
@@ -30,7 +31,7 @@ impl QemuSystem {
         }
     }
 
-    pub fn from(arch: Arch) -> Result<QemuSystem> {
+    pub fn from(system: &dyn System, arch: Arch) -> Result<QemuSystem> {
         let binary = format!("qemu-system-{}", arch.as_canonical_str());
         let mut command = match arch {
             Arch::AMD64 => {
@@ -47,7 +48,7 @@ impl QemuSystem {
         };
 
         // Resolve the QEMU binary by name from the extended PATH.
-        command.set_env("PATH", QemuPathBuilder::new().build());
+        command.set_env("PATH", QemuPathBuilder::new(system).build());
 
         // Set CPU type
         command.arg("-cpu").arg("max");
@@ -185,6 +186,7 @@ impl QemuSystem {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::platform::SystemMock;
 
     #[test]
     fn test_map_error_translates_not_found() {
@@ -198,7 +200,7 @@ mod tests {
 
     #[test]
     fn test_add_datadir_appends_dash_l() {
-        let mut qemu = QemuSystem::from(Arch::AMD64).unwrap();
+        let mut qemu = QemuSystem::from(&SystemMock::new(), Arch::AMD64).unwrap();
         qemu.add_datadir(Path::new("/snap/cubic/current/usr/share/qemu"));
         assert!(
             qemu.command
@@ -209,7 +211,7 @@ mod tests {
 
     #[test]
     fn test_from_suppresses_emulated_default_devices() {
-        let qemu = QemuSystem::from(Arch::AMD64).unwrap();
+        let qemu = QemuSystem::from(&SystemMock::new(), Arch::AMD64).unwrap();
         let command = qemu.command.get_command();
         assert!(command.contains("-nodefaults"));
         assert!(!command.contains("-vga none"));
@@ -217,7 +219,7 @@ mod tests {
 
     #[test]
     fn test_from_adds_virtio_rng_with_builtin_backend() {
-        let qemu = QemuSystem::from(Arch::AMD64).unwrap();
+        let qemu = QemuSystem::from(&SystemMock::new(), Arch::AMD64).unwrap();
         let command = qemu.command.get_command();
         assert!(command.contains("rng-builtin,id=rng0"));
         assert!(command.contains("virtio-rng-pci,rng=rng0"));
@@ -225,7 +227,7 @@ mod tests {
 
     #[test]
     fn test_from_adds_virtio_balloon() {
-        let qemu = QemuSystem::from(Arch::ARM64).unwrap();
+        let qemu = QemuSystem::from(&SystemMock::new(), Arch::ARM64).unwrap();
         assert!(qemu.command.get_command().contains("virtio-balloon-pci"));
     }
 

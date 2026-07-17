@@ -135,7 +135,9 @@ mod tests {
     use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
     use crate::models::Environment;
+    use crate::platform::SystemMock;
     use crate::view::ConsoleMock;
+    use std::rc::Rc;
 
     #[test]
     fn test_create_rejects_existing_instance_name() {
@@ -147,6 +149,7 @@ mod tests {
             String::new(),
         );
         let context = Context::new(
+            Rc::new(SystemMock::new()),
             env,
             Box::new(ImageStoreMock::default()),
             Box::new(InstanceStoreMock::new(vec![Instance {
