@@ -1,5 +1,6 @@
 use crate::error::{Error, Result};
 use crate::models::{Environment, Instance};
+use crate::platform::System;
 use crate::qemu::QemuPathBuilder;
 use crate::util::SystemCommand;
 use serde::{Deserialize, Serialize};
@@ -12,16 +13,18 @@ pub struct ImageInfo {
     pub virtual_size: u64,
 }
 
-pub struct QemuImg;
+pub struct QemuImg<'a> {
+    system: &'a dyn System,
+}
 
-impl QemuImg {
-    pub fn new() -> Self {
-        Self {}
+impl<'a> QemuImg<'a> {
+    pub fn new(system: &'a dyn System) -> Self {
+        Self { system }
     }
 
-    fn command() -> SystemCommand {
+    fn command(&self) -> SystemCommand {
         let mut cmd = SystemCommand::new("qemu-img");
-        cmd.set_env("PATH", QemuPathBuilder::new().build());
+        cmd.set_env("PATH", QemuPathBuilder::new(self.system).build());
         cmd
     }
 
@@ -33,7 +36,7 @@ impl QemuImg {
     }
 
     pub fn get_image_info(&self, env: &Environment, instance: &Instance) -> Option<ImageInfo> {
-        Self::command()
+        self.command()
             .arg("info")
             .arg("--force-share")
             .arg("--output")
@@ -46,7 +49,7 @@ impl QemuImg {
     }
 
     pub fn convert(&self, src: &str, dst: &str) -> Result<()> {
-        Self::command()
+        self.command()
             .arg("convert")
             .arg("-f")
             .arg("qcow2")
@@ -59,7 +62,7 @@ impl QemuImg {
     }
 
     pub fn resize(&self, image: &str, size: u64) -> Result<()> {
-        Self::command()
+        self.command()
             .arg("resize")
             .arg(image)
             .arg(size.to_string())

@@ -5,20 +5,23 @@ use crate::instance::{
     YamlInstanceDeserializer,
 };
 use crate::models::{DataSize, Environment, Instance, InstanceName};
+use crate::platform::System;
 use crate::qemu::Monitor;
 use crate::qemu::QemuImg;
 use crate::ssh_cmd::PortChecker;
 use std::path::Path;
+use std::rc::Rc;
 use std::str;
 use std::str::FromStr;
 
 pub struct InstanceDao {
     fs: FS,
     pub env: Environment,
+    system: Rc<dyn System>,
 }
 
 impl InstanceDao {
-    pub fn new(env: &Environment) -> Result<Self> {
+    pub fn new(system: Rc<dyn System>, env: &Environment) -> Result<Self> {
         let fs = FS::new();
         fs.setup_directory_access(&env.get_instance_dir())?;
         fs.setup_directory_access(env.get_cache_dir())?;
@@ -27,6 +30,7 @@ impl InstanceDao {
         Ok(InstanceDao {
             fs,
             env: env.clone(),
+            system,
         })
     }
 
@@ -106,7 +110,9 @@ impl InstanceStore for InstanceDao {
                     self.store(&instance).ok();
                 }
 
-                if let Some(info) = QemuImg::new().get_image_info(&self.env, &instance) {
+                if let Some(info) =
+                    QemuImg::new(self.system.as_ref()).get_image_info(&self.env, &instance)
+                {
                     instance.disk_used = Some(DataSize::new(info.actual_size as usize));
                     instance.disk_capacity = DataSize::new(info.virtual_size as usize);
                 }
@@ -164,7 +170,8 @@ impl InstanceStore for InstanceDao {
         } else if instance.disk_capacity.get_bytes() >= size as usize {
             Err(Error::CannotShrinkDisk(instance.name.to_string()))
         } else {
-            QemuImg::new().resize(&self.env.get_instance_image_file(&instance.name), size)?;
+            QemuImg::new(self.system.as_ref())
+                .resize(&self.env.get_instance_image_file(&instance.name), size)?;
             instance.disk_capacity = DataSize::new(size as usize);
             Ok(())
         }

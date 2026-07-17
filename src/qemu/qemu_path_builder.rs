@@ -1,3 +1,4 @@
+use crate::platform::System;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
@@ -19,16 +20,16 @@ pub struct QemuPathBuilder {
 }
 
 impl QemuPathBuilder {
-    pub fn new() -> Self {
+    pub fn new(system: &dyn System) -> Self {
         let mut dirs: Vec<PathBuf> = Vec::new();
 
         // Add QEMU directory override
-        if let Some(dir) = std::env::var_os("CUBIC_QEMU_DIR") {
+        if let Some(dir) = system.read_env_var("CUBIC_QEMU_DIR") {
             dirs.push(PathBuf::from(dir));
         }
 
         // Add system PATH variable
-        if let Some(path) = std::env::var_os("PATH") {
+        if let Some(path) = system.read_env_var("PATH") {
             dirs.extend(std::env::split_paths(&path));
         }
 
@@ -62,12 +63,6 @@ impl QemuPathBuilder {
     }
 }
 
-impl Default for QemuPathBuilder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 pub fn find_in_dir(dir: &Path, name: &str) -> Option<PathBuf> {
     let candidate = dir.join(name);
     if candidate.exists() {
@@ -86,6 +81,45 @@ pub fn find_in_dir(dir: &Path, name: &str) -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::platform::SystemMock;
+
+    #[test]
+    fn test_new_puts_cubic_qemu_dir_override_first() {
+        let system = SystemMock::new().add_env_var("CUBIC_QEMU_DIR", "/override/bin");
+
+        let builder = QemuPathBuilder::new(&system);
+
+        assert_eq!(
+            builder.get_dirs().first(),
+            Some(&PathBuf::from("/override/bin"))
+        );
+    }
+
+    #[test]
+    fn test_new_splits_path_variable() {
+        let joined = std::env::join_paths(["/a", "/b"].map(PathBuf::from))
+            .unwrap()
+            .into_string()
+            .unwrap();
+        let system = SystemMock::new().add_env_var("PATH", &joined);
+
+        let builder = QemuPathBuilder::new(&system);
+
+        assert!(builder.get_dirs().contains(&PathBuf::from("/a")));
+        assert!(builder.get_dirs().contains(&PathBuf::from("/b")));
+    }
+
+    #[test]
+    fn test_new_falls_back_to_default_dirs_when_unset() {
+        let system = SystemMock::new();
+
+        let builder = QemuPathBuilder::new(&system);
+
+        assert_eq!(
+            builder.get_dirs(),
+            DEFAULT_DIRS.iter().map(PathBuf::from).collect::<Vec<_>>()
+        );
+    }
 
     #[test]
     fn test_new_from_dirs_keeps_order_and_drops_duplicates() {

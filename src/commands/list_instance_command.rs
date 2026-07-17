@@ -68,7 +68,9 @@ mod tests {
     use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
     use crate::models::{Arch, DataSize, Environment, Instance};
+    use crate::platform::SystemMock;
     use crate::view::ConsoleMock;
+    use std::rc::Rc;
 
     #[test]
     fn test_list_instance_command() {
@@ -104,7 +106,12 @@ mod tests {
                 ..Instance::default()
             },
         ]);
-        let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
+        let context = commands::Context::new(
+            Rc::new(SystemMock::new()),
+            env,
+            Box::new(image_store),
+            Box::new(instance_store),
+        );
 
         ListInstanceCommand {}.run(console, &context).unwrap();
 
@@ -129,7 +136,12 @@ PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   Running
             String::new(),
             String::new(),
         );
-        let context = commands::Context::new(env, Box::new(image_store), Box::new(instance_store));
+        let context = commands::Context::new(
+            Rc::new(SystemMock::new()),
+            env,
+            Box::new(image_store),
+            Box::new(instance_store),
+        );
 
         ListInstanceCommand {}.run(console, &context).unwrap();
 

@@ -71,7 +71,9 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::Environment;
     use crate::models::Instance;
+    use crate::platform::SystemMock;
     use crate::view::ConsoleMock;
+    use std::rc::Rc;
     use std::str::FromStr;
 
     fn build_context(instances: Vec<Instance>) -> Context {
@@ -82,6 +84,7 @@ mod tests {
             String::new(),
         );
         Context::new(
+            Rc::new(SystemMock::new()),
             env,
             Box::new(ImageStoreMock::default()),
             Box::new(InstanceStoreMock::new(instances)),
@@ -124,6 +127,7 @@ mod tests {
             String::new(),
         );
         let context = Context::new(
+            Rc::new(SystemMock::new()),
             env,
             Box::new(ImageStoreMock::default()),
             Box::new(InstanceStoreMock::new_with_running(

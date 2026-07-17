@@ -49,8 +49,8 @@ impl Command for ExecCommand {
             "Executing on '{name}' as '{user}' on port {ssh_port} using key '{client_key}': {}",
             self.cmd
         ));
-        let mut ssh = Russh::new();
-        ssh.set_private_keys(env.get_home_ssh_private_key_paths(&FS::new()));
+        let mut ssh = Russh::new(context);
+        ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system(), &FS::new()));
         ssh.set_cmd(Some(self.cmd.clone()));
         ssh.set_env_vars(self.env_args.env_vars.clone());
         ssh.shell(console, name.as_str(), &client_key, &user, ssh_port);

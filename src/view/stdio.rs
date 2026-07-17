@@ -1,4 +1,5 @@
 use crate::commands::Verbosity;
+use crate::platform::System;
 use crate::view::{Animation, Console};
 use crossterm::QueueableCommand;
 use crossterm::cursor::MoveToColumn;
@@ -10,10 +11,6 @@ use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
 const ANIMATION_TICK_MS: u64 = 100;
-
-fn is_no_color() -> bool {
-    std::env::var_os("NO_COLOR").is_some()
-}
 
 // On Windows, ANSI escape codes are only interpreted once virtual terminal
 // processing is turned on for the console; this call is a no-op elsewhere.
@@ -62,8 +59,8 @@ impl Stream {
         }
     }
 
-    fn print(self, msg: &str, style: Option<(&str, Color)>) {
-        let enabled = style.is_some() && self.is_terminal() && !is_no_color();
+    fn print(self, msg: &str, style: Option<(&str, Color)>, no_color: bool) {
+        let enabled = style.is_some() && self.is_terminal() && !no_color;
         let text = match style {
             Some((label, color)) => format!("{} {msg}", colorize(label, color, enabled)),
             None => msg.to_string(),
@@ -75,15 +72,16 @@ impl Stream {
     }
 }
 
-pub struct Stdio {
+pub struct Stdio<'a> {
     verbosity: Verbosity,
     is_tty: bool,
     state: Arc<AnimationState>,
     thread: Option<JoinHandle<()>>,
+    system: &'a dyn System,
 }
 
-impl Stdio {
-    pub fn new() -> Self {
+impl<'a> Stdio<'a> {
+    pub fn new(system: &'a dyn System) -> Self {
         enable_ansi_support();
         Self {
             verbosity: Verbosity::new(false, false),
@@ -97,7 +95,12 @@ impl Stdio {
                 signal: Condvar::new(),
             }),
             thread: None,
+            system,
         }
+    }
+
+    fn is_no_color(&self) -> bool {
+        self.system.read_env_var("NO_COLOR").is_some()
     }
 
     // Print a message that coexists with a running animation. While an
@@ -105,13 +108,14 @@ impl Stdio {
     // holding the state lock): clear its line, print the message, then redraw a
     // fresh frame immediately so the live line stays just below the output.
     fn emit(&self, stream: Stream, msg: &str, style: Option<(&str, Color)>) {
+        let no_color = self.is_no_color();
         let inner = self.state.inner.lock().unwrap();
         let animation = inner.animation.clone();
         let mut stdout = stdout();
         if animation.is_some() {
             AnimationState::clear_line(&mut stdout);
         }
-        stream.print(msg, style);
+        stream.print(msg, style, no_color);
         if let Some(animation) = animation {
             AnimationState::draw_frame(&mut stdout, &animation);
         }
@@ -184,7 +188,7 @@ impl AnimationState {
     }
 }
 
-impl Console for Stdio {
+impl Console for Stdio<'_> {
     fn set_verbosity(&mut self, verbosity: Verbosity) {
         self.verbosity = verbosity;
     }
@@ -335,7 +339,7 @@ impl Console for Stdio {
     }
 }
 
-impl Drop for Stdio {
+impl Drop for Stdio<'_> {
     fn drop(&mut self) {
         self.stop();
         self.state.inner.lock().unwrap().shutdown = true;
