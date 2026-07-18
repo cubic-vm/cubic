@@ -53,7 +53,7 @@ machine:
             .deserialize("test", reader)
             .expect("Cannot parse config");
         assert_eq!(instance.name, "test");
-        assert_eq!(instance.user, "cubic");
+        assert_eq!(instance.user.as_str(), "cubic");
         assert_eq!(instance.cpus, 1);
         assert_eq!(instance.mem.get_bytes(), 1073741824);
         assert_eq!(instance.disk_capacity.get_bytes(), 2361393152);
@@ -80,7 +80,7 @@ machine:
             .deserialize("test", reader)
             .expect("Cannot parse config");
         assert_eq!(instance.name, "test");
-        assert_eq!(instance.user, "tux");
+        assert_eq!(instance.user.as_str(), "tux");
         assert_eq!(instance.cpus, 1);
         assert_eq!(instance.mem.get_bytes(), 1073741824);
         assert_eq!(instance.disk_capacity.get_bytes(), 2361393152);

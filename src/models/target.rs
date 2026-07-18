@@ -1,10 +1,10 @@
-use crate::models::InstanceName;
+use crate::models::{InstanceName, UserName};
 use std::fmt;
 use std::str::FromStr;
 
 #[derive(Clone)]
 pub struct Target {
-    user: Option<String>,
+    user: Option<UserName>,
     instance: InstanceName,
 }
 
@@ -16,7 +16,7 @@ impl Target {
         }
     }
 
-    pub fn get_user(&self) -> Option<&String> {
+    pub fn get_user(&self) -> Option<&UserName> {
         self.user.as_ref()
     }
 
@@ -36,7 +36,7 @@ impl FromStr for Target {
             }),
 
             [user, instance] => Ok(Self {
-                user: Some(user.to_string()),
+                user: Some(UserName::from_str(user).map_err(|error| error.to_string())?),
                 instance: InstanceName::from_str(instance)?,
             }),
             _ => Err("Target name must have format 'user@instance' or 'instance'".to_string()),
@@ -79,6 +79,11 @@ mod tests {
     #[test]
     fn test_invalid_target() {
         assert!(Target::from_str("cubic@my@machine").is_err());
+    }
+
+    #[test]
+    fn test_invalid_user_name() {
+        assert!(Target::from_str("bad user@mymachine").is_err());
     }
 
     #[test]

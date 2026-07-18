@@ -1,8 +1,10 @@
+use crate::models::UserName;
+
 #[derive(Default)]
 pub struct UserDataFactory;
 
 impl UserDataFactory {
-    pub fn create(&self, user: &str, pubkey: &str, execute: Option<&str>) -> String {
+    pub fn create(&self, user: &UserName, pubkey: &str, execute: Option<&str>) -> String {
         let execute = execute
             .map(|execute| {
                 format!(
@@ -38,10 +40,12 @@ impl UserDataFactory {
 #[cfg(test)]
 mod tests {
     pub use super::*;
+    use std::str::FromStr;
 
     #[test]
     fn test_write_user_data_without_execute() {
-        let actual = UserDataFactory::default().create("tux", "pubkey", None);
+        let actual =
+            UserDataFactory::default().create(&UserName::from_str("tux").unwrap(), "pubkey", None);
         let expected = r#"#cloud-config
 users:
   - name: tux
@@ -62,8 +66,11 @@ write_files:
 
     #[test]
     fn test_write_user_data_with_execute() {
-        let actual =
-            UserDataFactory::default().create("tux", "pubkey", Some("\"sudo apt install vim\""));
+        let actual = UserDataFactory::default().create(
+            &UserName::from_str("tux").unwrap(),
+            "pubkey",
+            Some("\"sudo apt install vim\""),
+        );
         let expected = r#"#cloud-config
 users:
   - name: tux
@@ -86,7 +93,11 @@ bootcmd:
 
     #[test]
     fn test_write_user_data_escapes_execute() {
-        let actual = UserDataFactory::default().create("tux", "pubkey", Some("a\\b\t\"c\"\nd\re"));
+        let actual = UserDataFactory::default().create(
+            &UserName::from_str("tux").unwrap(),
+            "pubkey",
+            Some("a\\b\t\"c\"\nd\re"),
+        );
 
         let expected_bootcmd = r#"bootcmd:
   - "a\\b\t\"c\"\nd\re"

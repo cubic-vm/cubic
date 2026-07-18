@@ -71,13 +71,14 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::Environment;
     use crate::models::Instance;
+    use crate::models::UserName;
     use crate::platform::SystemMock;
     use std::rc::Rc;
     use std::str::FromStr;
 
     fn build_context(instances: Vec<Instance>) -> Context {
         let env = Environment::new(
-            "cubic".to_string(),
+            UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
             String::new(),
@@ -122,7 +123,7 @@ mod tests {
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
         let env = Environment::new(
-            "cubic".to_string(),
+            UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
             String::new(),

@@ -1,17 +1,23 @@
 use crate::fs::FS;
+use crate::models::UserName;
 use crate::platform::System;
 use std::path::PathBuf;
 
 #[derive(Default, Clone)]
 pub struct Environment {
-    username: String,
+    username: UserName,
     data_dir: String,
     cache_dir: String,
     runtime_dir: String,
 }
 
 impl Environment {
-    pub fn new(username: String, data_dir: String, cache_dir: String, runtime_dir: String) -> Self {
+    pub fn new(
+        username: UserName,
+        data_dir: String,
+        cache_dir: String,
+        runtime_dir: String,
+    ) -> Self {
         Self {
             username,
             data_dir,
@@ -20,7 +26,7 @@ impl Environment {
         }
     }
 
-    pub fn get_username(&self) -> &str {
+    pub fn get_username(&self) -> &UserName {
         &self.username
     }
 
@@ -163,6 +169,7 @@ impl Environment {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     fn join_all(base: &str, segments: &[&str]) -> PathBuf {
         segments
@@ -173,13 +180,13 @@ mod tests {
     #[test]
     fn test_paths() {
         let env = Environment::new(
-            "testuser".to_string(),
+            UserName::from_str("testuser").unwrap(),
             "/data/cubic".to_string(),
             "/cache/cubic".to_string(),
             "/runtime/cubic".to_string(),
         );
 
-        assert_eq!(env.get_username(), "testuser");
+        assert_eq!(env.get_username().as_str(), "testuser");
         assert_eq!(env.get_cache_dir(), "/cache/cubic");
         assert_eq!(
             PathBuf::from(env.get_ssh_private_key_file("mymachine")),

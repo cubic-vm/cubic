@@ -69,13 +69,14 @@ mod tests {
     use super::*;
     use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
-    use crate::models::{Environment, Instance};
+    use crate::models::{Environment, Instance, UserName};
     use crate::platform::SystemMock;
     use std::rc::Rc;
+    use std::str::FromStr;
 
     fn build_context(instances: Vec<Instance>) -> commands::Context {
         let env = Environment::new(
-            "cubic".to_string(),
+            UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
             String::new(),

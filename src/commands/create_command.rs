@@ -5,7 +5,7 @@ use crate::commands::{
 };
 use crate::error::{Error, Result};
 use crate::fs::FS;
-use crate::models::{DataSize, ImageName, Instance, PortForward, ResourceAllocator};
+use crate::models::{DataSize, ImageName, Instance, PortForward, ResourceAllocator, UserName};
 use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
 use crate::view::Spinner;
@@ -49,7 +49,7 @@ pub struct CreateCommand {
     image: ImageName,
     /// Username (default: 'cubic')
     #[clap(short, long)]
-    user: Option<String>,
+    user: Option<UserName>,
     /// Number of vCPUs for the VM instance (default: derived from host resources)
     #[clap(short, long)]
     cpus: Option<u16>,
@@ -99,9 +99,8 @@ impl Command for CreateCommand {
             arch: image.arch,
             user: self
                 .user
-                .as_deref()
-                .unwrap_or(context.get_env().get_username())
-                .to_string(),
+                .clone()
+                .unwrap_or_else(|| context.get_env().get_username().clone()),
             cpus: self.cpus.unwrap_or(default_cpus),
             mem: self.memory.clone().unwrap_or(default_mem),
             disk_capacity: self.disk.clone(),
@@ -137,13 +136,14 @@ mod tests {
     use crate::models::Environment;
     use crate::platform::SystemMock;
     use std::rc::Rc;
+    use std::str::FromStr;
 
     #[test]
     fn test_create_rejects_existing_instance_name() {
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
         let env = Environment::new(
-            "cubic".to_string(),
+            UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
             String::new(),

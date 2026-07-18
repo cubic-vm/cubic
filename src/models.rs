@@ -14,6 +14,7 @@ mod resource_allocator;
 mod target;
 mod target_instance_path;
 mod target_path;
+mod user_name;
 
 pub use arch::*;
 pub use checksum::*;
@@ -31,3 +32,4 @@ pub use resource_allocator::*;
 pub use target::*;
 pub use target_instance_path::*;
 pub use target_path::*;
+pub use user_name::*;

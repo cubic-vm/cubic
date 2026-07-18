@@ -82,9 +82,10 @@ mod tests {
     use crate::error::Error;
     use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
-    use crate::models::Environment;
+    use crate::models::{Environment, UserName};
     use crate::platform::SystemMock;
     use std::rc::Rc;
+    use std::str::FromStr;
 
     #[test]
     fn test_reject_path_traversal() {
@@ -96,7 +97,7 @@ mod tests {
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
         let env = Environment::new(
-            "myuser".to_string(),
+            UserName::from_str("myuser").unwrap(),
             String::new(),
             String::new(),
             String::new(),
@@ -125,7 +126,7 @@ mod tests {
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
         let env = Environment::new(
-            "myuser".to_string(),
+            UserName::from_str("myuser").unwrap(),
             String::new(),
             String::new(),
             String::new(),

@@ -123,7 +123,7 @@ impl InstanceStore for InstanceDao {
             Some(i) => i,
             None => Instance {
                 name: name.to_string(),
-                user: self.env.get_username().to_string(),
+                user: self.env.get_username().clone(),
                 cpus: 1,
                 mem: DataSize::from_str("1G").unwrap(),
                 disk_capacity: DataSize::from_str("1G").unwrap(),
