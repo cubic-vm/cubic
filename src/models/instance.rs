@@ -1,10 +1,5 @@
-use crate::env::DEFAULT_USERNAME;
-use crate::models::{Arch, DataSize, PortForward};
+use crate::models::{Arch, DataSize, PortForward, UserName};
 use serde::{Deserialize, Serialize};
-
-fn default_user() -> String {
-    DEFAULT_USERNAME.to_string()
-}
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Instance {
@@ -12,8 +7,8 @@ pub struct Instance {
     pub name: String,
     #[serde(default)]
     pub arch: Arch,
-    #[serde(default = "default_user")]
-    pub user: String,
+    #[serde(default)]
+    pub user: UserName,
     pub cpus: u16,
     pub mem: DataSize,
     #[serde(skip)]

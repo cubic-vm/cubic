@@ -360,7 +360,7 @@ impl<'a> Russh<'a> {
         user: &Option<String>,
         client_key: &str,
     ) -> Rc<SftpSession> {
-        let user = user.as_ref().unwrap_or(&instance.user);
+        let user = user.as_deref().unwrap_or(instance.user.as_str());
         let channel = self
             .open_channel(console, &instance.name, client_key, user, instance.ssh_port)
             .await

@@ -67,9 +67,10 @@ mod tests {
     use super::*;
     use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
-    use crate::models::{Arch, DataSize, Environment, Instance};
+    use crate::models::{Arch, DataSize, Environment, Instance, UserName};
     use crate::platform::SystemMock;
     use std::rc::Rc;
+    use std::str::FromStr;
 
     #[test]
     fn test_list_instance_command() {
@@ -77,7 +78,7 @@ mod tests {
         let console = &mut Console::new(&system);
         let image_store = ImageStoreMock::default();
         let env = Environment::new(
-            "cubic".to_string(),
+            UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
             String::new(),
@@ -86,7 +87,7 @@ mod tests {
             Instance {
                 name: "test".to_string(),
                 arch: Arch::AMD64,
-                user: "cubic".to_string(),
+                user: UserName::from_str("cubic").unwrap(),
                 cpus: 1,
                 mem: DataSize::new(1024),
                 disk_capacity: DataSize::new(1048576),
@@ -97,7 +98,7 @@ mod tests {
             Instance {
                 name: "test2".to_string(),
                 arch: Arch::AMD64,
-                user: "cubic".to_string(),
+                user: UserName::from_str("cubic").unwrap(),
                 cpus: 5,
                 mem: DataSize::new(0),
                 disk_capacity: DataSize::new(5000),
@@ -132,7 +133,7 @@ PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   Running
         let instance_store = InstanceStoreMock::new(Vec::new());
         let image_store = ImageStoreMock::default();
         let env = Environment::new(
-            "cubic".to_string(),
+            UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
             String::new(),

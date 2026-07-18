@@ -25,6 +25,8 @@ impl TargetInstancePath {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::UserName;
+    use std::str::FromStr;
 
     #[test]
     fn test_to_pathbuf() {
@@ -89,7 +91,7 @@ mod tests {
     #[test]
     fn test_to_pathbuf_tilde_with_user_and_instance() {
         let mut instance = Instance::default();
-        instance.user = "root".to_string();
+        instance.user = UserName::from_str("root").unwrap();
         assert_eq!(
             TargetInstancePath {
                 user: Some("tux".to_string()),
@@ -106,7 +108,7 @@ mod tests {
     #[test]
     fn test_to_pathbuf_tilde_with_instance_without_user() {
         let mut instance = Instance::default();
-        instance.user = "root".to_string();
+        instance.user = UserName::from_str("root").unwrap();
         assert_eq!(
             TargetInstancePath {
                 user: None,

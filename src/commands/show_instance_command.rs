@@ -44,7 +44,7 @@ impl Command for ShowInstanceCommand {
             &util::format_or_na(instance.disk_used.map(|size| size.to_size())),
         );
         view.add("Disk Total", &instance.disk_capacity.to_size());
-        view.add("User", &instance.user);
+        view.add("User", instance.user.as_str());
         view.add("Isolated", util::to_yes_no(instance.isolate));
         view.add("SSH Port", &instance.ssh_port.to_string());
         view.add("Monitor Port", &util::format_or_na(instance.monitor_port));
@@ -80,7 +80,7 @@ mod tests {
     use super::*;
     use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
-    use crate::models::{Arch, DataSize, Environment, Instance, InstanceName};
+    use crate::models::{Arch, DataSize, Environment, Instance, InstanceName, UserName};
     use crate::platform::SystemMock;
     use std::path::PathBuf;
     use std::rc::Rc;
@@ -91,7 +91,7 @@ mod tests {
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
         let env = Environment::new(
-            "myuser".to_string(),
+            UserName::from_str("myuser").unwrap(),
             String::new(),
             String::new(),
             String::new(),
@@ -100,7 +100,7 @@ mod tests {
         let instance_store = InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             arch: Arch::AMD64,
-            user: "myuser".to_string(),
+            user: UserName::from_str("myuser").unwrap(),
             cpus: 1,
             mem: DataSize::new(1024),
             disk_capacity: DataSize::new(1048576),
@@ -147,7 +147,7 @@ Forward:      127.0.0.1:4000:40/tcp
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
         let env = Environment::new(
-            "cubic".to_string(),
+            UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
             String::new(),
@@ -156,7 +156,7 @@ Forward:      127.0.0.1:4000:40/tcp
         let instance_store = InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             arch: Arch::ARM64,
-            user: "john".to_string(),
+            user: UserName::from_str("john").unwrap(),
             cpus: 2,
             mem: DataSize::new(1),
             disk_capacity: DataSize::new(1),
@@ -230,7 +230,7 @@ SSH:          ssh -i {ssh_key} -p 8000 john@localhost
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
         let env = Environment::new(
-            "testuser".to_string(),
+            UserName::from_str("testuser").unwrap(),
             String::new(),
             String::new(),
             String::new(),

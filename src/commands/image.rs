@@ -52,15 +52,16 @@ pub fn fetch_image(
 mod tests {
     use super::*;
     use crate::image::ImageStoreMock;
-    use crate::models::{Arch, HashAlg};
+    use crate::models::{Arch, HashAlg, UserName};
     use crate::platform::SystemMock;
+    use std::str::FromStr;
 
     #[test]
     fn test_fetch_image_skips_cached_image() {
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
         let env = Environment::new(
-            "cubic".to_string(),
+            UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
             String::new(),

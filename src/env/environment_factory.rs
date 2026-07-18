@@ -1,9 +1,9 @@
 use crate::error::{Error, Result};
-use crate::models::Environment;
+use crate::models::{DEFAULT_USERNAME, Environment, UserName};
 use crate::platform::System;
+use std::str::FromStr;
 
 const ROOT_USERNAME: &str = "root";
-pub const DEFAULT_USERNAME: &str = "cubic";
 const USERNAME_ENV_VARS: [&str; 3] = ["USER", "LOGNAME", "USERNAME"];
 
 pub struct EnvironmentFactory;
@@ -21,14 +21,13 @@ impl EnvironmentFactory {
             .find_map(|var| system.read_env_var(var))
     }
 
-    pub fn get_username(system: &dyn System) -> String {
+    pub fn get_username(system: &dyn System) -> UserName {
         let username =
             Self::read_current_username(system).unwrap_or_else(|| DEFAULT_USERNAME.to_string());
         if username == ROOT_USERNAME {
-            DEFAULT_USERNAME.to_string()
-        } else {
-            username
+            return UserName::default();
         }
+        UserName::from_str(&username).unwrap_or_default()
     }
 
     #[cfg(target_os = "linux")]
@@ -109,14 +108,30 @@ mod tests {
     fn test_get_username_falls_back_to_default_when_unset() {
         let system = SystemMock::new();
 
-        assert_eq!(EnvironmentFactory::get_username(&system), DEFAULT_USERNAME);
+        assert_eq!(
+            EnvironmentFactory::get_username(&system).as_str(),
+            DEFAULT_USERNAME
+        );
     }
 
     #[test]
     fn test_get_username_maps_root_to_default() {
         let system = SystemMock::new().add_env_var("USER", ROOT_USERNAME);
 
-        assert_eq!(EnvironmentFactory::get_username(&system), DEFAULT_USERNAME);
+        assert_eq!(
+            EnvironmentFactory::get_username(&system).as_str(),
+            DEFAULT_USERNAME
+        );
+    }
+
+    #[test]
+    fn test_get_username_falls_back_to_default_when_invalid() {
+        let system = SystemMock::new().add_env_var("USER", "Bad Name");
+
+        assert_eq!(
+            EnvironmentFactory::get_username(&system).as_str(),
+            DEFAULT_USERNAME
+        );
     }
 
     #[cfg(target_os = "linux")]

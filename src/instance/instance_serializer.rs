@@ -21,7 +21,8 @@ impl InstanceSerializer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{Arch, DataSize};
+    use crate::models::{Arch, DataSize, UserName};
+    use std::str::FromStr;
 
     #[test]
     fn test_serialize_minimal_config() {
@@ -32,7 +33,7 @@ mod tests {
                 &Instance {
                     name: "test".to_string(),
                     arch: Arch::AMD64,
-                    user: "tux".to_string(),
+                    user: UserName::from_str("tux").unwrap(),
                     cpus: 1,
                     mem: DataSize::new(1000),
                     disk_capacity: DataSize::new(1000),
@@ -69,7 +70,7 @@ isolate = false
                 &Instance {
                     name: "test".to_string(),
                     arch: Arch::AMD64,
-                    user: "tux".to_string(),
+                    user: UserName::from_str("tux").unwrap(),
                     cpus: 1,
                     mem: DataSize::new(1000),
                     disk_capacity: DataSize::new(1000),

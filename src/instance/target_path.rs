@@ -9,7 +9,7 @@ pub fn resolve_target_path(
     if let Some(target) = tp.get_target() {
         let instance = instance_store.load(target.get_instance().as_str())?;
         Ok(TargetInstancePath {
-            user: target.get_user().cloned(),
+            user: target.get_user().map(|user| user.to_string()),
             instance: Some(instance),
             path: tp.path.clone(),
         })
