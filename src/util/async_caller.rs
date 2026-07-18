@@ -5,7 +5,7 @@ pub struct AsyncCaller {
 impl AsyncCaller {
     pub fn new() -> Self {
         Self {
-            runtime: tokio::runtime::Builder::new_multi_thread()
+            runtime: tokio::runtime::Builder::new_current_thread()
                 .enable_all()
                 .build()
                 .unwrap(),
