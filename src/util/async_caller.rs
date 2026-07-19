@@ -12,8 +12,10 @@ impl AsyncCaller {
         }
     }
 
-    pub fn call<F: Future>(&self, future: F) -> F::Output {
-        self.runtime.block_on(future)
+    pub fn call<F: Future>(self, future: F) -> F::Output {
+        let output = self.runtime.block_on(future);
+        self.runtime.shutdown_background();
+        output
     }
 }
 
@@ -32,9 +34,7 @@ mod tests {
 
     #[test]
     fn test_multiple_runtime_async_calls() {
-        let caller1 = AsyncCaller::new();
-        let caller2 = AsyncCaller::new();
-        assert_eq!(5, caller1.call(sum(2, 3)));
-        assert_eq!(3, caller2.call(sum(1, 2)));
+        assert_eq!(5, AsyncCaller::new().call(sum(2, 3)));
+        assert_eq!(3, AsyncCaller::new().call(sum(1, 2)));
     }
 }

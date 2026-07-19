@@ -5,6 +5,8 @@ use rustls::pki_types::{CertificateDer, PrivateKeyDer, ServerName};
 use rustls::{ClientConfig, ClientConnection, RootCertStore, StreamOwned};
 use std::net::TcpStream;
 use std::sync::Arc;
+use tokio_rustls::TlsConnector;
+use tokio_rustls::client::TlsStream;
 
 pub struct TlsClient {
     config: Arc<ClientConfig>,
@@ -45,5 +47,17 @@ impl TlsClient {
             .map_err(|e| Error::TlsConnection(e.to_string()))?;
         let tcp = TcpStream::connect(format!("127.0.0.1:{port}")).map_err(Error::from)?;
         Ok(StreamOwned::new(conn, tcp))
+    }
+
+    pub async fn connect_async(&self, port: u16) -> Result<TlsStream<tokio::net::TcpStream>> {
+        let server_name =
+            ServerName::try_from("localhost").map_err(|e| Error::TlsConnection(e.to_string()))?;
+        let tcp = tokio::net::TcpStream::connect(format!("127.0.0.1:{port}"))
+            .await
+            .map_err(Error::from)?;
+        TlsConnector::from(self.config.clone())
+            .connect(server_name, tcp)
+            .await
+            .map_err(|e| Error::TlsConnection(e.to_string()))
     }
 }

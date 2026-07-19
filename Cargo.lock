@@ -533,6 +533,7 @@ dependencies = [
 name = "cubic"
 version = "0.0.0-dev"
 dependencies = [
+ "bytes",
  "clap",
  "clap_complete",
  "crossterm",
@@ -551,6 +552,8 @@ dependencies = [
  "sysinfo",
  "thiserror",
  "tokio",
+ "tokio-rustls",
+ "tokio-util",
  "toml",
 ]
 

@@ -7,11 +7,11 @@ use crate::view::{Console, Spinner};
 use russh::keys::*;
 use russh::*;
 use russh_sftp::client::SftpSession;
-use std::io::Cursor;
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
-use tokio::{io::AsyncReadExt, sync::Mutex};
+use tokio_util::codec::FramedRead;
+use tokio_util::io::StreamReader;
 
 #[derive(PartialEq)]
 enum AuthMethod {
@@ -19,47 +19,26 @@ enum AuthMethod {
     Deprecated,
 }
 
-async fn ssh_geometry(
-    console: &mut Console<'_>,
-    output: Arc<Mutex<ChannelWriteHalf<client::Msg>>>,
+/// Polls the terminal geometry every 100ms and propagates changes to
+/// the remote PTY. Returns when sending a window change fails.
+async fn send_geometry_updates(
+    console: &Console<'_>,
+    output: &ChannelWriteHalf<client::Msg>,
 ) -> Result<(), ()> {
     let mut geometry = console.get_geometry();
 
     loop {
-        // update terminal geometry
         let new_geometry = console.get_geometry();
         if geometry != new_geometry
-            && let Some(new_geometry) = new_geometry
+            && let Some((width, height)) = new_geometry
         {
-            geometry = Some(new_geometry);
+            geometry = new_geometry;
             output
-                .lock()
-                .await
-                .window_change(new_geometry.0, new_geometry.1, 0, 0)
+                .window_change(width, height, 0, 0)
                 .await
                 .map_err(|_| ())?;
         }
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-    }
-}
-
-async fn ssh_output(output: Arc<Mutex<ChannelWriteHalf<client::Msg>>>) -> Result<(), ()> {
-    let mut stdin = tokio::io::stdin();
-    let mut c: &mut [u8] = &mut [0];
-
-    loop {
-        // read character from stdin
-        if stdin.read(c).await.map_err(|_| ())? == 0 {
-            continue;
-        }
-
-        // send character to ssh server
-        output
-            .lock()
-            .await
-            .data(&mut Cursor::new(&mut c))
-            .await
-            .map_err(|_| ())?;
     }
 }
 
@@ -337,19 +316,22 @@ impl<'a> Russh<'a> {
             channel.request_shell(true).await.map_err(|_| ())?;
         }
         let (mut ssh_in, ssh_out) = channel.split();
-        let mut ssh_in = ssh_in.make_reader();
-        let mut stdout = tokio::io::stdout();
-
-        let ssh_out = Arc::new(Mutex::new(ssh_out));
+        let mut ssh_reader = ssh_in.make_reader();
+        let mut ssh_writer = ssh_out.make_writer();
 
         console.stop();
         console.raw_mode();
+        let mut stdin = StreamReader::new(FramedRead::new(
+            tokio::io::stdin(),
+            util::ShortcutDecoder::new(),
+        ));
+        let mut stdout = tokio::io::stdout();
         tokio::select!(
-            _ = ssh_geometry(console, ssh_out.clone()) => { console.reset(); std::process::exit(0); },
-            _ = ssh_output(ssh_out.clone()) => { console.reset(); std::process::exit(0); },
-            _ = tokio::io::copy(&mut ssh_in, &mut stdout) => { console.reset(); std::process::exit(0); },
-            else => {}
+            _ = tokio::io::copy(&mut stdin, &mut ssh_writer) => {},
+            _ = tokio::io::copy(&mut ssh_reader, &mut stdout) => {},
+            _ = send_geometry_updates(console, &ssh_out) => {},
         );
+        console.reset();
         Ok(())
     }
 
