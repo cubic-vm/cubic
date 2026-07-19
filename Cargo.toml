@@ -16,6 +16,7 @@ rust-version = "1.92"
 qemu-sandbox = []
 
 [dependencies]
+bytes = "1"
 clap = { version = "4", features = ["derive"] }
 clap_complete = "4"
 crossterm = "0"
@@ -33,7 +34,17 @@ serde_yaml = "0"
 sha2 = "0.11"
 sysinfo = { version = "0", default-features = false, features = ["system"] }
 thiserror = "2"
-tokio = { version = "1", default-features = false, features = ["fs", "io-std"] }
+tokio = { version = "1", default-features = false, features = [
+    "fs",
+    "io-std",
+    "io-util",
+    "macros",
+    "net",
+    "rt",
+    "time",
+] }
+tokio-rustls = { version = "0", default-features = false, features = ["ring"] }
+tokio-util = { version = "0", default-features = false, features = ["codec", "io"] }
 toml = "1"
 
 [profile.release]

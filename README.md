@@ -226,6 +226,7 @@ drives to run every VM.
 
 | Rust Crate | Usage |
 |------------|-------|
+| bytes | Byte buffers used by the stdin detach-shortcut decoder |
 | clap | Parse CLI commands, arguments, and flags |
 | clap_complete | Generate shell completion scripts |
 | crossterm | Terminal control for the interactive console and views |
@@ -244,6 +245,8 @@ drives to run every VM.
 | sysinfo | Read the host username and detect running QEMU processes |
 | thiserror | Derive the crate's error types |
 | tokio | Async runtime for SSH and SFTP transfers |
+| tokio-rustls | Async TLS for the QEMU console connection |
+| tokio-util | Detects the console/ssh detach shortcut on stdin |
 | toml | Read and write the `instance.toml` config |
 
 # 📃 License

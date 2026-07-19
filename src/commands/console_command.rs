@@ -2,13 +2,16 @@ use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::InstanceCertPaths;
 use crate::qemu::TlsClient;
-use crate::util::Terminal;
+use crate::util;
 use crate::view::Console;
 use clap::Parser;
 use std::net::TcpStream;
 use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
+use tokio::io::AsyncWriteExt;
+use tokio_util::codec::FramedRead;
+use tokio_util::io::StreamReader;
 
 /// Open VM instance console
 ///
@@ -17,7 +20,7 @@ use std::time::Duration;
 ///   Connect to the console of 'my-instance'
 ///   $ cubic console my-instance
 ///   Default credentials: cubic / cubic
-///   Press CTRL+W to exit the console.
+///   Press Enter, ~, . to exit the console.
 ///
 ///   [...]
 ///
@@ -43,7 +46,7 @@ impl Command for ConsoleCommand {
             .load(self.instance.value.as_str())?;
 
         console.info(&format!("Default credentials: {} / cubic", instance.user));
-        console.info("Press CTRL+W to exit the console.");
+        console.info("Press Enter, ~, . to exit the console.");
 
         let port = instance
             .console_port
@@ -60,14 +63,26 @@ impl Command for ConsoleCommand {
         }
 
         console.raw_mode();
-        match TlsClient::new(&certs).and_then(|c| c.connect(port)) {
-            Ok(mut tls) => {
-                tls.get_mut()
-                    .set_read_timeout(Some(Duration::from_millis(10)))
-                    .ok();
-                Terminal::open(tls).wait();
-            }
-            Err(_) => console.error("Cannot open shell"),
+        let shell = util::AsyncCaller::new().call(async {
+            let tls = TlsClient::new(&certs)?.connect_async(port).await?;
+            let (mut reader, mut writer) = tokio::io::split(tls);
+            let mut stdin = StreamReader::new(FramedRead::new(
+                tokio::io::stdin(),
+                util::ShortcutDecoder::new(),
+            ));
+            let mut stdout = tokio::io::stdout();
+            tokio::select!(
+                _ = tokio::io::copy(&mut stdin, &mut writer) => {},
+                _ = tokio::io::copy(&mut reader, &mut stdout) => {},
+            );
+
+            let mut out = tokio::io::stdout();
+            out.write_all(b"\n").await.ok();
+            out.flush().await.ok();
+            Ok::<(), Error>(())
+        });
+        if shell.is_err() {
+            console.error("Cannot open shell");
         }
         console.reset();
         Ok(())
