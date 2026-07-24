@@ -7,8 +7,9 @@ use clap::{ArgAction, Parser};
 /// Modify VM instances
 ///
 /// Use this command to change the settings of an existing VM instance (CPU, memory,
-/// disk, etc.). The changes will be applied on the next (re-)start of the VM
-/// instance.
+/// disk, etc.). Port forwarding rules (--port/--rm-port) take effect immediately if
+/// the instance is running. All other changes are applied on the next (re-)start of
+/// the VM instance.
 ///
 /// Examples:
 ///
@@ -69,8 +70,21 @@ impl Command for ModifyCommand {
         let instance_store = context.get_instance_store();
         let mut instance = instance_store.load(self.instance.value.as_str())?;
 
-        if instance_store.is_running(&instance) {
-            console.info("Note: changes will be applied after the next restart.");
+        let is_running = instance_store.is_running(&instance);
+        let hostfwd_changed = !self.port.is_empty() || !self.rm_port.is_empty();
+
+        if is_running && hostfwd_changed {
+            let mut monitor = instance_store.get_monitor(&instance)?;
+            for fwd in &self.rm_port {
+                monitor.remove_hostfwd(fwd)?;
+            }
+            for fwd in &self.port {
+                monitor.add_hostfwd(fwd)?;
+            }
+        }
+
+        if is_running {
+            console.info("Note: changes may require a restart to take effect.");
         }
 
         if let Some(cpus) = &self.cpus {
@@ -165,7 +179,31 @@ mod tests {
 
         assert_eq!(
             system.get_output(),
-            "info: Note: changes will be applied after the next restart.\n"
+            "info: Note: changes may require a restart to take effect.\n"
         );
+    }
+
+    #[test]
+    fn test_modify_running_instance_port_attempts_live_apply() {
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
+        let context = build_context(InstanceStoreMock::new_with_running(
+            vec![Instance {
+                name: "test".to_string(),
+                ..Instance::default()
+            }],
+            &["test"],
+        ));
+
+        // InstanceStoreMock has no real monitor, so a live hostfwd change on
+        // a running instance surfaces the mock's InstanceNotRunning error
+        // instead of silently deferring to a restart, and the restart note
+        // is never printed.
+        let result = ModifyCommand::try_parse_from(["modify", "test", "--port", "8080:80"])
+            .unwrap()
+            .run(console, &context);
+
+        assert!(result.is_err());
+        assert_eq!(system.get_output(), "");
     }
 }

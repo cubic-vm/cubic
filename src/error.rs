@@ -126,6 +126,9 @@ Troubleshoot:
         "Invalid username '{0}'.\n\nUsernames must start with a lowercase letter or underscore, followed by lowercase letters, numbers, underlines or dashes"
     )]
     InvalidUsername(String),
+
+    #[error("Failed to apply port forwarding rule on the running instance: {0}")]
+    HostfwdCommandFailed(String),
 }
 
 fn format_qemu_not_found_help() -> String {

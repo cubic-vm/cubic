@@ -7,6 +7,8 @@ use crate::qemu::QemuPathBuilder;
 use crate::util::SystemCommand;
 use crate::view::Console;
 
+pub const NETDEV_ID: &str = "net0";
+
 pub struct QemuSystem {
     command: SystemCommand,
 }
@@ -128,10 +130,10 @@ impl QemuSystem {
         let restrict = if isolate { "on" } else { "off" };
         self.command
             .arg("-device")
-            .arg("virtio-net-pci,netdev=net0,romfile=")
+            .arg(format!("virtio-net-pci,netdev={NETDEV_ID},romfile="))
             .arg("-netdev")
             .arg(format!(
-                "user,id=net0,restrict={restrict},hostfwd=tcp:127.0.0.1:{ssh_port}-:22{hostfwd_options}"
+                "user,id={NETDEV_ID},restrict={restrict},hostfwd=tcp:127.0.0.1:{ssh_port}-:22{hostfwd_options}"
             ));
     }
 
