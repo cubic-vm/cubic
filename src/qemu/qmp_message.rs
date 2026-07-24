@@ -9,8 +9,8 @@ pub struct QmpTimestamp {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QmpError {
-    class: String,
-    desc: String,
+    pub class: String,
+    pub desc: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
