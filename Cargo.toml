@@ -12,9 +12,6 @@ categories = ["command-line-utilities"]
 edition = "2024"
 rust-version = "1.92"
 
-[features]
-qemu-sandbox = []
-
 [dependencies]
 bytes = "1"
 clap = { version = "4", features = ["derive"] }

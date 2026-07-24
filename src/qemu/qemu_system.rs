@@ -76,10 +76,6 @@ impl QemuSystem {
         // Allow memory reclaim via virtio-balloon.
         command.arg("-device").arg("virtio-balloon-pci");
 
-        // Sandbox
-        #[cfg(feature = "qemu-sandbox")]
-        command.arg("-sandbox").arg("on");
-
         Ok(QemuSystem { command })
     }
 
