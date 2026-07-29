@@ -1,8 +1,9 @@
 use crate::error::{Error, Result};
 use crate::models::Image;
+use crate::platform::System;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
 use std::io::{Read, Write};
+use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const IMAGE_CACHE_LIFETIME_SEC: u64 = 7 * 24 * 60 * 60; // = 1 week
@@ -25,15 +26,16 @@ impl ImageCache {
         (Self::get_timestamp() - self.timestamp) < IMAGE_CACHE_LIFETIME_SEC
     }
 
-    pub fn read_from_file(path: &str) -> Option<Self> {
-        File::open(path)
+    pub fn read_from_file(system: &dyn System, path: &Path) -> Option<Self> {
+        system
+            .open_file(path)
             .ok()
-            .and_then(|ref mut reader| ImageCache::deserialize(reader))
+            .and_then(|mut reader| ImageCache::deserialize(&mut *reader))
     }
 
-    pub fn write_to_file(&self, path: &str) {
-        if let Ok(ref mut file) = File::create(path) {
-            self.serialize(file).ok();
+    pub fn write_to_file(&self, system: &dyn System, path: &Path) {
+        if let Ok(mut file) = system.create_file(path) {
+            self.serialize(&mut *file).ok();
         }
     }
 

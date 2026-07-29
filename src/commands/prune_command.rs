@@ -1,9 +1,9 @@
 use crate::commands::{self, Command};
 use crate::error::Result;
-use crate::fs::FS;
 use crate::models::DataSize;
 use crate::view::{ConfirmDialog, Console};
 use clap::Parser;
+use std::path::{Path, PathBuf};
 
 /// Clear caches
 ///
@@ -19,14 +19,17 @@ pub struct PruneCommand {
 impl Command for PruneCommand {
     fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let env = context.get_env();
+        let system = context.get_system();
 
         // Calculate size
-        let fs = FS::new();
-        let paths = [env.get_image_cache_file(), env.get_image_dir()];
+        let paths = [
+            PathBuf::from(env.get_image_cache_file()),
+            PathBuf::from(env.get_image_dir()),
+        ];
         let total = DataSize::new(
             paths
                 .iter()
-                .fold(0, |total, path| total + fs.get_size(path)) as usize,
+                .fold(0, |total, path| total + system.get_path_size(path)) as usize,
         )
         .to_size();
 
@@ -41,8 +44,10 @@ impl Command for PruneCommand {
             || ConfirmDialog::new("Are you sure you want to continue?").confirm(console)
         {
             // Delete files
-            fs.remove_file(&env.get_image_cache_file()).ok();
-            fs.remove_dir(&env.get_image_dir()).ok();
+            system
+                .remove_file(Path::new(&env.get_image_cache_file()))
+                .ok();
+            system.remove_dir(Path::new(&env.get_image_dir())).ok();
 
             // Print size of deleted files
             console.print(&format!("Successfully freed {total} of disk space."));

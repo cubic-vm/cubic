@@ -1,17 +1,20 @@
 use crate::error::{Error, Result};
 use crate::models::{HashAlg, Image};
+use crate::platform::System;
 use crate::view::{Console, Spinner, TransferView};
 use crate::web::WebClient;
 use regex::Regex;
+use std::path::Path;
 use std::sync::{Arc, LazyLock, Mutex};
 
 static HEX_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new("^[0-9A-Fa-f]+$").unwrap());
 
-pub struct ImageFetcher {}
+#[derive(Default)]
+pub struct ImageFetcher;
 
 impl ImageFetcher {
     pub fn new() -> Self {
-        ImageFetcher {}
+        ImageFetcher
     }
 
     pub fn fetch_checksum(
@@ -49,7 +52,13 @@ impl ImageFetcher {
         Ok(None)
     }
 
-    pub fn fetch(&self, console: &mut Console<'_>, image: &Image, target_file: &str) -> Result<()> {
+    pub fn fetch(
+        &self,
+        console: &mut Console<'_>,
+        system: &dyn System,
+        image: &Image,
+        target_file: &Path,
+    ) -> Result<()> {
         let mut client = WebClient::new()?;
 
         let view = Arc::new(Mutex::new(TransferView::new(&format!(
@@ -57,7 +66,7 @@ impl ImageFetcher {
             &image.to_name()
         ))));
         console.play(view.clone());
-        let checksum = client.download_file(&image.image_url, target_file, view)?;
+        let checksum = client.download_file(system, &image.image_url, target_file, view)?;
         console.stop();
 
         // Verify checksum

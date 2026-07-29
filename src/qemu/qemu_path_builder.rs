@@ -63,15 +63,15 @@ impl QemuPathBuilder {
     }
 }
 
-pub fn find_in_dir(dir: &Path, name: &str) -> Option<PathBuf> {
+pub fn find_in_dir(system: &dyn System, dir: &Path, name: &str) -> Option<PathBuf> {
     let candidate = dir.join(name);
-    if candidate.exists() {
+    if system.exists_path(&candidate) {
         return Some(candidate);
     }
     #[cfg(windows)]
     {
         let exe = dir.join(format!("{name}.exe"));
-        if exe.exists() {
+        if system.exists_path(&exe) {
             return Some(exe);
         }
     }

@@ -1,9 +1,11 @@
 use crate::error::{Error, Result};
 use crate::image::{self, ImageCache};
 use crate::models::{Arch, Environment, Image, ImageName};
+use crate::platform::System;
 use crate::util;
 use crate::view::Console;
 use crate::web::WebClient;
+use std::path::Path;
 
 const IMAGE_PROVIDERS: &[&dyn image::ImageProvider] = &[
     &image::AlmaLinuxImageProvider {},
@@ -16,13 +18,17 @@ const IMAGE_PROVIDERS: &[&dyn image::ImageProvider] = &[
     &image::UbuntuImageProvider {},
 ];
 
-pub struct ImageFactory {
+pub struct ImageFactory<'a> {
     env: Environment,
+    system: &'a dyn System,
 }
 
-impl ImageFactory {
-    pub fn new(env: &Environment) -> Self {
-        Self { env: env.clone() }
+impl<'a> ImageFactory<'a> {
+    pub fn new(system: &'a dyn System, env: &Environment) -> Self {
+        Self {
+            env: env.clone(),
+            system,
+        }
     }
 
     fn filter_arch(filter: Option<ImageName>) -> Vec<Arch> {
@@ -158,7 +164,8 @@ impl ImageFactory {
         filter: Option<ImageName>,
     ) -> Result<Vec<Image>> {
         // Read cache
-        let cache = ImageCache::read_from_file(&self.env.get_image_cache_file());
+        let cache =
+            ImageCache::read_from_file(self.system, Path::new(&self.env.get_image_cache_file()));
 
         // Use cache if valid
         if let Some(cache) = &cache
@@ -192,7 +199,8 @@ impl ImageFactory {
             } else {
                 // Write cache
                 if filter.is_none() {
-                    ImageCache::new(images.clone()).write_to_file(&self.env.get_image_cache_file());
+                    ImageCache::new(images.clone())
+                        .write_to_file(self.system, Path::new(&self.env.get_image_cache_file()));
                 }
                 images
             },

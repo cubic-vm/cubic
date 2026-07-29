@@ -3,7 +3,6 @@ mod cloudinit;
 mod commands;
 mod env;
 mod error;
-mod fs;
 mod image;
 mod instance;
 mod iso9660;

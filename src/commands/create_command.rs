@@ -4,7 +4,6 @@ use crate::commands::{
     image::{fetch_image, fetch_image_info},
 };
 use crate::error::{Error, Result};
-use crate::fs::FS;
 use crate::models::{DataSize, ImageName, Instance, PortForward, ResourceAllocator, UserName};
 use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
@@ -82,8 +81,14 @@ impl Command for CreateCommand {
         }
 
         // Fetch image
-        let image = &fetch_image_info(console, env, &self.image)?;
-        fetch_image(console, env, context.get_image_store(), image)?;
+        let image = &fetch_image_info(console, context.get_system(), env, &self.image)?;
+        fetch_image(
+            console,
+            context.get_system(),
+            env,
+            context.get_image_store(),
+            image,
+        )?;
 
         console.play(Arc::new(Mutex::new(Spinner::new(format!(
             "Creating {}",
@@ -121,7 +126,7 @@ impl Command for CreateCommand {
         ));
 
         let image_path = &env.get_image_file(&image.to_file_name());
-        CreateInstanceAction::new().run(context, &FS::new(), image_path, instance)?;
+        CreateInstanceAction::new().run(context, image_path, instance)?;
 
         console.stop();
         Ok(())

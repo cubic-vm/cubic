@@ -1,7 +1,6 @@
 use crate::actions::CreateInstanceAction;
 use crate::commands::{Command, Context};
 use crate::error::{Error, Result};
-use crate::fs::FS;
 use crate::models::InstanceName;
 use crate::ssh_cmd::PortChecker;
 use crate::view::{Console, Spinner};
@@ -57,7 +56,7 @@ impl Command for CloneCommand {
         target.ssh_port = PortChecker::new().get_new_port()?;
 
         // Create VM instance
-        CreateInstanceAction::new().run(context, &FS::new(), image_path, target)?;
+        CreateInstanceAction::new().run(context, image_path, target)?;
 
         console.stop();
         Ok(())

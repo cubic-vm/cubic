@@ -1,15 +1,20 @@
 use crate::error::Result;
-use crate::fs::FS;
 use crate::image::{ImageFactory, ImageFetcher, ImageStore};
 use crate::models::{Environment, Image, ImageName};
+use crate::platform::System;
 use crate::view::{Console, Spinner};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-pub fn fetch_image_list(console: &mut Console<'_>, env: &Environment) -> Vec<Image> {
+pub fn fetch_image_list(
+    console: &mut Console<'_>,
+    system: &dyn System,
+    env: &Environment,
+) -> Vec<Image> {
     console.play(Arc::new(Mutex::new(Spinner::new(
         "Fetching image list".to_string(),
     ))));
-    let images: Vec<Image> = ImageFactory::new(env)
+    let images: Vec<Image> = ImageFactory::new(system, env)
         .get_all_images(console)
         .unwrap_or_default();
     console.stop();
@@ -18,6 +23,7 @@ pub fn fetch_image_list(console: &mut Console<'_>, env: &Environment) -> Vec<Ima
 
 pub fn fetch_image_info(
     console: &mut Console<'_>,
+    system: &dyn System,
     env: &Environment,
     image: &ImageName,
 ) -> Result<Image> {
@@ -26,23 +32,26 @@ pub fn fetch_image_info(
         image.get_vendor(),
         image.get_name()
     )))));
-    let image = ImageFactory::new(env).find_image(console, image);
+    let image = ImageFactory::new(system, env).find_image(console, image);
     console.stop();
     image
 }
 
 pub fn fetch_image(
     console: &mut Console<'_>,
+    system: &dyn System,
     env: &Environment,
     image_store: &dyn ImageStore,
     image: &Image,
 ) -> Result<()> {
     if !image_store.exists(image) {
-        FS::new().create_dir(&env.get_image_dir())?;
+        let image_dir = PathBuf::from(env.get_image_dir());
+        system.create_dir(&image_dir)?;
         ImageFetcher::new().fetch(
             console,
+            system,
             image,
-            &format!("{}/{}", env.get_image_dir(), image.to_file_name()),
+            &image_dir.join(image.to_file_name()),
         )?;
     }
     Ok(())
@@ -79,6 +88,6 @@ mod tests {
 
         // A cached image must return without touching the image directory
         // or the network.
-        fetch_image(console, &env, &image_store, &image).unwrap();
+        fetch_image(console, &system, &env, &image_store, &image).unwrap();
     }
 }
