@@ -228,3 +228,53 @@ impl InstanceStore for InstanceDao {
         Monitor::new(&self.env, instance)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::UserName;
+    use crate::platform::SystemMock;
+
+    fn build_env() -> Environment {
+        Environment::new(
+            UserName::from_str("cubic").unwrap(),
+            "/data".to_string(),
+            "/cache".to_string(),
+            "/run".to_string(),
+        )
+    }
+
+    #[test]
+    fn test_exists_true_when_instance_dir_present() {
+        let system = SystemMock::new().add_dir("/data/machines/test");
+        let dao = InstanceDao::new(Rc::new(system), &build_env()).unwrap();
+
+        assert!(dao.exists("test"));
+        assert!(!dao.exists("missing"));
+    }
+
+    #[test]
+    fn test_store_then_load_round_trips_instance() {
+        let system = SystemMock::new().add_dir("/data/machines/test");
+        let dao = InstanceDao::new(Rc::new(system), &build_env()).unwrap();
+        let instance = Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        };
+
+        dao.store(&instance).unwrap();
+        let loaded = dao.load("test").unwrap();
+
+        assert_eq!(loaded.name, instance.name);
+    }
+
+    #[test]
+    fn test_get_instances_lists_sorted_valid_names() {
+        let system = SystemMock::new()
+            .add_dir("/data/machines/zebra")
+            .add_dir("/data/machines/apple");
+        let dao = InstanceDao::new(Rc::new(system), &build_env()).unwrap();
+
+        assert_eq!(dao.get_instances(), vec!["apple", "zebra"]);
+    }
+}

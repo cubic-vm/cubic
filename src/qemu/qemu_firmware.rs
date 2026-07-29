@@ -201,4 +201,123 @@ mod tests {
             Some(&PathBuf::from("/home/user/.config/qemu/firmware"))
         );
     }
+
+    #[test]
+    fn test_find_lib_triplet_returns_dir_containing_qemu_subdir() {
+        let system = SystemMock::new()
+            .add_dir("/prefix/lib/x86_64-linux-gnu")
+            .add_dir("/prefix/lib/x86_64-linux-gnu/qemu")
+            .add_dir("/prefix/lib/other");
+        let install = QemuInstall {
+            system: &system,
+            prefix: PathBuf::from("/prefix"),
+        };
+
+        let triplet = install.find_lib_triplet();
+
+        assert_eq!(triplet, Some(PathBuf::from("x86_64-linux-gnu")));
+    }
+
+    #[test]
+    fn test_find_lib_triplet_returns_none_without_qemu_subdir() {
+        let system = SystemMock::new().add_dir("/prefix/lib/other");
+        let install = QemuInstall {
+            system: &system,
+            prefix: PathBuf::from("/prefix"),
+        };
+
+        assert_eq!(install.find_lib_triplet(), None);
+    }
+
+    #[test]
+    fn test_contains_shared_object_detects_so_file() {
+        let system = SystemMock::new().add_file("/prefix/lib/qemu/hw-usb.so", b"");
+
+        let install = QemuInstall {
+            system: &system,
+            prefix: PathBuf::from("/prefix"),
+        };
+
+        assert!(install.contains_shared_object(Path::new("/prefix/lib/qemu")));
+    }
+
+    #[test]
+    fn test_contains_shared_object_false_without_so_file() {
+        let system = SystemMock::new().add_file("/prefix/lib/qemu/readme.txt", b"");
+
+        let install = QemuInstall {
+            system: &system,
+            prefix: PathBuf::from("/prefix"),
+        };
+
+        assert!(!install.contains_shared_object(Path::new("/prefix/lib/qemu")));
+    }
+
+    #[test]
+    fn test_find_datadir_accepts_only_a_directory() {
+        let system = SystemMock::new().add_dir("/prefix/share/qemu");
+        let install = QemuInstall {
+            system: &system,
+            prefix: PathBuf::from("/prefix"),
+        };
+
+        assert_eq!(
+            install.find_datadir(),
+            Some(PathBuf::from("/prefix/share/qemu"))
+        );
+
+        let system = SystemMock::new().add_file("/prefix/share/qemu", b"");
+        let install = QemuInstall {
+            system: &system,
+            prefix: PathBuf::from("/prefix"),
+        };
+
+        assert_eq!(install.find_datadir(), None);
+    }
+
+    #[test]
+    fn test_find_json_files_filters_by_extension() {
+        let system = SystemMock::new()
+            .add_file("/etc/qemu/firmware/40-edk2-x86.json", b"")
+            .add_file("/etc/qemu/firmware/readme.txt", b"");
+
+        let install = QemuInstall {
+            system: &system,
+            prefix: PathBuf::from("/prefix"),
+        };
+
+        let found = install.find_json_files(Path::new("/etc/qemu/firmware"));
+
+        assert_eq!(
+            found,
+            vec![PathBuf::from("/etc/qemu/firmware/40-edk2-x86.json")]
+        );
+    }
+
+    #[test]
+    fn test_find_firmware_returns_first_matching_existing_descriptor() {
+        let descriptor = r#"{
+            "interface-types": ["uefi"],
+            "mapping": {
+                "device": "flash",
+                "executable": { "filename": "share/qemu/firmware/code.bin" }
+            },
+            "targets": [{ "architecture": "x86_64", "machines": ["pc-q35-8.0"] }],
+            "features": []
+        }"#;
+        let system = SystemMock::new()
+            .add_file("/etc/qemu/firmware/40-code.json", descriptor.as_bytes())
+            .add_file("/prefix/share/qemu/firmware/code.bin", b"");
+        let install = QemuInstall {
+            system: &system,
+            prefix: PathBuf::from("/prefix"),
+        };
+
+        let firmware = install.find_firmware(Arch::AMD64);
+
+        assert_eq!(
+            firmware,
+            Some(PathBuf::from("/prefix/share/qemu/firmware/code.bin"))
+        );
+    }
 }
