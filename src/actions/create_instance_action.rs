@@ -2,7 +2,7 @@ use crate::commands::Context;
 use crate::error::Result;
 use crate::models::Instance;
 use crate::qemu::QemuImg;
-use crate::ssh_cmd::SshKeyGenerator;
+use crate::ssh::SshKeyGenerator;
 use std::path::Path;
 
 #[derive(Default)]

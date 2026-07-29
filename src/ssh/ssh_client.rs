@@ -1,7 +1,7 @@
 use crate::commands::Context;
 use crate::error::Error;
 use crate::models::{Instance, TargetInstancePath};
-use crate::ssh_cmd::{SftpPath, SshKeyGenerator};
+use crate::ssh::{SftpPath, SshKeyGenerator};
 use crate::util;
 use crate::view::{Console, Spinner};
 use russh::keys::*;
@@ -42,16 +42,16 @@ async fn send_geometry_updates(
     }
 }
 
-pub struct Russh<'a> {
+pub struct SshClient<'a> {
     private_keys: Vec<String>,
     cmd: Option<String>,
     env_vars: Vec<String>,
     context: &'a Context,
 }
 
-struct Client {}
+struct ServerKeyHandler {}
 
-impl client::Handler for Client {
+impl client::Handler for ServerKeyHandler {
     type Error = russh::Error;
 
     async fn check_server_key(
@@ -62,7 +62,7 @@ impl client::Handler for Client {
     }
 }
 
-impl<'a> Russh<'a> {
+impl<'a> SshClient<'a> {
     pub fn new(context: &'a Context) -> Self {
         Self {
             private_keys: Vec::new(),
@@ -74,7 +74,7 @@ impl<'a> Russh<'a> {
 
     async fn authenticate_with_default_password(
         &self,
-        session: &mut russh::client::Handle<Client>,
+        session: &mut russh::client::Handle<ServerKeyHandler>,
         user: &str,
     ) -> Result<(), ()> {
         let auth = session
@@ -87,7 +87,7 @@ impl<'a> Russh<'a> {
 
     async fn authenticate_with_keys(
         &self,
-        session: &mut russh::client::Handle<Client>,
+        session: &mut russh::client::Handle<ServerKeyHandler>,
         user: &str,
         keys: &[String],
     ) -> bool {
@@ -116,7 +116,7 @@ impl<'a> Russh<'a> {
     async fn authenticate_with_password(
         &self,
         console: &mut Console<'_>,
-        session: &mut russh::client::Handle<Client>,
+        session: &mut russh::client::Handle<ServerKeyHandler>,
         user: &str,
         machine: &str,
     ) -> Result<(), ()> {
@@ -140,7 +140,7 @@ impl<'a> Russh<'a> {
     async fn authenticate(
         &self,
         console: &mut Console<'_>,
-        session: &mut russh::client::Handle<Client>,
+        session: &mut russh::client::Handle<ServerKeyHandler>,
         user: &str,
         machine: &str,
         client_key: &str,
@@ -232,7 +232,7 @@ impl<'a> Russh<'a> {
         console.debug(&format!("Connecting to 127.0.0.1:{port}"));
         let mut failed = false;
         loop {
-            let sh = Client {};
+            let sh = ServerKeyHandler {};
             let addrs = ("127.0.0.1", port);
             let config = Arc::new(client::Config::default());
             if let Ok(s) = client::connect(config, addrs, sh).await.map_err(|_| ()) {

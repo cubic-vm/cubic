@@ -3,7 +3,7 @@ use crate::error::Result;
 use crate::iso9660::IsoWriter;
 use crate::models::{Environment, Instance};
 use crate::platform::System;
-use crate::ssh_cmd::SshKeyGenerator;
+use crate::ssh::SshKeyGenerator;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 

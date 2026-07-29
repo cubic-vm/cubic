@@ -4,7 +4,7 @@ use crate::error::{Error, Result};
 use crate::instance::InstanceCertGenerator;
 use crate::models::Instance;
 use crate::qemu::{QemuFirmware, QemuInstall, QemuPathBuilder, QemuSystem};
-use crate::ssh_cmd::PortChecker;
+use crate::ssh::PortChecker;
 use crate::view::Console;
 use std::path::{Path, PathBuf};
 

@@ -3,7 +3,7 @@ use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::instance::InstanceStore;
 use crate::models::{DataSize, HOST_MEMORY_RESERVE, Instance, ResourceAllocator};
-use crate::ssh_cmd::PortChecker;
+use crate::ssh::PortChecker;
 use crate::view::Console;
 use crate::view::{ConfirmDialog, Spinner};
 use clap::Parser;

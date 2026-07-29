@@ -1,7 +1,7 @@
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::Target;
-use crate::ssh_cmd::Russh;
+use crate::ssh::SshClient;
 use crate::view::Console;
 use clap::Parser;
 
@@ -48,7 +48,7 @@ impl Command for ExecCommand {
             "Executing on '{name}' as '{user}' on port {ssh_port} using key '{client_key}': {}",
             self.cmd
         ));
-        let mut ssh = Russh::new(context);
+        let mut ssh = SshClient::new(context);
         ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system()));
         ssh.set_cmd(Some(self.cmd.clone()));
         ssh.set_env_vars(self.env_args.env_vars.clone());

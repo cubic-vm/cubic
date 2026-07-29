@@ -7,7 +7,7 @@ use crate::models::{DataSize, Environment, Instance, InstanceName};
 use crate::platform::System;
 use crate::qemu::Monitor;
 use crate::qemu::QemuImg;
-use crate::ssh_cmd::PortChecker;
+use crate::ssh::PortChecker;
 use std::path::Path;
 use std::rc::Rc;
 use std::str;
