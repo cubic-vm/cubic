@@ -1,7 +1,6 @@
-use crate::fs::FS;
 use crate::models::UserName;
 use crate::platform::System;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Default, Clone)]
 pub struct Environment {
@@ -131,7 +130,7 @@ impl Environment {
             .into_owned()
     }
 
-    pub fn get_home_ssh_private_key_paths(&self, system: &dyn System, fs: &FS) -> Vec<String> {
+    pub fn get_home_ssh_private_key_paths(&self, system: &dyn System) -> Vec<String> {
         let mut private_keys = Vec::new();
 
         let search_dirs: Vec<String> = ["SNAP_REAL_HOME", "HOME"]
@@ -146,7 +145,7 @@ impl Environment {
             .collect();
 
         for dir in search_dirs {
-            if let Ok(file_paths) = fs.read_dir_file_paths(&dir) {
+            if let Ok(file_paths) = system.read_dir(Path::new(&dir)) {
                 for file_path in file_paths {
                     if file_path
                         .file_name()

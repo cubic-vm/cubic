@@ -1,20 +1,19 @@
 use crate::error::{Error, Result};
-use crate::fs::FS;
 use crate::models::Checksum;
+use crate::platform::System;
 use crate::util;
 use crate::view::TransferView;
 use reqwest::blocking::Client;
 use sha2::{Digest, Sha256, Sha512};
-use std::fs::File;
-use std::io;
-use std::path::Path;
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 const REQUEST_TIMEOUT_SEC: u64 = 30;
 
 struct ProgressWriter {
-    file: File,
+    file: Box<dyn Write>,
     size: Option<u64>,
     written: u64,
     view: Arc<Mutex<TransferView>>,
@@ -23,7 +22,7 @@ struct ProgressWriter {
 }
 
 impl ProgressWriter {
-    pub fn new(file: File, size: Option<u64>, view: Arc<Mutex<TransferView>>) -> Self {
+    pub fn new(file: Box<dyn Write>, size: Option<u64>, view: Arc<Mutex<TransferView>>) -> Self {
         Self {
             file,
             size,
@@ -81,28 +80,31 @@ impl WebClient {
 
     pub fn download_file(
         &self,
+        system: &dyn System,
         url: &str,
-        file_path: &str,
+        file_path: &Path,
         view: Arc<Mutex<TransferView>>,
     ) -> Result<Checksum> {
-        let fs = FS::new();
-
-        let temp_file = format!("{file_path}.tmp");
-        if Path::new(&temp_file).exists() {
-            fs.remove_file(&temp_file)?;
+        // Appends rather than replacing the extension, so an image named
+        // `foo.img` downloads through `foo.img.tmp`.
+        let mut temp_file = file_path.as_os_str().to_owned();
+        temp_file.push(".tmp");
+        let temp_file = PathBuf::from(temp_file);
+        if system.exists_path(&temp_file) {
+            system.remove_file(&temp_file)?;
         }
 
-        if Path::new(&file_path).exists() {
+        if system.exists_path(file_path) {
             return Ok(Checksum::default());
         }
 
         let mut resp = self.client.get(url).send().map_err(Error::from)?;
 
         let mut writer =
-            ProgressWriter::new(fs.create_file(&temp_file)?, resp.content_length(), view);
+            ProgressWriter::new(system.create_file(&temp_file)?, resp.content_length(), view);
         resp.copy_to(&mut writer).map_err(Error::from)?;
 
-        fs.rename_file(&temp_file, file_path)?;
+        system.rename_file(&temp_file, file_path)?;
 
         Ok(Checksum {
             sha512: util::hex_encode(&writer.sha512.clone().finalize()),

@@ -14,26 +14,29 @@ impl QemuFirmware {
         if let Some(fw) = system.read_env_var(&var) {
             return Some(PathBuf::from(fw)); // trust the override as-is
         }
-        QemuInstall::find(dirs)?.find_firmware(system, arch)
+        QemuInstall::find(system, dirs)?.find_firmware(arch)
     }
 }
 
-pub struct QemuInstall {
+pub struct QemuInstall<'a> {
+    system: &'a dyn System,
     prefix: PathBuf,
 }
 
-impl QemuInstall {
-    pub fn find(dirs: &[PathBuf]) -> Option<Self> {
+impl<'a> QemuInstall<'a> {
+    pub fn find(system: &'a dyn System, dirs: &[PathBuf]) -> Option<Self> {
         let names = ["qemu-system-x86_64", "qemu-system-aarch64"];
-        let dir = dirs
-            .iter()
-            .find(|dir| names.iter().any(|name| find_in_dir(dir, name).is_some()))?;
+        let dir = dirs.iter().find(|dir| {
+            names
+                .iter()
+                .any(|name| find_in_dir(system, dir, name).is_some())
+        })?;
         let prefix = if cfg!(windows) {
             dir.clone()
         } else {
             dir.parent().unwrap_or(dir).to_path_buf()
         };
-        Some(Self { prefix })
+        Some(Self { system, prefix })
     }
 
     pub fn get_prefix(&self) -> &Path {
@@ -43,12 +46,12 @@ impl QemuInstall {
     pub fn find_module_dir(&self) -> Option<PathBuf> {
         self.build_module_dir_candidates()
             .into_iter()
-            .find(|dir| Self::contains_shared_object(dir))
+            .find(|dir| self.contains_shared_object(dir))
     }
 
     pub fn find_datadir(&self) -> Option<PathBuf> {
         let dir = self.prefix.join("share/qemu");
-        dir.is_dir().then_some(dir)
+        self.system.exists_dir(&dir).then_some(dir)
     }
 
     fn build_module_dir_candidates(&self) -> Vec<PathBuf> {
@@ -62,35 +65,34 @@ impl QemuInstall {
     }
 
     fn find_lib_triplet(&self) -> Option<PathBuf> {
-        let entries = std::fs::read_dir(self.prefix.join("lib")).ok()?;
+        let entries = self.system.read_dir(&self.prefix.join("lib")).ok()?;
         entries
-            .flatten()
-            .map(|entry| entry.path())
-            .filter(|path| path.join("qemu").is_dir())
+            .into_iter()
+            .filter(|path| self.system.exists_dir(&path.join("qemu")))
             .find_map(|path| path.file_name().map(PathBuf::from))
     }
 
-    fn contains_shared_object(dir: &Path) -> bool {
-        let Ok(entries) = std::fs::read_dir(dir) else {
+    fn contains_shared_object(&self, dir: &Path) -> bool {
+        let Ok(entries) = self.system.read_dir(dir) else {
             return false;
         };
         entries
-            .flatten()
-            .any(|entry| entry.path().extension().is_some_and(|ext| ext == "so"))
+            .into_iter()
+            .any(|path| path.extension().is_some_and(|ext| ext == "so"))
     }
 
-    fn find_firmware(&self, system: &dyn System, arch: Arch) -> Option<PathBuf> {
-        self.collect_descriptors(system)
+    fn find_firmware(&self, arch: Arch) -> Option<PathBuf> {
+        self.collect_descriptors()
             .into_iter()
             .filter(|descriptor| descriptor.matches(arch))
             .map(|descriptor| descriptor.build_code_path(&self.prefix))
-            .find(|code| code.exists())
+            .find(|code| self.system.exists_path(code))
     }
 
-    fn collect_descriptors(&self, system: &dyn System) -> Vec<QemuFirmwareDescriptor> {
+    fn collect_descriptors(&self) -> Vec<QemuFirmwareDescriptor> {
         let mut by_name: BTreeMap<String, PathBuf> = BTreeMap::new();
-        for dir in self.build_descriptor_dirs(system) {
-            for path in Self::find_json_files(&dir) {
+        for dir in self.build_descriptor_dirs() {
+            for path in self.find_json_files(&dir) {
                 if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                     by_name.entry(name.to_owned()).or_insert(path);
                 }
@@ -98,15 +100,17 @@ impl QemuInstall {
         }
         by_name
             .values()
-            .filter_map(|path| QemuFirmwareDescriptor::parse(&std::fs::read_to_string(path).ok()?))
+            .filter_map(|path| {
+                QemuFirmwareDescriptor::parse(&self.system.read_file_to_string(path).ok()?)
+            })
             .collect()
     }
 
-    fn build_descriptor_dirs(&self, system: &dyn System) -> Vec<PathBuf> {
+    fn build_descriptor_dirs(&self) -> Vec<PathBuf> {
         let mut dirs = Vec::new();
-        if let Some(config) = system.read_env_var("XDG_CONFIG_HOME") {
+        if let Some(config) = self.system.read_env_var("XDG_CONFIG_HOME") {
             dirs.push(PathBuf::from(config).join("qemu/firmware"));
-        } else if let Some(home) = system.read_env_var("HOME") {
+        } else if let Some(home) = self.system.read_env_var("HOME") {
             dirs.push(PathBuf::from(home).join(".config/qemu/firmware"));
         }
         dirs.push(PathBuf::from("/etc/qemu/firmware"));
@@ -116,13 +120,12 @@ impl QemuInstall {
         dirs
     }
 
-    fn find_json_files(dir: &Path) -> Vec<PathBuf> {
-        let Ok(entries) = std::fs::read_dir(dir) else {
+    fn find_json_files(&self, dir: &Path) -> Vec<PathBuf> {
+        let Ok(entries) = self.system.read_dir(dir) else {
             return Vec::new();
         };
         entries
-            .flatten()
-            .map(|entry| entry.path())
+            .into_iter()
             .filter(|path| path.extension().is_some_and(|ext| ext == "json"))
             .collect()
     }
@@ -135,7 +138,9 @@ mod tests {
 
     #[test]
     fn test_module_dir_candidates_cover_lib_layouts() {
+        let system = SystemMock::new();
         let candidates = QemuInstall {
+            system: &system,
             prefix: PathBuf::from("/snap/cubic/current/usr"),
         }
         .build_module_dir_candidates();
@@ -172,10 +177,11 @@ mod tests {
             .add_env_var("XDG_CONFIG_HOME", "/xdg")
             .add_env_var("HOME", "/home/user");
         let install = QemuInstall {
+            system: &system,
             prefix: PathBuf::from("/prefix"),
         };
 
-        let dirs = install.build_descriptor_dirs(&system);
+        let dirs = install.build_descriptor_dirs();
 
         assert_eq!(dirs.first(), Some(&PathBuf::from("/xdg/qemu/firmware")));
     }
@@ -184,10 +190,11 @@ mod tests {
     fn test_build_descriptor_dirs_falls_back_to_home() {
         let system = SystemMock::new().add_env_var("HOME", "/home/user");
         let install = QemuInstall {
+            system: &system,
             prefix: PathBuf::from("/prefix"),
         };
 
-        let dirs = install.build_descriptor_dirs(&system);
+        let dirs = install.build_descriptor_dirs();
 
         assert_eq!(
             dirs.first(),

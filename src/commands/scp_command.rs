@@ -1,6 +1,5 @@
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
-use crate::fs::FS;
 use crate::instance::{InstanceStore, resolve_target_path};
 use crate::models::TargetPath;
 use crate::ssh_cmd::Russh;
@@ -71,7 +70,7 @@ impl Command for ScpCommand {
         console.debug(&format!("Copying '{}' to '{}'", self.from, self.to));
 
         let mut ssh = Russh::new(context);
-        ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system(), &FS::new()));
+        ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system()));
         ssh.copy(
             console,
             &root_dir,

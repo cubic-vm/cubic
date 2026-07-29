@@ -1,13 +1,12 @@
 use crate::cloudinit::UserDataImageFactory;
 use crate::commands::Context;
 use crate::error::{Error, Result};
-use crate::fs::FS;
 use crate::instance::InstanceCertGenerator;
-use crate::models::{Instance, InstanceCertPaths};
+use crate::models::Instance;
 use crate::qemu::{QemuFirmware, QemuInstall, QemuPathBuilder, QemuSystem};
 use crate::ssh_cmd::PortChecker;
 use crate::view::Console;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct StartInstanceAction {
     instance: Instance,
@@ -31,13 +30,16 @@ impl StartInstanceAction {
         }
 
         let env = context.get_env();
-        FS::new().setup_directory_access(&env.get_instance_runtime_dir(&self.instance.name))?;
-        UserDataImageFactory.create_rust(env, &self.instance)?;
+        let system = context.get_system();
+        system.create_writable_dir(Path::new(
+            &env.get_instance_runtime_dir(&self.instance.name),
+        ))?;
+        UserDataImageFactory.create_rust(system, env, &self.instance)?;
 
         let instance_dir = PathBuf::from(env.get_instance_dir2(&self.instance.name));
-        let certs = InstanceCertPaths::load(&instance_dir);
-        if !certs.exists() {
-            InstanceCertGenerator::new(instance_dir.clone()).generate()?;
+        let cert_generator = InstanceCertGenerator::new(system, instance_dir.clone());
+        if !cert_generator.exists() {
+            cert_generator.generate()?;
         }
 
         let port_checker = PortChecker::new();
@@ -45,7 +47,6 @@ impl StartInstanceAction {
         self.instance.console_port = Some(port_checker.get_new_port()?);
         context.get_instance_store().store(&self.instance)?;
 
-        let system = context.get_system();
         let mut qemu_system = QemuSystem::from(system, self.instance.arch)?;
 
         let path_builder = QemuPathBuilder::new(system);
@@ -58,7 +59,7 @@ impl StartInstanceAction {
                 .collect::<Vec<_>>()
                 .join(", ")
         ));
-        let install = QemuInstall::find(path_builder.get_dirs());
+        let install = QemuInstall::find(system, path_builder.get_dirs());
         match &install {
             Some(install) => console.debug(&format!(
                 "Found QEMU install at '{}'",

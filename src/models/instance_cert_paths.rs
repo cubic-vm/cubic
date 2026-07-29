@@ -18,10 +18,6 @@ impl InstanceCertPaths {
             client_key: dir.join("client-key.pem"),
         }
     }
-
-    pub fn exists(&self) -> bool {
-        self.ca_cert.exists()
-    }
 }
 
 #[cfg(test)]

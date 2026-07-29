@@ -1,19 +1,25 @@
 use crate::error::{Error, Result};
 use crate::models::InstanceCertPaths;
+use crate::platform::System;
 use rcgen::{
     BasicConstraints, CertificateParams, CertifiedIssuer, DistinguishedName, DnType, IsCa, KeyPair,
     KeyUsagePurpose,
 };
-use std::fs;
 use std::path::PathBuf;
 
-pub struct InstanceCertGenerator {
+pub struct InstanceCertGenerator<'a> {
+    system: &'a dyn System,
     dir: PathBuf,
 }
 
-impl InstanceCertGenerator {
-    pub fn new(dir: PathBuf) -> Self {
-        Self { dir }
+impl<'a> InstanceCertGenerator<'a> {
+    pub fn new(system: &'a dyn System, dir: PathBuf) -> Self {
+        Self { system, dir }
+    }
+
+    pub fn exists(&self) -> bool {
+        self.system
+            .exists_path(&InstanceCertPaths::load(&self.dir).ca_cert)
     }
 
     pub fn generate(&self) -> Result<InstanceCertPaths> {
@@ -47,11 +53,16 @@ impl InstanceCertGenerator {
             .signed_by(&client_key, &ca)
             .map_err(|e| Error::TlsCertGeneration(e.to_string()))?;
 
-        fs::write(&certs.ca_cert, ca.pem()).map_err(Error::from)?;
-        fs::write(&certs.server_cert, server_cert.pem()).map_err(Error::from)?;
-        fs::write(&certs.server_key, server_key.serialize_pem()).map_err(Error::from)?;
-        fs::write(&certs.client_cert, client_cert.pem()).map_err(Error::from)?;
-        fs::write(&certs.client_key, client_key.serialize_pem()).map_err(Error::from)?;
+        self.system
+            .write_file(&certs.ca_cert, ca.pem().as_bytes())?;
+        self.system
+            .write_file(&certs.server_cert, server_cert.pem().as_bytes())?;
+        self.system
+            .write_secret_file(&certs.server_key, server_key.serialize_pem().as_bytes())?;
+        self.system
+            .write_file(&certs.client_cert, client_cert.pem().as_bytes())?;
+        self.system
+            .write_secret_file(&certs.client_key, client_key.serialize_pem().as_bytes())?;
 
         Ok(certs)
     }

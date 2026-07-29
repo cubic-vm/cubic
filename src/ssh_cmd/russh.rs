@@ -193,14 +193,14 @@ impl<'a> Russh<'a> {
         client_key: &str,
     ) -> Result<(), ()> {
         // create the cubic ssh key if it does not exist yet
-        if !Path::new(client_key).exists() {
+        if !self.context.get_system().exists_path(Path::new(client_key)) {
             SshKeyGenerator::new()
-                .generate_key(Path::new(client_key))
+                .generate_key(self.context.get_system(), Path::new(client_key))
                 .map_err(|_| ())?;
         }
 
         let pubkey = SshKeyGenerator::new()
-            .generate_public_key(Path::new(client_key))
+            .generate_public_key(self.context.get_system(), Path::new(client_key))
             .map_err(|_| ())?;
 
         console.warn(&format!(

@@ -112,7 +112,7 @@ impl CommandDispatcher {
         let context = &commands::Context::new(
             Rc::clone(&system),
             env.clone(),
-            Box::new(ImageDao::new(&env)?),
+            Box::new(ImageDao::new(Rc::clone(&system), &env)?),
             Box::new(InstanceDao::new(Rc::clone(&system), &env)?),
         );
 

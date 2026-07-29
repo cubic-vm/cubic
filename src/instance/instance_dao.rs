@@ -1,5 +1,4 @@
 use crate::error::{Error, Result};
-use crate::fs::FS;
 use crate::instance::{
     InstanceDeserializer, InstanceSerializer, InstanceStore, TomlInstanceDeserializer,
     YamlInstanceDeserializer,
@@ -15,20 +14,17 @@ use std::str;
 use std::str::FromStr;
 
 pub struct InstanceDao {
-    fs: FS,
     pub env: Environment,
     system: Rc<dyn System>,
 }
 
 impl InstanceDao {
     pub fn new(system: Rc<dyn System>, env: &Environment) -> Result<Self> {
-        let fs = FS::new();
-        fs.setup_directory_access(&env.get_instance_dir())?;
-        fs.setup_directory_access(env.get_cache_dir())?;
-        fs.setup_directory_access(env.get_runtime_dir())?;
+        system.create_writable_dir(Path::new(&env.get_instance_dir()))?;
+        system.create_writable_dir(Path::new(env.get_cache_dir()))?;
+        system.create_writable_dir(Path::new(env.get_runtime_dir()))?;
 
         Ok(InstanceDao {
-            fs,
             env: env.clone(),
             system,
         })
@@ -43,8 +39,8 @@ impl InstanceDao {
 
     fn read_running_pid(&self, instance: &Instance) -> Option<u64> {
         let pid = self
-            .fs
-            .read_file_to_string(&self.env.get_qemu_pid_file(&instance.name))
+            .system
+            .read_file_to_string(Path::new(&self.env.get_qemu_pid_file(&instance.name)))
             .ok()?
             .trim()
             .parse::<u64>()
@@ -53,8 +49,8 @@ impl InstanceDao {
         if self.is_process_alive(pid) {
             Some(pid)
         } else {
-            self.fs
-                .remove_file(&self.env.get_qemu_pid_file(&instance.name))
+            self.system
+                .remove_file(Path::new(&self.env.get_qemu_pid_file(&instance.name)))
                 .ok();
             None
         }
@@ -64,15 +60,16 @@ impl InstanceDao {
 impl InstanceStore for InstanceDao {
     fn get_instances(&self) -> Vec<String> {
         let mut instances: Vec<String> = self
-            .fs
-            .read_dir(&self.env.get_instance_dir())
+            .system
+            .read_dir(Path::new(&self.env.get_instance_dir()))
             .ok()
-            .and_then(|entries| entries.collect::<std::io::Result<Vec<_>>>().ok())
             .map(|entries| {
                 entries
                     .iter()
-                    .filter_map(|entry| entry.file_name().into_string().ok())
+                    .filter_map(|entry| entry.file_name())
+                    .filter_map(|name| name.to_str())
                     .filter(|name| InstanceName::from_str(name).is_ok())
+                    .map(|name| name.to_string())
                     .collect()
             })
             .unwrap_or_default();
@@ -81,7 +78,8 @@ impl InstanceStore for InstanceDao {
     }
 
     fn exists(&self, name: &str) -> bool {
-        Path::new(&self.env.get_instance_dir2(name)).exists()
+        self.system
+            .exists_path(Path::new(&self.env.get_instance_dir2(name)))
     }
 
     fn load(&self, name: &str) -> Result<Instance> {
@@ -92,7 +90,7 @@ impl InstanceStore for InstanceDao {
         let yaml_path = &self.env.get_instance_yaml_config_file(name);
         let toml_path = &self.env.get_instance_toml_config_file(name);
 
-        let from_yaml = !Path::new(toml_path).exists();
+        let from_yaml = !self.system.exists_path(Path::new(toml_path));
         let (path, deserializer): (&str, Box<dyn InstanceDeserializer>) = if from_yaml {
             (yaml_path, Box::new(YamlInstanceDeserializer::new()))
         } else {
@@ -100,8 +98,8 @@ impl InstanceStore for InstanceDao {
         };
 
         let instance = self
-            .fs
-            .open_file(path)
+            .system
+            .open_file(Path::new(path))
             .ok()
             .and_then(|mut file| deserializer.deserialize(name, &mut file))
             .map(|mut instance| {
@@ -137,13 +135,16 @@ impl InstanceStore for InstanceDao {
         let file_name = self.env.get_instance_toml_config_file(&instance.name);
         let temp_file_name = format!("{file_name}.tmp");
 
-        let mut file = self.fs.create_file(&temp_file_name)?;
+        let mut file = self.system.create_file(Path::new(&temp_file_name))?;
         InstanceSerializer::new().serialize(instance, &mut file)?;
-        self.fs.rename_file(&temp_file_name, &file_name)?;
+        self.system
+            .rename_file(Path::new(&temp_file_name), Path::new(&file_name))?;
 
         // remove deprecated yaml file format
-        self.fs
-            .remove_file(&self.env.get_instance_yaml_config_file(&instance.name))
+        self.system
+            .remove_file(Path::new(
+                &self.env.get_instance_yaml_config_file(&instance.name),
+            ))
             .ok();
 
         Ok(())
@@ -155,9 +156,9 @@ impl InstanceStore for InstanceDao {
         } else if self.is_running(instance) {
             Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
-            self.fs.rename_file(
-                &self.env.get_instance_dir2(&instance.name),
-                &self.env.get_instance_dir2(new_name),
+            self.system.rename_file(
+                Path::new(&self.env.get_instance_dir2(&instance.name)),
+                Path::new(&self.env.get_instance_dir2(new_name)),
             )?;
             instance.name = new_name.to_string();
             Ok(())
@@ -181,15 +182,17 @@ impl InstanceStore for InstanceDao {
         if self.is_running(instance) {
             Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
-            self.fs
-                .remove_dir(&self.env.get_instance_runtime_dir(&instance.name))
+            self.system
+                .remove_dir(Path::new(
+                    &self.env.get_instance_runtime_dir(&instance.name),
+                ))
                 .ok();
-            self.fs
-                .remove_dir(&self.env.get_instance_cache_dir(&instance.name))
+            self.system
+                .remove_dir(Path::new(&self.env.get_instance_cache_dir(&instance.name)))
                 .ok();
 
-            self.fs
-                .remove_dir(&self.env.get_instance_dir2(&instance.name))
+            self.system
+                .remove_dir(Path::new(&self.env.get_instance_dir2(&instance.name)))
                 .ok();
             Ok(())
         }
@@ -215,8 +218,8 @@ impl InstanceStore for InstanceDao {
             process.kill();
         }
 
-        self.fs
-            .remove_file(&self.env.get_qemu_pid_file(&instance.name))
+        self.system
+            .remove_file(Path::new(&self.env.get_qemu_pid_file(&instance.name)))
             .ok();
         Ok(())
     }

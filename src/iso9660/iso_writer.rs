@@ -1,10 +1,9 @@
 use std::collections::HashMap;
+use std::io::{self, Seek, Write};
 
 use crate::iso9660::{
     BinaryWriter, DirRecordFactory, PrimaryVolumeDesc, SECTOR_SIZE, TermVolumeDesc,
 };
-use std::fs::File;
-use std::io::{self, BufWriter};
 
 pub struct IsoWriter {
     pub pvd: PrimaryVolumeDesc,
@@ -19,9 +18,8 @@ impl IsoWriter {
         }
     }
 
-    pub fn create_iso(&self, output_path: &str) -> io::Result<()> {
-        let file = File::create(output_path)?;
-        let writer = &mut BinaryWriter::new(BufWriter::new(file));
+    pub fn create_iso<W: Write + Seek>(&self, writer: W) -> io::Result<()> {
+        let writer = &mut BinaryWriter::new(writer);
 
         // Sectors 0 - 15: Boot sector
         writer.skip(16u32 * SECTOR_SIZE as u32)?;
