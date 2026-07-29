@@ -48,19 +48,35 @@ pub mod tests {
         }
 
         pub fn add_file(self, path: &str, content: &[u8]) -> Self {
-            self.files
-                .borrow_mut()
-                .insert(PathBuf::from(path), content.to_vec());
+            let path = PathBuf::from(path);
+            self.add_parent_dirs(&path);
+            self.files.borrow_mut().insert(path, content.to_vec());
             self
         }
 
         pub fn add_dir(self, path: &str) -> Self {
-            self.dirs.borrow_mut().insert(PathBuf::from(path));
+            let path = PathBuf::from(path);
+            self.add_parent_dirs(&path);
+            self.dirs.borrow_mut().insert(path);
             self
         }
 
         pub fn get_written_file(&self, path: &str) -> Option<Vec<u8>> {
             self.files.borrow().get(Path::new(path)).cloned()
+        }
+
+        // Registers every ancestor as a directory, so a seeded path behaves
+        // like one on a real file system where its parents necessarily exist.
+        fn add_parent_dirs(&self, path: &Path) {
+            let mut dirs = self.dirs.borrow_mut();
+            let mut parent = path.parent();
+            while let Some(dir) = parent {
+                if dir.as_os_str().is_empty() {
+                    break;
+                }
+                dirs.insert(dir.to_path_buf());
+                parent = dir.parent();
+            }
         }
 
         fn log(&self, msg: &str) {
@@ -149,6 +165,7 @@ pub mod tests {
         }
 
         fn create_dir(&self, path: &Path) -> Result<()> {
+            self.add_parent_dirs(path);
             self.dirs.borrow_mut().insert(path.to_path_buf());
             Ok(())
         }
@@ -166,6 +183,13 @@ pub mod tests {
         }
 
         fn read_dir(&self, path: &Path) -> Result<Vec<PathBuf>> {
+            if !self.exists_dir(path) {
+                return Err(Error::FS(format!(
+                    "Cannot read directory '{}' (not found)",
+                    path.display()
+                )));
+            }
+
             let mut children: Vec<PathBuf> = self
                 .files
                 .borrow()
@@ -328,5 +352,270 @@ pub mod tests {
         let system = SystemMock::new();
 
         assert!(!system.is_terminal(Stream::Stdout));
+    }
+
+    #[test]
+    fn exists_path_returns_true_for_seeded_files_and_dirs() {
+        let system = SystemMock::new()
+            .add_file("/data/foo.txt", b"hello")
+            .add_dir("/data/bar");
+
+        assert!(system.exists_path(Path::new("/data/foo.txt")));
+        assert!(system.exists_path(Path::new("/data/bar")));
+        assert!(!system.exists_path(Path::new("/data/missing")));
+    }
+
+    #[test]
+    fn exists_path_ignores_a_trailing_slash() {
+        let system = SystemMock::new().add_dir("/data/bar");
+
+        assert!(system.exists_path(Path::new("/data/bar/")));
+    }
+
+    #[test]
+    fn exists_dir_holds_only_for_directories() {
+        let system = SystemMock::new()
+            .add_file("/data/foo.txt", b"hello")
+            .add_dir("/data/bar");
+
+        assert!(system.exists_dir(Path::new("/data/bar")));
+        assert!(!system.exists_dir(Path::new("/data/foo.txt")));
+        assert!(!system.exists_dir(Path::new("/data/missing")));
+    }
+
+    #[test]
+    fn add_file_registers_its_parent_dirs() {
+        let system = SystemMock::new().add_file("/data/sub/foo.txt", b"hello");
+
+        assert!(system.exists_dir(Path::new("/data/sub")));
+        assert!(system.exists_dir(Path::new("/data")));
+    }
+
+    #[test]
+    fn create_dir_registers_missing_parents() {
+        let system = SystemMock::new();
+
+        system.create_dir(Path::new("/data/sub/deep")).unwrap();
+
+        assert!(system.exists_dir(Path::new("/data/sub/deep")));
+        assert!(system.exists_dir(Path::new("/data/sub")));
+        assert!(system.exists_dir(Path::new("/data")));
+    }
+
+    #[test]
+    fn get_path_size_returns_file_length() {
+        let system = SystemMock::new().add_file("/data/foo.txt", b"hello");
+
+        assert_eq!(system.get_path_size(Path::new("/data/foo.txt")), 5);
+    }
+
+    #[test]
+    fn get_path_size_sums_directory_contents_recursively() {
+        let system = SystemMock::new()
+            .add_file("/data/a.txt", b"12")
+            .add_dir("/data/sub")
+            .add_file("/data/sub/b.txt", b"345");
+
+        assert_eq!(system.get_path_size(Path::new("/data")), 5);
+    }
+
+    #[test]
+    fn read_file_to_string_returns_seeded_content() {
+        let system = SystemMock::new().add_file("/data/foo.txt", b"hello");
+
+        assert_eq!(
+            system
+                .read_file_to_string(Path::new("/data/foo.txt"))
+                .unwrap(),
+            "hello"
+        );
+    }
+
+    #[test]
+    fn read_file_to_string_fails_when_missing() {
+        let system = SystemMock::new();
+
+        assert!(
+            system
+                .read_file_to_string(Path::new("/data/missing"))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn create_file_then_get_written_file_returns_written_bytes() {
+        let system = SystemMock::new();
+
+        {
+            let mut file = system.create_file(Path::new("/data/out.txt")).unwrap();
+            file.write_all(b"hello ").unwrap();
+            file.write_all(b"world").unwrap();
+        }
+
+        assert_eq!(
+            system.get_written_file("/data/out.txt"),
+            Some(b"hello world".to_vec())
+        );
+    }
+
+    #[test]
+    fn open_file_reads_back_seeded_content() {
+        let system = SystemMock::new().add_file("/data/foo.txt", b"hello");
+
+        let mut buf = String::new();
+        system
+            .open_file(Path::new("/data/foo.txt"))
+            .unwrap()
+            .read_to_string(&mut buf)
+            .unwrap();
+
+        assert_eq!(buf, "hello");
+    }
+
+    #[test]
+    fn write_file_seeds_readable_content() {
+        let system = SystemMock::new();
+
+        system
+            .write_file(Path::new("/data/foo.txt"), b"hello")
+            .unwrap();
+
+        assert_eq!(
+            system
+                .read_file_to_string(Path::new("/data/foo.txt"))
+                .unwrap(),
+            "hello"
+        );
+    }
+
+    #[test]
+    fn read_dir_lists_direct_children_only() {
+        let system = SystemMock::new()
+            .add_file("/data/a.txt", b"1")
+            .add_file("/data/b.txt", b"2")
+            .add_dir("/data/sub")
+            .add_file("/data/sub/c.txt", b"3");
+
+        let mut entries = system
+            .read_dir(Path::new("/data"))
+            .unwrap()
+            .into_iter()
+            .map(|p| p.to_string_lossy().into_owned())
+            .collect::<Vec<_>>();
+        entries.sort();
+
+        assert_eq!(
+            entries,
+            vec![
+                "/data/a.txt".to_string(),
+                "/data/b.txt".to_string(),
+                "/data/sub".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn read_dir_fails_when_the_directory_is_missing() {
+        let system = SystemMock::new().add_file("/data/foo.txt", b"hello");
+
+        assert!(system.read_dir(Path::new("/data/missing")).is_err());
+        assert!(system.read_dir(Path::new("/data/foo.txt")).is_err());
+    }
+
+    #[test]
+    fn rename_file_moves_content_to_new_path() {
+        let system = SystemMock::new().add_file("/data/old.txt", b"hello");
+
+        system
+            .rename_file(Path::new("/data/old.txt"), Path::new("/data/new.txt"))
+            .unwrap();
+
+        assert!(!system.exists_path(Path::new("/data/old.txt")));
+        assert_eq!(
+            system
+                .read_file_to_string(Path::new("/data/new.txt"))
+                .unwrap(),
+            "hello"
+        );
+    }
+
+    #[test]
+    fn rename_file_fails_when_source_missing() {
+        let system = SystemMock::new();
+
+        assert!(
+            system
+                .rename_file(Path::new("/data/old.txt"), Path::new("/data/new.txt"))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn rename_file_moves_a_directory_and_its_contents() {
+        let system = SystemMock::new()
+            .add_dir("/data/old")
+            .add_file("/data/old/a.txt", b"1")
+            .add_dir("/data/old/sub")
+            .add_file("/data/old/sub/b.txt", b"2");
+
+        system
+            .rename_file(Path::new("/data/old"), Path::new("/data/new"))
+            .unwrap();
+
+        assert!(!system.exists_path(Path::new("/data/old")));
+        assert!(system.exists_path(Path::new("/data/new")));
+        assert_eq!(
+            system
+                .read_file_to_string(Path::new("/data/new/a.txt"))
+                .unwrap(),
+            "1"
+        );
+        assert!(system.exists_path(Path::new("/data/new/sub")));
+        assert_eq!(
+            system
+                .read_file_to_string(Path::new("/data/new/sub/b.txt"))
+                .unwrap(),
+            "2"
+        );
+    }
+
+    #[test]
+    fn create_file_then_rename_file_sees_the_written_content() {
+        let system = SystemMock::new();
+
+        let mut file = system.create_file(Path::new("/data/old.tmp")).unwrap();
+        file.write_all(b"hello").unwrap();
+        // Rename while `file` is still alive (not yet flushed or dropped),
+        // mirroring InstanceDao::store and WebClient::download_file's
+        // create_file -> write -> rename_file shape.
+        system
+            .rename_file(Path::new("/data/old.tmp"), Path::new("/data/new"))
+            .unwrap();
+
+        assert_eq!(
+            system.read_file_to_string(Path::new("/data/new")).unwrap(),
+            "hello"
+        );
+    }
+
+    #[test]
+    fn remove_file_deletes_seeded_file() {
+        let system = SystemMock::new().add_file("/data/foo.txt", b"hello");
+
+        system.remove_file(Path::new("/data/foo.txt")).unwrap();
+
+        assert!(!system.exists_path(Path::new("/data/foo.txt")));
+    }
+
+    #[test]
+    fn remove_dir_deletes_directory_and_descendants() {
+        let system = SystemMock::new()
+            .add_dir("/data/sub")
+            .add_file("/data/sub/c.txt", b"3");
+
+        system.remove_dir(Path::new("/data/sub")).unwrap();
+
+        assert!(!system.exists_path(Path::new("/data/sub")));
+        assert!(!system.exists_path(Path::new("/data/sub/c.txt")));
     }
 }
