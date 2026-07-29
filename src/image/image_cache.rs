@@ -167,4 +167,33 @@ hash_alg = "Sha256"
 "#
         );
     }
+
+    #[test]
+    fn test_write_to_file_then_read_from_file_round_trips() {
+        let system = crate::platform::SystemMock::new();
+        let cache = ImageCache::new(vec![Image {
+            vendor: "testvendor".to_string(),
+            names: vec!["testversion".to_string()],
+            arch: Arch::AMD64,
+            image_url: "imageurl".to_string(),
+            checksum_url: "checksumurl".to_string(),
+            hash_alg: HashAlg::Sha256,
+            size: None,
+        }]);
+
+        cache.write_to_file(&system, Path::new("/cache/images.toml"));
+        let loaded = ImageCache::read_from_file(&system, Path::new("/cache/images.toml"));
+
+        assert_eq!(loaded, Some(cache));
+    }
+
+    #[test]
+    fn test_read_from_file_returns_none_when_missing() {
+        let system = crate::platform::SystemMock::new();
+
+        assert_eq!(
+            ImageCache::read_from_file(&system, Path::new("/cache/missing.toml")),
+            None
+        );
+    }
 }

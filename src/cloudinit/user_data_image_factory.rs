@@ -55,3 +55,83 @@ impl UserDataImageFactory {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::UserName;
+    use crate::platform::SystemMock;
+    use std::str::FromStr;
+
+    fn build_env() -> Environment {
+        Environment::new(
+            UserName::from_str("cubic").unwrap(),
+            "/data".to_string(),
+            "/cache".to_string(),
+            "/run".to_string(),
+        )
+    }
+
+    fn build_instance() -> Instance {
+        Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }
+    }
+
+    #[test]
+    fn test_create_rust_writes_the_cloud_init_image() {
+        let system = SystemMock::new();
+        let env = build_env();
+
+        UserDataImageFactory
+            .create_rust(&system, &env, &build_instance())
+            .unwrap();
+
+        let image = system
+            .get_written_file(&env.get_user_data_image_file("test"))
+            .expect("expected the cloud init image to have been written");
+        assert!(!image.is_empty());
+    }
+
+    #[test]
+    fn test_create_rust_embeds_the_public_key_of_the_instance() {
+        let system = SystemMock::new();
+        let env = build_env();
+        let key_path = Path::new(&env.get_instance_dir2("test")).join("ssh_client_key");
+        SshKeyGenerator::new()
+            .generate_key(&system, &key_path)
+            .unwrap();
+
+        UserDataImageFactory
+            .create_rust(&system, &env, &build_instance())
+            .unwrap();
+
+        let pubkey = SshKeyGenerator::new()
+            .generate_public_key(&system, &key_path)
+            .unwrap();
+        let image = system
+            .get_written_file(&env.get_user_data_image_file("test"))
+            .unwrap();
+        assert!(
+            image
+                .windows(pubkey.len())
+                .any(|window| window == pubkey.as_bytes())
+        );
+    }
+
+    #[test]
+    fn test_create_rust_keeps_an_existing_image() {
+        let env = build_env();
+        let system = SystemMock::new().add_file(&env.get_user_data_image_file("test"), b"existing");
+
+        UserDataImageFactory
+            .create_rust(&system, &env, &build_instance())
+            .unwrap();
+
+        assert_eq!(
+            system.get_written_file(&env.get_user_data_image_file("test")),
+            Some(b"existing".to_vec())
+        );
+    }
+}

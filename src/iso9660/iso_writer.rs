@@ -67,3 +67,37 @@ impl IsoWriter {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn test_create_iso_produces_sector_aligned_output() {
+        let mut iso_writer = IsoWriter::new();
+        iso_writer
+            .files
+            .insert("meta-data".to_string(), b"instance-id: test".to_vec());
+        iso_writer
+            .files
+            .insert("user-data".to_string(), b"#cloud-config".to_vec());
+
+        let mut buffer = Cursor::new(Vec::new());
+        iso_writer.create_iso(&mut buffer).unwrap();
+
+        let bytes = buffer.into_inner();
+        assert!(!bytes.is_empty());
+        assert_eq!(bytes.len() % SECTOR_SIZE, 0);
+    }
+
+    #[test]
+    fn test_create_iso_with_no_files_still_succeeds() {
+        let iso_writer = IsoWriter::new();
+
+        let mut buffer = Cursor::new(Vec::new());
+        let result = iso_writer.create_iso(&mut buffer);
+
+        assert!(result.is_ok());
+    }
+}

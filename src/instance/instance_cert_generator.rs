@@ -67,3 +67,40 @@ impl<'a> InstanceCertGenerator<'a> {
         Ok(certs)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::platform::SystemMock;
+
+    #[test]
+    fn test_exists_follows_the_ca_cert() {
+        let dir = PathBuf::from("/data/machines/test");
+        let system = SystemMock::new();
+        assert!(!InstanceCertGenerator::new(&system, dir.clone()).exists());
+
+        let system = SystemMock::new().add_file("/data/machines/test/ca-cert.pem", b"cert");
+        assert!(InstanceCertGenerator::new(&system, dir).exists());
+    }
+
+    #[test]
+    fn test_generate_writes_all_five_pem_files() {
+        let system = SystemMock::new();
+        let generator = InstanceCertGenerator::new(&system, PathBuf::from("/data/machines/test"));
+
+        let certs = generator.generate().unwrap();
+
+        for path in [
+            &certs.ca_cert,
+            &certs.server_cert,
+            &certs.server_key,
+            &certs.client_cert,
+            &certs.client_key,
+        ] {
+            let content = system
+                .get_written_file(&path.to_string_lossy())
+                .unwrap_or_else(|| panic!("expected {path:?} to have been written"));
+            assert!(!content.is_empty());
+        }
+    }
+}
