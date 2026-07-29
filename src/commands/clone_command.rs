@@ -2,7 +2,7 @@ use crate::actions::CreateInstanceAction;
 use crate::commands::{Command, Context};
 use crate::error::{Error, Result};
 use crate::models::InstanceName;
-use crate::ssh_cmd::PortChecker;
+use crate::ssh::PortChecker;
 use crate::view::{Console, Spinner};
 use clap::Parser;
 use std::sync::{Arc, Mutex};

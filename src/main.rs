@@ -9,7 +9,7 @@ mod iso9660;
 mod models;
 mod platform;
 mod qemu;
-mod ssh_cmd;
+mod ssh;
 mod util;
 mod view;
 mod web;
