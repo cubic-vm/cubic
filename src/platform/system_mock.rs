@@ -2,7 +2,7 @@
 pub mod tests {
     use crate::error::{Error, Result};
     use crate::platform::{Stream, System};
-    use std::cell::{Cell, RefCell};
+    use std::cell::RefCell;
     use std::collections::{HashMap, HashSet, VecDeque};
     use std::io::{Cursor, Read, Write};
     use std::path::{Path, PathBuf};
@@ -22,36 +22,241 @@ pub mod tests {
         Vanished,
     }
 
-    pub struct SystemMock {
-        env_vars: HashMap<String, String>,
-        output: RefCell<String>,
-        terminal: Cell<bool>,
-        input: RefCell<VecDeque<String>>,
-        files: Rc<RefCell<HashMap<PathBuf, Vec<u8>>>>,
-        dirs: RefCell<HashSet<PathBuf>>,
-        processes: RefCell<HashMap<u64, ProcessState>>,
-        killed: RefCell<Vec<u64>>,
+    // What the host reports about its own size.
+    struct HostResources {
         total_memory: u64,
         available_memory: u64,
         cpu_count: u16,
+    }
+
+    // Both halves of the console, so a test can seed input and read back
+    // output through a single piece of state.
+    #[derive(Default)]
+    struct ConsoleState {
+        output: String,
+        input: VecDeque<String>,
+    }
+
+    impl ConsoleState {
+        fn print(&mut self, msg: &str) {
+            self.output.push_str(msg);
+        }
+
+        fn println(&mut self, msg: &str) {
+            self.output.push_str(&format!("{msg}\n"));
+        }
+
+        fn push_input(&mut self, line: &str) {
+            self.input.push_back(line.to_string());
+        }
+
+        // An empty line once the queue is drained, standing in for a console
+        // that has nothing left to read.
+        fn pop_input(&mut self) -> String {
+            self.input.pop_front().unwrap_or_default()
+        }
+    }
+
+    // Files and directories as two flat path keyed collections. They live in
+    // one struct because most operations, from a lookup to a rename, have to
+    // consult both.
+    #[derive(Default)]
+    struct FileSystemState {
+        files: HashMap<PathBuf, Vec<u8>>,
+        dirs: HashSet<PathBuf>,
+    }
+
+    impl FileSystemState {
+        // Registers every ancestor as a directory, so a seeded path behaves
+        // like one on a real file system where its parents necessarily exist.
+        fn add_parent_dirs(&mut self, path: &Path) {
+            let mut parent = path.parent();
+            while let Some(dir) = parent {
+                if dir.as_os_str().is_empty() {
+                    break;
+                }
+                self.dirs.insert(dir.to_path_buf());
+                parent = dir.parent();
+            }
+        }
+
+        fn set_file(&mut self, path: &Path, content: &[u8]) {
+            self.files.insert(path.to_path_buf(), content.to_vec());
+        }
+
+        // Seeds a file the way a test states one exists, which implies its
+        // parents exist too. A write through the `System` trait uses
+        // `set_file` instead, since a real write does not conjure directories.
+        fn add_file(&mut self, path: &Path, content: &[u8]) {
+            self.add_parent_dirs(path);
+            self.set_file(path, content);
+        }
+
+        fn add_dir(&mut self, path: &Path) {
+            self.add_parent_dirs(path);
+            self.dirs.insert(path.to_path_buf());
+        }
+
+        fn append_to_file(&mut self, path: &Path, buf: &[u8]) {
+            self.files
+                .entry(path.to_path_buf())
+                .or_default()
+                .extend_from_slice(buf);
+        }
+
+        fn exists_path(&self, path: &Path) -> bool {
+            self.files.contains_key(path) || self.dirs.contains(path)
+        }
+
+        fn exists_dir(&self, path: &Path) -> bool {
+            self.dirs.contains(path)
+        }
+
+        fn get_file(&self, path: &Path) -> Option<Vec<u8>> {
+            self.files.get(path).cloned()
+        }
+
+        fn get_path_size(&self, path: &Path) -> u64 {
+            if let Some(content) = self.files.get(path) {
+                return content.len() as u64;
+            }
+            self.files
+                .iter()
+                .filter(|(file, _)| file.starts_with(path))
+                .map(|(_, content)| content.len() as u64)
+                .sum()
+        }
+
+        fn list_children(&self, path: &Path) -> Vec<PathBuf> {
+            let mut children: Vec<PathBuf> = self
+                .files
+                .keys()
+                .filter(|file| file.parent() == Some(path))
+                .cloned()
+                .collect();
+            children.extend(
+                self.dirs
+                    .iter()
+                    .filter(|dir| dir.parent() == Some(path))
+                    .cloned(),
+            );
+            children
+        }
+
+        fn remove_file(&mut self, path: &Path) -> Option<Vec<u8>> {
+            self.files.remove(path)
+        }
+
+        fn remove_tree(&mut self, path: &Path) {
+            self.dirs.retain(|dir| !dir.starts_with(path));
+            self.files.retain(|file, _| !file.starts_with(path));
+        }
+
+        // Reports whether anything moved, leaving it to the caller to turn a
+        // miss into an error. A directory rename must carry its nested
+        // files/dirs along too, since they're tracked as separate flat-path
+        // entries here rather than as children of the renamed directory.
+        fn rename_path(&mut self, from: &Path, to: &Path) -> bool {
+            let file = self.files.remove(from);
+            let was_dir = self.dirs.remove(from);
+
+            if file.is_none() && !was_dir {
+                return false;
+            }
+
+            if let Some(content) = file {
+                self.files.insert(to.to_path_buf(), content);
+            }
+            if was_dir {
+                self.dirs.insert(to.to_path_buf());
+            }
+
+            let nested_files: Vec<PathBuf> = self
+                .files
+                .keys()
+                .filter(|path| path.starts_with(from))
+                .cloned()
+                .collect();
+            for old_path in nested_files {
+                let content = self.files.remove(&old_path).unwrap();
+                let new_path = to.join(old_path.strip_prefix(from).unwrap());
+                self.files.insert(new_path, content);
+            }
+
+            let nested_dirs: Vec<PathBuf> = self
+                .dirs
+                .iter()
+                .filter(|path| path.starts_with(from))
+                .cloned()
+                .collect();
+            for old_path in nested_dirs {
+                self.dirs.remove(&old_path);
+                let new_path = to.join(old_path.strip_prefix(from).unwrap());
+                self.dirs.insert(new_path);
+            }
+
+            true
+        }
+    }
+
+    // The pids the host knows about, alongside the record of which ones a kill
+    // actually took down.
+    #[derive(Default)]
+    struct ProcessTable {
+        processes: HashMap<u64, ProcessState>,
+        killed: Vec<u64>,
+    }
+
+    impl ProcessTable {
+        fn add(&mut self, pid: u64, state: ProcessState) {
+            self.processes.insert(pid, state);
+        }
+
+        fn exists(&self, pid: u64) -> bool {
+            self.processes.contains_key(&pid)
+        }
+
+        fn kill(&mut self, pid: u64) -> Result<()> {
+            match self.processes.get(&pid).copied() {
+                None => Err(Error::ProcessNotFound(pid)),
+                Some(ProcessState::Unkillable) => Err(Error::KillFailed(pid)),
+                Some(ProcessState::Vanished) => {
+                    self.processes.remove(&pid);
+                    Err(Error::ProcessNotFound(pid))
+                }
+                Some(ProcessState::Alive) => {
+                    self.processes.remove(&pid);
+                    self.killed.push(pid);
+                    Ok(())
+                }
+            }
+        }
+    }
+
+    pub struct SystemMock {
+        env_vars: HashMap<String, String>,
+        terminal: bool,
+        host: HostResources,
+        console: RefCell<ConsoleState>,
+        file_system: Rc<RefCell<FileSystemState>>,
+        processes: RefCell<ProcessTable>,
     }
 
     impl SystemMock {
         pub fn new() -> Self {
             Self {
                 env_vars: HashMap::new(),
-                output: RefCell::new(String::new()),
-                terminal: Cell::new(false),
-                input: RefCell::new(VecDeque::new()),
-                files: Rc::new(RefCell::new(HashMap::new())),
-                dirs: RefCell::new(HashSet::new()),
-                processes: RefCell::new(HashMap::new()),
-                killed: RefCell::new(Vec::new()),
+                terminal: false,
                 // A roomy host by default, so a test that does not care about
                 // host size never hits a resource limit by accident.
-                total_memory: 16 * 1024 * 1024 * 1024,
-                available_memory: 16 * 1024 * 1024 * 1024,
-                cpu_count: 8,
+                host: HostResources {
+                    total_memory: 16 * 1024 * 1024 * 1024,
+                    available_memory: 16 * 1024 * 1024 * 1024,
+                    cpu_count: 8,
+                },
+                console: RefCell::new(ConsoleState::default()),
+                file_system: Rc::new(RefCell::new(FileSystemState::default())),
+                processes: RefCell::new(ProcessTable::default()),
             }
         }
 
@@ -60,35 +265,33 @@ pub mod tests {
             self
         }
 
-        pub fn set_terminal(self, terminal: bool) -> Self {
-            self.terminal.set(terminal);
+        pub fn set_terminal(mut self, terminal: bool) -> Self {
+            self.terminal = terminal;
             self
         }
 
         pub fn get_output(&self) -> String {
-            self.output.borrow().clone()
+            self.console.borrow().output.clone()
         }
 
         pub fn push_input(&self, line: &str) {
-            self.input.borrow_mut().push_back(line.to_string());
+            self.console.borrow_mut().push_input(line);
         }
 
         pub fn add_file(self, path: &str, content: &[u8]) -> Self {
-            let path = PathBuf::from(path);
-            self.add_parent_dirs(&path);
-            self.files.borrow_mut().insert(path, content.to_vec());
+            self.file_system
+                .borrow_mut()
+                .add_file(Path::new(path), content);
             self
         }
 
         pub fn add_dir(self, path: &str) -> Self {
-            let path = PathBuf::from(path);
-            self.add_parent_dirs(&path);
-            self.dirs.borrow_mut().insert(path);
+            self.file_system.borrow_mut().add_dir(Path::new(path));
             self
         }
 
         pub fn get_written_file(&self, path: &str) -> Option<Vec<u8>> {
-            self.files.borrow().get(Path::new(path)).cloned()
+            self.file_system.borrow().get_file(Path::new(path))
         }
 
         pub fn add_process(self, pid: u64) -> Self {
@@ -104,7 +307,7 @@ pub mod tests {
         }
 
         fn add_process_state(self, pid: u64, state: ProcessState) -> Self {
-            self.processes.borrow_mut().insert(pid, state);
+            self.processes.borrow_mut().add(pid, state);
             self
         }
 
@@ -114,51 +317,33 @@ pub mod tests {
             available_memory: u64,
             cpu_count: u16,
         ) -> Self {
-            self.total_memory = total_memory;
-            self.available_memory = available_memory;
-            self.cpu_count = cpu_count;
+            self.host = HostResources {
+                total_memory,
+                available_memory,
+                cpu_count,
+            };
             self
         }
 
         pub fn get_killed_processes(&self) -> Vec<u64> {
-            self.killed.borrow().clone()
-        }
-
-        // Registers every ancestor as a directory, so a seeded path behaves
-        // like one on a real file system where its parents necessarily exist.
-        fn add_parent_dirs(&self, path: &Path) {
-            let mut dirs = self.dirs.borrow_mut();
-            let mut parent = path.parent();
-            while let Some(dir) = parent {
-                if dir.as_os_str().is_empty() {
-                    break;
-                }
-                dirs.insert(dir.to_path_buf());
-                parent = dir.parent();
-            }
-        }
-
-        fn log(&self, msg: &str) {
-            self.output.borrow_mut().push_str(&format!("{msg}\n"));
+            self.processes.borrow().killed.clone()
         }
     }
 
-    // Writes commit into the shared `files` map immediately (no buffer, no
-    // flush-on-drop), so a create_file -> write -> rename_file sequence on the
-    // same path sees the write's effect without depending on the writer being
-    // flushed or dropped first, matching how a real File writes through.
+    // Writes commit into the shared file system state immediately (no buffer,
+    // no flush-on-drop), so a create_file -> write -> rename_file sequence on
+    // the same path sees the write's effect without depending on the writer
+    // being flushed or dropped first, matching how a real File writes through.
     struct MockFileWriter {
         path: PathBuf,
-        files: Rc<RefCell<HashMap<PathBuf, Vec<u8>>>>,
+        file_system: Rc<RefCell<FileSystemState>>,
     }
 
     impl Write for MockFileWriter {
         fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-            self.files
+            self.file_system
                 .borrow_mut()
-                .entry(self.path.clone())
-                .or_default()
-                .extend_from_slice(buf);
+                .append_to_file(&self.path, buf);
             Ok(buf.len())
         }
 
@@ -173,30 +358,25 @@ pub mod tests {
         }
 
         fn print(&self, _stream: Stream, msg: &str) {
-            self.output.borrow_mut().push_str(msg);
+            self.console.borrow_mut().print(msg);
         }
 
         fn println(&self, _stream: Stream, msg: &str) {
-            self.log(msg);
+            self.console.borrow_mut().println(msg);
         }
 
         fn flush(&self, _stream: Stream) {}
 
         fn is_terminal(&self, _stream: Stream) -> bool {
-            self.terminal.get()
+            self.terminal
         }
 
         fn read_input(&self) -> String {
-            self.input
-                .borrow_mut()
-                .pop_front()
-                .unwrap_or_default()
-                .trim()
-                .to_string()
+            self.console.borrow_mut().pop_input().trim().to_string()
         }
 
         fn read_secret(&self) -> std::result::Result<String, ()> {
-            Ok(self.input.borrow_mut().pop_front().unwrap_or_default())
+            Ok(self.console.borrow_mut().pop_input())
         }
 
         fn raw_mode(&self) {}
@@ -204,28 +384,19 @@ pub mod tests {
         fn reset(&self) {}
 
         fn exists_path(&self, path: &Path) -> bool {
-            self.files.borrow().contains_key(path) || self.dirs.borrow().contains(path)
+            self.file_system.borrow().exists_path(path)
         }
 
         fn exists_dir(&self, path: &Path) -> bool {
-            self.dirs.borrow().contains(path)
+            self.file_system.borrow().exists_dir(path)
         }
 
         fn get_path_size(&self, path: &Path) -> u64 {
-            let files = self.files.borrow();
-            if let Some(content) = files.get(path) {
-                return content.len() as u64;
-            }
-            files
-                .iter()
-                .filter(|(file, _)| file.starts_with(path))
-                .map(|(_, content)| content.len() as u64)
-                .sum()
+            self.file_system.borrow().get_path_size(path)
         }
 
         fn create_dir(&self, path: &Path) -> Result<()> {
-            self.add_parent_dirs(path);
-            self.dirs.borrow_mut().insert(path.to_path_buf());
+            self.file_system.borrow_mut().add_dir(path);
             Ok(())
         }
 
@@ -234,53 +405,33 @@ pub mod tests {
         }
 
         fn remove_dir(&self, path: &Path) -> Result<()> {
-            self.dirs.borrow_mut().retain(|dir| !dir.starts_with(path));
-            self.files
-                .borrow_mut()
-                .retain(|file, _| !file.starts_with(path));
+            self.file_system.borrow_mut().remove_tree(path);
             Ok(())
         }
 
         fn read_dir(&self, path: &Path) -> Result<Vec<PathBuf>> {
-            if !self.exists_dir(path) {
+            let file_system = self.file_system.borrow();
+            if !file_system.exists_dir(path) {
                 return Err(Error::FS(format!(
                     "Cannot read directory '{}' (not found)",
                     path.display()
                 )));
             }
-
-            let mut children: Vec<PathBuf> = self
-                .files
-                .borrow()
-                .keys()
-                .filter(|file| file.parent() == Some(path))
-                .cloned()
-                .collect();
-            children.extend(
-                self.dirs
-                    .borrow()
-                    .iter()
-                    .filter(|dir| dir.parent() == Some(path))
-                    .cloned(),
-            );
-            Ok(children)
+            Ok(file_system.list_children(path))
         }
 
         fn create_file(&self, path: &Path) -> Result<Box<dyn Write>> {
-            self.files
-                .borrow_mut()
-                .insert(path.to_path_buf(), Vec::new());
+            self.file_system.borrow_mut().set_file(path, &[]);
             Ok(Box::new(MockFileWriter {
                 path: path.to_path_buf(),
-                files: Rc::clone(&self.files),
+                file_system: Rc::clone(&self.file_system),
             }))
         }
 
         fn open_file(&self, path: &Path) -> Result<Box<dyn Read>> {
-            self.files
+            self.file_system
                 .borrow()
-                .get(path)
-                .cloned()
+                .get_file(path)
                 .map(|content| Box::new(Cursor::new(content)) as Box<dyn Read>)
                 .ok_or_else(|| {
                     Error::FS(format!("Cannot open file '{}' (not found)", path.display()))
@@ -288,7 +439,7 @@ pub mod tests {
         }
 
         fn read_file_to_string(&self, path: &Path) -> Result<String> {
-            let content = self.files.borrow().get(path).cloned().ok_or_else(|| {
+            let content = self.file_system.borrow().get_file(path).ok_or_else(|| {
                 Error::FS(format!("Cannot read file '{}' (not found)", path.display()))
             })?;
             String::from_utf8(content)
@@ -296,9 +447,7 @@ pub mod tests {
         }
 
         fn write_file(&self, path: &Path, contents: &[u8]) -> Result<()> {
-            self.files
-                .borrow_mut()
-                .insert(path.to_path_buf(), contents.to_vec());
+            self.file_system.borrow_mut().set_file(path, contents);
             Ok(())
         }
 
@@ -307,60 +456,21 @@ pub mod tests {
         }
 
         fn rename_file(&self, from: &Path, to: &Path) -> Result<()> {
-            let file = self.files.borrow_mut().remove(from);
-            let was_dir = self.dirs.borrow_mut().remove(from);
-
-            if file.is_none() && !was_dir {
-                return Err(Error::FS(format!(
+            if self.file_system.borrow_mut().rename_path(from, to) {
+                Ok(())
+            } else {
+                Err(Error::FS(format!(
                     "Cannot rename file from '{}' to '{}' (not found)",
                     from.display(),
                     to.display()
-                )));
+                )))
             }
-
-            if let Some(content) = file {
-                self.files.borrow_mut().insert(to.to_path_buf(), content);
-            }
-            if was_dir {
-                self.dirs.borrow_mut().insert(to.to_path_buf());
-            }
-
-            // A directory rename must carry its nested files/dirs along too,
-            // since they're tracked as separate flat-path entries here rather
-            // than as children of the renamed directory.
-            let nested_files: Vec<PathBuf> = self
-                .files
-                .borrow()
-                .keys()
-                .filter(|path| path.starts_with(from))
-                .cloned()
-                .collect();
-            for old_path in nested_files {
-                let content = self.files.borrow_mut().remove(&old_path).unwrap();
-                let new_path = to.join(old_path.strip_prefix(from).unwrap());
-                self.files.borrow_mut().insert(new_path, content);
-            }
-
-            let nested_dirs: Vec<PathBuf> = self
-                .dirs
-                .borrow()
-                .iter()
-                .filter(|path| path.starts_with(from))
-                .cloned()
-                .collect();
-            for old_path in nested_dirs {
-                self.dirs.borrow_mut().remove(&old_path);
-                let new_path = to.join(old_path.strip_prefix(from).unwrap());
-                self.dirs.borrow_mut().insert(new_path);
-            }
-
-            Ok(())
         }
 
         fn remove_file(&self, path: &Path) -> Result<()> {
-            self.files
+            self.file_system
                 .borrow_mut()
-                .remove(path)
+                .remove_file(path)
                 .map(|_| ())
                 .ok_or_else(|| {
                     Error::FS(format!(
@@ -371,36 +481,23 @@ pub mod tests {
         }
 
         fn exists_process(&self, pid: u64) -> bool {
-            self.processes.borrow().contains_key(&pid)
+            self.processes.borrow().exists(pid)
         }
 
         fn kill_process(&self, pid: u64) -> Result<()> {
-            let state = self.processes.borrow().get(&pid).copied();
-            match state {
-                None => Err(Error::ProcessNotFound(pid)),
-                Some(ProcessState::Unkillable) => Err(Error::KillFailed(pid)),
-                Some(ProcessState::Vanished) => {
-                    self.processes.borrow_mut().remove(&pid);
-                    Err(Error::ProcessNotFound(pid))
-                }
-                Some(ProcessState::Alive) => {
-                    self.processes.borrow_mut().remove(&pid);
-                    self.killed.borrow_mut().push(pid);
-                    Ok(())
-                }
-            }
+            self.processes.borrow_mut().kill(pid)
         }
 
         fn get_total_memory(&self) -> u64 {
-            self.total_memory
+            self.host.total_memory
         }
 
         fn get_available_memory(&self) -> u64 {
-            self.available_memory
+            self.host.available_memory
         }
 
         fn get_cpu_count(&self) -> u16 {
-            self.cpu_count
+            self.host.cpu_count
         }
     }
 
