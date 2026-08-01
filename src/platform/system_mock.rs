@@ -8,6 +8,20 @@ pub mod tests {
     use std::path::{Path, PathBuf};
     use std::rc::Rc;
 
+    // How a seeded pid answers a kill. Every state is visible to a liveness
+    // check, they differ only in what killing one does.
+    #[derive(Clone, Copy)]
+    enum ProcessState {
+        // Dies when killed.
+        Alive,
+        // Stays alive and reports a failure, standing in for a kill the host
+        // rejects, such as one aimed at another user's process.
+        Unkillable,
+        // Already gone once the kill lands, modelling the race between
+        // checking a pid and signalling it.
+        Vanished,
+    }
+
     pub struct SystemMock {
         env_vars: HashMap<String, String>,
         output: RefCell<String>,
@@ -15,6 +29,11 @@ pub mod tests {
         input: RefCell<VecDeque<String>>,
         files: Rc<RefCell<HashMap<PathBuf, Vec<u8>>>>,
         dirs: RefCell<HashSet<PathBuf>>,
+        processes: RefCell<HashMap<u64, ProcessState>>,
+        killed: RefCell<Vec<u64>>,
+        total_memory: u64,
+        available_memory: u64,
+        cpu_count: u16,
     }
 
     impl SystemMock {
@@ -26,6 +45,13 @@ pub mod tests {
                 input: RefCell::new(VecDeque::new()),
                 files: Rc::new(RefCell::new(HashMap::new())),
                 dirs: RefCell::new(HashSet::new()),
+                processes: RefCell::new(HashMap::new()),
+                killed: RefCell::new(Vec::new()),
+                // A roomy host by default, so a test that does not care about
+                // host size never hits a resource limit by accident.
+                total_memory: 16 * 1024 * 1024 * 1024,
+                available_memory: 16 * 1024 * 1024 * 1024,
+                cpu_count: 8,
             }
         }
 
@@ -63,6 +89,39 @@ pub mod tests {
 
         pub fn get_written_file(&self, path: &str) -> Option<Vec<u8>> {
             self.files.borrow().get(Path::new(path)).cloned()
+        }
+
+        pub fn add_process(self, pid: u64) -> Self {
+            self.add_process_state(pid, ProcessState::Alive)
+        }
+
+        pub fn add_unkillable_process(self, pid: u64) -> Self {
+            self.add_process_state(pid, ProcessState::Unkillable)
+        }
+
+        pub fn add_vanishing_process(self, pid: u64) -> Self {
+            self.add_process_state(pid, ProcessState::Vanished)
+        }
+
+        fn add_process_state(self, pid: u64, state: ProcessState) -> Self {
+            self.processes.borrow_mut().insert(pid, state);
+            self
+        }
+
+        pub fn set_host_resources(
+            mut self,
+            total_memory: u64,
+            available_memory: u64,
+            cpu_count: u16,
+        ) -> Self {
+            self.total_memory = total_memory;
+            self.available_memory = available_memory;
+            self.cpu_count = cpu_count;
+            self
+        }
+
+        pub fn get_killed_processes(&self) -> Vec<u64> {
+            self.killed.borrow().clone()
         }
 
         // Registers every ancestor as a directory, so a seeded path behaves
@@ -309,6 +368,39 @@ pub mod tests {
                         path.display()
                     ))
                 })
+        }
+
+        fn exists_process(&self, pid: u64) -> bool {
+            self.processes.borrow().contains_key(&pid)
+        }
+
+        fn kill_process(&self, pid: u64) -> Result<()> {
+            let state = self.processes.borrow().get(&pid).copied();
+            match state {
+                None => Err(Error::ProcessNotFound(pid)),
+                Some(ProcessState::Unkillable) => Err(Error::KillFailed(pid)),
+                Some(ProcessState::Vanished) => {
+                    self.processes.borrow_mut().remove(&pid);
+                    Err(Error::ProcessNotFound(pid))
+                }
+                Some(ProcessState::Alive) => {
+                    self.processes.borrow_mut().remove(&pid);
+                    self.killed.borrow_mut().push(pid);
+                    Ok(())
+                }
+            }
+        }
+
+        fn get_total_memory(&self) -> u64 {
+            self.total_memory
+        }
+
+        fn get_available_memory(&self) -> u64 {
+            self.available_memory
+        }
+
+        fn get_cpu_count(&self) -> u16 {
+            self.cpu_count
         }
     }
 
@@ -617,5 +709,84 @@ pub mod tests {
 
         assert!(!system.exists_path(Path::new("/data/sub")));
         assert!(!system.exists_path(Path::new("/data/sub/c.txt")));
+    }
+
+    #[test]
+    fn exists_process_only_finds_seeded_pids() {
+        let system = SystemMock::new().add_process(42);
+
+        assert!(system.exists_process(42));
+        assert!(!system.exists_process(43));
+    }
+
+    #[test]
+    fn kill_process_records_the_pid_and_ends_the_process() {
+        let system = SystemMock::new().add_process(42);
+
+        system.kill_process(42).unwrap();
+
+        assert_eq!(system.get_killed_processes(), vec![42]);
+        assert!(!system.exists_process(42));
+    }
+
+    #[test]
+    fn kill_process_fails_for_an_unkillable_pid_that_stays_alive() {
+        let system = SystemMock::new().add_unkillable_process(42);
+
+        assert!(matches!(
+            system.kill_process(42),
+            Err(Error::KillFailed(42))
+        ));
+        assert!(system.exists_process(42));
+        assert!(system.get_killed_processes().is_empty());
+    }
+
+    #[test]
+    fn kill_process_reports_a_vanishing_process_as_gone() {
+        let system = SystemMock::new().add_vanishing_process(42);
+
+        assert!(system.exists_process(42));
+        assert!(matches!(
+            system.kill_process(42),
+            Err(Error::ProcessNotFound(42))
+        ));
+        // Once the kill has reported it gone, every later look agrees.
+        assert!(!system.exists_process(42));
+        assert!(system.get_killed_processes().is_empty());
+    }
+
+    #[test]
+    fn seeding_a_pid_twice_keeps_the_last_state() {
+        let system = SystemMock::new().add_process(42).add_vanishing_process(42);
+
+        assert!(matches!(
+            system.kill_process(42),
+            Err(Error::ProcessNotFound(42))
+        ));
+
+        let system = SystemMock::new().add_vanishing_process(7).add_process(7);
+
+        system.kill_process(7).unwrap();
+        assert_eq!(system.get_killed_processes(), vec![7]);
+    }
+
+    #[test]
+    fn kill_process_fails_for_an_unknown_pid() {
+        let system = SystemMock::new();
+
+        assert!(matches!(
+            system.kill_process(42),
+            Err(Error::ProcessNotFound(42))
+        ));
+        assert!(system.get_killed_processes().is_empty());
+    }
+
+    #[test]
+    fn host_resources_return_the_configured_values() {
+        let system = SystemMock::new().set_host_resources(8_000, 2_000, 4);
+
+        assert_eq!(system.get_total_memory(), 8_000);
+        assert_eq!(system.get_available_memory(), 2_000);
+        assert_eq!(system.get_cpu_count(), 4);
     }
 }

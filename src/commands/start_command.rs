@@ -3,6 +3,7 @@ use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::instance::InstanceStore;
 use crate::models::{DataSize, HOST_MEMORY_RESERVE, Instance, ResourceAllocator};
+use crate::platform::System;
 use crate::ssh::PortChecker;
 use crate::view::Console;
 use crate::view::{ConfirmDialog, Spinner};
@@ -10,7 +11,6 @@ use clap::Parser;
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use sysinfo::System;
 
 /// Start VM instances
 ///
@@ -66,7 +66,12 @@ impl Command for StartCommand {
                     ));
                 }
 
-                self.fit_to_available_memory(console, instance_store, instance)?;
+                self.fit_to_available_memory(
+                    console,
+                    context.get_system(),
+                    instance_store,
+                    instance,
+                )?;
 
                 let mut action = StartInstanceAction::new(instance);
                 action.run(context, &self.qemu_args, console)?;
@@ -106,12 +111,11 @@ impl StartCommand {
     fn fit_to_available_memory(
         &self,
         console: &mut Console<'_>,
+        system: &dyn System,
         instance_store: &dyn InstanceStore,
         instance: &mut Instance,
     ) -> Result<()> {
-        let mut system = System::new();
-        system.refresh_memory();
-        let available = system.available_memory() as usize;
+        let available = system.get_available_memory() as usize;
 
         console.debug(&format!(
             "Instance '{}' requests {}, host has {} available with {} reserved",
@@ -153,9 +157,102 @@ impl StartCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::instance::InstanceStoreMock;
+    use crate::platform::SystemMock;
+
+    const GIB: usize = 1024 * 1024 * 1024;
+
+    fn build_instance() -> Instance {
+        Instance {
+            name: "test".to_string(),
+            cpus: 8,
+            mem: DataSize::new(8 * GIB),
+            ..Instance::default()
+        }
+    }
 
     #[test]
     fn test_reject_path_traversal() {
         assert!(StartCommand::try_parse_from(["start", "../../etc"]).is_err());
+    }
+
+    #[test]
+    fn test_keeps_size_when_memory_is_available() {
+        let system = SystemMock::new().set_host_resources((16 * GIB) as u64, (16 * GIB) as u64, 8);
+        let mut console = Console::new(&system);
+        let store = InstanceStoreMock::new(vec![build_instance()]);
+        let command = StartCommand::try_parse_from(["start", "--yes", "test"]).unwrap();
+        let mut instance = build_instance();
+
+        command
+            .fit_to_available_memory(&mut console, &system, &store, &mut instance)
+            .unwrap();
+
+        assert_eq!(instance.cpus, 8);
+        assert_eq!(instance.mem.get_bytes(), 8 * GIB);
+    }
+
+    #[test]
+    fn test_reduces_size_to_fit_available_memory() {
+        // 5 GiB available minus the 1 GiB reserve leaves a 4 GiB budget.
+        let system = SystemMock::new().set_host_resources((16 * GIB) as u64, (5 * GIB) as u64, 8);
+        let mut console = Console::new(&system);
+        let store = InstanceStoreMock::new(vec![build_instance()]);
+        let command = StartCommand::try_parse_from(["start", "--yes", "test"]).unwrap();
+        let mut instance = build_instance();
+
+        command
+            .fit_to_available_memory(&mut console, &system, &store, &mut instance)
+            .unwrap();
+
+        assert_eq!(instance.cpus, 8);
+        assert_eq!(instance.mem.get_bytes(), 4 * GIB);
+    }
+
+    #[test]
+    fn test_reduces_size_when_the_user_confirms() {
+        let system = SystemMock::new().set_host_resources((16 * GIB) as u64, (5 * GIB) as u64, 8);
+        system.push_input("y");
+        let mut console = Console::new(&system);
+        let store = InstanceStoreMock::new(vec![build_instance()]);
+        let command = StartCommand::try_parse_from(["start", "test"]).unwrap();
+        let mut instance = build_instance();
+
+        command
+            .fit_to_available_memory(&mut console, &system, &store, &mut instance)
+            .unwrap();
+
+        assert_eq!(instance.mem.get_bytes(), 4 * GIB);
+    }
+
+    #[test]
+    fn test_errors_when_the_user_declines() {
+        let system = SystemMock::new().set_host_resources((16 * GIB) as u64, (5 * GIB) as u64, 8);
+        system.push_input("n");
+        let mut console = Console::new(&system);
+        let store = InstanceStoreMock::new(vec![build_instance()]);
+        let command = StartCommand::try_parse_from(["start", "test"]).unwrap();
+        let mut instance = build_instance();
+
+        assert!(matches!(
+            command.fit_to_available_memory(&mut console, &system, &store, &mut instance),
+            Err(Error::NotEnoughMemory(name)) if name == "test"
+        ));
+        // The instance keeps its size, the reduction is only applied on accept.
+        assert_eq!(instance.mem.get_bytes(), 8 * GIB);
+    }
+
+    #[test]
+    fn test_errors_when_nothing_fits() {
+        let system = SystemMock::new().set_host_resources((16 * GIB) as u64, GIB as u64, 8);
+        let mut console = Console::new(&system);
+        let store = InstanceStoreMock::new(vec![build_instance()]);
+        let command = StartCommand::try_parse_from(["start", "--yes", "test"]).unwrap();
+        let mut instance = build_instance();
+
+        assert!(matches!(
+            command.fit_to_available_memory(&mut console, &system, &store, &mut instance),
+            Err(Error::NotEnoughMemory(name)) if name == "test"
+        ));
     }
 }

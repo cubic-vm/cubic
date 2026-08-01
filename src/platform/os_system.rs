@@ -11,6 +11,16 @@ impl OsSystem {
     pub fn new() -> Self {
         Self
     }
+
+    // Refreshes a single process so a lookup sees the current state of the
+    // host. `sysinfo::System` is spelled out because the name collides with
+    // the `System` trait implemented below.
+    fn read_process_table(pid: u64) -> (sysinfo::System, sysinfo::Pid) {
+        let sys_pid = sysinfo::Pid::from_u32(pid as u32);
+        let mut system = sysinfo::System::new();
+        system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[sys_pid]), true);
+        (system, sys_pid)
+    }
 }
 
 impl System for OsSystem {
@@ -251,5 +261,37 @@ impl System for OsSystem {
     fn remove_file(&self, path: &Path) -> Result<()> {
         fs::remove_file(path)
             .map_err(|e| Error::FS(format!("Cannot delete file '{}' ({e})", path.display())))
+    }
+
+    fn exists_process(&self, pid: u64) -> bool {
+        let (system, sys_pid) = Self::read_process_table(pid);
+        system.process(sys_pid).is_some()
+    }
+
+    fn kill_process(&self, pid: u64) -> Result<()> {
+        let (system, sys_pid) = Self::read_process_table(pid);
+        let process = system.process(sys_pid).ok_or(Error::ProcessNotFound(pid))?;
+
+        process.kill().then_some(()).ok_or(Error::KillFailed(pid))
+    }
+
+    fn get_total_memory(&self) -> u64 {
+        let mut system = sysinfo::System::new();
+        system.refresh_memory();
+        system.total_memory()
+    }
+
+    fn get_available_memory(&self) -> u64 {
+        let mut system = sysinfo::System::new();
+        system.refresh_memory();
+        system.available_memory()
+    }
+
+    // Counts logical processors, so a host with simultaneous multithreading
+    // reports its thread count rather than its physical cores.
+    fn get_cpu_count(&self) -> u16 {
+        let mut system = sysinfo::System::new();
+        system.refresh_cpu_all();
+        system.cpus().len() as u16
     }
 }

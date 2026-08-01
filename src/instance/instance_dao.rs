@@ -30,13 +30,6 @@ impl InstanceDao {
         })
     }
 
-    fn is_process_alive(&self, pid: u64) -> bool {
-        let sys_pid = sysinfo::Pid::from_u32(pid as u32);
-        let mut system = sysinfo::System::new();
-        system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[sys_pid]), true);
-        system.process(sys_pid).is_some()
-    }
-
     fn read_running_pid(&self, instance: &Instance) -> Option<u64> {
         let pid = self
             .system
@@ -46,7 +39,7 @@ impl InstanceDao {
             .parse::<u64>()
             .ok()?;
 
-        if self.is_process_alive(pid) {
+        if self.system.exists_process(pid) {
             Some(pid)
         } else {
             self.system
@@ -211,17 +204,22 @@ impl InstanceStore for InstanceDao {
             .get_pid(instance)
             .ok_or_else(|| Error::InstanceNotRunning(instance.name.clone()))?;
 
-        let sys_pid = sysinfo::Pid::from_u32(pid as u32);
-        let mut system = sysinfo::System::new();
-        system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[sys_pid]), true);
-        if let Some(process) = system.process(sys_pid) {
-            process.kill();
-        }
+        // A process that died between the check above and the signal already
+        // reached the goal of this call, so it counts as success. Only a live
+        // process that refused to die is an error, and it keeps its pid file,
+        // since dropping the file would orphan a QEMU process that no later
+        // command could reach.
+        let result = match self.system.kill_process(pid) {
+            Err(Error::ProcessNotFound(_)) => Ok(()),
+            result => result,
+        };
 
-        self.system
-            .remove_file(Path::new(&self.env.get_qemu_pid_file(&instance.name)))
-            .ok();
-        Ok(())
+        if result.is_ok() {
+            self.system
+                .remove_file(Path::new(&self.env.get_qemu_pid_file(&instance.name)))
+                .ok();
+        }
+        result
     }
 
     fn get_monitor(&self, instance: &Instance) -> Result<Monitor> {
@@ -242,6 +240,13 @@ mod tests {
             "/cache".to_string(),
             "/run".to_string(),
         )
+    }
+
+    fn build_instance() -> Instance {
+        Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }
     }
 
     #[test]
@@ -266,6 +271,93 @@ mod tests {
         let loaded = dao.load("test").unwrap();
 
         assert_eq!(loaded.name, instance.name);
+    }
+
+    #[test]
+    fn test_is_running_true_when_pid_alive() {
+        let env = build_env();
+        let system = SystemMock::new()
+            .add_file(&env.get_qemu_pid_file("test"), b"1234\n")
+            .add_process(1234);
+        let dao = InstanceDao::new(Rc::new(system), &env).unwrap();
+
+        assert!(dao.is_running(&build_instance()));
+        assert_eq!(dao.get_pid(&build_instance()), Some(1234));
+    }
+
+    #[test]
+    fn test_is_running_false_and_removes_stale_pid_file() {
+        let env = build_env();
+        let system = Rc::new(SystemMock::new().add_file(&env.get_qemu_pid_file("test"), b"1234\n"));
+        let dao = InstanceDao::new(Rc::clone(&system) as Rc<dyn System>, &env).unwrap();
+
+        assert!(!dao.is_running(&build_instance()));
+        assert!(!system.exists_path(Path::new(&env.get_qemu_pid_file("test"))));
+    }
+
+    #[test]
+    fn test_kill_kills_pid_and_removes_pid_file() {
+        let env = build_env();
+        let system = Rc::new(
+            SystemMock::new()
+                .add_file(&env.get_qemu_pid_file("test"), b"1234\n")
+                .add_process(1234),
+        );
+        let dao = InstanceDao::new(Rc::clone(&system) as Rc<dyn System>, &env).unwrap();
+
+        dao.kill(&build_instance()).unwrap();
+
+        assert_eq!(system.get_killed_processes(), vec![1234]);
+        assert!(!system.exists_path(Path::new(&env.get_qemu_pid_file("test"))));
+    }
+
+    #[test]
+    fn test_kill_succeeds_when_the_process_died_first() {
+        let env = build_env();
+        let system = Rc::new(
+            SystemMock::new()
+                .add_file(&env.get_qemu_pid_file("test"), b"1234\n")
+                .add_vanishing_process(1234),
+        );
+        let dao = InstanceDao::new(Rc::clone(&system) as Rc<dyn System>, &env).unwrap();
+
+        // The process is gone, which is what the call asked for, so losing the
+        // race to whoever reaped it is not a failure.
+        dao.kill(&build_instance()).unwrap();
+
+        assert!(system.get_killed_processes().is_empty());
+        assert!(!system.exists_path(Path::new(&env.get_qemu_pid_file("test"))));
+    }
+
+    #[test]
+    fn test_kill_keeps_pid_file_when_the_kill_fails() {
+        let env = build_env();
+        let system = Rc::new(
+            SystemMock::new()
+                .add_file(&env.get_qemu_pid_file("test"), b"1234\n")
+                .add_unkillable_process(1234),
+        );
+        let dao = InstanceDao::new(Rc::clone(&system) as Rc<dyn System>, &env).unwrap();
+
+        assert!(matches!(
+            dao.kill(&build_instance()),
+            Err(Error::KillFailed(1234))
+        ));
+        // The pid file has to survive, otherwise the still running QEMU
+        // process would be unreachable for every later command.
+        assert!(system.exists_path(Path::new(&env.get_qemu_pid_file("test"))));
+        assert!(dao.is_running(&build_instance()));
+    }
+
+    #[test]
+    fn test_kill_errors_when_not_running() {
+        let system = SystemMock::new();
+        let dao = InstanceDao::new(Rc::new(system), &build_env()).unwrap();
+
+        assert!(matches!(
+            dao.kill(&build_instance()),
+            Err(Error::InstanceNotRunning(name)) if name == "test"
+        ));
     }
 
     #[test]

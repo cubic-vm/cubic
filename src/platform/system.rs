@@ -31,4 +31,11 @@ pub trait System {
     fn write_secret_file(&self, path: &Path, contents: &[u8]) -> Result<()>;
     fn rename_file(&self, from: &Path, to: &Path) -> Result<()>;
     fn remove_file(&self, path: &Path) -> Result<()>;
+
+    fn exists_process(&self, pid: u64) -> bool;
+    fn kill_process(&self, pid: u64) -> Result<()>;
+
+    fn get_total_memory(&self) -> u64;
+    fn get_available_memory(&self) -> u64;
+    fn get_cpu_count(&self) -> u16;
 }
