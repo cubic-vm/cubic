@@ -1,5 +1,6 @@
 use crate::error::Result;
 use crate::platform::Stream;
+use crate::util::SystemCommand;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
@@ -34,6 +35,9 @@ pub trait System {
 
     fn exists_process(&self, pid: u64) -> bool;
     fn kill_process(&self, pid: u64) -> Result<()>;
+
+    fn run_command(&self, command: &SystemCommand) -> Result<Vec<u8>>;
+    fn spawn_command(&self, command: &SystemCommand) -> Result<()>;
 
     fn get_total_memory(&self) -> u64;
     fn get_available_memory(&self) -> u64;

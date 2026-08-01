@@ -106,7 +106,12 @@ impl StartInstanceAction {
         qemu_system.set_pid_file(&env.get_qemu_pid_file(&self.instance.name));
 
         qemu_system.set_monitor(self.instance.monitor_port.unwrap(), &instance_dir);
-        qemu_system.run(console)
+
+        let command = qemu_system.build_command();
+        console.debug(&command.get_command());
+        system
+            .spawn_command(&command)
+            .map_err(QemuSystem::map_error)
     }
 
     pub fn is_done(&self) -> bool {

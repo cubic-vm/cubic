@@ -2,6 +2,7 @@
 pub mod tests {
     use crate::error::{Error, Result};
     use crate::platform::{Stream, System};
+    use crate::util::SystemCommand;
     use std::cell::RefCell;
     use std::collections::{HashMap, HashSet, VecDeque};
     use std::io::{Cursor, Read, Write};
@@ -233,6 +234,44 @@ pub mod tests {
         }
     }
 
+    // How a seeded command answers a run.
+    enum CommandResult {
+        // Exits successfully with this on stdout.
+        Output(Vec<u8>),
+        // Exits with a failure carrying this on stderr.
+        Failure(String),
+    }
+
+    // The commands the host knows how to answer, alongside the record of what
+    // was attempted. A command that is not seeded is one the host cannot run,
+    // so it reports a missing binary rather than quietly succeeding.
+    #[derive(Default)]
+    struct CommandTable {
+        results: HashMap<String, CommandResult>,
+        executed: Vec<String>,
+    }
+
+    impl CommandTable {
+        fn add(&mut self, command: &str, result: CommandResult) {
+            self.results.insert(command.to_string(), result);
+        }
+
+        fn run(&mut self, command: &SystemCommand) -> Result<Vec<u8>> {
+            let line = command.get_command();
+            self.executed.push(line.clone());
+
+            match self.results.get(line.as_str()) {
+                None => Err(Error::SystemCommandNotFound(
+                    command.get_program().to_string(),
+                )),
+                Some(CommandResult::Failure(stderr)) => {
+                    Err(Error::SystemCommandFailed(line, stderr.clone()))
+                }
+                Some(CommandResult::Output(stdout)) => Ok(stdout.clone()),
+            }
+        }
+    }
+
     pub struct SystemMock {
         env_vars: HashMap<String, String>,
         terminal: bool,
@@ -240,6 +279,7 @@ pub mod tests {
         console: RefCell<ConsoleState>,
         file_system: Rc<RefCell<FileSystemState>>,
         processes: RefCell<ProcessTable>,
+        commands: RefCell<CommandTable>,
     }
 
     impl SystemMock {
@@ -257,6 +297,7 @@ pub mod tests {
                 console: RefCell::new(ConsoleState::default()),
                 file_system: Rc::new(RefCell::new(FileSystemState::default())),
                 processes: RefCell::new(ProcessTable::default()),
+                commands: RefCell::new(CommandTable::default()),
             }
         }
 
@@ -327,6 +368,25 @@ pub mod tests {
 
         pub fn get_killed_processes(&self) -> Vec<u64> {
             self.processes.borrow().killed.clone()
+        }
+
+        pub fn add_command_output(self, command: &str, stdout: &[u8]) -> Self {
+            self.commands
+                .borrow_mut()
+                .add(command, CommandResult::Output(stdout.to_vec()));
+            self
+        }
+
+        pub fn add_failing_command(self, command: &str, stderr: &str) -> Self {
+            self.commands
+                .borrow_mut()
+                .add(command, CommandResult::Failure(stderr.to_string()));
+            self
+        }
+
+        // Every command the host was asked to run, seeded or not, in order.
+        pub fn get_executed_commands(&self) -> Vec<String> {
+            self.commands.borrow().executed.clone()
         }
     }
 
@@ -486,6 +546,16 @@ pub mod tests {
 
         fn kill_process(&self, pid: u64) -> Result<()> {
             self.processes.borrow_mut().kill(pid)
+        }
+
+        fn run_command(&self, command: &SystemCommand) -> Result<Vec<u8>> {
+            self.commands.borrow_mut().run(command)
+        }
+
+        // A detached start has nothing to wait for, so it only reports whether
+        // the host could launch the command at all.
+        fn spawn_command(&self, command: &SystemCommand) -> Result<()> {
+            self.commands.borrow_mut().run(command).map(|_| ())
         }
 
         fn get_total_memory(&self) -> u64 {
@@ -885,5 +955,85 @@ pub mod tests {
         assert_eq!(system.get_total_memory(), 8_000);
         assert_eq!(system.get_available_memory(), 2_000);
         assert_eq!(system.get_cpu_count(), 4);
+    }
+
+    #[test]
+    fn run_command_returns_the_seeded_output() {
+        let system = SystemMock::new().add_command_output("echo hello", b"hello\n");
+
+        let mut command = SystemCommand::new("echo");
+        command.arg("hello");
+
+        assert_eq!(system.run_command(&command).unwrap(), b"hello\n");
+    }
+
+    #[test]
+    fn run_command_fails_for_an_unseeded_command() {
+        let system = SystemMock::new();
+
+        assert!(matches!(
+            system.run_command(&SystemCommand::new("qemu-img")),
+            Err(Error::SystemCommandNotFound(program)) if program == "qemu-img"
+        ));
+    }
+
+    #[test]
+    fn run_command_reports_a_seeded_failure_with_its_stderr() {
+        let system = SystemMock::new().add_failing_command("qemu-img resize", "no such file");
+
+        let mut command = SystemCommand::new("qemu-img");
+        command.arg("resize");
+
+        assert!(matches!(
+            system.run_command(&command),
+            Err(Error::SystemCommandFailed(line, stderr))
+                if line == "qemu-img resize" && stderr == "no such file"
+        ));
+    }
+
+    #[test]
+    fn run_command_matches_on_the_arguments() {
+        let system = SystemMock::new().add_command_output("qemu-img info a", b"a");
+
+        let mut other = SystemCommand::new("qemu-img");
+        other.arg("info").arg("b");
+
+        assert!(system.run_command(&other).is_err());
+    }
+
+    #[test]
+    fn spawn_command_succeeds_without_returning_output() {
+        let system = SystemMock::new().add_command_output("qemu-system-x86_64", b"ignored");
+
+        system
+            .spawn_command(&SystemCommand::new("qemu-system-x86_64"))
+            .unwrap();
+    }
+
+    #[test]
+    fn spawn_command_fails_for_an_unseeded_command() {
+        let system = SystemMock::new();
+
+        assert!(matches!(
+            system.spawn_command(&SystemCommand::new("qemu-system-x86_64")),
+            Err(Error::SystemCommandNotFound(program)) if program == "qemu-system-x86_64"
+        ));
+    }
+
+    #[test]
+    fn get_executed_commands_records_every_attempt_in_order() {
+        let system = SystemMock::new().add_command_output("echo one", b"");
+
+        let mut first = SystemCommand::new("echo");
+        first.arg("one");
+        system.run_command(&first).unwrap();
+
+        let mut second = SystemCommand::new("echo");
+        second.arg("two");
+        system.run_command(&second).ok();
+
+        // The failed attempt is recorded too, since the host was still asked
+        // to run it.
+        assert_eq!(system.get_executed_commands(), vec!["echo one", "echo two"]);
     }
 }
