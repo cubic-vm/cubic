@@ -57,8 +57,14 @@ on the host platform:
 
 * **KVM** on Linux
 * **HVF** (Hypervisor Framework) on macOS
-* **Hyper-V** on Windows
+* **NVMM** on the BSDs
 * **TCG** (software emulation) as a fallback
+
+On Windows the **WHPX** accelerator is currently disabled and instances run on
+TCG software emulation. WHPX requires the ``host`` CPU model, while the CPU
+model Cubic passes is shared with the TCG path, and the mismatch makes the
+guest hang at the OVMF firmware screen. See `issue #500
+<https://github.com/cubic-vm/cubic/issues/500>`_.
 
 Each instance stores its own disk image under
 ``~/.local/share/cubic/machines/<name>/``, keeping instances fully isolated

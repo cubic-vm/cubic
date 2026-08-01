@@ -97,7 +97,7 @@ Features
 * Supports Alma Linux, Arch Linux, Debian, Fedora, Gentoo, OpenSUSE, Rocky Linux and Ubuntu guest images
 * Uses official, checksum-verified cloud images downloaded straight from each distribution
 * Supports Linux, macOS and Windows hosts with amd64 and arm64 architecture
-* Supports hardware acceleration with KVM (Linux), Hypervisor (macOS) and Hyper-V (Windows)
+* Supports hardware acceleration with KVM (Linux) and Hypervisor (macOS), Windows runs on TCG software emulation for now
 * Boots each VM with EDK2 UEFI firmware, discovered automatically per architecture
 * No background privileged service and runs with standard user rights, no admin or root needed
 * Written in Rust
