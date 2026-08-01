@@ -26,9 +26,9 @@ impl QemuSystem {
             Some("nvmm")
         } else if cfg!(any(target_os = "macos", target_os = "ios")) {
             Some("hvf")
-        } else if cfg!(target_os = "windows") {
-            Some("whpx")
         } else {
+            // WHPX is disabled on Windows because it needs `-cpu host` while
+            // the shared `-cpu max` makes the guest hang at OVMF, see #500
             None
         }
     }
