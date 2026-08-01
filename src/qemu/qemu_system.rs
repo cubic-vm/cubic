@@ -5,7 +5,6 @@ use crate::models::{Arch, PortForward};
 use crate::platform::System;
 use crate::qemu::QemuPathBuilder;
 use crate::util::SystemCommand;
-use crate::view::Console;
 
 pub const NETDEV_ID: &str = "net0";
 
@@ -167,17 +166,18 @@ impl QemuSystem {
         self.command.arg("-pidfile").arg(path);
     }
 
-    fn map_error(error: Error) -> Error {
+    // A host that cannot find the binary lacks qemu, which is worth saying
+    // plainly rather than reporting a command that would not start. The caller
+    // runs the command, so it maps the failure through here.
+    pub fn map_error(error: Error) -> Error {
         match error {
             Error::SystemCommandNotFound(_) => Error::QemuNotFound,
             other => other,
         }
     }
 
-    pub fn run(&mut self, console: &mut Console<'_>) -> Result<()> {
-        console.debug(&self.command.get_command());
-
-        self.command.run_daemonized().map_err(Self::map_error)
+    pub fn build_command(self) -> SystemCommand {
+        self.command
     }
 }
 
@@ -227,6 +227,15 @@ mod tests {
     fn test_from_adds_virtio_balloon() {
         let qemu = QemuSystem::from(&SystemMock::new(), Arch::ARM64).unwrap();
         assert!(qemu.command.get_command().contains("virtio-balloon-pci"));
+    }
+
+    #[test]
+    fn test_build_command_names_the_binary_of_the_arch() {
+        let command = QemuSystem::from(&SystemMock::new(), Arch::AMD64)
+            .unwrap()
+            .build_command();
+
+        assert!(command.get_command().starts_with("qemu-system-x86_64"));
     }
 
     #[test]

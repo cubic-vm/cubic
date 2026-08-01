@@ -35,38 +35,49 @@ impl<'a> QemuImg<'a> {
         }
     }
 
+    // Anything that keeps the info from arriving, from a host without qemu to
+    // an image the tool cannot read, leaves the caller with what it already
+    // knows about the disk.
     pub fn get_image_info(&self, env: &Environment, instance: &Instance) -> Option<ImageInfo> {
-        self.command()
+        let mut command = self.command();
+        command
             .arg("info")
             .arg("--force-share")
             .arg("--output")
             .arg("json")
-            .arg(env.get_instance_image_file(&instance.name))
-            .output()
+            .arg(env.get_instance_image_file(&instance.name));
+
+        self.system
+            .run_command(&command)
             .ok()
-            .and_then(|output| String::from_utf8(output.stdout).ok())
+            .and_then(|stdout| String::from_utf8(stdout).ok())
             .and_then(|stdout| serde_json::from_str(&stdout).ok())
     }
 
     pub fn convert(&self, src: &str, dst: &str) -> Result<()> {
-        self.command()
+        let mut command = self.command();
+        command
             .arg("convert")
             .arg("-f")
             .arg("qcow2")
             .arg("-O")
             .arg("qcow2")
             .arg(src)
-            .arg(dst)
-            .run()
+            .arg(dst);
+
+        self.system
+            .run_command(&command)
+            .map(|_| ())
             .map_err(Self::map_error)
     }
 
     pub fn resize(&self, image: &str, size: u64) -> Result<()> {
-        self.command()
-            .arg("resize")
-            .arg(image)
-            .arg(size.to_string())
-            .run()
+        let mut command = self.command();
+        command.arg("resize").arg(image).arg(size.to_string());
+
+        self.system
+            .run_command(&command)
+            .map(|_| ())
             .map_err(Self::map_error)
     }
 }
@@ -74,6 +85,110 @@ impl<'a> QemuImg<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::UserName;
+    use crate::platform::SystemMock;
+    use std::str::FromStr;
+
+    fn build_env() -> Environment {
+        Environment::new(
+            UserName::from_str("cubic").unwrap(),
+            "/data".to_string(),
+            "/cache".to_string(),
+            "/run".to_string(),
+        )
+    }
+
+    fn build_instance() -> Instance {
+        Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }
+    }
+
+    fn build_info_command(env: &Environment) -> String {
+        format!(
+            "qemu-img info --force-share --output json {}",
+            env.get_instance_image_file("test")
+        )
+    }
+
+    #[test]
+    fn test_get_image_info_reads_the_reported_sizes() {
+        let env = build_env();
+        let system = SystemMock::new().add_command_output(
+            &build_info_command(&env),
+            br#"{"virtual-size": 1073741824, "actual-size": 200704}"#,
+        );
+
+        let info = QemuImg::new(&system)
+            .get_image_info(&env, &build_instance())
+            .unwrap();
+
+        assert_eq!(info.virtual_size, 1073741824);
+        assert_eq!(info.actual_size, 200704);
+    }
+
+    #[test]
+    fn test_get_image_info_is_none_without_qemu() {
+        let env = build_env();
+        let system = SystemMock::new();
+
+        assert!(
+            QemuImg::new(&system)
+                .get_image_info(&env, &build_instance())
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn test_get_image_info_is_none_when_the_output_is_not_readable() {
+        let env = build_env();
+        let system = SystemMock::new().add_command_output(&build_info_command(&env), b"not json");
+
+        assert!(
+            QemuImg::new(&system)
+                .get_image_info(&env, &build_instance())
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn test_resize_reports_a_missing_qemu() {
+        let system = SystemMock::new();
+
+        assert!(matches!(
+            QemuImg::new(&system).resize("/data/machines/test/image", 2048),
+            Err(Error::QemuNotFound)
+        ));
+    }
+
+    #[test]
+    fn test_resize_passes_the_size_to_qemu_img() {
+        let system = SystemMock::new()
+            .add_command_output("qemu-img resize /data/machines/test/image 2048", b"");
+
+        QemuImg::new(&system)
+            .resize("/data/machines/test/image", 2048)
+            .unwrap();
+
+        assert_eq!(
+            system.get_executed_commands(),
+            vec!["qemu-img resize /data/machines/test/image 2048"]
+        );
+    }
+
+    #[test]
+    fn test_convert_reports_the_failure_of_qemu_img() {
+        let system = SystemMock::new().add_failing_command(
+            "qemu-img convert -f qcow2 -O qcow2 /cache/image /data/machines/test/image",
+            "boom",
+        );
+
+        assert!(matches!(
+            QemuImg::new(&system).convert("/cache/image", "/data/machines/test/image"),
+            Err(Error::SystemCommandFailed(_, stderr)) if stderr == "boom"
+        ));
+    }
 
     #[test]
     fn test_image_info() {

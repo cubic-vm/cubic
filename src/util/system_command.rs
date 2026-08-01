@@ -1,29 +1,30 @@
-use crate::error::{Error, Result};
-use std::ffi::OsStr;
-use std::io::{ErrorKind, Read};
-use std::process::{Command, Output, Stdio};
-use std::str::from_utf8;
+use std::ffi::{OsStr, OsString};
 
+// A command to run, described but not started. Turning one into a child
+// process is the job of the `System` implementation, which keeps every spawn
+// on the host behind the same seam as every file access.
 pub struct SystemCommand {
-    cmd: Command,
-    stdout: bool,
+    program: String,
+    args: Vec<OsString>,
+    envs: Vec<(OsString, OsString)>,
 }
 
 impl SystemCommand {
     pub fn new(program: &str) -> Self {
         Self {
-            cmd: Command::new(program),
-            stdout: false,
+            program: program.to_string(),
+            args: Vec::new(),
+            envs: Vec::new(),
         }
     }
 
     pub fn get_command(&self) -> String {
         format!(
             "{} {}",
-            self.cmd.get_program().to_str().unwrap(),
-            self.cmd
-                .get_args()
-                .map(|a| a.to_str().unwrap())
+            self.program,
+            self.args
+                .iter()
+                .map(|a| a.to_string_lossy())
                 .collect::<Vec<_>>()
                 .join(" ")
         )
@@ -31,25 +32,26 @@ impl SystemCommand {
         .to_string()
     }
 
-    fn get_program(&self) -> String {
-        self.cmd.get_program().to_string_lossy().into_owned()
+    pub fn get_program(&self) -> &str {
+        &self.program
     }
 
-    fn map_spawn_error(&self, error: std::io::Error) -> Error {
-        if error.kind() == ErrorKind::NotFound {
-            return Error::SystemCommandNotFound(self.get_program());
-        }
+    pub fn get_args(&self) -> &[OsString] {
+        &self.args
+    }
 
-        Error::SystemCommandFailed(self.get_command(), error.to_string())
+    pub fn get_envs(&self) -> &[(OsString, OsString)] {
+        &self.envs
     }
 
     pub fn set_env<K: AsRef<OsStr>, V: AsRef<OsStr>>(&mut self, key: K, value: V) -> &mut Self {
-        self.cmd.env(key, value);
+        self.envs
+            .push((key.as_ref().to_os_string(), value.as_ref().to_os_string()));
         self
     }
 
     pub fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Self {
-        self.cmd.arg(arg);
+        self.args.push(arg.as_ref().to_os_string());
         self
     }
 
@@ -58,99 +60,11 @@ impl SystemCommand {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        self.cmd.args(args);
+        for arg in args {
+            self.arg(arg);
+        }
         self
     }
-
-    pub fn run(&mut self) -> Result<()> {
-        self.cmd
-            .stdin(Stdio::null())
-            .stdout(if self.stdout {
-                Stdio::inherit()
-            } else {
-                Stdio::null()
-            })
-            .stderr(Stdio::piped())
-            .output()
-            .map_err(|e| self.map_spawn_error(e))
-            .and_then(|out| {
-                if out.status.success() {
-                    Ok(())
-                } else {
-                    Err(Error::SystemCommandFailed(
-                        self.get_command(),
-                        from_utf8(&out.stderr).unwrap_or_default().to_string(),
-                    ))
-                }
-            })
-    }
-
-    pub fn run_daemonized(&mut self) -> Result<()> {
-        #[cfg(unix)]
-        unsafe {
-            use std::os::unix::process::CommandExt;
-            self.cmd.pre_exec(detach_from_session);
-        }
-
-        #[cfg(target_os = "windows")]
-        {
-            use std::os::windows::process::CommandExt;
-            const DETACHED_PROCESS: u32 = 0x0000_0008;
-            self.cmd.creation_flags(DETACHED_PROCESS);
-        }
-
-        let mut child = self
-            .cmd
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|e| self.map_spawn_error(e))?;
-
-        // Check immediately for instant failures, then again after a brief window
-        // to catch startup errors (KVM permission denied, bad firmware, port conflicts).
-        for ms in [0, 100] {
-            std::thread::sleep(std::time::Duration::from_millis(ms));
-            if let Ok(Some(_)) = child.try_wait() {
-                let stderr = child
-                    .stderr
-                    .take()
-                    .map(|mut s| {
-                        let mut buf = Vec::new();
-                        s.read_to_end(&mut buf).unwrap_or(0);
-                        from_utf8(&buf).unwrap_or_default().to_owned()
-                    })
-                    .unwrap_or_default();
-                return Err(Error::SystemCommandFailed(self.get_command(), stderr));
-            }
-        }
-
-        // Reap the child when it eventually exits to avoid a zombie process.
-        std::thread::spawn(move || {
-            let _ = child.wait();
-        });
-
-        Ok(())
-    }
-
-    pub fn output(&mut self) -> Result<Output> {
-        self.cmd
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()
-            .map_err(|e| self.map_spawn_error(e))
-    }
-}
-
-#[cfg(unix)]
-fn detach_from_session() -> std::io::Result<()> {
-    unsafe extern "C" {
-        fn setsid() -> i32;
-    }
-    if unsafe { setsid() } == -1 {
-        return Err(std::io::Error::last_os_error());
-    }
-    Ok(())
 }
 
 #[cfg(test)]
