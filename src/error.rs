@@ -29,6 +29,14 @@ pub enum Error {
     #[error("Instance '{0}' is not running")]
     InstanceNotRunning(String),
 
+    #[error("Process {0} is not running")]
+    ProcessNotFound(u64),
+
+    #[error(
+        "Cannot kill process {0}.\n\nTroubleshoot:\n  - Check that the process belongs to you\n  - Kill it manually and try again\n"
+    )]
+    KillFailed(u64),
+
     #[error(
         "Timed out waiting for instance(s) to start.\n\nTroubleshoot:\n  - Run with --verbose to see the QEMU command\n  - Check that QEMU can open /dev/kvm and firmware files\n  - Try again; the system may be under load\n"
     )]

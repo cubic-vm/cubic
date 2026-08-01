@@ -97,7 +97,7 @@ impl Command for CreateCommand {
         let ssh_port = PortChecker::new().get_new_port()?;
 
         let (default_cpus, default_mem) =
-            ResourceAllocator::read_from_host().get_default_resources();
+            ResourceAllocator::read_from_host(context.get_system()).get_default_resources();
 
         let instance = Instance {
             name: self.instance_name.value.to_string(),

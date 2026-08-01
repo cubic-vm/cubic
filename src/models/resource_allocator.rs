@@ -1,5 +1,5 @@
 use crate::models::DataSize;
-use sysinfo::System;
+use crate::platform::System;
 
 const MIB: usize = 1024 * 1024;
 const GIB: usize = 1024 * MIB;
@@ -43,15 +43,12 @@ impl ResourceAllocator {
 
     /// Read the live host total memory and cpu count and build an allocator.
     ///
-    /// `cpus().len()` counts logical processors, so a host with simultaneous
-    /// multithreading reports its thread count rather than its physical cores.
-    /// This matches the vCPU count handed to a machine, which also maps to
-    /// threads.
-    pub fn read_from_host() -> Self {
-        let mut system = System::new();
-        system.refresh_memory();
-        system.refresh_cpu_all();
-        Self::new(system.total_memory() as usize, system.cpus().len() as u16)
+    /// The cpu count is the number of logical processors, so a host with
+    /// simultaneous multithreading reports its thread count rather than its
+    /// physical cores. This matches the vCPU count handed to a machine, which
+    /// also maps to threads.
+    pub fn read_from_host(system: &dyn System) -> Self {
+        Self::new(system.get_total_memory() as usize, system.get_cpu_count())
     }
 
     /// Return the default vCPU count and memory for a new machine by selecting
@@ -90,6 +87,7 @@ impl ResourceAllocator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::platform::SystemMock;
 
     fn assert_resources(
         host_mem_gib: usize,
@@ -101,6 +99,18 @@ mod tests {
         let (cpus, mem) = allocator.get_default_resources();
         assert_eq!(cpus, expected_cpus);
         assert_eq!(mem.get_bytes(), expected_mem_bytes);
+    }
+
+    #[test]
+    fn test_read_from_host_uses_the_host_totals() {
+        // A 16 GiB, 16 thread host. Only the totals are read, the available
+        // memory plays no part in the default size.
+        let system = SystemMock::new().set_host_resources((16 * GIB) as u64, (16 * GIB) as u64, 16);
+
+        let (cpus, mem) = ResourceAllocator::read_from_host(&system).get_default_resources();
+
+        assert_eq!(cpus, 6);
+        assert_eq!(mem.get_bytes(), 3 * GIB);
     }
 
     #[test]
