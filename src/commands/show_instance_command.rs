@@ -78,7 +78,6 @@ impl Command for ShowInstanceCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
     use crate::models::{Arch, DataSize, Environment, Instance, InstanceName, UserName};
     use crate::platform::SystemMock;
@@ -96,7 +95,6 @@ mod tests {
             String::new(),
             String::new(),
         );
-        let image_store = ImageStoreMock::default();
         let instance_store = InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             arch: Arch::AMD64,
@@ -108,12 +106,8 @@ mod tests {
             hostfwd: vec!["127.0.0.1:4000:40/tcp".parse().unwrap()],
             ..Instance::default()
         }]);
-        let context = commands::Context::new(
-            Rc::new(SystemMock::new()),
-            env,
-            Box::new(image_store),
-            Box::new(instance_store),
-        );
+        let context =
+            commands::Context::new(Rc::new(SystemMock::new()), env, Box::new(instance_store));
 
         ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap().into(),
@@ -152,7 +146,6 @@ Forward:      127.0.0.1:4000:40/tcp
             String::new(),
             String::new(),
         );
-        let image_store = ImageStoreMock::default();
         let instance_store = InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             arch: Arch::ARM64,
@@ -170,12 +163,8 @@ Forward:      127.0.0.1:4000:40/tcp
             isolate: true,
             ..Instance::default()
         }]);
-        let context = commands::Context::new(
-            Rc::new(SystemMock::new()),
-            env,
-            Box::new(image_store),
-            Box::new(instance_store),
-        );
+        let context =
+            commands::Context::new(Rc::new(SystemMock::new()), env, Box::new(instance_store));
 
         let instance_dir = PathBuf::from("machines").join("test");
         let disk_image = instance_dir
@@ -236,13 +225,8 @@ SSH:          ssh -i {ssh_key} -p 8000 john@localhost
             String::new(),
         );
         let instance_store = InstanceStoreMock::new(Vec::new());
-        let image_store = ImageStoreMock::default();
-        let context = commands::Context::new(
-            Rc::new(SystemMock::new()),
-            env,
-            Box::new(image_store),
-            Box::new(instance_store),
-        );
+        let context =
+            commands::Context::new(Rc::new(SystemMock::new()), env, Box::new(instance_store));
 
         assert!(matches!(
             ShowInstanceCommand {

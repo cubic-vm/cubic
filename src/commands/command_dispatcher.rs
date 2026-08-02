@@ -1,7 +1,6 @@
 use crate::commands::{self, Command};
 use crate::env::EnvironmentFactory;
 use crate::error::Result;
-use crate::image::ImageDao;
 use crate::instance::InstanceDao;
 use crate::platform::System;
 use crate::view::Console;
@@ -112,7 +111,6 @@ impl CommandDispatcher {
         let context = &commands::Context::new(
             Rc::clone(&system),
             env.clone(),
-            Box::new(ImageDao::new(Rc::clone(&system), &env)?),
             Box::new(InstanceDao::new(Rc::clone(&system), &env)?),
         );
 

@@ -82,13 +82,7 @@ impl Command for CreateCommand {
 
         // Fetch image
         let image = &fetch_image_info(console, context.get_system(), env, &self.image)?;
-        fetch_image(
-            console,
-            context.get_system(),
-            env,
-            context.get_image_store(),
-            image,
-        )?;
+        fetch_image(console, context.get_system(), env, image)?;
 
         console.play(Arc::new(Mutex::new(Spinner::new(format!(
             "Creating {}",
@@ -136,7 +130,6 @@ impl Command for CreateCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
     use crate::models::Environment;
     use crate::platform::SystemMock;
@@ -156,7 +149,6 @@ mod tests {
         let context = Context::new(
             Rc::new(SystemMock::new()),
             env,
-            Box::new(ImageStoreMock::default()),
             Box::new(InstanceStoreMock::new(vec![Instance {
                 name: "test".to_string(),
                 ..Instance::default()

@@ -82,7 +82,6 @@ impl Command for ShowCommand {
 mod tests {
     use super::*;
     use crate::error::Error;
-    use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, Instance, UserName};
     use crate::platform::SystemMock;
@@ -99,7 +98,6 @@ mod tests {
         commands::Context::new(
             Rc::new(SystemMock::new()),
             env,
-            Box::new(ImageStoreMock::default()),
             Box::new(InstanceStoreMock::new(instances)),
         )
     }

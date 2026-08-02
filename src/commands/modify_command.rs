@@ -116,7 +116,6 @@ impl Command for ModifyCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, Instance, UserName};
     use crate::platform::SystemMock;
@@ -130,12 +129,7 @@ mod tests {
             String::new(),
             String::new(),
         );
-        commands::Context::new(
-            Rc::new(SystemMock::new()),
-            env,
-            Box::new(ImageStoreMock::default()),
-            Box::new(instance_store),
-        )
+        commands::Context::new(Rc::new(SystemMock::new()), env, Box::new(instance_store))
     }
 
     #[test]

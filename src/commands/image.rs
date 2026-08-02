@@ -3,7 +3,7 @@ use crate::image::{ImageFactory, ImageFetcher, ImageStore};
 use crate::models::{Environment, Image, ImageName};
 use crate::platform::System;
 use crate::view::{Console, Spinner};
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 pub fn fetch_image_list(
@@ -41,17 +41,15 @@ pub fn fetch_image(
     console: &mut Console<'_>,
     system: &dyn System,
     env: &Environment,
-    image_store: &dyn ImageStore,
     image: &Image,
 ) -> Result<()> {
-    if !image_store.exists(image) {
-        let image_dir = PathBuf::from(env.get_image_dir());
-        system.create_dir(&image_dir)?;
+    if !ImageStore::new().exists(system, env, image) {
+        system.create_writable_dir(Path::new(&env.get_image_dir()))?;
         ImageFetcher::new().fetch(
             console,
             system,
             image,
-            &image_dir.join(image.to_file_name()),
+            Path::new(&env.get_image_file(&image.to_file_name())),
         )?;
     }
     Ok(())
@@ -60,14 +58,13 @@ pub fn fetch_image(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::image::ImageStoreMock;
     use crate::models::{Arch, HashAlg, UserName};
     use crate::platform::SystemMock;
     use std::str::FromStr;
 
     #[test]
     fn test_fetch_image_skips_cached_image() {
-        let system = SystemMock::new();
+        let system = SystemMock::new().add_file("images/debian_bookworm_amd64", b"");
         let console = &mut Console::new(&system);
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
@@ -84,10 +81,9 @@ mod tests {
             hash_alg: HashAlg::Sha512,
             size: None,
         };
-        let image_store = ImageStoreMock::new(vec![image.clone()]);
 
         // A cached image must return without touching the image directory
         // or the network.
-        fetch_image(console, &system, &env, &image_store, &image).unwrap();
+        fetch_image(console, &system, &env, &image).unwrap();
     }
 }

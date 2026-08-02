@@ -1,5 +1,6 @@
 use crate::commands::{Command, Context, fetch_image_list};
 use crate::error::Result;
+use crate::image::ImageStore;
 use crate::models::{DataSize, get_default_arch};
 use crate::view::{Alignment, Console, TableView};
 use clap::Parser;
@@ -64,7 +65,7 @@ impl Command for ListImageCommand {
                 .add(&image.arch.to_string(), Alignment::Left)
                 .add(&size, Alignment::Right)
                 .add(
-                    if context.get_image_store().exists(&image) {
+                    if ImageStore::new().exists(context.get_system(), context.get_env(), &image) {
                         "yes"
                     } else {
                         "no"

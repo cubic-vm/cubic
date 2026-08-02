@@ -66,7 +66,6 @@ impl Command for CloneCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
     use crate::models::Environment;
     use crate::models::Instance;
@@ -85,7 +84,6 @@ mod tests {
         Context::new(
             Rc::new(SystemMock::new()),
             env,
-            Box::new(ImageStoreMock::default()),
             Box::new(InstanceStoreMock::new(instances)),
         )
     }
@@ -130,7 +128,6 @@ mod tests {
         let context = Context::new(
             Rc::new(SystemMock::new()),
             env,
-            Box::new(ImageStoreMock::default()),
             Box::new(InstanceStoreMock::new_with_running(
                 vec![Instance {
                     name: "test".to_string(),
