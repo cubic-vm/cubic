@@ -72,7 +72,6 @@ impl Command for DeleteCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, UserName};
     use crate::platform::SystemMock;
@@ -97,7 +96,6 @@ mod tests {
         let context = commands::Context::new(
             Rc::new(SystemMock::new()),
             env,
-            Box::new(ImageStoreMock::default()),
             Box::new(InstanceStoreMock::new(Vec::new())),
         );
 

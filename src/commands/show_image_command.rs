@@ -1,5 +1,6 @@
 use crate::commands::{self, Command, image::fetch_image_info};
 use crate::error::Result;
+use crate::image::ImageStore;
 use crate::models::{DataSize, ImageName};
 use crate::util;
 use crate::view::{Console, MapView};
@@ -33,7 +34,7 @@ impl Command for ShowImageCommand {
         view.add("Size", &size);
         view.add(
             "Cached",
-            util::to_yes_no(context.get_image_store().exists(&image)),
+            util::to_yes_no(ImageStore::new().exists(context.get_system(), env, &image)),
         );
 
         if self.all {

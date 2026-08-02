@@ -65,7 +65,6 @@ impl Command for ListInstanceCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::image::ImageStoreMock;
     use crate::instance::InstanceStoreMock;
     use crate::models::{Arch, DataSize, Environment, Instance, UserName};
     use crate::platform::SystemMock;
@@ -76,7 +75,6 @@ mod tests {
     fn test_list_instance_command() {
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
-        let image_store = ImageStoreMock::default();
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
             String::new(),
@@ -107,12 +105,8 @@ mod tests {
                 ..Instance::default()
             },
         ]);
-        let context = commands::Context::new(
-            Rc::new(SystemMock::new()),
-            env,
-            Box::new(image_store),
-            Box::new(instance_store),
-        );
+        let context =
+            commands::Context::new(Rc::new(SystemMock::new()), env, Box::new(instance_store));
 
         ListInstanceCommand {}.run(console, &context).unwrap();
 
@@ -131,19 +125,14 @@ PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   Running
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
         let instance_store = InstanceStoreMock::new(Vec::new());
-        let image_store = ImageStoreMock::default();
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
             String::new(),
         );
-        let context = commands::Context::new(
-            Rc::new(SystemMock::new()),
-            env,
-            Box::new(image_store),
-            Box::new(instance_store),
-        );
+        let context =
+            commands::Context::new(Rc::new(SystemMock::new()), env, Box::new(instance_store));
 
         ListInstanceCommand {}.run(console, &context).unwrap();
 
