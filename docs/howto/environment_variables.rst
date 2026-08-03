@@ -1,4 +1,4 @@
-.. _environment variables:
+.. _github token:
 
 Build with a Private GitHub Token Inside a VM
 =============================================
@@ -6,6 +6,11 @@ Build with a Private GitHub Token Inside a VM
 This guide shows how to forward a ``GITHUB_TOKEN`` from the host into a Cubic
 virtual machine so a build script can fetch private dependencies without storing
 the token inside the VM.
+
+This page is about passing host environment variables into a guest with
+``--env``. Cubic's own ``CUBIC_QEMU_DIR``, ``CUBIC_QEMU_FW_AMD64`` and
+``CUBIC_QEMU_FW_ARM64`` settings configure where Cubic looks for QEMU and UEFI
+firmware on the host instead. See :ref:`qemu detection` for those.
 
 Create the Virtual Machine
 --------------------------
