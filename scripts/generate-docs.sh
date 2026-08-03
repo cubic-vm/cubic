@@ -59,6 +59,7 @@ Cubic
    howto/getting_started
    howto/http_server
    howto/ssh_connect
+   howto/console_login
    howto/environment_variables
 
 .. toctree::

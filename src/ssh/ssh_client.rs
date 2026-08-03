@@ -72,19 +72,6 @@ impl<'a> SshClient<'a> {
         }
     }
 
-    async fn authenticate_with_default_password(
-        &self,
-        session: &mut russh::client::Handle<ServerKeyHandler>,
-        user: &str,
-    ) -> Result<(), ()> {
-        let auth = session
-            .authenticate_password(user, "cubic")
-            .await
-            .map(|auth| auth.success());
-
-        if let Ok(true) = auth { Ok(()) } else { Err(()) }
-    }
-
     async fn authenticate_with_keys(
         &self,
         session: &mut russh::client::Handle<ServerKeyHandler>,
@@ -170,17 +157,7 @@ impl<'a> SshClient<'a> {
             return Ok(AuthMethod::Deprecated);
         }
 
-        console.debug("Deprecated keys failed, trying the default password");
-        if self
-            .authenticate_with_default_password(session, user)
-            .await
-            .is_ok()
-        {
-            console.debug("Authenticated with the default password");
-            return Ok(AuthMethod::Deprecated);
-        }
-
-        console.debug("Default password failed, prompting for a password");
+        console.debug("Deprecated keys failed, prompting for a password");
         self.authenticate_with_password(console, session, user, machine)
             .await
             .map(|_| AuthMethod::Deprecated)
