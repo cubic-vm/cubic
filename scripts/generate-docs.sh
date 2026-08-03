@@ -11,8 +11,9 @@ function generate_cmd_doc() {
     cmd="$2"
     ref="$3"
     file="$4"
+    underline="${name//?/=}"
 
-    echo -e ".. $ref:\n\n$name\n=====\n\n.. code-block::\n\n    \$ $name --help" > "$file"
+    echo -e ".. $ref:\n\n$name\n$underline\n\n.. code-block::\n\n    \$ $name --help" > "$file"
     cargo run -- $cmd --help | sed "s/^/    /" >> "$file"
 }
 
