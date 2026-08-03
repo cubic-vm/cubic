@@ -60,8 +60,8 @@ active port forwarding rules:
 .. code-block::
 
     $ cubic show --all webserver
-    Status:       stopped
-    PID:          n/a
+    Running:      yes
+    PID:          12345
     Arch:         amd64
     CPUs:         4
     Memory:       4.0 GiB
@@ -72,11 +72,11 @@ active port forwarding rules:
     SSH Port:     10022
     Monitor Port: 10023
     Console Port: 10024
+    Forward:      127.0.0.1:8080:80/tcp
     Disk Image:   ~/.local/share/cubic/machines/webserver/machine.img
     Config:       ~/.local/share/cubic/machines/webserver/instance.toml
     SSH Key:      ~/.local/share/cubic/machines/webserver/ssh_client_key
     SSH:          ssh -i .../webserver/ssh_client_key -p 10022 alice@localhost
-    Forward:      127.0.0.1:8080:80/tcp
 
 Modify VM Settings
 ------------------
