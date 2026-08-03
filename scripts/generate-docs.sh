@@ -66,6 +66,7 @@ Cubic
    :caption: Troubleshooting
    :hidden:
 
+   troubleshooting/qemu_not_found
    troubleshooting/recover_disk
 
 .. toctree::
