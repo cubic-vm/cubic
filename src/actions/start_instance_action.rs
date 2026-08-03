@@ -3,6 +3,7 @@ use crate::commands::Context;
 use crate::error::{Error, Result};
 use crate::instance::InstanceCertGenerator;
 use crate::models::Instance;
+use crate::platform::System;
 use crate::qemu::{QemuFirmware, QemuInstall, QemuPathBuilder, QemuSystem};
 use crate::ssh::PortChecker;
 use crate::view::Console;
@@ -42,9 +43,8 @@ impl StartInstanceAction {
             cert_generator.generate()?;
         }
 
-        let port_checker = PortChecker::new();
-        self.instance.monitor_port = Some(port_checker.get_new_port()?);
-        self.instance.console_port = Some(port_checker.get_new_port()?);
+        self.instance.monitor_port = Some(system.bind_port()?);
+        self.instance.console_port = Some(system.bind_port()?);
         context.get_instance_store().store(&self.instance)?;
 
         let mut qemu_system = QemuSystem::from(system, self.instance.arch)?;
@@ -114,7 +114,7 @@ impl StartInstanceAction {
             .map_err(QemuSystem::map_error)
     }
 
-    pub fn is_done(&self) -> bool {
-        PortChecker::new().is_open(self.instance.ssh_port)
+    pub fn is_done(&self, system: &dyn System) -> bool {
+        PortChecker::new().is_open(system, self.instance.ssh_port)
     }
 }

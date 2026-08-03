@@ -1,11 +1,9 @@
 use crate::commands::Verbosity;
 use crate::error::{Error, Result};
+use crate::platform::ReadWrite;
 use crate::qemu;
 use serde_json::Value;
 use std::io::{BufRead, BufReader, Read, Write};
-
-trait ReadWrite: Read + Write {}
-impl<T: Read + Write> ReadWrite for T {}
 
 pub struct Qmp {
     counter: u64,

@@ -1,8 +1,9 @@
 use crate::error::Result;
-use crate::platform::Stream;
+use crate::platform::{ReadWrite, Stream};
 use crate::util::SystemCommand;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 pub trait System {
     fn read_env_var(&self, key: &str) -> Option<String>;
@@ -32,6 +33,12 @@ pub trait System {
     fn write_secret_file(&self, path: &Path, contents: &[u8]) -> Result<()>;
     fn rename_file(&self, from: &Path, to: &Path) -> Result<()>;
     fn remove_file(&self, path: &Path) -> Result<()>;
+
+    // Opens a loopback connection to `port`. The timeout bounds reads and
+    // writes on the returned stream, not the connect itself.
+    fn connect_port(&self, port: u16, timeout: Duration) -> Result<Box<dyn ReadWrite>>;
+    // Takes a free loopback port from the host and reports its number.
+    fn bind_port(&self) -> Result<u16>;
 
     fn exists_process(&self, pid: u64) -> bool;
     fn kill_process(&self, pid: u64) -> Result<()>;

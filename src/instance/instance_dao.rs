@@ -7,7 +7,6 @@ use crate::models::{DataSize, Environment, Instance, InstanceName};
 use crate::platform::System;
 use crate::qemu::Monitor;
 use crate::qemu::QemuImg;
-use crate::ssh::PortChecker;
 use std::path::Path;
 use std::rc::Rc;
 use std::str;
@@ -118,7 +117,7 @@ impl InstanceStore for InstanceDao {
                 cpus: 1,
                 mem: DataSize::from_str("1G").unwrap(),
                 disk_capacity: DataSize::from_str("1G").unwrap(),
-                ssh_port: PortChecker::new().get_new_port()?,
+                ssh_port: self.system.bind_port()?,
                 ..Instance::default()
             },
         })

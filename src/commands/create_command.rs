@@ -5,7 +5,6 @@ use crate::commands::{
 };
 use crate::error::{Error, Result};
 use crate::models::{DataSize, ImageName, Instance, PortForward, ResourceAllocator, UserName};
-use crate::ssh::PortChecker;
 use crate::view::Console;
 use crate::view::Spinner;
 use clap::{ArgAction, Parser};
@@ -88,7 +87,7 @@ impl Command for CreateCommand {
             "Creating {}",
             self.instance_name.value
         )))));
-        let ssh_port = PortChecker::new().get_new_port()?;
+        let ssh_port = context.get_system().bind_port()?;
 
         let (default_cpus, default_mem) =
             ResourceAllocator::read_from_host(context.get_system()).get_default_resources();
