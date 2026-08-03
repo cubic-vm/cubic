@@ -1,6 +1,6 @@
 use crate::error::Result;
 use crate::models::Instance;
-use crate::qemu::Monitor;
+use crate::qemu::QemuMonitorClient;
 use std::str;
 
 pub trait InstanceStore {
@@ -17,5 +17,5 @@ pub trait InstanceStore {
     fn get_pid(&self, instance: &Instance) -> Option<u64>;
     fn kill(&self, instance: &Instance) -> Result<()>;
 
-    fn get_monitor(&self, instance: &Instance) -> Result<Monitor>;
+    fn get_monitor(&self, instance: &Instance) -> Result<QemuMonitorClient>;
 }

@@ -4,7 +4,7 @@ pub mod tests {
     use crate::error::{Error, Result};
     use crate::instance::InstanceStore;
     use crate::models::Instance;
-    use crate::qemu::Monitor;
+    use crate::qemu::QemuMonitorClient;
     use std::sync::Mutex;
 
     pub struct InstanceStoreMock {
@@ -77,7 +77,7 @@ pub mod tests {
             Ok(())
         }
 
-        fn get_monitor(&self, instance: &Instance) -> Result<Monitor> {
+        fn get_monitor(&self, instance: &Instance) -> Result<QemuMonitorClient> {
             Err(Error::InstanceNotRunning(instance.name.clone()))
         }
     }
