@@ -5,8 +5,8 @@ use crate::instance::{
 };
 use crate::models::{DataSize, Environment, Instance, InstanceName};
 use crate::platform::System;
-use crate::qemu::Monitor;
 use crate::qemu::QemuImg;
+use crate::qemu::QemuMonitorClient;
 use std::path::Path;
 use std::rc::Rc;
 use std::str;
@@ -221,8 +221,8 @@ impl InstanceStore for InstanceDao {
         result
     }
 
-    fn get_monitor(&self, instance: &Instance) -> Result<Monitor> {
-        Monitor::new(&self.env, instance)
+    fn get_monitor(&self, instance: &Instance) -> Result<QemuMonitorClient> {
+        QemuMonitorClient::new(&self.env, instance)
     }
 }
 
