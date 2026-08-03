@@ -14,10 +14,10 @@ What Happens When You Run Cubic
    subsequent instances reuse it without re-downloading.
 
 2. **Provision** — Cubic generates a unique Ed25519 SSH key for the instance
-   and packages a cloud-init configuration into an ISO 9660 image. QEMU mounts
-   the ISO as a virtual CD-ROM drive on first boot.
+   and packages a cloud-init configuration into an ISO 9660 image. QEMU
+   attaches the image as a small virtio disk.
 
-3. **First boot** — cloud-init reads the ISO, creates the default user,
+3. **First boot** — cloud-init reads the seed disk, creates the default user,
    installs the instance's SSH key, and runs any configured tasks. On all
    subsequent boots cloud-init detects that provisioning is complete and does
    not run again.
@@ -42,10 +42,11 @@ initialising cloud VMs on first boot. Cubic uses it to configure each instance
 automatically without user interaction.
 
 For each new instance Cubic assembles a cloud-init configuration and packs it
-into a small ISO 9660 image. QEMU presents the ISO as a virtual CD-ROM;
-cloud-init finds it on first boot, applies the configuration — including
-creating the default user and installing the instance's SSH public key — and
-marks provisioning as done. The ISO is no longer consulted on subsequent boots.
+into a small ISO 9660 image. QEMU attaches that image as a virtio disk, and
+cloud-init finds it on first boot. It then applies the configuration —
+including creating the default user and installing the instance's SSH public
+key — and marks provisioning as done. The seed disk is no longer consulted on
+subsequent boots.
 
 QEMU and Hardware Acceleration
 -------------------------------
