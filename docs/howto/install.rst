@@ -73,7 +73,7 @@ Install with Cargo
 ------------------
 
 1. Install Dependencies
-^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Cubic needs QEMU and its UEFI firmware on the host. Install them with your
 package manager:
@@ -115,7 +115,7 @@ For Windows:
     winget install SoftwareFreedomConservancy.QEMU
 
 2. Install Rust toolchain
-^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Install the `Rust toolchain`_:
 
@@ -126,14 +126,14 @@ Install the `Rust toolchain`_:
 .. _Rust toolchain: https://rustup.rs
 
 3. Install Cubic
-^^^^^
+^^^^^^^^^^^^^^^^
 
 .. code-block::
 
     cargo install cubic
 
 4. Update PATH Environment Variable
-^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Add Cargo bin directory to PATH environment variable.
 
@@ -145,7 +145,7 @@ For Linux distributions:
     source ~/.profile
 
 5. Allow KVM Acceleration (Linux only, Optional)
-^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is recommended to add Kernel-based Virtual Machine (KVM) permission to your user for optimal VM performance:
 
@@ -156,7 +156,7 @@ It is recommended to add Kernel-based Virtual Machine (KVM) permission to your u
 This requires to exit the current user session and to relogin to make the change active.
 
 Test Cubic
-^^^^
+^^^^^^^^^^
 
 Check if Cubic is installed correctly:
 
