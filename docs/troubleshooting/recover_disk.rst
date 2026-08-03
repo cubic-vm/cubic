@@ -50,7 +50,10 @@ Mount the Image with ``qemu-nbd``
 ---------------------------------
 
 When ``libguestfs-tools`` is not available, expose the disk as a block device
-on Linux with the Network Block Device kernel module:
+on Linux with the Network Block Device kernel module.
+
+The Snap package does not ship ``qemu-nbd``, so install the ``qemu-utils``
+package of your distribution to get it:
 
 .. code-block::
 
