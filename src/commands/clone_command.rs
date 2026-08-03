@@ -2,7 +2,6 @@ use crate::actions::CreateInstanceAction;
 use crate::commands::{Command, Context};
 use crate::error::{Error, Result};
 use crate::models::InstanceName;
-use crate::ssh::PortChecker;
 use crate::view::{Console, Spinner};
 use clap::Parser;
 use std::sync::{Arc, Mutex};
@@ -53,7 +52,7 @@ impl Command for CloneCommand {
         // Setup target instance info
         let mut target = source.clone();
         target.name = self.new_name.to_string();
-        target.ssh_port = PortChecker::new().get_new_port()?;
+        target.ssh_port = context.get_system().bind_port()?;
 
         // Create VM instance
         CreateInstanceAction::new().run(context, image_path, target)?;

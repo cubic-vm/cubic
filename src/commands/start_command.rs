@@ -56,9 +56,9 @@ impl Command for StartCommand {
         for name in &self.instances.value {
             let instance = &mut instance_store.load(name.as_str())?;
             if !instance_store.is_running(instance) {
-                if port_checker.is_open(instance.ssh_port) {
+                if port_checker.is_open(context.get_system(), instance.ssh_port) {
                     let old_port = instance.ssh_port;
-                    instance.ssh_port = port_checker.get_new_port()?;
+                    instance.ssh_port = context.get_system().bind_port()?;
                     instance_store.store(instance)?;
                     console.debug(&format!(
                         "Instance '{}' ssh_port {} is taken, reassigned to {}",
@@ -87,7 +87,7 @@ impl Command for StartCommand {
                 self.instances.get_names().join(", ")
             )))));
             let deadline = Instant::now() + Duration::from_secs(300);
-            while actions.iter().any(|a| !a.is_done()) {
+            while actions.iter().any(|a| !a.is_done(context.get_system())) {
                 if Instant::now() >= deadline {
                     console.stop();
                     return Err(Error::StartTimeout);
@@ -157,8 +157,12 @@ impl StartCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
+    use crate::commands::Context;
+    use crate::instance::{InstanceDao, InstanceStoreMock};
+    use crate::models::{Environment, UserName};
     use crate::platform::SystemMock;
+    use std::rc::Rc;
+    use std::str::FromStr;
 
     const GIB: usize = 1024 * 1024 * 1024;
 
@@ -169,6 +173,78 @@ mod tests {
             mem: DataSize::new(8 * GIB),
             ..Instance::default()
         }
+    }
+
+    fn build_env() -> Environment {
+        Environment::new(
+            UserName::from_str("cubic").unwrap(),
+            "/data".to_string(),
+            "/cache".to_string(),
+            "/run".to_string(),
+        )
+    }
+
+    // A real dao over a mocked host, so an assertion reads back the port that
+    // survived a write rather than one the store was handed.
+    fn build_dao(system: &Rc<SystemMock>) -> InstanceDao {
+        InstanceDao::new(Rc::clone(system) as Rc<dyn System>, &build_env()).unwrap()
+    }
+
+    // Seeds a stopped instance on the given ssh port and hands back a context
+    // over a host too small to run it. The run then stops at the memory check,
+    // which is the step right after the port reassignment, so a port assertion
+    // never depends on what QEMU would have done later.
+    fn build_starved_context(system: &Rc<SystemMock>, ssh_port: u16) -> Context {
+        let instance = Instance {
+            ssh_port,
+            ..build_instance()
+        };
+        build_dao(system).store(&instance).unwrap();
+
+        Context::new(
+            Rc::clone(system) as Rc<dyn System>,
+            build_env(),
+            Box::new(build_dao(system)),
+        )
+    }
+
+    #[test]
+    fn test_reassigns_an_ssh_port_that_is_taken() {
+        let system = Rc::new(
+            SystemMock::new()
+                .set_host_resources(GIB as u64, GIB as u64, 8)
+                .add_dir("/data/machines/test")
+                .add_open_port(22000),
+        );
+        let context = build_starved_context(&system, 22000);
+        let mut console = Console::new(system.as_ref());
+        let command = StartCommand::try_parse_from(["start", "--yes", "test"]).unwrap();
+
+        assert!(matches!(
+            command.run(&mut console, &context),
+            Err(Error::NotEnoughMemory(_))
+        ));
+        // Read back through the dao, so the new port has to have been written
+        // rather than only set on the instance in hand.
+        assert_ne!(build_dao(&system).load("test").unwrap().ssh_port, 22000);
+    }
+
+    #[test]
+    fn test_keeps_an_ssh_port_that_is_free() {
+        let system = Rc::new(
+            SystemMock::new()
+                .set_host_resources(GIB as u64, GIB as u64, 8)
+                .add_dir("/data/machines/test"),
+        );
+        let context = build_starved_context(&system, 22000);
+        let mut console = Console::new(system.as_ref());
+        let command = StartCommand::try_parse_from(["start", "--yes", "test"]).unwrap();
+
+        assert!(matches!(
+            command.run(&mut console, &context),
+            Err(Error::NotEnoughMemory(_))
+        ));
+        assert_eq!(build_dao(&system).load("test").unwrap().ssh_port, 22000);
     }
 
     #[test]
