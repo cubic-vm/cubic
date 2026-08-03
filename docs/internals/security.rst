@@ -101,11 +101,13 @@ The intended way to reach a guest is SSH key authentication, which depends on
 holding the private key that Cubic stores alongside the virtual machine rather
 than on a password that could be guessed or shared.
 
-For convenience while a machine is still being provisioned, new instances also
-have a default account password enabled for the moment. The SSH port is bound to
-loopback, so this is only reachable from the same host and never from the
-network, but moving to key-only authentication and dropping the default password
-is a planned improvement.
+A new machine has no account password at all. The user account is created with a
+locked password, so the SSH key is the only way in.
+
+This shapes how you use the serial console. The console shows the login prompt
+of the guest, and that prompt accepts only a password, so it stays closed until
+you set one from an SSH session. Set a password while SSH works if you want the
+console available as a way in later. See :ref:`console login` for the steps.
 
 One area that can still be improved is host key verification. Today the host key
 that the guest presents is accepted as it is, which is reasonable while

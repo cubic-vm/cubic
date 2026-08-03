@@ -19,7 +19,7 @@ use tokio_util::io::StreamReader;
 ///
 ///   Connect to the console of 'my-instance'
 ///   $ cubic console my-instance
-///   Default credentials: cubic / cubic
+///   Login requires a password. Set one with 'sudo passwd' over cubic ssh.
 ///   Press Enter, ~, . to exit the console.
 ///
 ///   [...]
@@ -45,7 +45,7 @@ impl Command for ConsoleCommand {
             .get_instance_store()
             .load(self.instance.value.as_str())?;
 
-        console.info(&format!("Default credentials: {} / cubic", instance.user));
+        console.info("Login requires a password. Set one with 'sudo passwd' over cubic ssh.");
         console.info("Press Enter, ~, . to exit the console.");
 
         let port = instance
