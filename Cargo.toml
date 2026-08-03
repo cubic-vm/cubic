@@ -16,14 +16,13 @@ rust-version = "1.92"
 bytes = "1"
 clap = { version = "4", features = ["derive"] }
 clap_complete = "4"
-crossterm = "0"
+crossterm = { version = "0", default-features = false, features = ["windows"] }
 getrandom = { version = "0.4", features = ["sys_rng"] }
 regex = "1"
 rcgen = { version = "0", default-features = false, features = ["pem", "ring"] }
 reqwest = { version = "0", default-features = false, features = ["rustls-tls", "blocking"] }
 russh = { version = "0", default-features = false, features = ["ring", "rsa"] }
 rustls = { version = "0", default-features = false, features = ["ring", "std"] }
-rustls-pki-types = { version = "1", default-features = false, features = ["std"] }
 russh-sftp = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
