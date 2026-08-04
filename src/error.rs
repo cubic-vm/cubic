@@ -43,6 +43,11 @@ pub enum Error {
     StartTimeout,
 
     #[error(
+        "Timed out waiting for the console of instance '{0}'.\n\nTroubleshoot:\n  - Check that the instance is running: `cubic list`\n  - Run with --verbose to see the QEMU command\n  - Try again; the system may be under load\n"
+    )]
+    ConsoleTimeout(String),
+
+    #[error(
         "Not enough free memory to start instance '{0}'.\n\nTroubleshoot:\n  - Free up memory by stopping other instances or processes\n  - Reduce the instance memory: `cubic modify {0} --memory <size>`\n  - Accept the proposed smaller size by running with --yes\n"
     )]
     NotEnoughMemory(String),

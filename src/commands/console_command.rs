@@ -5,13 +5,15 @@ use crate::qemu::TlsClient;
 use crate::util;
 use crate::view::Console;
 use clap::Parser;
-use std::net::TcpStream;
 use std::path::PathBuf;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::io::AsyncWriteExt;
 use tokio_util::codec::FramedRead;
 use tokio_util::io::StreamReader;
+
+const CONSOLE_TIMEOUT: Duration = Duration::from_secs(60);
+const PROBE_IO_TIMEOUT: Duration = Duration::from_secs(1);
 
 /// Open VM instance console
 ///
@@ -58,7 +60,22 @@ impl Command for ConsoleCommand {
         );
         let certs = InstanceCertPaths::load(&instance_dir);
 
-        while TcpStream::connect(format!("127.0.0.1:{port}")).is_err() {
+        let system = context.get_system();
+        let instance_store = context.get_instance_store();
+        let deadline = Instant::now() + CONSOLE_TIMEOUT;
+        let mut was_running = false;
+        while system.connect_port(port, PROBE_IO_TIMEOUT).is_err() {
+            // QEMU writes its pid file after the spawn returns, so only a pid
+            // file that vanished again means it exited.
+            let running = instance_store.is_running(&instance);
+            if was_running && !running {
+                return Err(Error::InstanceNotRunning(instance.name.clone()));
+            }
+            was_running |= running;
+
+            if Instant::now() >= deadline {
+                return Err(Error::ConsoleTimeout(instance.name.clone()));
+            }
             thread::sleep(Duration::from_secs(1));
         }
 
