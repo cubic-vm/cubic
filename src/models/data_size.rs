@@ -38,8 +38,8 @@ impl FromStr for DataSize {
             return Err(error);
         }
 
-        let suffix: char = value.bytes().last().unwrap() as char;
-        let size = &value[..value.len() - 1];
+        let suffix = value.chars().next_back().unwrap();
+        let size = &value[..value.len() - suffix.len_utf8()];
         let power = match suffix {
             'B' => 0,
             'K' => 1,
@@ -49,11 +49,11 @@ impl FromStr for DataSize {
             _ => return Err(error),
         };
 
-        size.parse()
-            .map(|size: usize| Self {
-                bytes: size * 1024_usize.pow(power),
-            })
-            .map_err(|_| error)
+        size.parse::<usize>()
+            .ok()
+            .and_then(|size| size.checked_mul(1024_usize.pow(power)))
+            .map(|bytes| Self { bytes })
+            .ok_or(error)
     }
 }
 
@@ -138,5 +138,30 @@ mod tests {
             DataSize::from_str("1T").unwrap().get_bytes(),
             1024_usize.pow(4)
         )
+    }
+
+    #[test]
+    fn test_from_multibyte_suffix() {
+        assert!(DataSize::from_str("10€").is_err())
+    }
+
+    #[test]
+    fn test_from_only_multibyte_char() {
+        assert!(DataSize::from_str("€").is_err())
+    }
+
+    #[test]
+    fn test_from_overflow() {
+        assert!(DataSize::from_str("99999999999999999T").is_err())
+    }
+
+    #[test]
+    fn test_from_missing_suffix() {
+        assert!(DataSize::from_str("10").is_err())
+    }
+
+    #[test]
+    fn test_from_empty() {
+        assert!(DataSize::from_str("").is_err())
     }
 }
