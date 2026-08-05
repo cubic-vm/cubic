@@ -230,7 +230,7 @@ impl InstanceStore for InstanceDao {
 mod tests {
     use super::*;
     use crate::models::UserName;
-    use crate::platform::SystemMock;
+    use crate::platform::{FileSystem, SystemMock};
 
     fn build_env() -> Environment {
         Environment::new(
