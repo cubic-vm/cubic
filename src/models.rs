@@ -1,5 +1,4 @@
 mod arch;
-mod checksum;
 mod config;
 mod data_size;
 mod environment;
@@ -17,7 +16,6 @@ mod target_path;
 mod user_name;
 
 pub use arch::*;
-pub use checksum::*;
 pub use config::*;
 pub use data_size::*;
 pub use environment::*;
