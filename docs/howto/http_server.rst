@@ -61,7 +61,6 @@ active port forwarding rules:
 
     $ cubic show --all webserver
     Running:      yes
-    PID:          12345
     Arch:         amd64
     CPUs:         4
     Memory:       4.0 GiB
@@ -73,6 +72,7 @@ active port forwarding rules:
     Monitor Port: 10023
     Console Port: 10024
     Forward:      127.0.0.1:8080:80/tcp
+    PID:          12345
     Disk Image:   ~/.local/share/cubic/machines/webserver/machine.img
     Config:       ~/.local/share/cubic/machines/webserver/instance.toml
     SSH Key:      ~/.local/share/cubic/machines/webserver/ssh_client_key

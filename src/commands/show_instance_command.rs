@@ -10,9 +10,8 @@ pub struct ShowInstanceCommand {
     #[clap(flatten)]
     pub instance: commands::InstanceArg,
 
-    /// Show all available information
-    #[arg(short = 'a', long = "all")]
-    pub all: bool,
+    #[clap(flatten)]
+    pub all: commands::AllInfoArg,
 }
 
 impl Command for ShowInstanceCommand {
@@ -32,16 +31,12 @@ impl Command for ShowInstanceCommand {
             "Running",
             util::to_yes_no(instance_store.is_running(&instance)),
         );
-        view.add(
-            "PID",
-            &util::format_or_na(instance_store.get_pid(&instance)),
-        );
         view.add("Arch", &instance.arch.to_string());
         view.add("CPUs", &instance.cpus.to_string());
         view.add("Memory", &instance.mem.to_size());
         view.add(
             "Disk Used",
-            &util::format_or_na(instance.disk_used.map(|size| size.to_size())),
+            &util::format_or_na(instance.disk_used.as_ref().map(|size| size.to_size())),
         );
         view.add("Disk Total", &instance.disk_capacity.to_size());
         view.add("User", instance.user.as_str());
@@ -56,7 +51,11 @@ impl Command for ShowInstanceCommand {
             view.add(key, &rule.to_string());
         }
 
-        if self.all {
+        if self.all.value {
+            view.add(
+                "PID",
+                &util::format_or_na(instance_store.get_pid(&instance)),
+            );
             view.add("Disk Image", &env.get_instance_image_file(&instance.name));
             view.add("Config", &env.get_instance_toml_config_file(&instance.name));
             view.add("SSH Key", &ssh_key);
@@ -111,7 +110,7 @@ mod tests {
 
         ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap().into(),
-            all: false,
+            all: false.into(),
         }
         .run(console, &context)
         .unwrap();
@@ -120,7 +119,6 @@ mod tests {
             system.get_output(),
             "\
 Running:      no
-PID:          n/a
 Arch:         amd64
 CPUs:         1
 Memory:       1.0 KiB
@@ -182,7 +180,7 @@ Forward:      127.0.0.1:4000:40/tcp
 
         ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap().into(),
-            all: true,
+            all: true.into(),
         }
         .run(console, &context)
         .unwrap();
@@ -192,7 +190,6 @@ Forward:      127.0.0.1:4000:40/tcp
             format!(
                 "\
 Running:      no
-PID:          n/a
 Arch:         arm64
 CPUs:         2
 Memory:       1   B
@@ -205,6 +202,7 @@ Monitor Port: 8001
 Console Port: 8002
 Forward:      127.0.0.1:4000:40/tcp
               0.0.0.0:80:8000/udp
+PID:          n/a
 Disk Image:   {disk_image}
 Config:       {config}
 SSH Key:      {ssh_key}
@@ -231,7 +229,7 @@ SSH:          ssh -i {ssh_key} -p 8000 john@localhost
         assert!(matches!(
             ShowInstanceCommand {
                 instance: InstanceName::from_str("test").unwrap().into(),
-                all: false,
+                all: false.into(),
             }
             .run(console, &context),
             Err(Error::UnknownInstance(_))

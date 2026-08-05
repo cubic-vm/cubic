@@ -10,6 +10,7 @@ pub mod tests {
     pub struct InstanceStoreMock {
         instances: Vec<Instance>,
         running: Vec<String>,
+        pids: Vec<(String, u64)>,
         killed: Mutex<Vec<String>>,
     }
 
@@ -22,8 +23,14 @@ pub mod tests {
             Self {
                 instances,
                 running: running.iter().map(|name| name.to_string()).collect(),
+                pids: Vec::new(),
                 killed: Mutex::new(Vec::new()),
             }
+        }
+
+        pub fn set_pid(mut self, name: &str, pid: u64) -> Self {
+            self.pids.push((name.to_string(), pid));
+            self
         }
 
         pub fn get_killed(&self) -> Vec<String> {
@@ -68,8 +75,11 @@ pub mod tests {
             self.running.contains(&instance.name)
         }
 
-        fn get_pid(&self, _instance: &Instance) -> Option<u64> {
-            None
+        fn get_pid(&self, instance: &Instance) -> Option<u64> {
+            self.pids
+                .iter()
+                .find(|(name, _)| *name == instance.name)
+                .map(|(_, pid)| *pid)
         }
 
         fn kill(&self, instance: &Instance) -> Result<()> {
