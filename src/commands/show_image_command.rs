@@ -12,9 +12,8 @@ pub struct ShowImageCommand {
     /// Name of the virtual machine image
     pub name: ImageName,
 
-    /// Show all available information
-    #[arg(short = 'a', long = "all")]
-    pub all: bool,
+    #[clap(flatten)]
+    pub all: commands::AllInfoArg,
 }
 
 impl Command for ShowImageCommand {
@@ -37,7 +36,7 @@ impl Command for ShowImageCommand {
             util::to_yes_no(ImageStore::new().exists(context.get_system(), env, &image)),
         );
 
-        if self.all {
+        if self.all.value {
             view.add("Checksum", &image.hash_alg.to_string());
             view.add(
                 "Image File",

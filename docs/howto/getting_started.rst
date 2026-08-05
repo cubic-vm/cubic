@@ -46,11 +46,11 @@ You can list all your virtual machines with the following command:
 .. code-block::
 
     $ cubic instances
-    PID   Name      Arch    CPUs    Memory   Disk Used   Disk Total   Running
-          example   amd64      4   4.0 GiB   941.2 MiB    100.0 GiB        no
+    Name      Arch    CPUs    Memory   Disk Used   Disk Total   Running
+    example   amd64      4   4.0 GiB   941.2 MiB    100.0 GiB        no
 
-The machine is created but not started yet, so it has no process id and
-``Running`` is ``no``.
+The machine is created but not started yet, so ``Running`` is ``no``.
+Add ``--all`` to see the process id of each running machine.
 Cubic picks the number of CPUs and the memory size from the resources of your
 host, so your values can differ.
 

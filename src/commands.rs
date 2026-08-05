@@ -1,3 +1,4 @@
+mod all_info_arg;
 mod clone_command;
 mod command_dispatcher;
 mod completions_command;
@@ -27,6 +28,7 @@ mod stop_command;
 mod verbosity;
 mod yes_arg;
 
+pub use all_info_arg::*;
 pub use clone_command::*;
 pub use command_dispatcher::*;
 pub use completions_command::*;

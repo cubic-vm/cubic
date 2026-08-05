@@ -12,8 +12,7 @@ use clap::Parser;
 ///
 ///   Show information of a VM instance
 ///   $ cubic show trixie
-///   Status:       running
-///   PID:          12345
+///   Running:      yes
 ///   Arch:         amd64
 ///   CPUs:         6
 ///   Memory:       16.0 GiB
@@ -24,15 +23,16 @@ use clap::Parser;
 ///   SSH Port:     54315
 ///   Monitor Port: 54316
 ///   Console Port: 54317
+///   Forward:      127.0.0.1:4000:4000/tcp
 ///
-///   Show all information, adding file locations, the SSH command and forwards
+///   Show all information, adding the process id, file locations and the SSH command
 ///   $ cubic show --all trixie
 ///   ... (fields above, then)
+///   PID:          12345
 ///   Disk Image:   ~/.local/share/cubic/machines/trixie/machine.img
 ///   Config:       ~/.local/share/cubic/machines/trixie/instance.toml
 ///   SSH Key:      ~/.local/share/cubic/machines/trixie/ssh_client_key
 ///   SSH:          ssh -i .../trixie/ssh_client_key -p 54315 cubic@localhost
-///   Forward:      127.0.0.1:4000:4000/tcp
 ///
 ///   Show information of a VM image
 ///   $ cubic show ubuntu:noble
@@ -56,9 +56,8 @@ pub struct ShowCommand {
     /// Name of the virtual machine image or instance
     name: InstanceImageName,
 
-    /// Show all available information
-    #[arg(short = 'a', long = "all")]
-    all: bool,
+    #[clap(flatten)]
+    all: commands::AllInfoArg,
 }
 
 impl Command for ShowCommand {
@@ -66,12 +65,12 @@ impl Command for ShowCommand {
         match &self.name {
             InstanceImageName::Image(name) => commands::ShowImageCommand {
                 name: name.clone(),
-                all: self.all,
+                all: self.all.value.into(),
             }
             .run(console, context),
             InstanceImageName::Instance(instance) => commands::ShowInstanceCommand {
                 instance: instance.clone().into(),
-                all: self.all,
+                all: self.all.value.into(),
             }
             .run(console, context),
         }
@@ -113,7 +112,7 @@ mod tests {
 
         ShowCommand {
             name: InstanceImageName::from_str("test").unwrap(),
-            all: false,
+            all: false.into(),
         }
         .run(console, &context)
         .unwrap();
@@ -129,7 +128,7 @@ mod tests {
 
         let result = ShowCommand {
             name: InstanceImageName::from_str("missing").unwrap(),
-            all: false,
+            all: false.into(),
         }
         .run(console, &context);
 

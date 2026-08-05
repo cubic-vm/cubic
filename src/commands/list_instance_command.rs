@@ -9,14 +9,24 @@ use clap::Parser;
 /// Examples:
 ///
 ///   $ cubic instances
-///   PID     Name           Arch    CPUs     Memory   Disk Used   Disk Total   Running
-///           noble-arm64    arm64      8    8.0 GiB     4.4 GiB    100.0 GiB       yes
-///   1059    trixie         amd64      6   16.0 GiB         n/a    100.0 GiB       yes
-///           fedora         amd64      4    4.0 GiB    10.0 GiB    100.0 GiB        no
+///   Name          Arch    CPUs     Memory   Disk Used   Disk Total   Running
+///   noble-arm64   arm64      8    8.0 GiB     4.4 GiB    100.0 GiB       yes
+///   trixie        amd64      6   16.0 GiB         n/a    100.0 GiB       yes
+///   fedora        amd64      4    4.0 GiB    10.0 GiB    100.0 GiB        no
+///
+///   Show the process id of each running VM instance:
+///   $ cubic instances --all
+///   PID    Name          Arch    CPUs     Memory   Disk Used   Disk Total   Running
+///          noble-arm64   arm64      8    8.0 GiB     4.4 GiB    100.0 GiB       yes
+///   1059   trixie        amd64      6   16.0 GiB         n/a    100.0 GiB       yes
+///          fedora        amd64      4    4.0 GiB    10.0 GiB    100.0 GiB        no
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
-pub struct ListInstanceCommand;
+pub struct ListInstanceCommand {
+    #[clap(flatten)]
+    pub all: commands::AllInfoArg,
+}
 
 impl Command for ListInstanceCommand {
     fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
@@ -24,8 +34,11 @@ impl Command for ListInstanceCommand {
         let instance_names = instance_store.get_instances();
 
         let mut view = TableView::new();
-        view.add_row()
-            .add("PID", Alignment::Left)
+        let header = view.add_row();
+        if self.all.value {
+            header.add("PID", Alignment::Left);
+        }
+        header
             .add("Name", Alignment::Left)
             .add("Arch", Alignment::Left)
             .add("CPUs", Alignment::Right)
@@ -36,14 +49,16 @@ impl Command for ListInstanceCommand {
 
         for instance_name in &instance_names {
             let instance = instance_store.load(instance_name)?;
-            let pid = instance_store
-                .get_pid(&instance)
-                .map(|pid| pid.to_string())
-                .unwrap_or_default();
 
-            view.add_row()
-                .add(&pid, Alignment::Left)
-                .add(instance_name, Alignment::Left)
+            let row = view.add_row();
+            if self.all.value {
+                let pid = instance_store
+                    .get_pid(&instance)
+                    .map(|pid| pid.to_string())
+                    .unwrap_or_default();
+                row.add(&pid, Alignment::Left);
+            }
+            row.add(instance_name, Alignment::Left)
                 .add(&instance.arch.to_string(), Alignment::Left)
                 .add(&instance.cpus.to_string(), Alignment::Right)
                 .add(&instance.mem.to_size(), Alignment::Right)
@@ -71,17 +86,22 @@ mod tests {
     use std::rc::Rc;
     use std::str::FromStr;
 
-    #[test]
-    fn test_list_instance_command() {
-        let system = SystemMock::new();
-        let console = &mut Console::new(&system);
+    fn build_context(instances: Vec<Instance>) -> commands::Context {
+        build_context_with_store(InstanceStoreMock::new(instances))
+    }
+
+    fn build_context_with_store(store: InstanceStoreMock) -> commands::Context {
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
             String::new(),
         );
-        let instance_store = InstanceStoreMock::new(vec![
+        commands::Context::new(Rc::new(SystemMock::new()), env, Box::new(store))
+    }
+
+    fn build_instances() -> Vec<Instance> {
+        vec![
             Instance {
                 name: "test".to_string(),
                 arch: Arch::AMD64,
@@ -104,11 +124,38 @@ mod tests {
                 hostfwd: Vec::new(),
                 ..Instance::default()
             },
-        ]);
-        let context =
-            commands::Context::new(Rc::new(SystemMock::new()), env, Box::new(instance_store));
+        ]
+    }
 
-        ListInstanceCommand {}.run(console, &context).unwrap();
+    #[test]
+    fn test_list_instance_command() {
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
+        let context = build_context(build_instances());
+
+        ListInstanceCommand { all: false.into() }
+            .run(console, &context)
+            .unwrap();
+
+        assert_eq!(
+            system.get_output(),
+            "\
+Name    Arch    CPUs    Memory   Disk Used   Disk Total   Running
+test    amd64      1   1.0 KiB         n/a      1.0 MiB        no
+test2   amd64      5     0   B         n/a      4.9 KiB        no
+"
+        );
+    }
+
+    #[test]
+    fn test_list_instance_command_all_adds_the_pid_column() {
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
+        let context = build_context(build_instances());
+
+        ListInstanceCommand { all: true.into() }
+            .run(console, &context)
+            .unwrap();
 
         assert_eq!(
             system.get_output(),
@@ -121,24 +168,41 @@ PID   Name    Arch    CPUs    Memory   Disk Used   Disk Total   Running
     }
 
     #[test]
-    fn test_list_instance_command_empty() {
+    fn test_list_instance_command_all_shows_the_pid_of_a_running_instance() {
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
-        let instance_store = InstanceStoreMock::new(Vec::new());
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-            String::new(),
+        let context = build_context_with_store(
+            InstanceStoreMock::new_with_running(build_instances(), &["test2"])
+                .set_pid("test2", 1059),
         );
-        let context =
-            commands::Context::new(Rc::new(SystemMock::new()), env, Box::new(instance_store));
 
-        ListInstanceCommand {}.run(console, &context).unwrap();
+        ListInstanceCommand { all: true.into() }
+            .run(console, &context)
+            .unwrap();
 
         assert_eq!(
             system.get_output(),
-            "PID   Name   Arch   CPUs   Memory   Disk Used   Disk Total   Running\n"
+            "\
+PID    Name    Arch    CPUs    Memory   Disk Used   Disk Total   Running
+       test    amd64      1   1.0 KiB         n/a      1.0 MiB        no
+1059   test2   amd64      5     0   B         n/a      4.9 KiB       yes
+"
+        );
+    }
+
+    #[test]
+    fn test_list_instance_command_empty() {
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
+        let context = build_context(Vec::new());
+
+        ListInstanceCommand { all: false.into() }
+            .run(console, &context)
+            .unwrap();
+
+        assert_eq!(
+            system.get_output(),
+            "Name   Arch   CPUs   Memory   Disk Used   Disk Total   Running\n"
         );
     }
 }
