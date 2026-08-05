@@ -21,16 +21,12 @@ impl Command for ShowImageCommand {
         let env = context.get_env();
         let image = fetch_image_info(console, context.get_system(), env, &self.name)?;
 
-        let size = util::format_or_na(
-            image
-                .size
-                .map(|size| DataSize::new(size as usize).to_size()),
-        );
-
         let mut view = MapView::new();
         view.add("Name", &image.get_image_names());
         view.add("Architecture", &image.arch.to_string());
-        view.add("Size", &size);
+        if let Some(size) = image.size {
+            view.add("Size", &DataSize::new(size as usize).to_size());
+        }
         view.add(
             "Cached",
             util::to_yes_no(ImageStore::new().exists(context.get_system(), env, &image)),

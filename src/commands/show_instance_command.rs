@@ -34,16 +34,19 @@ impl Command for ShowInstanceCommand {
         view.add("Arch", &instance.arch.to_string());
         view.add("CPUs", &instance.cpus.to_string());
         view.add("Memory", &instance.mem.to_size());
-        view.add(
-            "Disk Used",
-            &util::format_or_na(instance.disk_used.as_ref().map(|size| size.to_size())),
-        );
+        if let Some(disk_used) = &instance.disk_used {
+            view.add("Disk Used", &disk_used.to_size());
+        }
         view.add("Disk Total", &instance.disk_capacity.to_size());
         view.add("User", instance.user.as_str());
         view.add("Isolated", util::to_yes_no(instance.isolate));
         view.add("SSH Port", &instance.ssh_port.to_string());
-        view.add("Monitor Port", &util::format_or_na(instance.monitor_port));
-        view.add("Console Port", &util::format_or_na(instance.console_port));
+        if let Some(monitor_port) = instance.monitor_port {
+            view.add("Monitor Port", &monitor_port.to_string());
+        }
+        if let Some(console_port) = instance.console_port {
+            view.add("Console Port", &console_port.to_string());
+        }
 
         // Port forwarding
         for (index, rule) in instance.hostfwd.iter().enumerate() {
@@ -52,10 +55,9 @@ impl Command for ShowInstanceCommand {
         }
 
         if self.all.value {
-            view.add(
-                "PID",
-                &util::format_or_na(instance_store.get_pid(&instance)),
-            );
+            if let Some(pid) = instance_store.get_pid(&instance) {
+                view.add("PID", &pid.to_string());
+            }
             view.add("Disk Image", &env.get_instance_image_file(&instance.name));
             view.add("Config", &env.get_instance_toml_config_file(&instance.name));
             view.add("SSH Key", &ssh_key);
@@ -118,18 +120,15 @@ mod tests {
         assert_eq!(
             system.get_output(),
             "\
-Running:      no
-Arch:         amd64
-CPUs:         1
-Memory:       1.0 KiB
-Disk Used:    n/a
-Disk Total:   1.0 MiB
-User:         myuser
-Isolated:     no
-SSH Port:     9000
-Monitor Port: n/a
-Console Port: n/a
-Forward:      127.0.0.1:4000:40/tcp
+Running:    no
+Arch:       amd64
+CPUs:       1
+Memory:     1.0 KiB
+Disk Total: 1.0 MiB
+User:       myuser
+Isolated:   no
+SSH Port:   9000
+Forward:    127.0.0.1:4000:40/tcp
 "
         );
     }
@@ -193,7 +192,6 @@ Running:      no
 Arch:         arm64
 CPUs:         2
 Memory:       1   B
-Disk Used:    n/a
 Disk Total:   1   B
 User:         john
 Isolated:     yes
@@ -202,7 +200,6 @@ Monitor Port: 8001
 Console Port: 8002
 Forward:      127.0.0.1:4000:40/tcp
               0.0.0.0:80:8000/udp
-PID:          n/a
 Disk Image:   {disk_image}
 Config:       {config}
 SSH Key:      {ssh_key}
