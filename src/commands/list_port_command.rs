@@ -7,17 +7,20 @@ use clap::Parser;
 /// List ports for VM instances
 ///
 /// Shows port forwarding rules from VM instance to host. Use cubic modify <instance>
-/// to configure the forwarding.
+/// to configure the forwarding. The SSH port is assigned by cubic and is shown by
+/// cubic show instead.
 ///
 /// Examples:
 ///
 ///   $ cubic ports
-///   Instance       Host              Guest   Protocol   In Use
-///   noble-arm64    127.0.0.1:30612   :22     /tcp       no
-///   noble-arm64    127.0.0.1:2222    :22     /tcp       no
-///   trixie         127.0.0.1:30200   :22     /tcp       yes
-///   trixie         127.0.0.1:4000    :4000   /tcp       yes
-///   fedora         127.0.0.1:59153   :22     /tcp       no
+///   Instance      Host             Guest   Protocol   In Use
+///   noble-arm64   127.0.0.1:2222   :22     /tcp       no
+///   trixie        127.0.0.1:4000   :4000   /tcp       yes
+///   trixie        0.0.0.0:80       :8000   /udp       yes
+///
+///   $ cubic ports
+///   No port forwarding rules are configured.
+///   Add one with cubic modify <instance> --port <host_port>:<guest_port>
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
@@ -28,6 +31,7 @@ impl Command for ListPortCommand {
         let instance_store = context.get_instance_store();
         let instance_names = instance_store.get_instances();
 
+        let mut rule_count = 0;
         let mut view = TableView::new();
         view.add_row()
             .add("Instance", Alignment::Left)
@@ -38,15 +42,11 @@ impl Command for ListPortCommand {
 
         for instance_name in instance_names {
             let instance = &instance_store.load(&instance_name)?;
+            if instance.hostfwd.is_empty() {
+                continue;
+            }
+
             let status = util::to_yes_no(instance_store.is_running(instance));
-
-            view.add_row()
-                .add(&instance_name, Alignment::Left)
-                .add(&format!("127.0.0.1:{}", instance.ssh_port), Alignment::Left)
-                .add(":22", Alignment::Left)
-                .add("/tcp", Alignment::Left)
-                .add(status, Alignment::Left);
-
             for rule in &instance.hostfwd {
                 view.add_row()
                     .add(&instance_name, Alignment::Left)
@@ -57,8 +57,16 @@ impl Command for ListPortCommand {
                     .add(&format!(":{}", rule.get_guest_port()), Alignment::Left)
                     .add(&format!("/{}", rule.get_protocol()), Alignment::Left)
                     .add(status, Alignment::Left);
+                rule_count += 1;
             }
         }
+
+        if rule_count == 0 {
+            console.print("No port forwarding rules are configured.");
+            console.print("Add one with cubic modify <instance> --port <host_port>:<guest_port>");
+            return Ok(());
+        }
+
         view.print(console);
         Ok(())
     }
@@ -87,22 +95,39 @@ mod tests {
         )
     }
 
+    const NO_RULES: &str = "\
+No port forwarding rules are configured.
+Add one with cubic modify <instance> --port <host_port>:<guest_port>
+";
+
     #[test]
-    fn test_list_ports_empty() {
+    fn test_list_ports_without_instances_explains_how_to_add_a_rule() {
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
         let context = build_context(Vec::new());
 
         ListPortCommand {}.run(console, &context).unwrap();
 
-        assert_eq!(
-            system.get_output(),
-            "Instance   Host   Guest   Protocol   In Use\n"
-        );
+        assert_eq!(system.get_output(), NO_RULES);
     }
 
     #[test]
-    fn test_list_ports_adds_row_per_forward_rule() {
+    fn test_list_ports_without_rules_explains_how_to_add_a_rule() {
+        let system = SystemMock::new();
+        let console = &mut Console::new(&system);
+        let context = build_context(vec![Instance {
+            name: "test".to_string(),
+            ssh_port: 9000,
+            ..Instance::default()
+        }]);
+
+        ListPortCommand {}.run(console, &context).unwrap();
+
+        assert_eq!(system.get_output(), NO_RULES);
+    }
+
+    #[test]
+    fn test_list_ports_skips_instances_without_rules() {
         let system = SystemMock::new();
         let console = &mut Console::new(&system);
         let context = build_context(vec![
@@ -125,8 +150,6 @@ mod tests {
             system.get_output(),
             "\
 Instance   Host             Guest   Protocol   In Use
-test       127.0.0.1:9000   :22     /tcp       no
-test2      127.0.0.1:8000   :22     /tcp       no
 test2      127.0.0.1:4000   :40     /tcp       no
 "
         );
