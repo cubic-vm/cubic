@@ -23,7 +23,7 @@ pub struct RestartCommand {
 impl Command for RestartCommand {
     fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         commands::StopCommand {
-            all: false,
+            all: false.into(),
             wait: true,
             kill: false,
             instances: self.instances.value.clone().into(),

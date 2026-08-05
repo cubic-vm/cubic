@@ -1,4 +1,4 @@
-use crate::commands::{Command, Context, fetch_image_list};
+use crate::commands::{AllImagesArg, Command, Context, fetch_image_list};
 use crate::error::Result;
 use crate::image::ImageStore;
 use crate::models::{DataSize, get_default_arch};
@@ -34,9 +34,8 @@ use clap::Parser;
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
 pub struct ListImageCommand {
-    /// Show all images
-    #[clap(short, long, action, global = true)]
-    all: bool,
+    #[clap(flatten)]
+    all: AllImagesArg,
 }
 
 impl Command for ListImageCommand {
@@ -51,7 +50,7 @@ impl Command for ListImageCommand {
             .add("Cached", Alignment::Right);
 
         for image in images {
-            if !self.all && image.arch != get_default_arch() {
+            if !self.all.value && image.arch != get_default_arch() {
                 continue;
             }
 
