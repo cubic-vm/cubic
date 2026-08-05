@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::models::{HashAlg, Image};
+use crate::models::Image;
 use crate::platform::System;
 use crate::view::{Console, Spinner, TransferView};
 use crate::web::WebClient;
@@ -17,11 +17,7 @@ impl ImageFetcher {
         ImageFetcher
     }
 
-    pub fn fetch_checksum(
-        &self,
-        client: &mut WebClient,
-        image: &Image,
-    ) -> Result<Option<(HashAlg, String)>> {
+    pub fn fetch_checksum(&self, client: &mut WebClient, image: &Image) -> Result<Option<String>> {
         if let Some(pos) = image.image_url.rfind("/") {
             let file_name = &image.image_url[pos + 1..image.image_url.len()];
             let content = client.download_content(&image.checksum_url)?;
@@ -44,7 +40,7 @@ impl ImageFetcher {
                     .collect::<Vec<_>>();
 
                 if let (&[_], &[hashsum]) = (file_names.as_slice(), hashsums.as_slice()) {
-                    return Ok(Some((image.hash_alg, hashsum.to_string())));
+                    return Ok(Some(hashsum.to_string()));
                 }
             }
         }
@@ -66,7 +62,8 @@ impl ImageFetcher {
             &image.to_name()
         ))));
         console.play(view.clone());
-        let checksum = client.download_file(system, &image.image_url, target_file, view)?;
+        let checksum =
+            client.download_file(system, &image.image_url, target_file, view, image.hash_alg)?;
         console.stop();
 
         // Verify checksum
@@ -76,12 +73,8 @@ impl ImageFetcher {
         )))));
         let mut valid_checksum = false;
 
-        if let Ok(Some((hash_alg, hashsum))) = self.fetch_checksum(&mut client, image) {
-            let check = match hash_alg {
-                HashAlg::Sha512 => checksum.sha512,
-                HashAlg::Sha256 => checksum.sha256,
-            };
-            valid_checksum = check == hashsum;
+        if let Ok(Some(hashsum)) = self.fetch_checksum(&mut client, image) {
+            valid_checksum = checksum == hashsum;
         }
 
         console.stop();
