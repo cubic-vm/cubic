@@ -57,7 +57,15 @@ impl<'a> ImageFactory<'a> {
         console.debug(&format!(
             "Fetching image directory listing '{image_dir_url}'"
         ));
-        let image_content = web.download_content(&image_dir_url).unwrap();
+        let image_content = match web.download_content(&image_dir_url) {
+            Ok(content) => content,
+            Err(e) => {
+                console.debug(&format!(
+                    "Cannot fetch image directory listing '{image_dir_url}' ({e})"
+                ));
+                return None;
+            }
+        };
 
         let image_file = util::find_and_extract(
             &format!(
