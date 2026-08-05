@@ -53,7 +53,7 @@ impl Command for DeleteCommand {
             commands::StopCommand {
                 all: false,
                 wait: true,
-                kill: false,
+                kill: true,
                 instances: self.instances.value.clone().into(),
             }
             .run(console, context)?;
