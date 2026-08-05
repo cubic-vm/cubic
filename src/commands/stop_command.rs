@@ -27,9 +27,8 @@ use std::time::Duration;
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
 pub struct StopCommand {
-    /// Stop all virtual machine instances
-    #[clap(short, long, default_value_t = false)]
-    pub all: bool,
+    #[clap(flatten)]
+    pub all: commands::AllInstancesArg,
     /// Wait for the virtual machine instance to be stopped
     #[clap(short, long, default_value_t = false)]
     pub wait: bool,
@@ -44,11 +43,11 @@ impl Command for StopCommand {
     fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
 
-        if !self.all {
+        if !self.all.value {
             self.instances.require_names()?;
         }
 
-        let stop_instances = if self.all {
+        let stop_instances = if self.all.value {
             instance_store.get_instances()
         } else {
             self.instances.get_names()
@@ -109,7 +108,7 @@ mod tests {
 
         assert!(matches!(
             StopCommand {
-                all: false,
+                all: false.into(),
                 wait: false,
                 kill: false,
                 instances: Vec::new().into(),
@@ -137,7 +136,7 @@ mod tests {
 
         assert!(
             StopCommand {
-                all: true,
+                all: true.into(),
                 wait: false,
                 kill: false,
                 instances: Vec::new().into(),

@@ -51,7 +51,7 @@ impl Command for DeleteCommand {
         if self.yes.value || ConfirmDialog::new("\nDo you want to proceed?").confirm(console) {
             // Stop the VM instances
             commands::StopCommand {
-                all: false,
+                all: false.into(),
                 wait: true,
                 kill: true,
                 instances: self.instances.value.clone().into(),
