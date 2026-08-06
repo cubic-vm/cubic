@@ -53,17 +53,25 @@ impl Command for StopCommand {
             self.instances.get_names()
         };
 
+        // Only the instances that are running are stopped, so only those are named
         let mut actions = Vec::new();
-        for instance in &stop_instances {
-            let mut action = StopInstanceAction::new(&instance_store.load(instance)?);
+        let mut stopping = Vec::new();
+        for name in &stop_instances {
+            let instance = instance_store.load(name)?;
+            if !instance_store.is_running(&instance) {
+                continue;
+            }
+
+            let mut action = StopInstanceAction::new(&instance);
             action.run(instance_store, self.kill)?;
             actions.push(action);
+            stopping.push(name.clone());
         }
 
-        if self.wait && !stop_instances.is_empty() {
+        if self.wait && !stopping.is_empty() {
             console.play(Arc::new(Mutex::new(Spinner::new(format!(
                 "Stopping {}",
-                stop_instances.join(", ")
+                stopping.join(", ")
             )))));
             while actions.iter().any(|action| !action.is_done(instance_store)) {
                 thread::sleep(Duration::from_secs(1))
