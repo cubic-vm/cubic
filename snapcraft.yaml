@@ -46,7 +46,7 @@ package-repositories:
     architectures: [arm64]
     formats: [deb, deb-src]
     components: [main]
-    suites: [noble, noble-updates, noble-backports]
+    suites: [noble, noble-updates, noble-backports, noble-security]
     key-id: F6ECB3762474EDA9D21B7022871920D1991BC93C
     url: http://ports.ubuntu.com/ubuntu-ports
 
