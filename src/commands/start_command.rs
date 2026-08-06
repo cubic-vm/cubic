@@ -53,6 +53,7 @@ impl Command for StartCommand {
 
         // Launch virtual machine instances
         let mut actions = Vec::new();
+        let mut starting = Vec::new();
         for name in &self.instances.value {
             let instance = &mut instance_store.load(name.as_str())?;
             if !instance_store.is_running(instance) {
@@ -77,14 +78,16 @@ impl Command for StartCommand {
                 action.run(context, &self.qemu_args, console)?;
 
                 actions.push(action);
+                // Only the instances that are launched are named
+                starting.push(instance.name.clone());
             }
         }
 
         // Wait for virtual machine instances to be started
-        if self.wait {
+        if self.wait && !starting.is_empty() {
             console.play(Arc::new(Mutex::new(Spinner::new(format!(
                 "Starting {}",
-                self.instances.get_names().join(", ")
+                starting.join(", ")
             )))));
             let deadline = Instant::now() + Duration::from_secs(300);
             while actions.iter().any(|a| !a.is_done(context.get_system())) {
