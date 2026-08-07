@@ -26,9 +26,11 @@ cleanall: build-image
 
 format: build-image
 	${DOCKER_CMD} ${IMAGE} cargo fmt --check
+	${DOCKER_CMD} ${IMAGE} vulnlog fmt --check vulnlog.yml
 
 fix-format: build-image
 	${DOCKER_CMD} ${IMAGE} cargo fmt
+	${DOCKER_CMD} ${IMAGE} vulnlog fmt vulnlog.yml
 
 lint: build-image
 	${DOCKER_CMD} ${IMAGE} cargo clippy -- -D warnings
