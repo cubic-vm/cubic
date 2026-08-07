@@ -26,9 +26,11 @@ cleanall: build-image
 
 format: build-image
 	${DOCKER_CMD} ${IMAGE} cargo fmt --check
+	${DOCKER_CMD} ${IMAGE} vulnlog fmt --check vulnlog.yml
 
 fix-format: build-image
 	${DOCKER_CMD} ${IMAGE} cargo fmt
+	${DOCKER_CMD} ${IMAGE} vulnlog fmt vulnlog.yml
 
 lint: build-image
 	${DOCKER_CMD} ${IMAGE} cargo clippy -- -D warnings
@@ -63,7 +65,7 @@ doc: build-image
 	@${DOCKER_CMD} -p 4000:4000 -it ${IMAGE} python3 -m http.server -d target/page 4000
 
 suppress: build-image
-	@${DOCKER_CMD} -it ${IMAGE} /root/bin/vulnlog suppress vulnlog.yml -o .cargo/audit.toml
+	@${DOCKER_CMD} -it ${IMAGE} vulnlog suppress vulnlog.yml -o .cargo/audit.toml
 
 release: build-image
 	sed "s/^\(version =\).*$$/\1 \"${version}\"/g" -i Cargo.toml
