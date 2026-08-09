@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use crate::models::Instance;
 use std::io::Read;
 use std::str;
@@ -10,15 +11,18 @@ impl TomlInstanceDeserializer {
         Self
     }
 
-    pub fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Option<Instance> {
+    pub fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Result<Instance> {
         let mut data = String::new();
-        reader.read_to_string(&mut data).ok()?;
+        reader
+            .read_to_string(&mut data)
+            .map_err(|error| Error::InvalidInstanceConfig(name.to_string(), error.to_string()))?;
+
         toml::from_str(&data)
             .map(|mut instance: Instance| {
                 instance.name = name.to_string();
                 instance
             })
-            .ok()
+            .map_err(|error| Error::InvalidInstanceConfig(name.to_string(), error.to_string()))
     }
 }
 
@@ -31,10 +35,19 @@ mod tests {
     #[test]
     fn test_deserialize_empty_file() {
         let reader = &mut BufReader::new("".as_bytes());
-        assert_eq!(
+        assert!(matches!(
             TomlInstanceDeserializer::new().deserialize("test", reader),
-            None
-        );
+            Err(Error::InvalidInstanceConfig(name, _)) if name == "test"
+        ));
+    }
+
+    #[test]
+    fn test_deserialize_broken_file() {
+        let reader = &mut BufReader::new("cpus = ".as_bytes());
+        assert!(matches!(
+            TomlInstanceDeserializer::new().deserialize("test", reader),
+            Err(Error::InvalidInstanceConfig(name, _)) if name == "test"
+        ));
     }
 
     #[test]

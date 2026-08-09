@@ -1,3 +1,4 @@
+use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::view::{ConfirmDialog, Console};
@@ -60,7 +61,11 @@ impl Command for DeleteCommand {
 
             // Delete the VM instances
             for instance in &self.instances.value {
-                instance_store.delete(&instance_store.load(instance.as_str())?)?;
+                instance_store.delete(&LoadInstanceAction::new().run(
+                    context,
+                    console,
+                    instance.as_str(),
+                )?)?;
                 console.print(&format!("Deleted instance {instance}"));
             }
         }

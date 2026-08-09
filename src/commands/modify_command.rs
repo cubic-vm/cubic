@@ -1,3 +1,4 @@
+use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::{DataSize, PortForward};
@@ -68,7 +69,8 @@ pub struct ModifyCommand {
 impl Command for ModifyCommand {
     fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
-        let mut instance = instance_store.load(self.instance.value.as_str())?;
+        let mut instance =
+            LoadInstanceAction::new().run(context, console, self.instance.value.as_str())?;
 
         let is_running = instance_store.is_running(&instance);
         let hostfwd_changed = !self.port.is_empty() || !self.rm_port.is_empty();

@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::models::{Environment, Instance};
+use crate::models::{DataSize, Environment, Instance};
 use crate::platform::System;
 use crate::qemu::QemuPathBuilder;
 use crate::util::SystemCommand;
@@ -52,6 +52,14 @@ impl<'a> QemuImg<'a> {
             .ok()
             .and_then(|stdout| String::from_utf8(stdout).ok())
             .and_then(|stdout| serde_json::from_str(&stdout).ok())
+    }
+
+    // Keeps the current sizes when the image cannot be read.
+    pub fn read_disk_info(&self, env: &Environment, instance: &mut Instance) {
+        if let Some(info) = self.get_image_info(env, instance) {
+            instance.disk_used = Some(DataSize::new(info.actual_size as usize));
+            instance.disk_capacity = DataSize::new(info.virtual_size as usize);
+        }
     }
 
     pub fn convert(&self, src: &str, dst: &str) -> Result<()> {

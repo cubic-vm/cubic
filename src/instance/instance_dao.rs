@@ -78,33 +78,15 @@ impl InstanceStore for InstanceDao {
 
         let path = self.env.get_instance_toml_config_file(name);
 
-        let instance = self
+        let mut file = self
             .system
             .open_file(Path::new(&path))
-            .ok()
-            .and_then(|mut file| TomlInstanceDeserializer::new().deserialize(name, &mut file))
-            .map(|mut instance| {
-                if let Some(info) =
-                    QemuImg::new(self.system.as_ref()).get_image_info(&self.env, &instance)
-                {
-                    instance.disk_used = Some(DataSize::new(info.actual_size as usize));
-                    instance.disk_capacity = DataSize::new(info.virtual_size as usize);
-                }
-                instance
-            });
+            .map_err(|error| Error::InvalidInstanceConfig(name.to_string(), error.to_string()))?;
 
-        Ok(match instance {
-            Some(i) => i,
-            None => Instance {
-                name: name.to_string(),
-                user: self.env.get_username().clone(),
-                cpus: 1,
-                mem: DataSize::from_str("1G").unwrap(),
-                disk_capacity: DataSize::from_str("1G").unwrap(),
-                ssh_port: self.system.bind_port()?,
-                ..Instance::default()
-            },
-        })
+        let mut instance = TomlInstanceDeserializer::new().deserialize(name, &mut file)?;
+        QemuImg::new(self.system.as_ref()).read_disk_info(&self.env, &mut instance);
+
+        Ok(instance)
     }
 
     fn store(&self, instance: &Instance) -> Result<()> {
@@ -247,6 +229,31 @@ mod tests {
         let loaded = dao.load("test").unwrap();
 
         assert_eq!(loaded.name, instance.name);
+    }
+
+    #[test]
+    fn test_load_reports_a_broken_config() {
+        let env = build_env();
+        let system = SystemMock::new()
+            .add_dir("/data/machines/test")
+            .add_file(&env.get_instance_toml_config_file("test"), b"cpus = ");
+        let dao = InstanceDao::new(Rc::new(system), &env).unwrap();
+
+        assert!(matches!(
+            dao.load("test"),
+            Err(Error::InvalidInstanceConfig(name, _)) if name == "test"
+        ));
+    }
+
+    #[test]
+    fn test_load_reports_a_missing_config() {
+        let system = SystemMock::new().add_dir("/data/machines/test");
+        let dao = InstanceDao::new(Rc::new(system), &build_env()).unwrap();
+
+        assert!(matches!(
+            dao.load("test"),
+            Err(Error::InvalidInstanceConfig(name, _)) if name == "test"
+        ));
     }
 
     #[test]

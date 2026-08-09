@@ -1,4 +1,4 @@
-use crate::actions::CreateInstanceAction;
+use crate::actions::{CreateInstanceAction, LoadInstanceAction};
 use crate::commands::{Command, Context};
 use crate::error::{Error, Result};
 use crate::models::InstanceName;
@@ -32,7 +32,7 @@ impl Command for CloneCommand {
         }
 
         // Load source instance info
-        let source = &instance_store.load(self.name.as_str())?;
+        let source = &LoadInstanceAction::new().run(context, console, self.name.as_str())?;
 
         // Verify that the source instance is stopped
         if instance_store.is_running(source) {

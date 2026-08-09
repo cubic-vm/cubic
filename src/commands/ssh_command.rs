@@ -1,3 +1,4 @@
+use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::Target;
@@ -25,7 +26,6 @@ pub struct SshCommand {
 impl Command for SshCommand {
     fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let env = context.get_env();
-        let instance_store = context.get_instance_store();
 
         let name = self.target.get_instance();
 
@@ -37,7 +37,7 @@ impl Command for SshCommand {
         }
         .run(console, context)?;
 
-        let instance = instance_store.load(name.as_str())?;
+        let instance = LoadInstanceAction::new().run(context, console, name.as_str())?;
         let user = self
             .target
             .get_user()
