@@ -1,4 +1,4 @@
-use crate::actions::StopInstanceAction;
+use crate::actions::{LoadInstanceAction, StopInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::view::Console;
@@ -57,7 +57,7 @@ impl Command for StopCommand {
         let mut actions = Vec::new();
         let mut stopping = Vec::new();
         for name in &stop_instances {
-            let instance = instance_store.load(name)?;
+            let instance = LoadInstanceAction::new().run(context, console, name)?;
             if !instance_store.is_running(&instance) {
                 continue;
             }

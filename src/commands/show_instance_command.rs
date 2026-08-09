@@ -1,3 +1,4 @@
+use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::util;
@@ -23,7 +24,8 @@ impl Command for ShowInstanceCommand {
             return Err(Error::UnknownInstance(self.instance.value.to_string()));
         }
 
-        let instance = instance_store.load(self.instance.value.as_str())?;
+        let instance =
+            LoadInstanceAction::new().run(context, console, self.instance.value.as_str())?;
         let ssh_key = env.get_ssh_private_key_file(&instance.name);
 
         let mut view = MapView::new();

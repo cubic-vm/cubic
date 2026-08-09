@@ -1,3 +1,4 @@
+use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::InstanceName;
@@ -21,11 +22,11 @@ pub struct RenameCommand {
 }
 
 impl Command for RenameCommand {
-    fn run(&self, _console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
+    fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         let instance_store = context.get_instance_store();
 
         instance_store.rename(
-            &mut instance_store.load(self.old_name.as_str())?,
+            &mut LoadInstanceAction::new().run(context, console, self.old_name.as_str())?,
             self.new_name.as_str(),
         )
     }

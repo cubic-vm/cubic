@@ -1,3 +1,4 @@
+use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::InstanceCertPaths;
@@ -43,9 +44,8 @@ impl Command for ConsoleCommand {
         }
         .run(console, context)?;
 
-        let instance = context
-            .get_instance_store()
-            .load(self.instance.value.as_str())?;
+        let instance =
+            LoadInstanceAction::new().run(context, console, self.instance.value.as_str())?;
 
         console.info("Login requires a password. Set one with 'sudo passwd' over cubic ssh.");
         console.info("Press Enter, ~, . to exit the console.");

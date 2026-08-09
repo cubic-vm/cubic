@@ -1,3 +1,4 @@
+use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::util;
@@ -48,7 +49,7 @@ impl Command for ListInstanceCommand {
             .add("Running", Alignment::Right);
 
         for instance_name in &instance_names {
-            let instance = instance_store.load(instance_name)?;
+            let instance = LoadInstanceAction::new().run(context, console, instance_name)?;
 
             let row = view.add_row();
             if self.all.value {

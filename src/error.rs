@@ -15,6 +15,9 @@ pub enum Error {
     )]
     UnknownInstance(String),
 
+    #[error("Config of instance '{0}' is invalid.\n\n{1}")]
+    InvalidInstanceConfig(String, String),
+
     #[error("Image '{0}' not found.\n\nList available images with: `cubic images`")]
     UnknownImage(String),
 

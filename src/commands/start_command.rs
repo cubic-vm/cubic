@@ -1,4 +1,4 @@
-use crate::actions::StartInstanceAction;
+use crate::actions::{LoadInstanceAction, StartInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::instance::InstanceStore;
@@ -55,7 +55,7 @@ impl Command for StartCommand {
         let mut actions = Vec::new();
         let mut starting = Vec::new();
         for name in &self.instances.value {
-            let instance = &mut instance_store.load(name.as_str())?;
+            let instance = &mut LoadInstanceAction::new().run(context, console, name.as_str())?;
             if !instance_store.is_running(instance) {
                 if port_checker.is_open(context.get_system(), instance.ssh_port) {
                     let old_port = instance.ssh_port;

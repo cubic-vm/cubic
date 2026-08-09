@@ -1,3 +1,4 @@
+use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::Target;
@@ -36,7 +37,7 @@ impl Command for ExecCommand {
         }
         .run(console, context)?;
 
-        let instance = context.get_instance_store().load(name.as_str())?;
+        let instance = LoadInstanceAction::new().run(context, console, name.as_str())?;
         let user = self
             .target
             .get_user()

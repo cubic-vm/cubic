@@ -1,3 +1,4 @@
+use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::util;
@@ -41,7 +42,7 @@ impl Command for ListPortCommand {
             .add("In Use", Alignment::Left);
 
         for instance_name in instance_names {
-            let instance = &instance_store.load(&instance_name)?;
+            let instance = &LoadInstanceAction::new().run(context, console, &instance_name)?;
             if instance.hostfwd.is_empty() {
                 continue;
             }
