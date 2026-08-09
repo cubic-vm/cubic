@@ -518,7 +518,7 @@ dependencies = [
 
 [[package]]
 name = "cubic"
-version = "0.0.0-dev"
+version = "0.25.0"
 dependencies = [
  "bytes",
  "clap",
