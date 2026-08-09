@@ -1,5 +1,4 @@
 mod arch;
-mod config;
 mod data_size;
 mod environment;
 mod image;
@@ -16,7 +15,6 @@ mod target_path;
 mod user_name;
 
 pub use arch::*;
-pub use config::*;
 pub use data_size::*;
 pub use environment::*;
 pub use image::*;

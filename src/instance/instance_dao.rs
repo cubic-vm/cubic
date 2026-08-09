@@ -1,8 +1,5 @@
 use crate::error::{Error, Result};
-use crate::instance::{
-    InstanceDeserializer, InstanceSerializer, InstanceStore, TomlInstanceDeserializer,
-    YamlInstanceDeserializer,
-};
+use crate::instance::{InstanceSerializer, InstanceStore, TomlInstanceDeserializer};
 use crate::models::{DataSize, Environment, Instance, InstanceName};
 use crate::platform::System;
 use crate::qemu::QemuImg;
@@ -79,27 +76,14 @@ impl InstanceStore for InstanceDao {
             return Err(Error::UnknownInstance(name.to_string()));
         }
 
-        let yaml_path = &self.env.get_instance_yaml_config_file(name);
-        let toml_path = &self.env.get_instance_toml_config_file(name);
-
-        let from_yaml = !self.system.exists_path(Path::new(toml_path));
-        let (path, deserializer): (&str, Box<dyn InstanceDeserializer>) = if from_yaml {
-            (yaml_path, Box::new(YamlInstanceDeserializer::new()))
-        } else {
-            (toml_path, Box::new(TomlInstanceDeserializer::new()))
-        };
+        let path = self.env.get_instance_toml_config_file(name);
 
         let instance = self
             .system
-            .open_file(Path::new(path))
+            .open_file(Path::new(&path))
             .ok()
-            .and_then(|mut file| deserializer.deserialize(name, &mut file))
+            .and_then(|mut file| TomlInstanceDeserializer::new().deserialize(name, &mut file))
             .map(|mut instance| {
-                // migrate the deprecated yaml config to the toml format
-                if from_yaml {
-                    self.store(&instance).ok();
-                }
-
                 if let Some(info) =
                     QemuImg::new(self.system.as_ref()).get_image_info(&self.env, &instance)
                 {
@@ -131,13 +115,6 @@ impl InstanceStore for InstanceDao {
         InstanceSerializer::new().serialize(instance, &mut file)?;
         self.system
             .rename_file(Path::new(&temp_file_name), Path::new(&file_name))?;
-
-        // remove deprecated yaml file format
-        self.system
-            .remove_file(Path::new(
-                &self.env.get_instance_yaml_config_file(&instance.name),
-            ))
-            .ok();
 
         Ok(())
     }

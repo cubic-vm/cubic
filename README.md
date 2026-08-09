@@ -240,7 +240,6 @@ drives to run every VM.
 | rustls-pki-types | Shared certificate and key types backing rustls |
 | serde | Derive serialization for config and QMP messages |
 | serde_json | QMP protocol and firmware descriptor parsing |
-| serde_yaml | Parse cloud-init and instance YAML |
 | sha2 | Verify downloaded image checksums |
 | sysinfo | Read the host username and detect running QEMU processes |
 | thiserror | Derive the crate's error types |

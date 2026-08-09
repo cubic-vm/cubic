@@ -1,4 +1,3 @@
-use crate::instance::InstanceDeserializer;
 use crate::models::Instance;
 use std::io::Read;
 use std::str;
@@ -10,10 +9,8 @@ impl TomlInstanceDeserializer {
     pub fn new() -> Self {
         Self
     }
-}
 
-impl InstanceDeserializer for TomlInstanceDeserializer {
-    fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Option<Instance> {
+    pub fn deserialize(&self, name: &str, reader: &mut dyn Read) -> Option<Instance> {
         let mut data = String::new();
         reader.read_to_string(&mut data).ok()?;
         toml::from_str(&data)

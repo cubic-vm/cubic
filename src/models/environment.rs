@@ -72,13 +72,6 @@ impl Environment {
             .into_owned()
     }
 
-    pub fn get_instance_yaml_config_file(&self, instance: &str) -> String {
-        PathBuf::from(self.get_instance_dir2(instance))
-            .join("machine.yaml")
-            .to_string_lossy()
-            .into_owned()
-    }
-
     pub fn get_instance_toml_config_file(&self, instance: &str) -> String {
         PathBuf::from(self.get_instance_dir2(instance))
             .join("instance.toml")
@@ -211,10 +204,6 @@ mod tests {
         assert_eq!(
             PathBuf::from(env.get_instance_dir2("mymachine")),
             join_all("/data/cubic", &["machines", "mymachine"])
-        );
-        assert_eq!(
-            PathBuf::from(env.get_instance_yaml_config_file("mymachine")),
-            join_all("/data/cubic", &["machines", "mymachine", "machine.yaml"])
         );
         assert_eq!(
             PathBuf::from(env.get_instance_toml_config_file("mymachine")),
