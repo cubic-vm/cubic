@@ -1,4 +1,4 @@
-use crate::cloudinit::UserDataImageFactory;
+use crate::cloudinit::CloudInitImageFactory;
 use crate::commands::Context;
 use crate::error::{Error, Result};
 use crate::instance::InstanceCertGenerator;
@@ -7,7 +7,7 @@ use crate::platform::System;
 use crate::qemu::{QemuFirmware, QemuInstall, QemuPathBuilder, QemuSystem};
 use crate::ssh::PortChecker;
 use crate::view::Console;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub struct StartInstanceAction {
     instance: Instance,
@@ -32,10 +32,7 @@ impl StartInstanceAction {
 
         let env = context.get_env();
         let system = context.get_system();
-        system.create_writable_dir(Path::new(
-            &env.get_instance_runtime_dir(&self.instance.name),
-        ))?;
-        UserDataImageFactory.create_rust(system, env, &self.instance)?;
+        CloudInitImageFactory.create(system, env, &self.instance)?;
 
         let instance_dir = PathBuf::from(env.get_instance_dir2(&self.instance.name));
         let cert_generator = InstanceCertGenerator::new(system, instance_dir.clone());
@@ -94,7 +91,7 @@ impl StartInstanceAction {
         qemu_system.set_memory(self.instance.mem.get_bytes() as u64);
         qemu_system.set_console(self.instance.console_port.unwrap(), &instance_dir);
         qemu_system.add_drive(&env.get_instance_image_file(&self.instance.name), "qcow2");
-        qemu_system.add_drive(&env.get_user_data_image_file(&self.instance.name), "raw");
+        qemu_system.add_drive(&env.get_cloud_init_file(&self.instance.name), "raw");
         qemu_system.set_network(
             &self.instance.hostfwd,
             self.instance.ssh_port,

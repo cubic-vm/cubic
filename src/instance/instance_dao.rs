@@ -18,7 +18,6 @@ impl InstanceDao {
     pub fn new(system: Rc<dyn System>, env: &Environment) -> Result<Self> {
         system.create_writable_dir(Path::new(&env.get_instance_dir()))?;
         system.create_writable_dir(Path::new(env.get_cache_dir()))?;
-        system.create_writable_dir(Path::new(env.get_runtime_dir()))?;
 
         Ok(InstanceDao {
             env: env.clone(),
@@ -134,15 +133,6 @@ impl InstanceStore for InstanceDao {
             Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
             self.system
-                .remove_dir(Path::new(
-                    &self.env.get_instance_runtime_dir(&instance.name),
-                ))
-                .ok();
-            self.system
-                .remove_dir(Path::new(&self.env.get_instance_cache_dir(&instance.name)))
-                .ok();
-
-            self.system
                 .remove_dir(Path::new(&self.env.get_instance_dir2(&instance.name)))
                 .ok();
             Ok(())
@@ -196,7 +186,6 @@ mod tests {
             UserName::from_str("cubic").unwrap(),
             "/data".to_string(),
             "/cache".to_string(),
-            "/run".to_string(),
         )
     }
 

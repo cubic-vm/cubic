@@ -183,7 +183,6 @@ mod tests {
             UserName::from_str("cubic").unwrap(),
             "/data".to_string(),
             "/cache".to_string(),
-            "/run".to_string(),
         )
     }
 

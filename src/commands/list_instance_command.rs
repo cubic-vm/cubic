@@ -96,7 +96,6 @@ mod tests {
             UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
-            String::new(),
         );
         commands::Context::new(Rc::new(SystemMock::new()), env, Box::new(store))
     }

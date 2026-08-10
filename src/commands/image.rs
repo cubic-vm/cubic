@@ -70,7 +70,6 @@ mod tests {
             UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
-            String::new(),
         );
         let image = Image {
             vendor: "debian".to_string(),

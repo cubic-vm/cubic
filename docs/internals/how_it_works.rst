@@ -42,7 +42,8 @@ initialising cloud VMs on first boot. Cubic uses it to configure each instance
 automatically without user interaction.
 
 For each new instance Cubic assembles a cloud-init configuration and packs it
-into a small ISO 9660 image. QEMU attaches that image as a virtio disk, and
+into a small ISO 9660 image, stored as ``cloud-init.iso`` in the instance
+directory. QEMU attaches that image as a virtio disk, and
 cloud-init finds it on first boot. It then applies the configuration —
 including creating the default user and installing the instance's SSH public
 key — and marks provisioning as done. The seed disk is no longer consulted on
@@ -67,8 +68,10 @@ model Cubic passes is shared with the TCG path, and the mismatch makes the
 guest hang at the OVMF firmware screen. See `issue #500
 <https://github.com/cubic-vm/cubic/issues/500>`_.
 
-Each instance stores its own disk image under
-``~/.local/share/cubic/machines/<name>/``, keeping instances fully isolated
+Each instance keeps everything it owns in one directory under
+``~/.local/share/cubic/machines/<name>/``. That directory holds the
+configuration, the disk image, the SSH key, the cloud-init seed image and,
+while the machine runs, the QEMU pid file. This keeps instances fully isolated
 from each other and from the shared image cache.
 
 UEFI Firmware (EDK2)

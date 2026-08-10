@@ -96,7 +96,6 @@ mod tests {
             UserName::from_str("myuser").unwrap(),
             String::new(),
             String::new(),
-            String::new(),
         );
         let instance_store = InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
@@ -141,7 +140,6 @@ Forward:    127.0.0.1:4000:40/tcp
         let console = &mut Console::new(&system);
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
-            String::new(),
             String::new(),
             String::new(),
         );
@@ -217,7 +215,6 @@ SSH:          ssh -i {ssh_key} -p 8000 john@localhost
         let console = &mut Console::new(&system);
         let env = Environment::new(
             UserName::from_str("testuser").unwrap(),
-            String::new(),
             String::new(),
             String::new(),
         );

@@ -27,7 +27,6 @@ mod tests {
             UserName::from_str("cubic").unwrap(),
             String::new(),
             "/cache".to_string(),
-            String::new(),
         )
     }
 

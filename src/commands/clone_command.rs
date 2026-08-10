@@ -78,7 +78,6 @@ mod tests {
             UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
-            String::new(),
         );
         Context::new(
             Rc::new(SystemMock::new()),
@@ -120,7 +119,6 @@ mod tests {
         let console = &mut Console::new(&system);
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
-            String::new(),
             String::new(),
             String::new(),
         );

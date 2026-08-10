@@ -96,7 +96,6 @@ mod tests {
             UserName::from_str("myuser").unwrap(),
             String::new(),
             String::new(),
-            String::new(),
         );
         let context = commands::Context::new(
             Rc::new(SystemMock::new()),
