@@ -137,11 +137,11 @@ Keeping Instances Apart
 -----------------------
 
 Everything that belongs to a virtual machine, including its SSH private key, its
-TLS certificates, and its disk images, is stored under your own data directory,
-for example ``~/.local/share/cubic/machines/<name>/`` on Linux. Reaching a
-running machine therefore comes down to two things: the file permissions on that
-directory, and holding the SSH key or the TLS client certificate that is kept
-inside it.
+TLS certificates, its disk images and its cloud-init seed image, is stored under
+your own data directory, for example ``~/.local/share/cubic/machines/<name>/``
+on Linux. Reaching a running machine therefore comes down to two things: the
+file permissions on that directory, and holding the SSH key or the TLS client
+certificate that is kept inside it.
 
 Cubic currently relies on the file permissions that the operating system applies
 by default. Restricting the private keys and certificates so that only their

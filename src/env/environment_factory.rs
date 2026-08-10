@@ -39,14 +39,11 @@ impl EnvironmentFactory {
             })?;
         let cache_dir = Self::read_env(system, "XDG_CACHE_HOME")
             .or_else(|_| Self::read_env(system, "HOME").map(|home| format!("{home}/.cache")))?;
-        let runtime_dir = Self::read_env(system, "XDG_RUNTIME_DIR")
-            .or_else(|_| Self::read_env(system, "UID").map(|uid| format!("/run/user/{uid}")))?;
 
         Ok(Environment::new(
             Self::get_username(system),
             format!("{data_dir}/cubic"),
             format!("{cache_dir}/cubic"),
-            format!("{runtime_dir}/cubic"),
         ))
     }
 
@@ -57,7 +54,6 @@ impl EnvironmentFactory {
         Ok(Environment::new(
             Self::get_username(system),
             format!("{home_dir}/Library/cubic"),
-            format!("{home_dir}/Library/Caches/cubic"),
             format!("{home_dir}/Library/Caches/cubic"),
         ))
     }
@@ -70,7 +66,6 @@ impl EnvironmentFactory {
         Ok(Environment::new(
             Self::get_username(system),
             format!("{local_app_data_dir}\\cubic"),
-            format!("{temp_dir}\\cubic"),
             format!("{temp_dir}\\cubic"),
         ))
     }
@@ -139,8 +134,7 @@ mod tests {
     fn test_create_env_falls_back_through_xdg_and_home() {
         let system = SystemMock::new()
             .add_env_var("USER", "alice")
-            .add_env_var("HOME", "/home/alice")
-            .add_env_var("XDG_RUNTIME_DIR", "/run/user/1000");
+            .add_env_var("HOME", "/home/alice");
 
         let env = EnvironmentFactory::create_env(&system).unwrap();
 
@@ -149,7 +143,6 @@ mod tests {
             "/home/alice/.local/share/cubic/machines"
         );
         assert_eq!(env.get_cache_dir(), "/home/alice/.cache/cubic");
-        assert_eq!(env.get_runtime_dir(), "/run/user/1000/cubic");
     }
 
     #[cfg(target_os = "linux")]
@@ -159,7 +152,6 @@ mod tests {
             .add_env_var("USER", "alice")
             .add_env_var("SNAP_USER_COMMON", "/snap/cubic/common")
             .add_env_var("XDG_CACHE_HOME", "/cache")
-            .add_env_var("XDG_RUNTIME_DIR", "/run/user/1000")
             .add_env_var("HOME", "/home/alice");
 
         let env = EnvironmentFactory::create_env(&system).unwrap();

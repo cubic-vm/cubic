@@ -6,7 +6,6 @@ COPY . .
 ENV DEBIAN_FRONTEND=noninteractive
 ENV XDG_DATA_HOME=/tmp/data
 ENV XDG_CACHE_HOME=/tmp/cache
-ENV XDG_RUNTIME_DIR=/tmp/runtime
 ENV PATH=/root/bin:${PATH}
 RUN apt update && \
     apt install -y \

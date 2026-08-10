@@ -143,7 +143,6 @@ mod tests {
             UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
-            String::new(),
         );
         let context = Context::new(
             Rc::new(SystemMock::new()),

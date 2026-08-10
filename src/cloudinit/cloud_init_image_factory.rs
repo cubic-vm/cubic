@@ -8,18 +8,18 @@ use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
 #[derive(Default)]
-pub struct UserDataImageFactory;
+pub struct CloudInitImageFactory;
 
-impl UserDataImageFactory {
-    pub fn create_rust(
+impl CloudInitImageFactory {
+    pub fn create(
         &self,
         system: &dyn System,
         env: &Environment,
         instance: &Instance,
     ) -> Result<()> {
-        let user_data_img_path = PathBuf::from(env.get_user_data_image_file(&instance.name));
+        let cloud_init_path = PathBuf::from(env.get_cloud_init_file(&instance.name));
 
-        if system.exists_path(&user_data_img_path) {
+        if system.exists_path(&cloud_init_path) {
             return Ok(());
         }
 
@@ -37,7 +37,6 @@ impl UserDataImageFactory {
             UserDataFactory.create(&instance.user, &pubkey, instance.execute.as_deref());
 
         // Generate ISO file
-        system.create_dir(Path::new(&env.get_instance_cache_dir(&instance.name)))?;
         let mut iso_writer = IsoWriter::new();
         iso_writer.pvd.system_id = "LINUX".to_string();
         iso_writer.pvd.volume_id = "cidata".to_string();
@@ -51,7 +50,7 @@ impl UserDataImageFactory {
 
         let mut buffer = Cursor::new(Vec::new());
         iso_writer.create_iso(&mut buffer)?;
-        system.write_file(&user_data_img_path, buffer.get_ref())?;
+        system.write_file(&cloud_init_path, buffer.get_ref())?;
         Ok(())
     }
 }
@@ -68,7 +67,6 @@ mod tests {
             UserName::from_str("cubic").unwrap(),
             "/data".to_string(),
             "/cache".to_string(),
-            "/run".to_string(),
         )
     }
 
@@ -80,22 +78,22 @@ mod tests {
     }
 
     #[test]
-    fn test_create_rust_writes_the_cloud_init_image() {
+    fn test_create_writes_the_cloud_init_image() {
         let system = SystemMock::new();
         let env = build_env();
 
-        UserDataImageFactory
-            .create_rust(&system, &env, &build_instance())
+        CloudInitImageFactory
+            .create(&system, &env, &build_instance())
             .unwrap();
 
         let image = system
-            .get_written_file(&env.get_user_data_image_file("test"))
+            .get_written_file(&env.get_cloud_init_file("test"))
             .expect("expected the cloud init image to have been written");
         assert!(!image.is_empty());
     }
 
     #[test]
-    fn test_create_rust_embeds_the_public_key_of_the_instance() {
+    fn test_create_embeds_the_public_key_of_the_instance() {
         let system = SystemMock::new();
         let env = build_env();
         let key_path = Path::new(&env.get_instance_dir2("test")).join("ssh_client_key");
@@ -103,15 +101,15 @@ mod tests {
             .generate_key(&system, &key_path)
             .unwrap();
 
-        UserDataImageFactory
-            .create_rust(&system, &env, &build_instance())
+        CloudInitImageFactory
+            .create(&system, &env, &build_instance())
             .unwrap();
 
         let pubkey = SshKeyGenerator::new()
             .generate_public_key(&system, &key_path)
             .unwrap();
         let image = system
-            .get_written_file(&env.get_user_data_image_file("test"))
+            .get_written_file(&env.get_cloud_init_file("test"))
             .unwrap();
         assert!(
             image
@@ -121,16 +119,16 @@ mod tests {
     }
 
     #[test]
-    fn test_create_rust_keeps_an_existing_image() {
+    fn test_create_keeps_an_existing_image() {
         let env = build_env();
-        let system = SystemMock::new().add_file(&env.get_user_data_image_file("test"), b"existing");
+        let system = SystemMock::new().add_file(&env.get_cloud_init_file("test"), b"existing");
 
-        UserDataImageFactory
-            .create_rust(&system, &env, &build_instance())
+        CloudInitImageFactory
+            .create(&system, &env, &build_instance())
             .unwrap();
 
         assert_eq!(
-            system.get_written_file(&env.get_user_data_image_file("test")),
+            system.get_written_file(&env.get_cloud_init_file("test")),
             Some(b"existing".to_vec())
         );
     }

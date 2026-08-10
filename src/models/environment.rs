@@ -7,21 +7,14 @@ pub struct Environment {
     username: UserName,
     data_dir: String,
     cache_dir: String,
-    runtime_dir: String,
 }
 
 impl Environment {
-    pub fn new(
-        username: UserName,
-        data_dir: String,
-        cache_dir: String,
-        runtime_dir: String,
-    ) -> Self {
+    pub fn new(username: UserName, data_dir: String, cache_dir: String) -> Self {
         Self {
             username,
             data_dir,
             cache_dir,
-            runtime_dir,
         }
     }
 
@@ -31,10 +24,6 @@ impl Environment {
 
     pub fn get_cache_dir(&self) -> &str {
         &self.cache_dir
-    }
-
-    pub fn get_runtime_dir(&self) -> &str {
-        &self.runtime_dir
     }
 
     pub fn get_instance_dir(&self) -> String {
@@ -86,31 +75,15 @@ impl Environment {
             .into_owned()
     }
 
-    pub fn get_instance_cache_dir(&self, instance: &str) -> String {
-        PathBuf::from(&self.cache_dir)
-            .join("instances")
-            .join(instance)
-            .to_string_lossy()
-            .into_owned()
-    }
-
-    pub fn get_user_data_image_file(&self, instance: &str) -> String {
-        PathBuf::from(self.get_instance_cache_dir(instance))
-            .join("user-data.img")
-            .to_string_lossy()
-            .into_owned()
-    }
-
-    pub fn get_instance_runtime_dir(&self, instance: &str) -> String {
-        PathBuf::from(&self.runtime_dir)
-            .join("instances")
-            .join(instance)
+    pub fn get_cloud_init_file(&self, instance: &str) -> String {
+        PathBuf::from(self.get_instance_dir2(instance))
+            .join("cloud-init.iso")
             .to_string_lossy()
             .into_owned()
     }
 
     pub fn get_qemu_pid_file(&self, instance: &str) -> String {
-        PathBuf::from(self.get_instance_runtime_dir(instance))
+        PathBuf::from(self.get_instance_dir2(instance))
             .join("qemu.pid")
             .to_string_lossy()
             .into_owned()
@@ -175,7 +148,6 @@ mod tests {
             UserName::from_str("testuser").unwrap(),
             "/data/cubic".to_string(),
             "/cache/cubic".to_string(),
-            "/runtime/cubic".to_string(),
         );
 
         assert_eq!(env.get_username().as_str(), "testuser");
@@ -184,7 +156,6 @@ mod tests {
             PathBuf::from(env.get_ssh_private_key_file("mymachine")),
             join_all("/data/cubic", &["machines", "mymachine", "ssh_client_key"])
         );
-        assert_eq!(env.get_runtime_dir(), "/runtime/cubic");
         assert_eq!(
             PathBuf::from(env.get_instance_dir()),
             PathBuf::from("/data/cubic").join("machines")
@@ -214,20 +185,12 @@ mod tests {
             join_all("/data/cubic", &["machines", "mymachine", "machine.img"])
         );
         assert_eq!(
-            PathBuf::from(env.get_instance_cache_dir("mymachine")),
-            join_all("/cache/cubic", &["instances", "mymachine"])
-        );
-        assert_eq!(
-            PathBuf::from(env.get_user_data_image_file("mymachine")),
-            join_all("/cache/cubic", &["instances", "mymachine", "user-data.img"])
-        );
-        assert_eq!(
-            PathBuf::from(env.get_instance_runtime_dir("mymachine")),
-            join_all("/runtime/cubic", &["instances", "mymachine"])
+            PathBuf::from(env.get_cloud_init_file("mymachine")),
+            join_all("/data/cubic", &["machines", "mymachine", "cloud-init.iso"])
         );
         assert_eq!(
             PathBuf::from(env.get_qemu_pid_file("mymachine")),
-            join_all("/runtime/cubic", &["instances", "mymachine", "qemu.pid"])
+            join_all("/data/cubic", &["machines", "mymachine", "qemu.pid"])
         );
     }
 }
