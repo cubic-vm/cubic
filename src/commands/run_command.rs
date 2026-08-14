@@ -34,6 +34,8 @@ pub struct RunCommand {
     #[clap(flatten)]
     create_cmd: commands::CreateCommand,
     #[clap(flatten)]
+    accel: commands::AccelArg,
+    #[clap(flatten)]
     env_args: commands::EnvArgs,
 }
 
@@ -42,6 +44,7 @@ impl Command for RunCommand {
         self.create_cmd.run(console, context)?;
         commands::SshCommand {
             target: Target::from_instance_name(self.create_cmd.instance_name.value.clone()),
+            accel: self.accel,
             env_args: self.env_args.clone(),
         }
         .run(console, context)

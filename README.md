@@ -50,7 +50,7 @@ Cubic fits a lot of everyday workflows:
   - **Ubuntu**
 - Supports the following host OS: **Linux**, **macOS**, **Windows**
 - Supports **amd64** and **arm64** CPU architectures
-- Supports hardware acceleration with **KVM** (Linux) and **Hypervisor** (macOS), Windows runs on **TCG** software emulation for now
+- Supports hardware acceleration with **KVM** (Linux), **Hypervisor** (macOS), **WHPX** (Windows) and **NVMM** (BSD)
 - Daemonless design which does not require root privileges
 - Written in Rust
 

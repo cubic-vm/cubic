@@ -1,6 +1,6 @@
 use crate::commands::{Context, DEFAULT_DISK_SIZE};
 use crate::error::{Error, Result};
-use crate::models::{DataSize, Instance, ResourceAllocator, get_default_arch};
+use crate::models::{Arch, DataSize, Instance, ResourceAllocator};
 use crate::qemu::QemuImg;
 use crate::view::Console;
 use std::str::FromStr;
@@ -41,7 +41,7 @@ impl LoadInstanceAction {
 
         let mut instance = Instance {
             name: name.to_string(),
-            arch: get_default_arch(),
+            arch: Arch::get_host(),
             user: context.get_env().get_username().clone(),
             cpus,
             mem,

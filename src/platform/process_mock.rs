@@ -2,6 +2,7 @@ use crate::error::{Error, Result};
 use crate::platform::{Process, SystemMock};
 use crate::util::SystemCommand;
 use std::collections::HashMap;
+use std::time::Duration;
 
 // How a seeded pid answers a kill. Every state is visible to a liveness
 // check, they differ only in what killing one does.
@@ -142,6 +143,17 @@ impl SystemMock {
 impl Process for SystemMock {
     fn run_command(&self, command: &SystemCommand) -> Result<Vec<u8>> {
         self.commands.borrow_mut().run(command)
+    }
+
+    // A seeded command stands for one that comes up and prints the marker, so
+    // neither the marker nor the deadline matters here.
+    fn run_command_until_output(
+        &self,
+        command: &SystemCommand,
+        _marker: &str,
+        _timeout: Duration,
+    ) -> Result<()> {
+        self.commands.borrow_mut().run(command).map(|_| ())
     }
 
     // A detached start has nothing to wait for, so it only reports whether the

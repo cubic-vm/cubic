@@ -21,6 +21,8 @@ pub struct ExecCommand {
     /// Command to execute in the virtual machine instance
     pub cmd: String,
     #[clap(flatten)]
+    pub accel: commands::AccelArg,
+    #[clap(flatten)]
     pub env_args: commands::EnvArgs,
 }
 
@@ -31,6 +33,7 @@ impl Command for ExecCommand {
 
         commands::StartCommand {
             qemu_args: None,
+            accel: self.accel,
             wait: true,
             yes: commands::YesArg { value: false },
             instances: name.clone().into(),

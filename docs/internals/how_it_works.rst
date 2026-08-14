@@ -54,19 +54,17 @@ QEMU and Hardware Acceleration
 
 `QEMU <https://www.qemu.org>`_ is an open-source machine emulator and
 virtualiser. Cubic translates the instance configuration into a QEMU command
-line and executes it directly. The accelerator is selected automatically based
-on the host platform:
+line and executes it directly. Every platform has one hardware accelerator:
 
 * **KVM** on Linux
 * **HVF** (Hypervisor Framework) on macOS
+* **WHPX** on Windows
 * **NVMM** on the BSDs
-* **TCG** (software emulation) as a fallback
 
-On Windows the **WHPX** accelerator is currently disabled and instances run on
-TCG software emulation. WHPX requires the ``host`` CPU model, while the CPU
-model Cubic passes is shared with the TCG path, and the mismatch makes the
-guest hang at the OVMF firmware screen. See `issue #500
-<https://github.com/cubic-vm/cubic/issues/500>`_.
+Cubic checks with QEMU that the accelerator works on the host and falls back to
+**TCG** software emulation when it does not. Use ``cubic start --accel on`` to
+insist on hardware acceleration and ``--accel off`` to run in software
+emulation.
 
 Each instance keeps everything it owns in one directory under
 ``~/.local/share/cubic/machines/<name>/``. That directory holds the

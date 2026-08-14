@@ -31,6 +31,8 @@ const PROBE_IO_TIMEOUT: Duration = Duration::from_secs(1);
 #[clap(verbatim_doc_comment)]
 pub struct ConsoleCommand {
     #[clap(flatten)]
+    pub accel: commands::AccelArg,
+    #[clap(flatten)]
     instance: commands::InstanceArg,
 }
 
@@ -38,6 +40,7 @@ impl Command for ConsoleCommand {
     fn run(&self, console: &mut Console<'_>, context: &commands::Context) -> Result<()> {
         commands::StartCommand {
             qemu_args: None,
+            accel: self.accel,
             wait: false,
             yes: commands::YesArg { value: false },
             instances: self.instance.value.clone().into(),

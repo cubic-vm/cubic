@@ -34,6 +34,8 @@ pub struct StartCommand {
     /// Pass additional QEMU arguments
     #[clap(long)]
     pub qemu_args: Option<String>,
+    #[clap(flatten)]
+    pub accel: commands::AccelArg,
     /// Wait until the VM instance has started
     #[clap(short, long, default_value_t = false)]
     pub wait: bool,
@@ -75,7 +77,7 @@ impl Command for StartCommand {
                 )?;
 
                 let mut action = StartInstanceAction::new(instance);
-                action.run(context, &self.qemu_args, console)?;
+                action.run(context, &self.qemu_args, self.accel.value, console)?;
 
                 actions.push(action);
                 // Only the instances that are launched are named
