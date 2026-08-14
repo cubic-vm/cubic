@@ -109,11 +109,15 @@ of the guest, and that prompt accepts only a password, so it stays closed until
 you set one from an SSH session. Set a password while SSH works if you want the
 console available as a way in later. See :ref:`console login` for the steps.
 
-One area that can still be improved is host key verification. Today the host key
-that the guest presents is accepted as it is, which is reasonable while
-connections only ever go to ``127.0.0.1``. Remembering each machine's host key on
-the first connection would let Cubic notice if it ever reached the wrong
-endpoint.
+Cubic also remembers the host key of each guest. The first connection stores the
+key the guest presents in the machine's ``instance.toml`` file, and every later
+connection compares against it, the same idea as a known hosts file kept per
+machine.
+
+A key that does not match stops the connection. Cubic shows both fingerprints,
+points out that this may be a malicious attempt to take over the connection, and
+asks whether to trust the new key. Answering yes stores it, which is how you
+carry on after you recreated the guest yourself.
 
 Encrypted QEMU Control Channels
 -------------------------------

@@ -25,4 +25,7 @@ pub struct Instance {
     pub execute: Option<String>,
     #[serde(default)]
     pub isolate: bool,
+    /// Guest SSH host key, pinned on the first connect
+    #[serde(default)]
+    pub ssh_host_key: Option<String>,
 }
