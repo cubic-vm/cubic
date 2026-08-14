@@ -56,7 +56,6 @@ impl Command for ExecCommand {
         ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system()));
         ssh.set_cmd(Some(self.cmd.clone()));
         ssh.set_env_vars(self.env_args.env_vars.clone());
-        ssh.shell(console, name.as_str(), &client_key, &user, ssh_port);
-        Ok(())
+        ssh.shell(console, name.as_str(), &client_key, &user, ssh_port)
     }
 }

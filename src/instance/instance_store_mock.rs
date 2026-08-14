@@ -5,13 +5,16 @@ pub mod tests {
     use crate::instance::InstanceStore;
     use crate::models::Instance;
     use crate::qemu::QemuMonitorClient;
-    use std::sync::Mutex;
+    use std::sync::{Arc, Mutex};
 
     pub struct InstanceStoreMock {
         instances: Vec<Instance>,
         running: Vec<String>,
         pids: Vec<(String, u64)>,
-        killed: Mutex<Vec<String>>,
+        // Shared, so a test keeps a handle on what the store recorded after it
+        // moved into a Context.
+        pub killed: Arc<Mutex<Vec<String>>>,
+        pub stored: Arc<Mutex<Vec<Instance>>>,
     }
 
     impl InstanceStoreMock {
@@ -24,17 +27,14 @@ pub mod tests {
                 instances,
                 running: running.iter().map(|name| name.to_string()).collect(),
                 pids: Vec::new(),
-                killed: Mutex::new(Vec::new()),
+                killed: Arc::new(Mutex::new(Vec::new())),
+                stored: Arc::new(Mutex::new(Vec::new())),
             }
         }
 
         pub fn set_pid(mut self, name: &str, pid: u64) -> Self {
             self.pids.push((name.to_string(), pid));
             self
-        }
-
-        pub fn get_killed(&self) -> Vec<String> {
-            self.killed.lock().unwrap().clone()
         }
     }
 
@@ -55,7 +55,8 @@ pub mod tests {
                 .ok_or(Error::UnknownInstance(name.to_string()))
         }
 
-        fn store(&self, _instance: &Instance) -> Result<()> {
+        fn store(&self, instance: &Instance) -> Result<()> {
+            self.stored.lock().unwrap().push(instance.clone());
             Ok(())
         }
 

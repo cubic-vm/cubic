@@ -144,6 +144,18 @@ Troubleshoot:
     #[error("SFTP Error: {0}")]
     Sftp(String),
 
+    #[error("Connection to instance '{0}' failed")]
+    SshConnectionFailed(String),
+
+    #[error("Authentication on instance '{0}' failed")]
+    SshAuthFailed(String),
+
+    #[error("Authentication on instance '{0}' was cancelled")]
+    SshAuthCancelled(String),
+
+    #[error("The new SSH host key of instance '{0}' was not trusted")]
+    SshHostKeyRejected(String),
+
     #[error(
         "Invalid username '{0}'.\n\nUsernames must start with a lowercase letter or underscore, followed by lowercase letters, numbers, underlines or dashes"
     )]

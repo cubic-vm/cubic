@@ -32,6 +32,7 @@ use clap::Parser;
 ///   Disk Image:   ~/.local/share/cubic/machines/trixie/machine.img
 ///   Config:       ~/.local/share/cubic/machines/trixie/instance.toml
 ///   SSH Key:      ~/.local/share/cubic/machines/trixie/ssh_client_key
+///   SSH Host Key: SHA256:ZkAslGjFiUHdGf/WUL8rQvkib4PTvQatUV0OUQSncCA
 ///   SSH:          ssh -i .../trixie/ssh_client_key -p 54315 cubic@localhost
 ///
 ///   Show information of a VM image

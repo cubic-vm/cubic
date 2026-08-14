@@ -1,15 +1,15 @@
 use crate::commands::Context;
 use crate::error::Error;
 use crate::models::{Instance, TargetInstancePath};
-use crate::ssh::{SftpPath, SshKeyGenerator};
+use crate::ssh::{HostKeyChecker, KeyCheck, SftpPath, SshKeyGenerator};
 use crate::util;
-use crate::view::{Console, Spinner};
+use crate::view::{ConfirmDialog, Console, Spinner};
 use russh::keys::*;
 use russh::*;
 use russh_sftp::client::SftpSession;
 use std::path::Path;
 use std::rc::Rc;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tokio_util::codec::FramedRead;
 use tokio_util::io::StreamReader;
 
@@ -49,16 +49,28 @@ pub struct SshClient<'a> {
     context: &'a Context,
 }
 
-struct ServerKeyHandler {}
+/// Verifies the host key of the guest. The handler is moved into the russh
+/// session, so it cannot borrow the console or the context. It records the
+/// offered key instead and lets the caller report and store it.
+struct ServerKeyHandler {
+    pinned: Option<String>,
+    offered: Arc<Mutex<Option<String>>>,
+}
 
 impl client::Handler for ServerKeyHandler {
     type Error = russh::Error;
 
     async fn check_server_key(
         &mut self,
-        _server_public_key: &ssh_key::PublicKey,
+        server_public_key: &ssh_key::PublicKey,
     ) -> Result<bool, Self::Error> {
-        Ok(true)
+        let Ok(key) = server_public_key.to_openssh() else {
+            return Ok(false);
+        };
+        let check = HostKeyChecker::new().check_key(self.pinned.as_deref(), &key);
+        *self.offered.lock().unwrap() = Some(key);
+
+        Ok(check != KeyCheck::Changed)
     }
 }
 
@@ -106,15 +118,16 @@ impl<'a> SshClient<'a> {
         session: &mut russh::client::Handle<ServerKeyHandler>,
         user: &str,
         machine: &str,
-    ) -> Result<(), ()> {
+    ) -> Result<(), Error> {
         loop {
-            let password =
-                console.prompt_secret(&format!("Enter password for {user}@{machine}: "))?;
+            let password = console
+                .prompt_secret(&format!("Enter password for {user}@{machine}: "))
+                .map_err(|_| Error::SshAuthCancelled(machine.to_string()))?;
 
             if session
                 .authenticate_password(user, password)
                 .await
-                .map_err(|_| ())?
+                .map_err(|_| Error::SshAuthFailed(machine.to_string()))?
                 .success()
             {
                 break;
@@ -131,7 +144,7 @@ impl<'a> SshClient<'a> {
         user: &str,
         machine: &str,
         client_key: &str,
-    ) -> Result<AuthMethod, ()> {
+    ) -> Result<AuthMethod, Error> {
         // The cubic per-instance ssh_client_key is the only supported method.
         // Everything below is a deprecated fallback.
         console.debug(&format!(
@@ -193,6 +206,28 @@ impl<'a> SshClient<'a> {
         Ok(())
     }
 
+    /// Reports a host key that does not match the pinned one and asks whether
+    /// to trust it from now on.
+    fn confirm_new_host_key(
+        &self,
+        console: &mut Console<'_>,
+        machine: &str,
+        pinned: &str,
+        offered: &str,
+    ) -> bool {
+        let checker = HostKeyChecker::new();
+
+        console.stop();
+        console.warn(&format!(
+            "The host key of instance '{machine}' does not match the stored key."
+        ));
+        console.warn(&format!("  expected  {}", checker.get_fingerprint(pinned)));
+        console.warn(&format!("  actual    {}", checker.get_fingerprint(offered)));
+        console.warn("This may be a malicious attempt to take over the connection to the guest.");
+
+        ConfirmDialog::new("Do you want to trust the new key and continue?").confirm(console)
+    }
+
     async fn open_channel(
         &self,
         console: &mut Console<'_>,
@@ -200,22 +235,49 @@ impl<'a> SshClient<'a> {
         client_key: &str,
         user: &str,
         port: u16,
-    ) -> Result<Channel<russh::client::Msg>, ()> {
+    ) -> Result<Channel<russh::client::Msg>, Error> {
         let mut session;
+        let store = self.context.get_instance_store();
+        let mut instance = store.load(machine)?;
+        let mut pinned = instance.ssh_host_key.clone();
+        let offered = Arc::new(Mutex::new(None));
 
-        console.play(Arc::new(std::sync::Mutex::new(Spinner::new(format!(
+        console.play(Arc::new(Mutex::new(Spinner::new(format!(
             "Connecting to {machine}"
         )))));
         console.debug(&format!("Connecting to 127.0.0.1:{port}"));
         let mut failed = false;
         loop {
-            let sh = ServerKeyHandler {};
+            let sh = ServerKeyHandler {
+                pinned: pinned.clone(),
+                offered: Arc::clone(&offered),
+            };
             let addrs = ("127.0.0.1", port);
             let config = Arc::new(client::Config::default());
-            if let Ok(s) = client::connect(config, addrs, sh).await.map_err(|_| ()) {
+            if let Ok(s) = client::connect(config, addrs, sh).await {
                 session = s;
                 break;
             }
+
+            // A rejected host key fails like any other connect error, so it has
+            // to end the retry loop on its own.
+            let key = offered.lock().unwrap().clone();
+            if let (Some(key), Some(pinned_key)) = (key, pinned.clone())
+                && HostKeyChecker::new().check_key(Some(&pinned_key), &key) == KeyCheck::Changed
+            {
+                if !self.confirm_new_host_key(console, machine, &pinned_key, &key) {
+                    return Err(Error::SshHostKeyRejected(machine.to_string()));
+                }
+
+                instance.ssh_host_key = Some(key.clone());
+                store.store(&instance)?;
+                pinned = Some(key);
+                console.play(Arc::new(Mutex::new(Spinner::new(format!(
+                    "Connecting to {machine}"
+                )))));
+                continue;
+            }
+
             if !failed {
                 failed = true;
                 console.debug(&format!("Connection to 127.0.0.1:{port} failed, retrying"));
@@ -223,7 +285,21 @@ impl<'a> SshClient<'a> {
         }
 
         console.debug(&format!("Connected to 127.0.0.1:{port}"));
-        console.play(Arc::new(std::sync::Mutex::new(Spinner::new(format!(
+
+        // Trust the key of a guest that has none stored yet on this first connect.
+        if pinned.is_none() {
+            let key = offered.lock().unwrap().clone();
+            if let Some(key) = key {
+                console.debug(&format!(
+                    "Pinning host key {}",
+                    HostKeyChecker::new().get_fingerprint(&key)
+                ));
+                instance.ssh_host_key = Some(key);
+                store.store(&instance)?;
+            }
+        }
+
+        console.play(Arc::new(Mutex::new(Spinner::new(format!(
             "Authenticating on {machine}"
         )))));
 
@@ -236,7 +312,10 @@ impl<'a> SshClient<'a> {
             self.warn_deprecated_auth(console, machine, client_key).ok();
         }
 
-        session.channel_open_session().await.map_err(|_| ())
+        session
+            .channel_open_session()
+            .await
+            .map_err(|_| Error::SshConnectionFailed(machine.to_string()))
     }
 
     async fn handle_interactive_shell(
@@ -246,7 +325,7 @@ impl<'a> SshClient<'a> {
         client_key: &str,
         user: &str,
         port: u16,
-    ) -> Result<(), ()> {
+    ) -> Result<(), Error> {
         let channel = self
             .open_channel(console, machine, client_key, user, port)
             .await?;
@@ -270,7 +349,7 @@ impl<'a> SshClient<'a> {
                 &[],
             )
             .await
-            .map_err(|_| ())?;
+            .map_err(|_| Error::SshConnectionFailed(machine.to_string()))?;
 
         for var in &self.env_vars {
             let (name, value) = if let Some((k, v)) = var.split_once('=') {
@@ -284,13 +363,22 @@ impl<'a> SshClient<'a> {
                         .unwrap_or_default(),
                 )
             };
-            channel.set_env(false, name, value).await.map_err(|_| ())?;
+            channel
+                .set_env(false, name, value)
+                .await
+                .map_err(|_| Error::SshConnectionFailed(machine.to_string()))?;
         }
 
         if let Some(cmd) = &self.cmd {
-            channel.exec(true, cmd.as_str()).await.map_err(|_| ())?;
+            channel
+                .exec(true, cmd.as_str())
+                .await
+                .map_err(|_| Error::SshConnectionFailed(machine.to_string()))?;
         } else {
-            channel.request_shell(true).await.map_err(|_| ())?;
+            channel
+                .request_shell(true)
+                .await
+                .map_err(|_| Error::SshConnectionFailed(machine.to_string()))?;
         }
         let (mut ssh_in, ssh_out) = channel.split();
         let mut ssh_reader = ssh_in.make_reader();
@@ -318,14 +406,19 @@ impl<'a> SshClient<'a> {
         instance: &Instance,
         user: &Option<String>,
         client_key: &str,
-    ) -> Rc<SftpSession> {
+    ) -> Result<Rc<SftpSession>, Error> {
         let user = user.as_deref().unwrap_or(instance.user.as_str());
         let channel = self
             .open_channel(console, &instance.name, client_key, user, instance.ssh_port)
+            .await?;
+        channel
+            .request_subsystem(true, "sftp")
             .await
-            .unwrap();
-        channel.request_subsystem(true, "sftp").await.unwrap();
-        Rc::new(SftpSession::new(channel.into_stream()).await.unwrap())
+            .map_err(|error| Error::Sftp(error.to_string()))?;
+        SftpSession::new(channel.into_stream())
+            .await
+            .map(Rc::new)
+            .map_err(|error| Error::Sftp(error.to_string()))
     }
 
     async fn open_target_fs(
@@ -333,7 +426,7 @@ impl<'a> SshClient<'a> {
         console: &mut Console<'_>,
         path: &TargetInstancePath,
         client_key: Option<&str>,
-    ) -> SftpPath {
+    ) -> Result<SftpPath, Error> {
         let sftp = if let Some(instance) = &path.instance {
             Some(
                 self.open_sftp(
@@ -342,15 +435,15 @@ impl<'a> SshClient<'a> {
                     &path.user,
                     client_key.unwrap_or_default(),
                 )
-                .await,
+                .await?,
             )
         } else {
             None
         };
-        SftpPath {
+        Ok(SftpPath {
             sftp,
             path: path.to_pathbuf(),
-        }
+        })
     }
 
     async fn async_copy(
@@ -362,8 +455,8 @@ impl<'a> SshClient<'a> {
         to: &TargetInstancePath,
         to_key: Option<&str>,
     ) -> Result<(), Error> {
-        let source = self.open_target_fs(console, from, from_key).await;
-        let target = self.open_target_fs(console, to, to_key).await;
+        let source = self.open_target_fs(console, from, from_key).await?;
+        let target = self.open_target_fs(console, to, to_key).await?;
 
         source.copy(console, target).await
     }
@@ -387,10 +480,9 @@ impl<'a> SshClient<'a> {
         client_key: &str,
         user: &str,
         port: u16,
-    ) -> bool {
+    ) -> Result<(), Error> {
         util::AsyncCaller::new()
             .call(self.handle_interactive_shell(console, machine, client_key, user, port))
-            .is_ok()
     }
 
     pub fn copy(
@@ -404,5 +496,57 @@ impl<'a> SshClient<'a> {
     ) -> Result<(), Error> {
         util::AsyncCaller::new()
             .call(self.async_copy(console, root_dir, from, from_key, to, to_key))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use getrandom::SysRng;
+    use getrandom::rand_core::UnwrapErr;
+    use russh::client::Handler;
+    use russh::keys::ssh_key::{Algorithm, PrivateKey};
+
+    fn build_key() -> ssh_key::PublicKey {
+        PrivateKey::random(&mut UnwrapErr(SysRng), Algorithm::Ed25519)
+            .unwrap()
+            .public_key()
+            .clone()
+    }
+
+    fn check_key(
+        pinned: Option<&ssh_key::PublicKey>,
+        offered: &ssh_key::PublicKey,
+    ) -> (bool, bool) {
+        let seen = Arc::new(Mutex::new(None));
+        let mut handler = ServerKeyHandler {
+            pinned: pinned.map(|key| key.to_openssh().unwrap()),
+            offered: Arc::clone(&seen),
+        };
+
+        let accepted = util::AsyncCaller::new()
+            .call(handler.check_server_key(offered))
+            .unwrap();
+        let recorded =
+            seen.lock().unwrap().as_deref() == Some(offered.to_openssh().unwrap().as_str());
+
+        (accepted, recorded)
+    }
+
+    #[test]
+    fn test_check_server_key_accepts_the_first_key() {
+        assert_eq!(check_key(None, &build_key()), (true, true));
+    }
+
+    #[test]
+    fn test_check_server_key_accepts_the_pinned_key() {
+        let key = build_key();
+
+        assert_eq!(check_key(Some(&key), &key), (true, true));
+    }
+
+    #[test]
+    fn test_check_server_key_rejects_a_changed_key() {
+        assert_eq!(check_key(Some(&build_key()), &build_key()), (false, true));
     }
 }

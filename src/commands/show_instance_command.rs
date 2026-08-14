@@ -1,6 +1,7 @@
 use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
+use crate::ssh::HostKeyChecker;
 use crate::util;
 use crate::view::{Console, MapView};
 use clap::Parser;
@@ -63,6 +64,12 @@ impl Command for ShowInstanceCommand {
             view.add("Disk Image", &env.get_instance_image_file(&instance.name));
             view.add("Config", &env.get_instance_toml_config_file(&instance.name));
             view.add("SSH Key", &ssh_key);
+            if let Some(host_key) = &instance.ssh_host_key {
+                view.add(
+                    "SSH Host Key",
+                    &HostKeyChecker::new().get_fingerprint(host_key),
+                );
+            }
             view.add(
                 "SSH",
                 &format!(
@@ -158,6 +165,10 @@ Forward:    127.0.0.1:4000:40/tcp
                 "0.0.0.0:80:8000/udp".parse().unwrap(),
             ],
             isolate: true,
+            ssh_host_key: Some(
+                "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4f"
+                    .to_string(),
+            ),
             ..Instance::default()
         }]);
         let context =
@@ -203,6 +214,7 @@ Forward:      127.0.0.1:4000:40/tcp
 Disk Image:   {disk_image}
 Config:       {config}
 SSH Key:      {ssh_key}
+SSH Host Key: SHA256:ZkAslGjFiUHdGf/WUL8rQvkib4PTvQatUV0OUQSncCA
 SSH:          ssh -i {ssh_key} -p 8000 john@localhost
 "
             )

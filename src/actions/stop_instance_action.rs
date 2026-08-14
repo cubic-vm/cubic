@@ -67,7 +67,7 @@ mod tests {
             .run(&store, true)
             .unwrap();
 
-        assert_eq!(store.get_killed(), ["test"]);
+        assert_eq!(*store.killed.lock().unwrap(), ["test"]);
     }
 
     #[test]
@@ -79,7 +79,7 @@ mod tests {
             .run(&store, true)
             .unwrap();
 
-        assert!(store.get_killed().is_empty());
+        assert!(store.killed.lock().unwrap().is_empty());
     }
 
     #[test]
@@ -92,7 +92,7 @@ mod tests {
         let result = StopInstanceAction::new(&instance).run(&store, false);
 
         assert!(result.is_err());
-        assert!(store.get_killed().is_empty());
+        assert!(store.killed.lock().unwrap().is_empty());
     }
 
     #[test]

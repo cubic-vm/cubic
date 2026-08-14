@@ -74,6 +74,7 @@ ssh_port = 14357
         assert!(instance.hostfwd.is_empty());
         assert_eq!(instance.execute, None);
         assert!(!instance.isolate);
+        assert_eq!(instance.ssh_host_key, None);
     }
 
     #[test]
@@ -88,6 +89,7 @@ ssh_port = 14357
 hostfwd = ["tcp:127.0.0.1:8000-:8000", "tcp:127.0.0.1:9000-:10000"]
 execute = "sudo apt update"
 isolate = true
+ssh_host_key = "ssh-ed25519 AAAA"
 "#
             .as_bytes(),
         );
@@ -111,6 +113,7 @@ isolate = true
         );
         assert_eq!(instance.execute, Some("sudo apt update".to_string()));
         assert!(instance.isolate);
+        assert_eq!(instance.ssh_host_key, Some("ssh-ed25519 AAAA".to_string()));
     }
 
     #[test]

@@ -78,6 +78,7 @@ isolate = false
                     hostfwd: Vec::new(),
                     execute: Some("echo hello world".to_string()),
                     isolate: true,
+                    ssh_host_key: Some("ssh-ed25519 AAAA".to_string()),
                     ..Instance::default()
                 },
                 &mut writer,
@@ -96,6 +97,7 @@ ssh_port = 10000
 hostfwd = []
 execute = "echo hello world"
 isolate = true
+ssh_host_key = "ssh-ed25519 AAAA"
 "#
         );
     }
