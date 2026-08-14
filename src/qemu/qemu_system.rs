@@ -7,58 +7,30 @@ use crate::qemu::QemuPathBuilder;
 use crate::util::SystemCommand;
 
 pub const NETDEV_ID: &str = "net0";
+pub const SOFTWARE_ACCEL: &str = "tcg";
 
 pub struct QemuSystem {
     command: SystemCommand,
 }
 
 impl QemuSystem {
-    fn get_accelerator() -> Option<&'static str> {
-        if cfg!(any(target_os = "linux", target_os = "android")) {
-            Some("kvm")
-        } else if cfg!(any(
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            target_os = "openbsd",
-            target_os = "netbsd"
-        )) {
-            Some("nvmm")
-        } else if cfg!(any(target_os = "macos", target_os = "ios")) {
-            Some("hvf")
-        } else {
-            // WHPX is disabled on Windows because it needs `-cpu host` while
-            // the shared `-cpu max` makes the guest hang at OVMF, see #500
-            None
+    pub fn get_machine(arch: Arch) -> &'static str {
+        match arch {
+            Arch::AMD64 => "q35",
+            Arch::ARM64 => "virt",
         }
     }
 
     pub fn from(system: &dyn System, arch: Arch) -> Result<QemuSystem> {
         let binary = format!("qemu-system-{}", arch.as_canonical_str());
-        let mut command = match arch {
-            Arch::AMD64 => {
-                let mut command = SystemCommand::new(&binary);
-                command.arg("-machine").arg("q35");
-                command.arg("-smbios").arg("type=0,uefi=on");
-                command
-            }
-            Arch::ARM64 => {
-                let mut command = SystemCommand::new(&binary);
-                command.arg("-machine").arg("virt");
-                command
-            }
-        };
+        let mut command = SystemCommand::new(&binary);
+        command.arg("-machine").arg(Self::get_machine(arch));
+        if arch == Arch::AMD64 {
+            command.arg("-smbios").arg("type=0,uefi=on");
+        }
 
         // Resolve the QEMU binary by name from the extended PATH.
         command.set_env("PATH", QemuPathBuilder::new(system).build());
-
-        // Set CPU type
-        command.arg("-cpu").arg("max");
-
-        // Enable accelerators
-        if let Some(accel) = Self::get_accelerator() {
-            command.arg("-accel").arg(accel);
-        }
-        command.arg("-accel").arg("tcg");
 
         // Only boot disk
         command.arg("-boot").arg("c");
@@ -78,6 +50,28 @@ impl QemuSystem {
         command.arg("-device").arg("virtio-balloon-pci");
 
         Ok(QemuSystem { command })
+    }
+
+    // The CPU model follows from the accelerator. Windows takes named models
+    // only, and a model richer than qemu64 faults the firmware, see #500.
+    pub fn get_cpu(accel: &str) -> &'static str {
+        if accel == SOFTWARE_ACCEL {
+            "max"
+        } else if cfg!(target_os = "windows") {
+            "qemu64"
+        } else {
+            "host"
+        }
+    }
+
+    // One accelerator only. QEMU takes the first of several that comes up,
+    // which hides an accelerator that starts and then fails.
+    pub fn set_accelerator(&mut self, accel: &str) {
+        self.command
+            .arg("-cpu")
+            .arg(Self::get_cpu(accel))
+            .arg("-accel")
+            .arg(accel);
     }
 
     pub fn set_cpus(&mut self, cpus: u16) {
@@ -236,6 +230,25 @@ mod tests {
             .build_command();
 
         assert!(command.get_command().starts_with("qemu-system-x86_64"));
+    }
+
+    #[test]
+    fn test_get_cpu_follows_the_accelerator() {
+        assert_eq!(QemuSystem::get_cpu(SOFTWARE_ACCEL), "max");
+        // Hardware acceleration never takes `max`, which hangs the firmware.
+        assert_ne!(QemuSystem::get_cpu("kvm"), "max");
+    }
+
+    #[test]
+    fn test_set_accelerator_names_one_accelerator_and_one_cpu_model() {
+        let mut qemu = QemuSystem::from(&SystemMock::new(), Arch::AMD64).unwrap();
+        qemu.set_accelerator(SOFTWARE_ACCEL);
+
+        let command = qemu.command.get_command();
+
+        assert!(command.contains("-cpu max -accel tcg"));
+        assert_eq!(command.matches("-accel").count(), 1);
+        assert_eq!(command.matches("-cpu").count(), 1);
     }
 
     #[test]

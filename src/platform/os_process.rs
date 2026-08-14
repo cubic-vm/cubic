@@ -1,9 +1,12 @@
 use crate::error::{Error, Result};
 use crate::platform::{OsSystem, Process};
 use crate::util::SystemCommand;
-use std::io::{ErrorKind, Read};
+use std::io::{BufRead, BufReader, ErrorKind, Read};
 use std::process::{Command, Stdio};
 use std::str::from_utf8;
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
 
 impl OsSystem {
     // Refreshes a single process so a lookup sees the current state of the
@@ -67,6 +70,63 @@ impl Process for OsSystem {
                     ))
                 }
             })
+    }
+
+    // Reads rather than polls, so the command is only kept alive until it says
+    // it is up. Stdin stays open, or a command that reads it sees an early end
+    // of file and stops on its own.
+    fn run_command_until_output(
+        &self,
+        command: &SystemCommand,
+        marker: &str,
+        timeout: Duration,
+    ) -> Result<()> {
+        let mut child = Self::build_process(command)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| Self::map_spawn_error(command, e))?;
+
+        let (Some(stdout), Some(stderr)) = (child.stdout.take(), child.stderr.take()) else {
+            let _ = child.kill();
+            return Err(Error::SystemCommandFailed(
+                command.get_command(),
+                "The command offered no output to read.".to_string(),
+            ));
+        };
+
+        // Both pipes are drained on their own thread. A pipe that nobody reads
+        // fills up and stops the command it belongs to.
+        let (sender, receiver) = mpsc::channel();
+        let needle = marker.to_string();
+        thread::spawn(move || {
+            let mut lines = BufReader::new(stdout).lines();
+            while let Some(Ok(line)) = lines.next() {
+                if line.contains(&needle) {
+                    return sender.send(()).unwrap_or_default();
+                }
+            }
+        });
+        let collector = thread::spawn(move || {
+            let mut text = String::new();
+            BufReader::new(stderr).read_to_string(&mut text).ok();
+            text
+        });
+
+        // The sender is dropped as soon as stdout ends, so a command that stops
+        // early is seen without waiting for the deadline.
+        let found = receiver.recv_timeout(timeout).is_ok();
+        let _ = child.kill();
+        let _ = child.wait();
+
+        if found {
+            return Ok(());
+        }
+        Err(Error::SystemCommandFailed(
+            command.get_command(),
+            collector.join().unwrap_or_default(),
+        ))
     }
 
     fn spawn_command(&self, command: &SystemCommand) -> Result<()> {

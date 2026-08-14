@@ -11,6 +11,18 @@ pub enum Arch {
 }
 
 impl Arch {
+    // The arch cubic itself was built for, which is the arch a guest must have
+    // to run with hardware acceleration.
+    #[cfg(target_arch = "aarch64")]
+    pub fn get_host() -> Arch {
+        Arch::ARM64
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
+    pub fn get_host() -> Arch {
+        Arch::AMD64
+    }
+
     pub fn as_vendor_str(&self) -> &str {
         match self {
             Arch::AMD64 => "amd64",

@@ -17,6 +17,8 @@ use clap::Parser;
 #[clap(verbatim_doc_comment)]
 pub struct RestartCommand {
     #[clap(flatten)]
+    pub accel: commands::AccelArg,
+    #[clap(flatten)]
     instances: commands::InstancesArg,
 }
 
@@ -31,6 +33,7 @@ impl Command for RestartCommand {
         .run(console, context)?;
         commands::StartCommand {
             qemu_args: None,
+            accel: self.accel,
             wait: true,
             yes: commands::YesArg { value: false },
             instances: self.instances.value.clone().into(),

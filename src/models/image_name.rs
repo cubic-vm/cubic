@@ -7,16 +7,6 @@ use std::sync::LazyLock;
 static IMAGE_NAME_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new("^(\\w+):([\\w\\.]+)(:(amd64|arm64))?$").unwrap());
 
-#[cfg(target_arch = "aarch64")]
-pub fn get_default_arch() -> Arch {
-    Arch::ARM64
-}
-
-#[cfg(not(target_arch = "aarch64"))]
-pub fn get_default_arch() -> Arch {
-    Arch::AMD64
-}
-
 #[derive(Clone, Debug)]
 pub struct ImageName {
     vendor: String,
@@ -49,7 +39,7 @@ impl FromStr for ImageName {
             let arch = tokens
                 .next()
                 .map(|x| Arch::from_str(x).unwrap())
-                .unwrap_or(get_default_arch());
+                .unwrap_or(Arch::get_host());
 
             Ok(Self { vendor, name, arch })
         } else {

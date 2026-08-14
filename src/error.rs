@@ -1,3 +1,4 @@
+use crate::models::Arch;
 use std::io;
 use thiserror::Error;
 
@@ -9,6 +10,11 @@ pub enum Error {
         "CPU arch '{0}' is not supported.\n\nChoose a supported architecture: 'amd64' or 'arm64'"
     )]
     UnknownArch(String),
+
+    #[error(
+        "Hardware acceleration needs a guest arch equal to the host arch.\n\nInstance '{0}' is {1} and this host is {2}.\n\nRun it with `--accel off` to use software emulation."
+    )]
+    ArchMismatch(String, Arch, Arch),
 
     #[error(
         "Instance '{0}' does not exist.\n\nOptions:\n  - Use an existing instance name\n  - Create it first: `cubic create {0} [...]`"

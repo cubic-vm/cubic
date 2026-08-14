@@ -20,6 +20,8 @@ pub struct SshCommand {
     /// Target instance (format: [username@]instance, e.g. 'myinstance' or 'cubic@myinstance')
     pub target: Target,
     #[clap(flatten)]
+    pub accel: commands::AccelArg,
+    #[clap(flatten)]
     pub env_args: commands::EnvArgs,
 }
 
@@ -31,6 +33,7 @@ impl Command for SshCommand {
 
         commands::StartCommand {
             qemu_args: None,
+            accel: self.accel,
             wait: true,
             yes: commands::YesArg { value: false },
             instances: name.clone().into(),

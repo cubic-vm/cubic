@@ -1,3 +1,4 @@
+mod accel_arg;
 mod all_images_arg;
 mod all_info_arg;
 mod all_instances_arg;
@@ -30,6 +31,7 @@ mod stop_command;
 mod verbosity;
 mod yes_arg;
 
+pub use accel_arg::*;
 pub use all_images_arg::*;
 pub use all_info_arg::*;
 pub use all_instances_arg::*;
