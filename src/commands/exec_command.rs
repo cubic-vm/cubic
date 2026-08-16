@@ -3,6 +3,7 @@ use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::Target;
 use crate::ssh::SshClient;
+use crate::util;
 use crate::view::Console;
 use clap::Parser;
 
@@ -56,6 +57,15 @@ impl Command for ExecCommand {
         ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system()));
         ssh.set_cmd(Some(self.cmd.clone()));
         ssh.set_env_vars(self.env_args.env_vars.clone());
-        ssh.shell(console, name.as_str(), &client_key, &user, ssh_port)
+        let async_caller = util::AsyncCaller::new();
+        let channel = async_caller.call(ssh.open_channel(
+            console,
+            &instance.name,
+            &client_key,
+            &user,
+            ssh_port,
+        ))?;
+        async_caller.call(ssh.shell(console, name.as_str(), channel))?;
+        Ok(())
     }
 }

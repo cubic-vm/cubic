@@ -3,6 +3,7 @@ use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::{TargetInstancePath, TargetPath};
 use crate::ssh::SshClient;
+use crate::util;
 use crate::view::Console;
 use clap::Parser;
 
@@ -78,11 +79,6 @@ impl Command for ScpCommand {
         check_target_is_running(context, console, &self.to)?;
 
         let env = context.get_env();
-        let root_dir = context
-            .get_system()
-            .read_env_var("SNAP")
-            .unwrap_or_default();
-
         let from = resolve_target_path(context, console, &self.from)?;
         let to = resolve_target_path(context, console, &self.to)?;
         let from_key = from
@@ -98,14 +94,13 @@ impl Command for ScpCommand {
 
         let mut ssh = SshClient::new(context);
         ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system()));
-        ssh.copy(
+        util::AsyncCaller::new().call(ssh.copy(
             console,
-            &root_dir,
             &from,
             from_key.as_deref(),
             &to,
             to_key.as_deref(),
-        )?;
+        ))?;
         Ok(())
     }
 }
