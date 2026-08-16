@@ -3,7 +3,7 @@ use crate::error::Error;
 use crate::models::{Instance, TargetInstancePath};
 use crate::ssh::{HostKeyChecker, KeyCheck, SftpPath, SshKeyGenerator};
 use crate::util;
-use crate::view::{ConfirmDialog, Console, Spinner};
+use crate::view::{ConfirmDialog, Console};
 use russh::keys::*;
 use russh::*;
 use russh_sftp::client::SftpSession;
@@ -217,7 +217,6 @@ impl<'a> SshClient<'a> {
     ) -> bool {
         let checker = HostKeyChecker::new();
 
-        console.stop();
         console.warn(&format!(
             "The host key of instance '{machine}' does not match the stored key."
         ));
@@ -228,7 +227,7 @@ impl<'a> SshClient<'a> {
         ConfirmDialog::new("Do you want to trust the new key and continue?").confirm(console)
     }
 
-    async fn open_channel(
+    pub async fn open_channel(
         &self,
         console: &mut Console<'_>,
         machine: &str,
@@ -242,9 +241,6 @@ impl<'a> SshClient<'a> {
         let mut pinned = instance.ssh_host_key.clone();
         let offered = Arc::new(Mutex::new(None));
 
-        console.play(Arc::new(Mutex::new(Spinner::new(format!(
-            "Connecting to {machine}"
-        )))));
         console.debug(&format!("Connecting to 127.0.0.1:{port}"));
         let mut failed = false;
         loop {
@@ -272,9 +268,6 @@ impl<'a> SshClient<'a> {
                 instance.ssh_host_key = Some(key.clone());
                 store.store(&instance)?;
                 pinned = Some(key);
-                console.play(Arc::new(Mutex::new(Spinner::new(format!(
-                    "Connecting to {machine}"
-                )))));
                 continue;
             }
 
@@ -299,14 +292,9 @@ impl<'a> SshClient<'a> {
             }
         }
 
-        console.play(Arc::new(Mutex::new(Spinner::new(format!(
-            "Authenticating on {machine}"
-        )))));
-
         let auth_method = self
             .authenticate(console, &mut session, user, machine, client_key)
             .await;
-        console.stop();
 
         if auth_method? == AuthMethod::Deprecated {
             self.warn_deprecated_auth(console, machine, client_key).ok();
@@ -318,22 +306,14 @@ impl<'a> SshClient<'a> {
             .map_err(|_| Error::SshConnectionFailed(machine.to_string()))
     }
 
-    async fn handle_interactive_shell(
+    pub async fn shell(
         &self,
         console: &mut Console<'_>,
-        machine: &str,
-        client_key: &str,
-        user: &str,
-        port: u16,
+        instance: &str,
+        channel: Channel<russh::client::Msg>,
     ) -> Result<(), Error> {
-        let channel = self
-            .open_channel(console, machine, client_key, user, port)
-            .await?;
         let (w, h) = console.get_geometry().unwrap();
 
-        console.play(Arc::new(std::sync::Mutex::new(Spinner::new(format!(
-            "Opening shell on {machine}"
-        )))));
         channel
             .request_pty(
                 false,
@@ -349,7 +329,7 @@ impl<'a> SshClient<'a> {
                 &[],
             )
             .await
-            .map_err(|_| Error::SshConnectionFailed(machine.to_string()))?;
+            .map_err(|_| Error::SshConnectionFailed(instance.to_string()))?;
 
         for var in &self.env_vars {
             let (name, value) = if let Some((k, v)) = var.split_once('=') {
@@ -366,25 +346,24 @@ impl<'a> SshClient<'a> {
             channel
                 .set_env(false, name, value)
                 .await
-                .map_err(|_| Error::SshConnectionFailed(machine.to_string()))?;
+                .map_err(|_| Error::SshConnectionFailed(instance.to_string()))?;
         }
 
         if let Some(cmd) = &self.cmd {
             channel
                 .exec(true, cmd.as_str())
                 .await
-                .map_err(|_| Error::SshConnectionFailed(machine.to_string()))?;
+                .map_err(|_| Error::SshConnectionFailed(instance.to_string()))?;
         } else {
             channel
                 .request_shell(true)
                 .await
-                .map_err(|_| Error::SshConnectionFailed(machine.to_string()))?;
+                .map_err(|_| Error::SshConnectionFailed(instance.to_string()))?;
         }
         let (mut ssh_in, ssh_out) = channel.split();
         let mut ssh_reader = ssh_in.make_reader();
         let mut ssh_writer = ssh_out.make_writer();
 
-        console.stop();
         console.raw_mode();
         let mut stdin = StreamReader::new(FramedRead::new(
             tokio::io::stdin(),
@@ -446,10 +425,9 @@ impl<'a> SshClient<'a> {
         })
     }
 
-    async fn async_copy(
+    pub async fn copy(
         &self,
         console: &mut Console<'_>,
-        _root_dir: &str,
         from: &TargetInstancePath,
         from_key: Option<&str>,
         to: &TargetInstancePath,
@@ -471,31 +449,6 @@ impl<'a> SshClient<'a> {
 
     pub fn set_env_vars(&mut self, env_vars: Vec<String>) {
         self.env_vars = env_vars;
-    }
-
-    pub fn shell(
-        &mut self,
-        console: &mut Console<'_>,
-        machine: &str,
-        client_key: &str,
-        user: &str,
-        port: u16,
-    ) -> Result<(), Error> {
-        util::AsyncCaller::new()
-            .call(self.handle_interactive_shell(console, machine, client_key, user, port))
-    }
-
-    pub fn copy(
-        &self,
-        console: &mut Console<'_>,
-        root_dir: &str,
-        from: &TargetInstancePath,
-        from_key: Option<&str>,
-        to: &TargetInstancePath,
-        to_key: Option<&str>,
-    ) -> Result<(), Error> {
-        util::AsyncCaller::new()
-            .call(self.async_copy(console, root_dir, from, from_key, to, to_key))
     }
 }
 
