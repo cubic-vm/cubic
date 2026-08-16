@@ -28,7 +28,7 @@ impl FromStr for TargetPath {
                 target: Some(Target::from_str(target)?),
                 path: path.to_string(),
             }),
-            _ => Err("Target path must have the format [[user@]instance:]path (e.g. 'cubic@mymachine:/home/cubic', 'mymachine:~/' or 'my_file'".to_string()),
+            _ => Err("Target path must have the format [[user@]instance:]path (e.g. 'cubic@mymachine:/home/cubic', 'mymachine:~/' or 'my_file')".to_string()),
         }
     }
 }
