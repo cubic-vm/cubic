@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use crate::error::{Error, FsOperation, Result};
 use crate::platform::{FileSystem, OsSystem};
 use std::fs;
 use std::io::{Read, Write};
@@ -32,49 +32,31 @@ impl FileSystem for OsSystem {
     }
 
     fn create_dir(&self, path: &Path) -> Result<()> {
-        fs::create_dir_all(path).map_err(|e| {
-            Error::FS(format!(
-                "Cannot create directory '{}' ({e})",
-                path.display()
-            ))
-        })
+        fs::create_dir_all(path).map_err(|e| Error::from_fs(FsOperation::CreateDir, path, e))
     }
 
     fn create_writable_dir(&self, path: &Path) -> Result<()> {
         self.create_dir(path)?;
 
         let permission = fs::metadata(path)
-            .map_err(|e| {
-                Error::FS(format!(
-                    "Cannot read directory metadata '{}' ({e})",
-                    path.display()
-                ))
-            })?
+            .map_err(|e| Error::from_fs(FsOperation::ReadMetadata, path, e))?
             .permissions();
 
         if permission.readonly() {
-            return Err(Error::FS(format!(
-                "Cannot write directory '{}'",
-                path.display()
-            )));
+            return Err(Error::ReadOnlyDir(path.to_path_buf()));
         }
 
         Ok(())
     }
 
     fn remove_dir(&self, path: &Path) -> Result<()> {
-        fs::remove_dir_all(path).map_err(|e| {
-            Error::FS(format!(
-                "Cannot remove directory '{}' ({e})",
-                path.display()
-            ))
-        })
+        fs::remove_dir_all(path).map_err(|e| Error::from_fs(FsOperation::RemoveDir, path, e))
     }
 
     fn read_dir(&self, path: &Path) -> Result<Vec<PathBuf>> {
         fs::read_dir(path)
             .map(|dir| dir.flatten().map(|entry| entry.path()).collect())
-            .map_err(|e| Error::FS(format!("Cannot read directory '{}' ({e})", path.display())))
+            .map_err(|e| Error::from_fs(FsOperation::ReadDir, path, e))
     }
 
     fn create_file(&self, path: &Path) -> Result<Box<dyn Write>> {
@@ -84,23 +66,21 @@ impl FileSystem for OsSystem {
             .truncate(true)
             .open(path)
             .map(|f| Box::new(f) as Box<dyn Write>)
-            .map_err(|e| Error::FS(format!("Cannot create file '{}' ({e})", path.display())))
+            .map_err(|e| Error::from_fs(FsOperation::CreateFile, path, e))
     }
 
     fn open_file(&self, path: &Path) -> Result<Box<dyn Read>> {
         fs::File::open(path)
             .map(|f| Box::new(f) as Box<dyn Read>)
-            .map_err(|e| Error::FS(format!("Cannot open file '{}' ({e})", path.display())))
+            .map_err(|e| Error::from_fs(FsOperation::OpenFile, path, e))
     }
 
     fn read_file_to_string(&self, path: &Path) -> Result<String> {
-        fs::read_to_string(path)
-            .map_err(|e| Error::FS(format!("Cannot read file '{}' ({e})", path.display())))
+        fs::read_to_string(path).map_err(|e| Error::from_fs(FsOperation::ReadFile, path, e))
     }
 
     fn write_file(&self, path: &Path, contents: &[u8]) -> Result<()> {
-        fs::write(path, contents)
-            .map_err(|e| Error::FS(format!("Cannot write file '{}' ({e})", path.display())))
+        fs::write(path, contents).map_err(|e| Error::from_fs(FsOperation::WriteFile, path, e))
     }
 
     // Writes a file only the owner may read, for private keys and other
@@ -118,21 +98,18 @@ impl FileSystem for OsSystem {
         options
             .open(path)
             .and_then(|mut file| file.write_all(contents))
-            .map_err(|e| Error::FS(format!("Cannot write file '{}' ({e})", path.display())))
+            .map_err(|e| Error::from_fs(FsOperation::WriteFile, path, e))
     }
 
     fn rename_file(&self, from: &Path, to: &Path) -> Result<()> {
-        fs::rename(from, to).map_err(|e| {
-            Error::FS(format!(
-                "Cannot rename file from '{}' to '{}' ({e})",
-                from.display(),
-                to.display()
-            ))
+        fs::rename(from, to).map_err(|e| Error::RenameFile {
+            from: from.to_path_buf(),
+            to: to.to_path_buf(),
+            source: e,
         })
     }
 
     fn remove_file(&self, path: &Path) -> Result<()> {
-        fs::remove_file(path)
-            .map_err(|e| Error::FS(format!("Cannot delete file '{}' ({e})", path.display())))
+        fs::remove_file(path).map_err(|e| Error::from_fs(FsOperation::RemoveFile, path, e))
     }
 }

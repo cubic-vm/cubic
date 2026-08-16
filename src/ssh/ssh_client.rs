@@ -414,11 +414,11 @@ impl<'a> SshClient<'a> {
         channel
             .request_subsystem(true, "sftp")
             .await
-            .map_err(|error| Error::Sftp(error.to_string()))?;
+            .map_err(|error| Error::from_sftp_session(&instance.name, error))?;
         SftpSession::new(channel.into_stream())
             .await
             .map(Rc::new)
-            .map_err(|error| Error::Sftp(error.to_string()))
+            .map_err(|error| Error::from_sftp_session(&instance.name, error))
     }
 
     async fn open_target_fs(

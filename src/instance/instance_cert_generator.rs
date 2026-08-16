@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::models::InstanceCertPaths;
 use crate::platform::System;
 use rcgen::{
@@ -25,7 +25,7 @@ impl<'a> InstanceCertGenerator<'a> {
     pub fn generate(&self) -> Result<InstanceCertPaths> {
         let certs = InstanceCertPaths::load(&self.dir);
 
-        let ca_key = KeyPair::generate().map_err(|e| Error::TlsCertGeneration(e.to_string()))?;
+        let ca_key = KeyPair::generate()?;
         let mut ca_params = CertificateParams::default();
 
         ca_params.distinguished_name = {
@@ -35,23 +35,16 @@ impl<'a> InstanceCertGenerator<'a> {
         };
         ca_params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
         ca_params.key_usages = vec![KeyUsagePurpose::KeyCertSign, KeyUsagePurpose::CrlSign];
-        let ca = CertifiedIssuer::self_signed(ca_params, ca_key)
-            .map_err(|e| Error::TlsCertGeneration(e.to_string()))?;
+        let ca = CertifiedIssuer::self_signed(ca_params, ca_key)?;
 
-        let server_key =
-            KeyPair::generate().map_err(|e| Error::TlsCertGeneration(e.to_string()))?;
+        let server_key = KeyPair::generate()?;
 
-        let server_cert = CertificateParams::new(vec!["localhost".to_string()])
-            .map_err(|e| Error::TlsCertGeneration(e.to_string()))?
-            .signed_by(&server_key, &ca)
-            .map_err(|e| Error::TlsCertGeneration(e.to_string()))?;
+        let server_cert =
+            CertificateParams::new(vec!["localhost".to_string()])?.signed_by(&server_key, &ca)?;
 
-        let client_key =
-            KeyPair::generate().map_err(|e| Error::TlsCertGeneration(e.to_string()))?;
+        let client_key = KeyPair::generate()?;
 
-        let client_cert = CertificateParams::default()
-            .signed_by(&client_key, &ca)
-            .map_err(|e| Error::TlsCertGeneration(e.to_string()))?;
+        let client_cert = CertificateParams::default().signed_by(&client_key, &ca)?;
 
         self.system
             .write_file(&certs.ca_cert, ca.pem().as_bytes())?;

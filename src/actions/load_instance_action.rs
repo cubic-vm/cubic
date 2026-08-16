@@ -22,9 +22,9 @@ impl LoadInstanceAction {
         name: &str,
     ) -> Result<Instance> {
         match context.get_instance_store().load(name) {
-            Err(Error::InvalidInstanceConfig(_, reason)) => {
+            Err(error @ Error::InvalidInstanceConfig { .. }) => {
                 console.warn(&format!(
-                    "Config of instance '{name}' is invalid, resetting it to the default settings.\n{reason}"
+                    "{error}\n\nResetting instance '{name}' to the default settings."
                 ));
 
                 let instance = self.build_default_instance(context, name)?;

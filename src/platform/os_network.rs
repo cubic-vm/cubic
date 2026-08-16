@@ -5,13 +5,14 @@ use std::time::Duration;
 
 impl Network for OsSystem {
     fn connect_port(&self, port: u16, timeout: Duration) -> Result<Box<dyn ReadWrite>> {
-        let stream = TcpStream::connect(format!("127.0.0.1:{port}")).map_err(Error::from)?;
+        let stream = TcpStream::connect(format!("127.0.0.1:{port}"))
+            .map_err(|e| Error::ConnectionFailed(port, e))?;
         stream
             .set_read_timeout(Some(timeout))
-            .map_err(Error::from)?;
+            .map_err(|e| Error::ConnectionFailed(port, e))?;
         stream
             .set_write_timeout(Some(timeout))
-            .map_err(Error::from)?;
+            .map_err(|e| Error::ConnectionFailed(port, e))?;
         Ok(Box::new(stream))
     }
 

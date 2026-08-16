@@ -14,26 +14,23 @@ pub struct TlsClient {
 
 impl TlsClient {
     pub fn new(certs: &InstanceCertPaths) -> Result<Self> {
-        let ca_der = CertificateDer::from_pem_file(&certs.ca_cert)
-            .map_err(|e| Error::TlsConnection(e.to_string()))?;
+        let ca_der = CertificateDer::from_pem_file(&certs.ca_cert).map_err(Error::from_tls)?;
 
         let mut root_store = RootCertStore::empty();
-        root_store
-            .add(ca_der)
-            .map_err(|e| Error::TlsConnection(e.to_string()))?;
+        root_store.add(ca_der).map_err(Error::from_tls)?;
 
         let client_certs = CertificateDer::pem_file_iter(&certs.client_cert)
-            .map_err(|e| Error::TlsConnection(e.to_string()))?
+            .map_err(Error::from_tls)?
             .collect::<std::result::Result<Vec<_>, _>>()
-            .map_err(|e| Error::TlsConnection(e.to_string()))?;
+            .map_err(Error::from_tls)?;
 
-        let client_key = PrivateKeyDer::from_pem_file(&certs.client_key)
-            .map_err(|e| Error::TlsConnection(e.to_string()))?;
+        let client_key =
+            PrivateKeyDer::from_pem_file(&certs.client_key).map_err(Error::from_tls)?;
 
         let config = ClientConfig::builder()
             .with_root_certificates(root_store)
             .with_client_auth_cert(client_certs, client_key)
-            .map_err(|e| Error::TlsConnection(e.to_string()))?;
+            .map_err(Error::from_tls)?;
 
         Ok(Self {
             config: Arc::new(config),
@@ -41,23 +38,22 @@ impl TlsClient {
     }
 
     pub fn connect(&self, port: u16) -> Result<StreamOwned<ClientConnection, TcpStream>> {
-        let server_name =
-            ServerName::try_from("localhost").map_err(|e| Error::TlsConnection(e.to_string()))?;
-        let conn = ClientConnection::new(self.config.clone(), server_name)
-            .map_err(|e| Error::TlsConnection(e.to_string()))?;
-        let tcp = TcpStream::connect(format!("127.0.0.1:{port}")).map_err(Error::from)?;
+        let server_name = ServerName::try_from("localhost").map_err(Error::from_tls)?;
+        let conn =
+            ClientConnection::new(self.config.clone(), server_name).map_err(Error::from_tls)?;
+        let tcp = TcpStream::connect(format!("127.0.0.1:{port}"))
+            .map_err(|e| Error::ConnectionFailed(port, e))?;
         Ok(StreamOwned::new(conn, tcp))
     }
 
     pub async fn connect_async(&self, port: u16) -> Result<TlsStream<tokio::net::TcpStream>> {
-        let server_name =
-            ServerName::try_from("localhost").map_err(|e| Error::TlsConnection(e.to_string()))?;
+        let server_name = ServerName::try_from("localhost").map_err(Error::from_tls)?;
         let tcp = tokio::net::TcpStream::connect(format!("127.0.0.1:{port}"))
             .await
-            .map_err(Error::from)?;
+            .map_err(|e| Error::ConnectionFailed(port, e))?;
         TlsConnector::from(self.config.clone())
             .connect(server_name, tcp)
             .await
-            .map_err(|e| Error::TlsConnection(e.to_string()))
+            .map_err(Error::from_tls)
     }
 }
