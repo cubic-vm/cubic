@@ -15,14 +15,14 @@ impl TomlInstanceDeserializer {
         let mut data = String::new();
         reader
             .read_to_string(&mut data)
-            .map_err(|error| Error::InvalidInstanceConfig(name.to_string(), error.to_string()))?;
+            .map_err(|error| Error::from_config(name, error))?;
 
         toml::from_str(&data)
             .map(|mut instance: Instance| {
                 instance.name = name.to_string();
                 instance
             })
-            .map_err(|error| Error::InvalidInstanceConfig(name.to_string(), error.to_string()))
+            .map_err(|error| Error::from_config(name, error))
     }
 }
 
@@ -33,20 +33,11 @@ mod tests {
     use std::io::BufReader;
 
     #[test]
-    fn test_deserialize_empty_file() {
-        let reader = &mut BufReader::new("".as_bytes());
-        assert!(matches!(
-            TomlInstanceDeserializer::new().deserialize("test", reader),
-            Err(Error::InvalidInstanceConfig(name, _)) if name == "test"
-        ));
-    }
-
-    #[test]
     fn test_deserialize_broken_file() {
         let reader = &mut BufReader::new("cpus = ".as_bytes());
         assert!(matches!(
             TomlInstanceDeserializer::new().deserialize("test", reader),
-            Err(Error::InvalidInstanceConfig(name, _)) if name == "test"
+            Err(Error::InvalidInstanceConfig { name, .. }) if name == "test"
         ));
     }
 

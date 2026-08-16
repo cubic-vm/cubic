@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use crate::error::{Error, FsOperation, Result};
 use crate::view::{AsyncTransferView, Console, TransferView};
 use russh_sftp::{self, client::SftpSession};
 use std::cmp::max;
@@ -48,7 +48,7 @@ impl SftpPath {
             Some(sftp) => sftp
                 .try_exists(self.to_str())
                 .await
-                .map_err(|e| Error::Sftp(e.to_string())),
+                .map_err(|e| Error::from_sftp(FsOperation::ReadMetadata, self.to_str(), e)),
         }
     }
 
@@ -57,12 +57,12 @@ impl SftpPath {
             None => self
                 .path
                 .metadata()
-                .map_err(|_| Error::InvalidPath(self.to_str().to_string()))
+                .map_err(|e| Error::from_fs(FsOperation::ReadMetadata, &self.path, e))
                 .map(|metadata| metadata.len() as usize),
             Some(sftp) => sftp
                 .metadata(self.to_str())
                 .await
-                .map_err(|_| Error::InvalidPath(self.to_str().to_string()))
+                .map_err(|e| Error::from_sftp(FsOperation::ReadMetadata, self.to_str(), e))
                 .and_then(|metadata| {
                     metadata
                         .size
@@ -78,7 +78,7 @@ impl SftpPath {
             Some(sftp) => sftp
                 .metadata(self.to_str())
                 .await
-                .map_err(|_| Error::InvalidPath(self.to_str().to_string()))
+                .map_err(|e| Error::from_sftp(FsOperation::ReadMetadata, self.to_str(), e))
                 .map(|metadata| metadata.file_type().is_file()),
         }
     }
@@ -89,7 +89,7 @@ impl SftpPath {
             Some(sftp) => sftp
                 .metadata(self.to_str())
                 .await
-                .map_err(|_| Error::InvalidPath(self.to_str().to_string()))
+                .map_err(|e| Error::from_sftp(FsOperation::ReadMetadata, self.to_str(), e))
                 .map(|metadata| metadata.file_type().is_dir()),
         }
     }
@@ -107,12 +107,12 @@ impl SftpPath {
             None => tokio::fs::File::open(self.path.clone())
                 .await
                 .map(|f| Box::new(f) as Box<dyn AsyncRead + Unpin>)
-                .map_err(Error::Io),
+                .map_err(|e| Error::from_fs(FsOperation::OpenFile, &self.path, e)),
             Some(sftp) => sftp
                 .open(self.to_str())
                 .await
                 .map(|f| Box::new(f) as Box<dyn AsyncRead + Unpin>)
-                .map_err(|e| Error::Sftp(e.to_string())),
+                .map_err(|e| Error::from_sftp(FsOperation::OpenFile, self.to_str(), e)),
         }
     }
 
@@ -121,12 +121,12 @@ impl SftpPath {
             None => tokio::fs::File::create(self.path.clone())
                 .await
                 .map(|f| Box::new(f) as Box<dyn AsyncWrite + Unpin>)
-                .map_err(Error::Io),
+                .map_err(|e| Error::from_fs(FsOperation::CreateFile, &self.path, e)),
             Some(sftp) => sftp
                 .create(self.to_str())
                 .await
                 .map(|f| Box::new(f) as Box<dyn AsyncWrite + Unpin>)
-                .map_err(|e| Error::Sftp(e.to_string())),
+                .map_err(|e| Error::from_sftp(FsOperation::CreateFile, self.to_str(), e)),
         }
     }
 
@@ -144,7 +144,7 @@ impl SftpPath {
         let result = tokio::io::copy(read, &mut self.create_file().await?)
             .await
             .map(|_| ())
-            .map_err(Error::Io);
+            .map_err(|e| Error::from_fs(FsOperation::WriteFile, &self.path, e));
         console.stop();
         result
     }
@@ -166,7 +166,7 @@ impl SftpPath {
                 for entry in sftp
                     .read_dir(self.to_str())
                     .await
-                    .map_err(|e| Error::Sftp(e.to_string()))?
+                    .map_err(|e| Error::from_sftp(FsOperation::ReadDir, self.to_str(), e))?
                 {
                     children.push(Self {
                         sftp: Some(sftp.clone()),
@@ -181,11 +181,12 @@ impl SftpPath {
 
     pub async fn create_path(&self) -> Result<()> {
         match &self.sftp {
-            None => fs::create_dir(self.path.clone()).map_err(Error::Io),
+            None => fs::create_dir(self.path.clone())
+                .map_err(|e| Error::from_fs(FsOperation::CreateDir, &self.path, e)),
             Some(sftp) => sftp
                 .create_dir(self.to_str())
                 .await
-                .map_err(|e| Error::Sftp(e.to_string())),
+                .map_err(|e| Error::from_sftp(FsOperation::CreateDir, self.to_str(), e)),
         }
     }
 

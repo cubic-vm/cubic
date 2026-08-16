@@ -52,7 +52,10 @@ impl NetworkMock {
         match self.find(port) {
             Some(PortState::Listening) => Ok(Box::new(StreamMock::new(GREETING))),
             Some(PortState::Silent) => Ok(Box::new(StreamMock::new(b""))),
-            _ => Err(Error::Io(std::io::ErrorKind::ConnectionRefused.into())),
+            _ => Err(Error::ConnectionFailed(
+                port,
+                std::io::ErrorKind::ConnectionRefused.into(),
+            )),
         }
     }
 
@@ -185,7 +188,7 @@ mod tests {
 
         assert!(matches!(
             system.connect_port(22, Duration::from_secs(1)),
-            Err(Error::Io(e)) if e.kind() == std::io::ErrorKind::ConnectionRefused
+            Err(Error::ConnectionFailed(22, e)) if e.kind() == std::io::ErrorKind::ConnectionRefused
         ));
     }
 

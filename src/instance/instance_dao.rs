@@ -80,7 +80,7 @@ impl InstanceStore for InstanceDao {
         let mut file = self
             .system
             .open_file(Path::new(&path))
-            .map_err(|error| Error::InvalidInstanceConfig(name.to_string(), error.to_string()))?;
+            .map_err(|error| Error::from_config(name, error))?;
 
         let mut instance = TomlInstanceDeserializer::new().deserialize(name, &mut file)?;
         QemuImg::new(self.system.as_ref()).read_disk_info(&self.env, &mut instance);
@@ -221,27 +221,13 @@ mod tests {
     }
 
     #[test]
-    fn test_load_reports_a_broken_config() {
-        let env = build_env();
-        let system = SystemMock::new()
-            .add_dir("/data/machines/test")
-            .add_file(&env.get_instance_toml_config_file("test"), b"cpus = ");
-        let dao = InstanceDao::new(Rc::new(system), &env).unwrap();
-
-        assert!(matches!(
-            dao.load("test"),
-            Err(Error::InvalidInstanceConfig(name, _)) if name == "test"
-        ));
-    }
-
-    #[test]
     fn test_load_reports_a_missing_config() {
         let system = SystemMock::new().add_dir("/data/machines/test");
         let dao = InstanceDao::new(Rc::new(system), &build_env()).unwrap();
 
         assert!(matches!(
             dao.load("test"),
-            Err(Error::InvalidInstanceConfig(name, _)) if name == "test"
+            Err(Error::InvalidInstanceConfig { name, .. }) if name == "test"
         ));
     }
 

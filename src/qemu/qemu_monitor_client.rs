@@ -25,10 +25,10 @@ impl QemuMonitorClient {
         let socket = stream.get_mut();
         socket
             .set_read_timeout(Some(QMP_TIMEOUT))
-            .map_err(Error::from)?;
+            .map_err(|e| Error::ConnectionFailed(port, e))?;
         socket
             .set_write_timeout(Some(QMP_TIMEOUT))
-            .map_err(Error::from)?;
+            .map_err(|e| Error::ConnectionFailed(port, e))?;
 
         let mut client = QemuMonitorClient {
             counter: 0,

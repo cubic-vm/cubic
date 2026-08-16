@@ -1,7 +1,8 @@
-use crate::error::{Error, Result};
+use crate::error::{Error, FsOperation, Result};
 use crate::platform::{FileSystem, SystemMock};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::io;
 use std::io::{Cursor, Read, Write};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -218,10 +219,11 @@ impl FileSystem for SystemMock {
     fn read_dir(&self, path: &Path) -> Result<Vec<PathBuf>> {
         let file_system = self.file_system.borrow();
         if !file_system.exists_dir(path) {
-            return Err(Error::FS(format!(
-                "Cannot read directory '{}' (not found)",
-                path.display()
-            )));
+            return Err(Error::from_fs(
+                FsOperation::ReadDir,
+                path,
+                io::ErrorKind::NotFound.into(),
+            ));
         }
         Ok(file_system.list_children(path))
     }
@@ -239,15 +241,22 @@ impl FileSystem for SystemMock {
             .borrow()
             .get_file(path)
             .map(|content| Box::new(Cursor::new(content)) as Box<dyn Read>)
-            .ok_or_else(|| Error::FS(format!("Cannot open file '{}' (not found)", path.display())))
+            .ok_or_else(|| {
+                Error::from_fs(FsOperation::OpenFile, path, io::ErrorKind::NotFound.into())
+            })
     }
 
     fn read_file_to_string(&self, path: &Path) -> Result<String> {
         let content = self.file_system.borrow().get_file(path).ok_or_else(|| {
-            Error::FS(format!("Cannot read file '{}' (not found)", path.display()))
+            Error::from_fs(FsOperation::ReadFile, path, io::ErrorKind::NotFound.into())
         })?;
-        String::from_utf8(content)
-            .map_err(|e| Error::FS(format!("Cannot read file '{}' ({e})", path.display())))
+        String::from_utf8(content).map_err(|e| {
+            Error::from_fs(
+                FsOperation::ReadFile,
+                path,
+                io::Error::new(io::ErrorKind::InvalidData, e),
+            )
+        })
     }
 
     fn write_file(&self, path: &Path, contents: &[u8]) -> Result<()> {
@@ -263,11 +272,11 @@ impl FileSystem for SystemMock {
         if self.file_system.borrow_mut().rename_path(from, to) {
             Ok(())
         } else {
-            Err(Error::FS(format!(
-                "Cannot rename file from '{}' to '{}' (not found)",
-                from.display(),
-                to.display()
-            )))
+            Err(Error::RenameFile {
+                from: from.to_path_buf(),
+                to: to.to_path_buf(),
+                source: io::ErrorKind::NotFound.into(),
+            })
         }
     }
 
@@ -277,10 +286,11 @@ impl FileSystem for SystemMock {
             .remove_file(path)
             .map(|_| ())
             .ok_or_else(|| {
-                Error::FS(format!(
-                    "Cannot delete file '{}' (not found)",
-                    path.display()
-                ))
+                Error::from_fs(
+                    FsOperation::RemoveFile,
+                    path,
+                    io::ErrorKind::NotFound.into(),
+                )
             })
     }
 }
