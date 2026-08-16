@@ -120,11 +120,8 @@ Error:
 {1}
 
 Troubleshoot:
-  - Make sure the following tools are installed and the PATH variable is set
-    correctly:
-    - qemu-system-x86_64
-    - qemu-system-aarch64
-    - qemu-img
+  - Run the command again with --verbose to see the full QEMU command line
+  - Check the QEMU version with `qemu-system-x86_64 --version`
 
   - Report error at https://github.com/cubic-vm/cubic/issues
 "
