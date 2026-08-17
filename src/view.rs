@@ -6,7 +6,6 @@ mod map_view;
 mod progress_bar;
 mod spinner;
 mod table_view;
-mod time_duration;
 mod transfer_view;
 
 pub use animation::*;
@@ -17,5 +16,4 @@ pub use map_view::*;
 pub use progress_bar::*;
 pub use spinner::*;
 pub use table_view::*;
-pub use time_duration::*;
 pub use transfer_view::*;
