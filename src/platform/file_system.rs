@@ -6,6 +6,7 @@ pub trait FileSystem {
     fn exists_path(&self, path: &Path) -> bool;
     fn exists_dir(&self, path: &Path) -> bool;
     fn get_path_size(&self, path: &Path) -> u64;
+    fn get_available_space(&self, path: &Path) -> Option<u64>;
     fn create_dir(&self, path: &Path) -> Result<()>;
     fn create_writable_dir(&self, path: &Path) -> Result<()>;
     fn remove_dir(&self, path: &Path) -> Result<()>;

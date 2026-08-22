@@ -1,5 +1,6 @@
-use crate::models::DataSize;
+use crate::models::{DataSize, Environment};
 use crate::platform::System;
+use std::path::Path;
 
 const MIB: usize = 1024 * 1024;
 const GIB: usize = 1024 * MIB;
@@ -7,6 +8,9 @@ const GIB: usize = 1024 * MIB;
 /// Memory kept aside for the host and QEMU overhead so a machine never claims
 /// all of the available memory.
 pub const HOST_MEMORY_RESERVE: usize = GIB;
+
+pub const LOW_DISK_SPACE: u64 = 5 * GIB as u64;
+pub const LOW_DISK_SPACE_WARNING: &str = "Low disk space detected on the host.";
 
 /// Decides the default vCPU count and memory for a new machine based on the
 /// resources of the host it runs on.
@@ -71,6 +75,12 @@ impl ResourceAllocator {
     pub fn get_resources_for_budget(available_bytes: usize) -> Option<(u16, DataSize)> {
         let budget = available_bytes.saturating_sub(HOST_MEMORY_RESERVE);
         (budget >= 512 * MIB).then(|| Self::resources_for_level(budget / GIB))
+    }
+
+    pub fn is_disk_space_low(system: &dyn System, env: &Environment) -> bool {
+        system
+            .get_available_space(Path::new(&env.get_instance_dir()))
+            .is_some_and(|free| free < LOW_DISK_SPACE)
     }
 
     /// Map a level to its machine size. Level N is 2N vCPUs and N GiB, and the
