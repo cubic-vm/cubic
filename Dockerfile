@@ -17,6 +17,7 @@ RUN apt update && \
         git \
         vim \
         yamllint \
+        shellcheck \
         unzip \
         curl &&\
     curl -fsSL https://github.com/vulnlog/vulnlog/releases/download/v0.16.0/install-vulnlog.sh | sh &&\
