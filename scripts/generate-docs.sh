@@ -3,18 +3,18 @@ set -euo pipefail
 
 version="$1"
 
-CMDS="run create instances images ports show modify console ssh scp exec start \
-    stop restart rename clone delete prune completions"
+CMDS=(run create instances images ports show modify console ssh scp exec start \
+    stop restart rename clone delete prune completions)
 
 function generate_cmd_doc() {
     name="$1"
-    cmd="$2"
-    ref="$3"
-    file="$4"
+    ref="$2"
+    file="$3"
+    shift 3
     underline="${name//?/=}"
 
     echo -e ".. $ref:\n\n$name\n$underline\n\n.. code-block::\n\n    \$ $name --help" > "$file"
-    cargo run -- $cmd --help | sed "s/^/    /" >> "$file"
+    cargo run -- "$@" --help | sed "s/^/    /" >> "$file"
 }
 
 # Set version
@@ -24,11 +24,11 @@ sed "s/^release = .*$/release = '$version'/g" -i docs/conf.py
 mkdir -p docs/reference
 
 # Generate cubic help
-generate_cmd_doc "cubic" "" "_ref_cubic" "docs/reference/cubic.rst"
+generate_cmd_doc "cubic" "_ref_cubic" "docs/reference/cubic.rst"
 
 # Generate cubic subcommands help
-for cmd in ${CMDS}; do
-    generate_cmd_doc "cubic $cmd" "$cmd" "_ref_cubic_$cmd" "docs/reference/$cmd.rst"
+for cmd in "${CMDS[@]}"; do
+    generate_cmd_doc "cubic $cmd" "_ref_cubic_$cmd" "docs/reference/$cmd.rst" "$cmd"
 done
 
 # Generate reference/index.rst as the Command Reference landing page
@@ -42,7 +42,7 @@ Command Reference
    cubic
 REFEOF
 
-for cmd in ${CMDS}; do
+for cmd in "${CMDS[@]}"; do
     echo "   $cmd" >> docs/reference/index.rst
 done
 
@@ -83,7 +83,7 @@ Cubic
 
 EOF
 
-for cmd in ${CMDS}; do
+for cmd in "${CMDS[@]}"; do
     echo "   reference/$cmd" >> docs/index.rst
 done
 

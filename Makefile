@@ -41,6 +41,9 @@ fix-lint: build-image
 yamllint: build-image
 	${DOCKER_CMD} ${IMAGE} yamllint --strict .
 
+shellcheck: build-image
+	${DOCKER_CMD} ${IMAGE} shellcheck .github/scripts/*.sh scripts/*.sh
+
 test: build-image
 	${DOCKER_CMD} ${IMAGE} cargo test
 
@@ -53,7 +56,7 @@ update: build-image
 sh: build-image
 	${DOCKER_CMD} -it ${IMAGE} bash
 
-check: format lint yamllint test audit
+check: format lint yamllint shellcheck test audit
 
 fix: fix-format fix-lint
 
