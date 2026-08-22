@@ -4,7 +4,9 @@ use crate::commands::{
     image::{fetch_image, fetch_image_info},
 };
 use crate::error::{Error, Result};
-use crate::models::{DataSize, ImageName, Instance, PortForward, ResourceAllocator, UserName};
+use crate::models::{
+    DataSize, ImageName, Instance, LOW_DISK_SPACE_WARNING, PortForward, ResourceAllocator, UserName,
+};
 use crate::view::Console;
 use crate::view::Spinner;
 use clap::{ArgAction, Parser};
@@ -77,6 +79,10 @@ impl Command for CreateCommand {
             return Err(Error::InstanceAlreadyExists(
                 self.instance_name.value.to_string(),
             ));
+        }
+
+        if ResourceAllocator::is_disk_space_low(context.get_system(), env) {
+            console.warn(LOW_DISK_SPACE_WARNING);
         }
 
         // Fetch image

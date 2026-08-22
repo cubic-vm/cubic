@@ -202,6 +202,10 @@ impl FileSystem for SystemMock {
         self.file_system.borrow().get_path_size(path)
     }
 
+    fn get_available_space(&self, _path: &Path) -> Option<u64> {
+        None
+    }
+
     fn create_dir(&self, path: &Path) -> Result<()> {
         self.file_system.borrow_mut().add_dir(path);
         Ok(())

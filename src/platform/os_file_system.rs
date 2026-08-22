@@ -31,6 +31,17 @@ impl FileSystem for OsSystem {
             .unwrap_or_default()
     }
 
+    fn get_available_space(&self, path: &Path) -> Option<u64> {
+        let path = path.canonicalize().ok()?;
+
+        sysinfo::Disks::new_with_refreshed_list()
+            .list()
+            .iter()
+            .filter(|disk| path.starts_with(disk.mount_point()))
+            .max_by_key(|disk| disk.mount_point().as_os_str().len())
+            .map(|disk| disk.available_space())
+    }
+
     fn create_dir(&self, path: &Path) -> Result<()> {
         fs::create_dir_all(path).map_err(|e| Error::from_fs(FsOperation::CreateDir, path, e))
     }

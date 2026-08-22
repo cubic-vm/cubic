@@ -1,7 +1,7 @@
 use crate::actions::{CreateInstanceAction, LoadInstanceAction};
 use crate::commands::{Command, Context};
 use crate::error::{Error, Result};
-use crate::models::InstanceName;
+use crate::models::{InstanceName, LOW_DISK_SPACE_WARNING, ResourceAllocator};
 use crate::view::{Console, Spinner};
 use clap::Parser;
 use std::sync::{Arc, Mutex};
@@ -29,6 +29,10 @@ impl Command for CloneCommand {
         // Verify that the target name is available
         if instance_store.exists(self.new_name.as_str()) {
             return Err(Error::InstanceAlreadyExists(self.new_name.to_string()));
+        }
+
+        if ResourceAllocator::is_disk_space_low(context.get_system(), context.get_env()) {
+            console.warn(LOW_DISK_SPACE_WARNING);
         }
 
         // Load source instance info
