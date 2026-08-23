@@ -56,6 +56,7 @@ Cubic
    :hidden:
 
    howto/install
+   howto/shell_completions
    howto/getting_started
    howto/http_server
    howto/ssh_connect
