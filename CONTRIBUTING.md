@@ -15,35 +15,50 @@ There are many ways to contribute, no matter your background:
 
 ## How to set up a development environment?
 
-Before building Cubic, ensure you have the necessary tools installed:
+The recommended workflow uses **Docker** and **Make**, which build and run all checks inside a pinned container matching the CI environment:
+
+- **Docker**
+- **Make**
+- **Git**
+
+Alternatively, if you prefer building directly on your host without Docker:
 
 - **Git**
 - **GCC**
-- **Rustup**
+- **Rustup** (Rust toolchain `1.92.0` matching CI and the container)
 
 For **Debian**, **Ubuntu**, and derivatives:
 ```bash
-sudo apt update && sudo apt install -y git gcc rustup
+sudo apt update && sudo apt install -y git gcc rustup make docker.io
 ```
 
 For **Fedora** and derivatives:
 ```bash
-sudo dnf install -y git gcc rustup && sudo rustup-init -y
+sudo dnf install -y git gcc rustup make docker && sudo rustup-init -y
 ```
 
 For **OpenSUSE** and derivatives:
 ```bash
-sudo zypper install -y git gcc rustup
+sudo zypper install -y git gcc rustup make docker
 ```
 
 Then clone the repository:
 ```bash
 git clone https://github.com/cubic-vm/cubic.git
 cd cubic/
-rustup toolchain install stable
+rustup toolchain install 1.92.0
+rustup override set 1.92.0
 ```
 
 ## How to build?
+
+The primary and recommended way to build Cubic is using Make, which runs inside the pinned container:
+
+```bash
+make build
+```
+
+Alternatively, you can build locally with Cargo:
 
 Debug build (fast compile, no optimisations):
 ```bash
@@ -82,6 +97,14 @@ To actually run virtual machines, Cubic requires QEMU to be installed on the hos
 
 ## How to test?
 
+The recommended way to run the test suite is via the containerized Make target:
+
+```bash
+make test
+```
+
+Alternatively, you can run tests directly with Cargo:
+
 ```bash
 cargo test
 ```
@@ -97,6 +120,14 @@ The documentation is built with [Sphinx](https://www.sphinx-doc.org/).
 The source files live in the `docs/` directory and are written in
 [reStructuredText](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html).
 
+Using Make, you can build and preview the documentation server inside the container:
+
+```bash
+make doc
+```
+
+Alternatively, to build on your host:
+
 First, generate the CLI reference pages from the binary's help output:
 ```bash
 ./scripts/generate-docs.sh dev
@@ -111,6 +142,19 @@ The output is written to `target/doc/`.
 
 ## How to fix code formatting?
 
+The recommended way to fix formatting across Rust code and configuration files is:
+
+```bash
+make fix-format
+```
+
+To check formatting without modifying files:
+```bash
+make format
+```
+
+Alternatively, you can format Rust code directly with Cargo:
+
 ```bash
 cargo fmt
 ```
@@ -122,6 +166,24 @@ cargo fmt --check
 
 ## How to lint?
 
+The recommended way to run lints inside the pinned container is:
+
+```bash
+make lint
+```
+
+To automatically apply safe fixes:
+```bash
+make fix-lint
+```
+
+You can also run both format and lint fixes together:
+```bash
+make fix
+```
+
+Alternatively, you can run Clippy directly with Cargo:
+
 ```bash
 cargo clippy -- -D warnings
 ```
@@ -132,6 +194,14 @@ cargo clippy --fix --allow-dirty
 ```
 
 ## How to run a security audit?
+
+The recommended way to run a security audit inside the container is:
+
+```bash
+make audit
+```
+
+Alternatively, using Cargo directly:
 
 ```bash
 cargo audit
@@ -160,7 +230,16 @@ General guideline:
   - `chore: ...` for changes not related to source code
   - `revert: ...` for reverting a previous commit
 
-Before opening a pull request, please verify that your changes pass all checks:
+Before opening a pull request, please verify that your changes pass all checks.
+The recommended way is running the containerized check suite:
+
+```bash
+make check
+```
+
+This runs formatting, linting (including yamllint and shellcheck), unit tests, and security audits matching CI.
+
+Alternatively, if running directly with Cargo:
 ```bash
 cargo fmt --check && cargo clippy -- -D warnings && cargo test && cargo audit
 ```
