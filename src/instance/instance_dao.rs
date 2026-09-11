@@ -101,11 +101,10 @@ impl InstanceStore for InstanceDao {
     }
 
     fn rename(&self, instance: &mut Instance, new_name: &str) -> Result<()> {
-        if self.exists(new_name) {
-            Err(Error::InstanceAlreadyExists(new_name.to_string()))
-        } else if self.is_running(instance) {
+        if self.is_running(instance) {
             Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
+            self.claim_name(new_name)?;
             self.system.rename_file(
                 Path::new(&self.env.get_instance_dir2(&instance.name)),
                 Path::new(&self.env.get_instance_dir2(new_name)),

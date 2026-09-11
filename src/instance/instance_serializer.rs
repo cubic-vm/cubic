@@ -57,6 +57,7 @@ disk_capacity = 1000
 ssh_port = 10000
 hostfwd = []
 isolate = false
+auto_remove = false
 "#
         );
     }
@@ -98,6 +99,7 @@ hostfwd = []
 execute = "echo hello world"
 isolate = true
 ssh_host_key = "ssh-ed25519 AAAA"
+auto_remove = false
 "#
         );
     }

@@ -163,16 +163,12 @@ impl CreateCommand {
         &self,
         console: &Arc<Console>,
         context: &Context,
-        overlay: bool,
+        auto_remove: bool,
     ) -> Result<()> {
         let env = context.get_env();
         let instance_store = context.get_instance_store();
 
-        if instance_store.exists(self.instance_name.value.as_str()) {
-            return Err(Error::InstanceAlreadyExists(
-                self.instance_name.value.to_string(),
-            ));
-        }
+        instance_store.claim_name(self.instance_name.value.as_str())?;
 
         if ResourceAllocator::is_disk_space_low(context.get_system(), env) {
             console.warn(LOW_DISK_SPACE_WARNING);
@@ -211,7 +207,7 @@ impl CreateCommand {
         ));
 
         let image_path = &env.get_image_file(&image.to_file_name());
-        CreateInstanceAction::new().run(context, image_path, instance, overlay)?;
+        CreateInstanceAction::new().run(context, image_path, instance, auto_remove)?;
 
         Ok(())
     }

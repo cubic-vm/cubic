@@ -68,13 +68,20 @@ impl Command for RunCommand {
     async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
         self.create_cmd.create(console, context, self.rm).await?;
 
-        let result = commands::SshCommand {
+        let ssh = commands::SshCommand {
             target: Target::from_instance_name(self.create_cmd.instance_name.value.clone()),
             accel: self.accel,
             env_args: self.env_args.clone(),
-        }
-        .run(console, context)
-        .await;
+        };
+        // Ctrl+C ends the session like an exit. The dropped shell cannot
+        // reset the terminal, so reset it here.
+        let result = tokio::select! {
+            result = ssh.run(console, context) => result,
+            _ = tokio::signal::ctrl_c() => {
+                console.reset();
+                Ok(130)
+            }
+        };
 
         if self.rm {
             self.cleanup(console, context);

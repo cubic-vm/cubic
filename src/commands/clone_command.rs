@@ -26,11 +26,6 @@ impl Command for CloneCommand {
     async fn run(&self, console: &Arc<Console>, context: &Context) -> Result<u8> {
         let instance_store = context.get_instance_store();
 
-        // Verify that the target name is available
-        if instance_store.exists(self.new_name.as_str()) {
-            return Err(Error::InstanceAlreadyExists(self.new_name.to_string()));
-        }
-
         if ResourceAllocator::is_disk_space_low(context.get_system(), context.get_env()) {
             console.warn(LOW_DISK_SPACE_WARNING);
         }
@@ -42,6 +37,9 @@ impl Command for CloneCommand {
         if instance_store.is_running(source) {
             return Err(Error::InstanceNotStopped(source.name.to_string()));
         }
+
+        // Verify that the target name is available
+        instance_store.claim_name(self.new_name.as_str())?;
 
         let text = format!("Cloning {} to {}", self.name, self.new_name);
         let _spinner = Spinner::new(Arc::clone(console), text);

@@ -31,6 +31,9 @@ pub struct Instance {
     /// Guest SSH host key, pinned on the first connect
     #[serde(default)]
     pub ssh_host_key: Option<String>,
+    /// Set by `cubic run --rm`, the instance is deleted once it stops
+    #[serde(default)]
+    pub auto_remove: bool,
 }
 
 impl Instance {

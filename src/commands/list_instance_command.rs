@@ -50,6 +50,9 @@ impl Command for ListInstanceCommand {
 
         for instance_name in &instance_names {
             let instance = LoadInstanceAction::new().run(context, console, instance_name)?;
+            if instance_store.is_stale(&instance) {
+                continue;
+            }
 
             let row = view.add_row();
             if self.all.value {
@@ -197,6 +200,31 @@ PID   Name    Arch    CPUs   Memory         Disk   Running
 PID    Name    Arch    CPUs   Memory         Disk   Running
        test    amd64      1   1024 B   512/1024 K        no
 1059   test2   amd64      5      0 B       5000 B       yes
+"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_list_instance_command_hides_a_stale_instance() {
+        let system = SystemMock::new();
+        let system = Arc::new(system);
+        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
+        let mut instances = build_instances();
+        instances[0].auto_remove = true;
+        instances[1].auto_remove = true;
+        let context =
+            build_context_with_store(InstanceStoreMock::new_with_running(instances, &["test2"]));
+
+        ListInstanceCommand { all: false.into() }
+            .run(console, &context)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            system.get_output(),
+            "\
+Name    Arch    CPUs   Memory     Disk   Running
+test2   amd64      5      0 B   5000 B       yes
 "
         );
     }
