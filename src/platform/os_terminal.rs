@@ -1,19 +1,23 @@
 use crate::platform::{OsSystem, Stream, Terminal};
 use std::io::{IsTerminal, Read, Write, stderr, stdin, stdout};
 
+impl OsSystem {
+    // A closed pipe must not fail the command.
+    fn write_stream(mut out: impl Write, text: &str) {
+        out.write_all(text.as_bytes()).ok();
+    }
+}
+
 impl Terminal for OsSystem {
     fn print(&self, stream: Stream, msg: &str) {
         match stream {
-            Stream::Stdout => print!("{msg}"),
-            Stream::Stderr => eprint!("{msg}"),
+            Stream::Stdout => OsSystem::write_stream(stdout().lock(), msg),
+            Stream::Stderr => OsSystem::write_stream(stderr().lock(), msg),
         }
     }
 
     fn println(&self, stream: Stream, msg: &str) {
-        match stream {
-            Stream::Stdout => println!("{msg}"),
-            Stream::Stderr => eprintln!("{msg}"),
-        }
+        self.print(stream, &format!("{msg}\n"));
     }
 
     fn flush(&self, stream: Stream) {
@@ -36,7 +40,7 @@ impl Terminal for OsSystem {
 
     fn read_input(&self) -> String {
         let mut reply = String::new();
-        stdin().read_line(&mut reply).unwrap();
+        stdin().read_line(&mut reply).ok();
         reply.trim().to_string()
     }
 
@@ -62,7 +66,7 @@ impl Terminal for OsSystem {
                 // Ctrl+C
                 0x03 => {
                     self.reset();
-                    println!();
+                    self.println(Stream::Stdout, "");
                     std::process::exit(1)
                 }
 
