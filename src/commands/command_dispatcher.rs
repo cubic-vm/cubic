@@ -103,7 +103,7 @@ pub struct CommandDispatcher {
 impl CommandDispatcher {
     pub async fn dispatch(self, system: Arc<dyn System>, console: &Arc<Console>) -> Result<u8> {
         let Some(command) = self.command else {
-            println!("{}", CommandDispatcher::command().render_long_help());
+            console.print(&CommandDispatcher::command().render_long_help().to_string());
             return Ok(0);
         };
 
