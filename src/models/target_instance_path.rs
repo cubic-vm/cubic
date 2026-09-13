@@ -28,97 +28,34 @@ mod tests {
     use crate::models::UserName;
     use std::str::FromStr;
 
-    #[test]
-    fn test_to_pathbuf() {
-        assert_eq!(
-            TargetInstancePath {
-                user: None,
-                instance: None,
-                path: "a/b/c".to_string(),
-            }
-            .to_pathbuf()
-            .to_str()
-            .unwrap(),
-            "a/b/c"
-        )
+    fn build_path(user: Option<&str>, instance_user: Option<&str>, path: &str) -> String {
+        TargetInstancePath {
+            user: user.map(str::to_string),
+            instance: instance_user.map(|name| Instance {
+                user: UserName::from_str(name).unwrap(),
+                ..Instance::default()
+            }),
+            path: path.to_string(),
+        }
+        .to_pathbuf()
+        .to_str()
+        .unwrap()
+        .to_string()
     }
 
     #[test]
-    fn test_to_pathbuf_with_tilde() {
+    fn test_expand_a_tilde() {
+        assert_eq!(build_path(None, None, "a/b/c"), "a/b/c");
+        assert_eq!(build_path(None, None, "~/a/b/c"), "~/a/b/c");
+        assert_eq!(build_path(Some("tux"), None, "~"), "/home/tux");
+        assert_eq!(build_path(Some("tux"), None, "~/a/b/c"), "/home/tux/a/b/c");
         assert_eq!(
-            TargetInstancePath {
-                user: None,
-                instance: None,
-                path: "~/a/b/c".to_string(),
-            }
-            .to_pathbuf()
-            .to_str()
-            .unwrap(),
-            "~/a/b/c"
-        )
-    }
-
-    #[test]
-    fn test_to_pathbuf_tilde_only() {
-        assert_eq!(
-            TargetInstancePath {
-                user: Some("tux".to_string()),
-                instance: None,
-                path: "~".to_string(),
-            }
-            .to_pathbuf()
-            .to_str()
-            .unwrap(),
-            "/home/tux"
-        )
-    }
-
-    #[test]
-    fn test_to_pathbuf_tilde_without_instance() {
-        assert_eq!(
-            TargetInstancePath {
-                user: Some("tux".to_string()),
-                instance: None,
-                path: "~/a/b/c".to_string(),
-            }
-            .to_pathbuf()
-            .to_str()
-            .unwrap(),
-            "/home/tux/a/b/c"
-        )
-    }
-
-    #[test]
-    fn test_to_pathbuf_tilde_with_user_and_instance() {
-        let mut instance = Instance::default();
-        instance.user = UserName::from_str("root").unwrap();
-        assert_eq!(
-            TargetInstancePath {
-                user: Some("tux".to_string()),
-                instance: Some(instance),
-                path: "~/a/b/c".to_string(),
-            }
-            .to_pathbuf()
-            .to_str()
-            .unwrap(),
-            "/home/tux/a/b/c"
-        )
-    }
-
-    #[test]
-    fn test_to_pathbuf_tilde_with_instance_without_user() {
-        let mut instance = Instance::default();
-        instance.user = UserName::from_str("root").unwrap();
-        assert_eq!(
-            TargetInstancePath {
-                user: None,
-                instance: Some(instance),
-                path: "~/a/b/c".to_string(),
-            }
-            .to_pathbuf()
-            .to_str()
-            .unwrap(),
+            build_path(None, Some("root"), "~/a/b/c"),
             "/home/root/a/b/c"
-        )
+        );
+
+        // The name given on the command line wins over the instance one.
+        let path = build_path(Some("tux"), Some("root"), "~/a/b/c");
+        assert_eq!(path, "/home/tux/a/b/c");
     }
 }

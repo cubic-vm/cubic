@@ -58,47 +58,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_instance_name() {
+    fn test_parse_a_target() {
         let target = Target::from_str("mymachine").unwrap();
         assert_eq!(target.get_user(), None);
         assert_eq!(target.get_instance().as_str(), "mymachine");
-    }
 
-    #[test]
-    fn test_user_and_instance_name() {
         let target = Target::from_str("cubic@mymachine").unwrap();
         assert_eq!(target.get_user().unwrap().as_str(), "cubic");
         assert_eq!(target.get_instance().as_str(), "mymachine");
     }
 
     #[test]
-    fn test_invalid_instance_name() {
+    fn test_reject_an_invalid_target() {
         assert!(Target::from_str("cubic@my&machine").is_err());
-    }
-
-    #[test]
-    fn test_invalid_target() {
         assert!(Target::from_str("cubic@my@machine").is_err());
-    }
-
-    #[test]
-    fn test_invalid_user_name() {
         assert!(Target::from_str("bad user@mymachine").is_err());
     }
 
     #[test]
-    fn test_to_string_without_user() {
+    fn test_render_a_target() {
         assert_eq!(
             Target::from_str("mymachine").unwrap().to_string(),
             "mymachine"
         );
-    }
-
-    #[test]
-    fn test_to_string_with_user() {
-        assert_eq!(
-            Target::from_str("cubic@mymachine").unwrap().to_string(),
-            "cubic@mymachine"
-        );
+        let target = Target::from_str("cubic@mymachine").unwrap();
+        assert_eq!(target.to_string(), "cubic@mymachine");
     }
 }

@@ -55,34 +55,23 @@ impl From<Vec<InstanceName>> for InstancesArg {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     #[test]
-    fn test_parse_valid_name() {
+    fn test_parse_a_name() {
         assert!(InstanceArg::try_parse_from(["prog", "my-instance_1"]).is_ok());
-    }
-
-    #[test]
-    fn test_reject_parent_traversal() {
-        assert!(InstanceArg::try_parse_from(["prog", "../../etc"]).is_err());
-    }
-
-    #[test]
-    fn test_reject_absolute_path() {
-        assert!(InstanceArg::try_parse_from(["prog", "/abs/path"]).is_err());
-    }
-
-    #[test]
-    fn test_parse_valid_names() {
         assert!(InstancesArg::try_parse_from(["prog", "trixie", "noble"]).is_ok());
     }
 
     #[test]
-    fn test_reject_parent_traversal_in_list() {
+    fn test_reject_path_traversal() {
+        assert!(InstanceArg::try_parse_from(["prog", "../../etc"]).is_err());
         assert!(InstancesArg::try_parse_from(["prog", "trixie", "../../etc"]).is_err());
     }
 
     #[test]
-    fn test_reject_absolute_path_in_list() {
+    fn test_reject_an_absolute_path() {
+        assert!(InstanceArg::try_parse_from(["prog", "/abs/path"]).is_err());
         assert!(InstancesArg::try_parse_from(["prog", "/abs/path"]).is_err());
     }
 
@@ -97,14 +86,12 @@ mod tests {
 
     #[test]
     fn test_require_names_accepts_names() {
-        use std::str::FromStr;
         let args: InstancesArg = vec![InstanceName::from_str("foo").unwrap()].into();
         assert!(args.require_names().is_ok());
     }
 
     #[test]
     fn test_get_names() {
-        use std::str::FromStr;
         let args: InstancesArg = vec![
             InstanceName::from_str("foo").unwrap(),
             InstanceName::from_str("bar").unwrap(),

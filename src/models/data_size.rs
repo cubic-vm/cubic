@@ -105,32 +105,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_zero_to_size() {
-        assert_eq!(&DataSize::new(0).to_size(), "0 B")
-    }
-
-    #[test]
-    fn test_drops_to_a_lower_unit_below_ten() {
-        assert_eq!(&DataSize::new(1024_usize.pow(2)).to_size(), "1024 K")
-    }
-
-    #[test]
-    fn test_keeps_the_unit_from_ten() {
-        assert_eq!(&DataSize::new(10 * 1024_usize.pow(2)).to_size(), "10 M")
-    }
-
-    #[test]
-    fn test_rounds_to_the_nearest_whole() {
+    fn test_render_a_size() {
+        assert_eq!(DataSize::new(0).to_size(), "0 B");
+        assert_eq!(DataSize::new(1024_usize.pow(2)).to_size(), "1024 K");
+        assert_eq!(DataSize::new(10 * 1024_usize.pow(2)).to_size(), "10 M");
         assert_eq!(
-            &DataSize::new(107 * 1024_usize.pow(3) / 10).to_size(),
+            DataSize::new(107 * 1024_usize.pow(3) / 10).to_size(),
             "11 G"
-        )
-    }
-
-    #[test]
-    fn test_caps_the_number_at_four_digits() {
-        assert_eq!(&DataSize::new(9999).to_size(), "9999 B");
-        assert_eq!(&DataSize::new(10_000).to_size(), "10 K");
+        );
+        assert_eq!(DataSize::new(9999).to_size(), "9999 B");
+        assert_eq!(DataSize::new(10_000).to_size(), "10 K");
     }
 
     #[test]
@@ -144,61 +128,27 @@ mod tests {
     }
 
     #[test]
-    fn test_from_byte() {
-        assert_eq!(DataSize::from_str("1B").unwrap().get_bytes(), 1)
-    }
-
-    #[test]
-    fn test_from_kilobyte() {
-        assert_eq!(DataSize::from_str("1K").unwrap().get_bytes(), 1024)
-    }
-
-    #[test]
-    fn test_from_megabyte() {
+    fn test_parse_a_size() {
+        assert_eq!(DataSize::from_str("1B").unwrap().get_bytes(), 1);
+        assert_eq!(DataSize::from_str("1K").unwrap().get_bytes(), 1024);
         assert_eq!(
             DataSize::from_str("1M").unwrap().get_bytes(),
             1024_usize.pow(2)
-        )
-    }
-
-    #[test]
-    fn test_from_gigabyte() {
+        );
         assert_eq!(
             DataSize::from_str("1G").unwrap().get_bytes(),
             1024_usize.pow(3)
-        )
-    }
-
-    #[test]
-    fn test_from_terabyte() {
+        );
         assert_eq!(
             DataSize::from_str("1T").unwrap().get_bytes(),
             1024_usize.pow(4)
-        )
+        );
     }
 
     #[test]
-    fn test_from_multibyte_suffix() {
-        assert!(DataSize::from_str("10€").is_err())
-    }
-
-    #[test]
-    fn test_from_only_multibyte_char() {
-        assert!(DataSize::from_str("€").is_err())
-    }
-
-    #[test]
-    fn test_from_overflow() {
-        assert!(DataSize::from_str("99999999999999999T").is_err())
-    }
-
-    #[test]
-    fn test_from_missing_suffix() {
-        assert!(DataSize::from_str("10").is_err())
-    }
-
-    #[test]
-    fn test_from_empty() {
-        assert!(DataSize::from_str("").is_err())
+    fn test_reject_an_invalid_size() {
+        for input in ["10€", "€", "99999999999999999T", "10", ""] {
+            assert!(DataSize::from_str(input).is_err(), "input {input}");
+        }
     }
 }

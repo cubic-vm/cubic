@@ -61,12 +61,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_amd64() {
+    fn test_parse_an_arch() {
         assert_eq!(Arch::from_str("amd64").unwrap(), Arch::AMD64);
-    }
-
-    #[test]
-    fn test_parse_arm64() {
         assert_eq!(Arch::from_str("arm64").unwrap(), Arch::ARM64);
     }
 
@@ -79,20 +75,13 @@ mod tests {
     }
 
     #[test]
-    fn test_vendor_str() {
+    fn test_render_an_arch() {
         assert_eq!(Arch::AMD64.as_vendor_str(), "amd64");
-        assert_eq!(Arch::ARM64.as_vendor_str(), "arm64");
-    }
-
-    #[test]
-    fn test_canonical_str() {
         assert_eq!(Arch::AMD64.as_canonical_str(), "x86_64");
-        assert_eq!(Arch::ARM64.as_canonical_str(), "aarch64");
-    }
-
-    #[test]
-    fn test_to_string() {
         assert_eq!(Arch::AMD64.to_string(), "amd64");
+
+        assert_eq!(Arch::ARM64.as_vendor_str(), "arm64");
+        assert_eq!(Arch::ARM64.as_canonical_str(), "aarch64");
         assert_eq!(Arch::ARM64.to_string(), "arm64");
     }
 }

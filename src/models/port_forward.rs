@@ -195,50 +195,75 @@ impl<'de> Deserialize<'de> for PortForward {
 mod tests {
     use super::*;
 
+    fn build_forward(ip: [u8; 4], host: u16, guest: u16, protocol: Protocol) -> PortForward {
+        PortForward::new(IpAddr::V4(Ipv4Addr::from(ip)), host, guest, protocol)
+    }
+
+    fn parse(input: &str) -> String {
+        input.parse::<PortForward>().unwrap().to_string()
+    }
+
+    fn parse_qemu(input: &str) -> String {
+        PortForward::from_qemu(input).unwrap().to_string()
+    }
+
+    // The parse tests below read their result back through `to_string`,
+    // which this test pins.
     #[test]
-    fn test_reject_unparsable_forward() {
+    fn test_render_a_forward() {
+        let local = build_forward([127, 0, 0, 1], 1000, 10, Protocol::Tcp);
+        assert_eq!(local.to_string(), "127.0.0.1:1000:10/tcp");
+        assert_eq!(local.to_qemu(), "tcp:127.0.0.1:1000-:10");
+
+        let udp = build_forward([127, 0, 0, 1], 3000, 30, Protocol::Udp);
+        assert_eq!(udp.to_string(), "127.0.0.1:3000:30/udp");
+        assert_eq!(udp.to_qemu(), "udp:127.0.0.1:3000-:30");
+
+        let any = build_forward([0, 0, 0, 0], 5000, 50, Protocol::Udp);
+        assert_eq!(any.to_string(), "0.0.0.0:5000:50/udp");
+        assert_eq!(any.to_qemu(), "udp:0.0.0.0:5000-:50");
+
+        let lan = build_forward([192, 168, 0, 1], 6000, 60, Protocol::Tcp);
+        assert_eq!(lan.to_string(), "192.168.0.1:6000:60/tcp");
+        assert_eq!(lan.to_qemu(), "tcp:192.168.0.1:6000-:60");
+    }
+
+    #[test]
+    fn test_parse_a_forward() {
+        assert_eq!(parse("1000:10"), "127.0.0.1:1000:10/tcp");
+        assert_eq!(parse("127.0.0.1:2000:20"), "127.0.0.1:2000:20/tcp");
+        assert_eq!(parse("3000:30/udp"), "127.0.0.1:3000:30/udp");
+        assert_eq!(parse("4000:40/tcp"), "127.0.0.1:4000:40/tcp");
+        assert_eq!(parse("0.0.0.0:5000:50/udp"), "0.0.0.0:5000:50/udp");
+        assert_eq!(parse("192.168.0.1:6000:60/tcp"), "192.168.0.1:6000:60/tcp");
+    }
+
+    #[test]
+    fn test_parse_a_qemu_forward() {
+        assert_eq!(parse_qemu("::1000-:10"), "127.0.0.1:1000:10/tcp");
+        assert_eq!(parse_qemu(":127.0.0.1:2000-:20"), "127.0.0.1:2000:20/tcp");
+        assert_eq!(parse_qemu("udp::3000-:30"), "127.0.0.1:3000:30/udp");
+        assert_eq!(parse_qemu("tcp::4000-:40"), "127.0.0.1:4000:40/tcp");
+        assert_eq!(parse_qemu("udp:0.0.0.0:5000-:50"), "0.0.0.0:5000:50/udp");
+        assert_eq!(
+            parse_qemu("tcp:192.168.0.1:6000-:60"),
+            "192.168.0.1:6000:60/tcp"
+        );
+    }
+
+    #[test]
+    fn test_reject_an_invalid_forward() {
         assert!("abc".parse::<PortForward>().is_err());
-    }
-
-    #[test]
-    fn test_reject_host_port_overflow() {
         assert!("99999:80".parse::<PortForward>().is_err());
-    }
-
-    #[test]
-    fn test_reject_invalid_host_ip() {
         assert!("999.0.0.1:8000:80".parse::<PortForward>().is_err());
-    }
-
-    #[test]
-    fn test_reject_unparsable_qemu_forward() {
         assert!(PortForward::from_qemu("garbage").is_err());
-    }
-
-    #[test]
-    fn test_reject_qemu_guest_port_overflow() {
         assert!(PortForward::from_qemu("tcp:127.0.0.1:8000-:99999").is_err());
-    }
-
-    #[test]
-    fn test_reject_unknown_protocol() {
         assert!(Protocol::from_str("sctp").is_err());
     }
 
     #[test]
-    fn test_protocol_to_string() {
-        assert_eq!(Protocol::Udp.to_string(), "udp");
-        assert_eq!(Protocol::Tcp.to_string(), "tcp");
-    }
-
-    #[test]
     fn test_serde_round_trip_uses_qemu_format() {
-        let forward = PortForward::new(
-            IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-            8000,
-            80,
-            Protocol::Tcp,
-        );
+        let forward = build_forward([127, 0, 0, 1], 8000, 80, Protocol::Tcp);
 
         let serialized = serde_json::to_string(&forward).unwrap();
         assert_eq!(serialized, "\"tcp:127.0.0.1:8000-:80\"");
@@ -250,273 +275,5 @@ mod tests {
     #[test]
     fn test_deserialize_rejects_invalid_forward() {
         assert!(serde_json::from_str::<PortForward>("\"garbage\"").is_err());
-    }
-
-    #[test]
-    fn test_basic_parsing() {
-        assert_eq!(
-            "1000:10".parse(),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                1000,
-                10,
-                Protocol::Tcp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_localhost_parsing() {
-        assert_eq!(
-            "127.0.0.1:2000:20".parse(),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                2000,
-                20,
-                Protocol::Tcp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_udp_parsing() {
-        assert_eq!(
-            "3000:30/udp".parse(),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                3000,
-                30,
-                Protocol::Udp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_tcp_parsing() {
-        assert_eq!(
-            "4000:40/tcp".parse(),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                4000,
-                40,
-                Protocol::Tcp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_ip_udp_parsing() {
-        assert_eq!(
-            "0.0.0.0:5000:50/udp".parse(),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-                5000,
-                50,
-                Protocol::Udp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_ip_tcp_parsing() {
-        assert_eq!(
-            "192.168.0.1:6000:60/tcp".parse(),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)),
-                6000,
-                60,
-                Protocol::Tcp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_qemu_basic_parsing() {
-        assert_eq!(
-            PortForward::from_qemu("::1000-:10"),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                1000,
-                10,
-                Protocol::Tcp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_qemu_localhost_parsing() {
-        assert_eq!(
-            PortForward::from_qemu(":127.0.0.1:2000-:20"),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                2000,
-                20,
-                Protocol::Tcp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_qemu_udp_parsing() {
-        assert_eq!(
-            PortForward::from_qemu("udp::3000-:30"),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                3000,
-                30,
-                Protocol::Udp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_qemu_tcp_parsing() {
-        assert_eq!(
-            PortForward::from_qemu("tcp::4000-:40"),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                4000,
-                40,
-                Protocol::Tcp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_qemu_ip_udp_parsing() {
-        assert_eq!(
-            PortForward::from_qemu("udp:0.0.0.0:5000-:50"),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-                5000,
-                50,
-                Protocol::Udp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_qemu_ip_tcp_parsing() {
-        assert_eq!(
-            PortForward::from_qemu("tcp:192.168.0.1:6000-:60"),
-            Ok(PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)),
-                6000,
-                60,
-                Protocol::Tcp
-            ))
-        )
-    }
-
-    #[test]
-    fn test_basic_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                1000,
-                10,
-                Protocol::Tcp
-            )
-            .to_string(),
-            "127.0.0.1:1000:10/tcp",
-        )
-    }
-
-    #[test]
-    fn test_udp_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                3000,
-                30,
-                Protocol::Udp
-            )
-            .to_string(),
-            "127.0.0.1:3000:30/udp".to_string()
-        )
-    }
-
-    #[test]
-    fn test_ip_udp_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-                5000,
-                50,
-                Protocol::Udp
-            )
-            .to_string(),
-            "0.0.0.0:5000:50/udp",
-        )
-    }
-
-    #[test]
-    fn test_ip_tcp_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)),
-                6000,
-                60,
-                Protocol::Tcp
-            )
-            .to_string(),
-            "192.168.0.1:6000:60/tcp",
-        )
-    }
-
-    #[test]
-    fn test_qemu_basic_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                1000,
-                10,
-                Protocol::Tcp
-            )
-            .to_qemu(),
-            "tcp:127.0.0.1:1000-:10",
-        )
-    }
-
-    #[test]
-    fn test_qemu_udp_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-                3000,
-                30,
-                Protocol::Udp
-            )
-            .to_qemu(),
-            "udp:127.0.0.1:3000-:30".to_string()
-        )
-    }
-
-    #[test]
-    fn test_qemu_ip_udp_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-                5000,
-                50,
-                Protocol::Udp
-            )
-            .to_qemu(),
-            "udp:0.0.0.0:5000-:50",
-        )
-    }
-
-    #[test]
-    fn test_qemu_ip_tcp_to_string() {
-        assert_eq!(
-            PortForward::new(
-                IpAddr::V4(Ipv4Addr::new(192, 168, 0, 1)),
-                6000,
-                60,
-                Protocol::Tcp
-            )
-            .to_qemu(),
-            "tcp:192.168.0.1:6000-:60",
-        )
     }
 }

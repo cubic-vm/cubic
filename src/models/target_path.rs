@@ -49,21 +49,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_path() {
+    fn test_round_trip_a_path() {
         let path = TargetPath::from_str("/home/cubic").unwrap();
-        assert_eq!(path.to_string().as_str(), "/home/cubic");
-    }
+        assert_eq!(path.to_string(), "/home/cubic");
 
-    #[test]
-    fn test_instance_path() {
         let path = TargetPath::from_str("mymachine:/home/cubic").unwrap();
-        assert_eq!(path.to_string().as_str(), "mymachine:/home/cubic");
-    }
+        assert_eq!(path.to_string(), "mymachine:/home/cubic");
 
-    #[test]
-    fn test_user_instance_path() {
         let path = TargetPath::from_str("cubic@mymachine:/home/cubic").unwrap();
-        assert_eq!(path.to_string().as_str(), "cubic@mymachine:/home/cubic");
+        assert_eq!(path.to_string(), "cubic@mymachine:/home/cubic");
     }
 
     #[test]
@@ -72,16 +66,13 @@ mod tests {
     }
 
     #[test]
-    fn test_get_target_of_instance_path() {
+    fn test_get_the_target_of_a_path() {
         let path = TargetPath::from_str("mymachine:/home/cubic").unwrap();
         assert_eq!(
             path.get_target().unwrap().get_instance().as_str(),
             "mymachine"
         );
-    }
 
-    #[test]
-    fn test_get_target_of_local_path() {
         let path = TargetPath::from_str("/home/cubic").unwrap();
         assert!(path.get_target().is_none());
     }
