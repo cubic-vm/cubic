@@ -37,27 +37,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_zero_percent() {
-        assert_eq!(&ProgressBar::new(0.0, 12).to_string(), "[>         ]");
-    }
-
-    #[test]
-    fn test_twenty_five_percent() {
-        assert_eq!(&ProgressBar::new(0.25, 12).to_string(), "[==>       ]");
-    }
-
-    #[test]
-    fn test_fifty_percent() {
-        assert_eq!(&ProgressBar::new(0.5, 12).to_string(), "[=====>    ]");
-    }
-
-    #[test]
-    fn test_seventy_five_percent() {
-        assert_eq!(&ProgressBar::new(0.75, 12).to_string(), "[=======>  ]");
-    }
-
-    #[test]
-    fn test_hundred_percent() {
-        assert_eq!(&ProgressBar::new(1.0, 12).to_string(), "[==========]");
+    fn test_render_a_bar() {
+        assert_eq!(ProgressBar::new(0.0, 12).to_string(), "[>         ]");
+        assert_eq!(ProgressBar::new(0.25, 12).to_string(), "[==>       ]");
+        assert_eq!(ProgressBar::new(0.5, 12).to_string(), "[=====>    ]");
+        assert_eq!(ProgressBar::new(0.75, 12).to_string(), "[=======>  ]");
+        assert_eq!(ProgressBar::new(1.0, 12).to_string(), "[==========]");
     }
 }

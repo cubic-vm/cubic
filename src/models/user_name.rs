@@ -76,52 +76,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_letters() {
+    fn test_accept_a_valid_name() {
         UserName::from_str("tux").unwrap();
-    }
-
-    #[test]
-    fn test_leading_underscore() {
         UserName::from_str("_tux").unwrap();
-    }
-
-    #[test]
-    fn test_numbers_underscore_dash_after_first_char() {
         UserName::from_str("tux-01_x").unwrap();
     }
 
     #[test]
-    fn test_reject_leading_digit() {
+    fn test_reject_an_invalid_name() {
         assert!(UserName::from_str("1tux").is_err());
-    }
-
-    #[test]
-    fn test_reject_leading_dash() {
         assert!(UserName::from_str("-tux").is_err());
-    }
-
-    #[test]
-    fn test_reject_empty_name() {
         assert!(UserName::from_str("").is_err());
-    }
-
-    #[test]
-    fn test_reject_space() {
         assert!(UserName::from_str("bad name").is_err());
-    }
-
-    #[test]
-    fn test_reject_newline() {
         assert!(UserName::from_str("tux\nroot").is_err());
-    }
-
-    #[test]
-    fn test_reject_yaml_injection() {
         assert!(UserName::from_str("tux\n  - name: root").is_err());
-    }
-
-    #[test]
-    fn test_reject_uppercase() {
         assert!(UserName::from_str("Tux").is_err());
     }
 

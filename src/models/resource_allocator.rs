@@ -99,18 +99,6 @@ mod tests {
     use super::*;
     use crate::platform::SystemMock;
 
-    fn assert_resources(
-        host_mem_gib: usize,
-        host_threads: u16,
-        expected_cpus: u16,
-        expected_mem_bytes: usize,
-    ) {
-        let allocator = ResourceAllocator::new(host_mem_gib * GIB, host_threads);
-        let (cpus, mem) = allocator.get_default_resources();
-        assert_eq!(cpus, expected_cpus);
-        assert_eq!(mem.get_bytes(), expected_mem_bytes);
-    }
-
     #[test]
     fn test_read_from_host_uses_the_host_totals() {
         // A 16 GiB, 16 thread host. Only the totals are read, the available
@@ -124,103 +112,49 @@ mod tests {
     }
 
     #[test]
-    fn test_level_8() {
-        assert_resources(36, 36, 16, 8 * GIB);
+    fn test_get_default_resources() {
+        for (host_gib, threads, cpus, mem) in [
+            (8, 8, 2, GIB),
+            (12, 12, 4, 2 * GIB),
+            (16, 16, 6, 3 * GIB),
+            (20, 20, 8, 4 * GIB),
+            (23, 23, 8, 4 * GIB),
+            (24, 24, 10, 5 * GIB),
+            (28, 28, 12, 6 * GIB),
+            (32, 32, 14, 7 * GIB),
+            (36, 36, 16, 8 * GIB),
+            (35, 35, 14, 7 * GIB),
+            (40, 40, 18, 9 * GIB),
+            (80, 80, 38, 19 * GIB),
+            (8, 64, 2, GIB),
+            (64, 8, 2, GIB),
+            (4, 4, 1, 512 * MIB),
+            (1, 1, 1, 512 * MIB),
+        ] {
+            let allocator = ResourceAllocator::new(host_gib * GIB, threads);
+            let expected = (cpus, DataSize::new(mem));
+            assert_eq!(
+                allocator.get_default_resources(),
+                expected,
+                "{host_gib} GiB"
+            );
+        }
     }
 
     #[test]
-    fn test_level_keeps_scaling_without_a_maximum() {
-        assert_resources(40, 40, 18, 9 * GIB);
-        assert_resources(80, 80, 38, 19 * GIB);
-    }
-
-    #[test]
-    fn test_level_7() {
-        assert_resources(32, 32, 14, 7 * GIB);
-    }
-
-    #[test]
-    fn test_level_6() {
-        assert_resources(28, 28, 12, 6 * GIB);
-    }
-
-    #[test]
-    fn test_level_5() {
-        assert_resources(24, 24, 10, 5 * GIB);
-    }
-
-    #[test]
-    fn test_level_4() {
-        assert_resources(20, 20, 8, 4 * GIB);
-        assert_resources(23, 23, 8, 4 * GIB);
-    }
-
-    #[test]
-    fn test_level_3() {
-        assert_resources(16, 16, 6, 3 * GIB);
-    }
-
-    #[test]
-    fn test_level_2() {
-        assert_resources(12, 12, 4, 2 * GIB);
-    }
-
-    #[test]
-    fn test_level_1() {
-        assert_resources(8, 8, 2, GIB);
-    }
-
-    #[test]
-    fn test_just_below_a_threshold_stays_on_the_lower_level() {
-        assert_resources(35, 35, 14, 7 * GIB);
-    }
-
-    #[test]
-    fn test_memory_threshold_dominates() {
-        assert_resources(8, 64, 2, GIB);
-    }
-
-    #[test]
-    fn test_thread_threshold_dominates() {
-        assert_resources(64, 8, 2, GIB);
-    }
-
-    #[test]
-    fn test_small_host_falls_back_to_one_core() {
-        assert_resources(4, 4, 1, 512 * MIB);
-        assert_resources(1, 1, 1, 512 * MIB);
-    }
-
-    #[test]
-    fn test_budget_reserves_host_memory() {
-        // 5 GiB available minus the 1 GiB reserve leaves a 4 GiB budget.
-        assert_eq!(
-            ResourceAllocator::get_resources_for_budget(5 * GIB),
-            Some((8, DataSize::new(4 * GIB)))
-        );
-    }
-
-    #[test]
-    fn test_budget_rounds_down_to_whole_gib() {
-        // 3.5 GiB available, 2.5 GiB budget, fits level 2.
-        assert_eq!(
-            ResourceAllocator::get_resources_for_budget(3 * GIB + 512 * MIB),
-            Some((4, DataSize::new(2 * GIB)))
-        );
-    }
-
-    #[test]
-    fn test_budget_falls_back_to_512_mib() {
-        // Budget between 512 MiB and 1 GiB yields the smallest machine.
-        assert_eq!(
-            ResourceAllocator::get_resources_for_budget(GIB + 512 * MIB),
-            Some((1, DataSize::new(512 * MIB)))
-        );
-    }
-
-    #[test]
-    fn test_budget_too_small_returns_none() {
-        assert_eq!(ResourceAllocator::get_resources_for_budget(GIB), None);
-        assert_eq!(ResourceAllocator::get_resources_for_budget(0), None);
+    fn test_get_resources_for_budget() {
+        for (available, expected) in [
+            // 5 GiB available minus the 1 GiB reserve leaves a 4 GiB budget.
+            (5 * GIB, Some((8, DataSize::new(4 * GIB)))),
+            // 3.5 GiB available, 2.5 GiB budget, rounded down to level 2.
+            (3 * GIB + 512 * MIB, Some((4, DataSize::new(2 * GIB)))),
+            // A budget between 512 MiB and 1 GiB yields the smallest machine.
+            (GIB + 512 * MIB, Some((1, DataSize::new(512 * MIB)))),
+            (GIB, None),
+            (0, None),
+        ] {
+            let resources = ResourceAllocator::get_resources_for_budget(available);
+            assert_eq!(resources, expected, "available {available}");
+        }
     }
 }

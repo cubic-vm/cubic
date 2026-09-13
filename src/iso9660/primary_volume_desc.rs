@@ -78,6 +78,10 @@ mod tests {
     use super::*;
     use std::io::Cursor;
 
+    fn pad(text: &str, width: usize) -> Vec<u8> {
+        format!("{text:<width$}").into_bytes()
+    }
+
     #[test]
     fn test_write() {
         let mut pvd = PrimaryVolumeDesc::default();
@@ -122,14 +126,8 @@ mod tests {
         assert_eq!(&result[1..6], "CD001".as_bytes());
         assert_eq!(result[6], 1);
         assert_eq!(result[7], 0);
-        assert_eq!(
-            &result[8..40],
-            "system id                       ".as_bytes()
-        );
-        assert_eq!(
-            &result[40..72],
-            "volume id                       ".as_bytes()
-        );
+        assert_eq!(&result[8..40], pad("system id", 32));
+        assert_eq!(&result[40..72], pad("volume id", 32));
         assert_eq!(&result[72..80], &[0u8; 8]);
         assert_eq!(&result[80..84], &[0x78, 0x56, 0x34, 0x12]);
         assert_eq!(&result[84..88], &[0x12, 0x34, 0x56, 0x78]);
@@ -160,22 +158,13 @@ mod tests {
         assert_eq!(&result[186..188], &[0x78, 0x9A]);
         assert_eq!(result[188], 1);
         assert_eq!(result[189], b'A');
-        assert_eq!(&result[190..318], "volume set id                                                                                                                   ".as_bytes());
-        assert_eq!(&result[318..446], "publisher id                                                                                                                    ".as_bytes());
-        assert_eq!(&result[446..574], "data prepare id                                                                                                                 ".as_bytes());
-        assert_eq!(&result[574..702], "application id                                                                                                                  ".as_bytes());
-        assert_eq!(
-            &result[702..739],
-            "copyright file id                    ".as_bytes()
-        );
-        assert_eq!(
-            &result[739..776],
-            "abstract file id                     ".as_bytes()
-        );
-        assert_eq!(
-            &result[776..813],
-            "bibliographic file id                ".as_bytes()
-        );
+        assert_eq!(&result[190..318], pad("volume set id", 128));
+        assert_eq!(&result[318..446], pad("publisher id", 128));
+        assert_eq!(&result[446..574], pad("data prepare id", 128));
+        assert_eq!(&result[574..702], pad("application id", 128));
+        assert_eq!(&result[702..739], pad("copyright file id", 37));
+        assert_eq!(&result[739..776], pad("abstract file id", 37));
+        assert_eq!(&result[776..813], pad("bibliographic file id", 37));
         assert_eq!(&result[813..830], &[0u8; 17]);
         assert_eq!(&result[830..847], &[0u8; 17]);
         assert_eq!(&result[847..864], &[0u8; 17]);

@@ -44,52 +44,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_letters() {
-        InstanceName::from_str("foobar").unwrap();
+    fn test_accept_a_valid_name() {
+        for input in ["foobar", "12345", "_", "-", "10foo-bar_5", "café"] {
+            InstanceName::from_str(input).unwrap();
+        }
     }
 
     #[test]
-    fn test_numbers() {
-        InstanceName::from_str("12345").unwrap();
-    }
-
-    #[test]
-    fn test_underline() {
-        InstanceName::from_str("_").unwrap();
-    }
-
-    #[test]
-    fn test_dash() {
-        InstanceName::from_str("-").unwrap();
-    }
-
-    #[test]
-    fn test_valid_name() {
-        InstanceName::from_str("10foo-bar_5").unwrap();
-    }
-
-    #[test]
-    fn test_invalid_name() {
+    fn test_reject_an_invalid_name() {
         assert!(InstanceName::from_str("foo/bar").is_err());
-    }
-
-    #[test]
-    fn test_accept_unicode_letter() {
-        InstanceName::from_str("caf\u{e9}").unwrap();
+        assert!(InstanceName::from_str("/abs/path").is_err());
+        assert!(InstanceName::from_str("").is_err());
     }
 
     #[test]
     fn test_reject_path_traversal() {
         assert!(InstanceName::from_str("../../etc").is_err());
-    }
-
-    #[test]
-    fn test_reject_absolute_path() {
-        assert!(InstanceName::from_str("/abs/path").is_err());
-    }
-
-    #[test]
-    fn test_reject_empty_name() {
-        assert!(InstanceName::from_str("").is_err());
     }
 }

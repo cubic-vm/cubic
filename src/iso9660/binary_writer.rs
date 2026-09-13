@@ -80,110 +80,53 @@ mod tests {
     use std::io::Cursor;
 
     #[test]
-    fn test_write_one_byte() {
-        let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
-        assert_eq!(writer.write_byte(1).unwrap(), 1);
-        assert_eq!(writer.get_writer().get_ref(), &[1]);
-    }
-
-    #[test]
-    fn test_write_two_bytes() {
+    fn test_write_bytes() {
         let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
         assert_eq!(writer.write_byte(1).unwrap(), 1);
         assert_eq!(writer.write_byte(2).unwrap(), 2);
-        assert_eq!(writer.get_writer().get_ref(), &[1, 2]);
+        assert_eq!(writer.write_bytes(&[]).unwrap(), 2);
+        assert_eq!(writer.write_bytes(&[3, 4, 5]).unwrap(), 5);
+        assert_eq!(writer.write_bytes(&[5, 4, 3]).unwrap(), 8);
+        assert_eq!(writer.get_writer().get_ref(), &[1, 2, 3, 4, 5, 5, 4, 3]);
     }
 
     #[test]
-    fn test_write_empty_chunk() {
-        let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
-        assert_eq!(writer.write_bytes(&[]).unwrap(), 0);
-        assert_eq!(writer.get_writer().get_ref(), &[0u8; 0]);
-    }
+    fn test_write_a_padded_string() {
+        for (input, width, expected) in [
+            ("", 0, b"" as &[u8]),
+            ("foo", 3, b"foo"),
+            ("foo", 10, b"foo       "),
+            ("foobar", 3, b"foo"),
+        ] {
+            let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
+            let written = writer.write_padded_string(input, width).unwrap();
+            assert_eq!(written, expected.len() as u64, "input {input}");
+            assert_eq!(writer.get_writer().get_ref(), expected, "input {input}");
+        }
 
-    #[test]
-    fn test_write_one_chunk() {
-        let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
-        assert_eq!(writer.write_bytes(&[1, 2, 3, 4, 5]).unwrap(), 5);
-        assert_eq!(writer.get_writer().get_ref(), &[1, 2, 3, 4, 5]);
-    }
-
-    #[test]
-    fn test_write_two_chunks() {
-        let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
-        assert_eq!(writer.write_bytes(&[1, 2, 3, 4, 5]).unwrap(), 5);
-        assert_eq!(writer.write_bytes(&[5, 4, 3, 2, 1]).unwrap(), 10);
-        assert_eq!(
-            writer.get_writer().get_ref(),
-            &[1, 2, 3, 4, 5, 5, 4, 3, 2, 1]
-        );
-    }
-
-    #[test]
-    fn test_write_empty_padded_string() {
-        let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
-        assert_eq!(writer.write_padded_string("", 0).unwrap(), 0);
-        assert_eq!(writer.get_writer().get_ref(), &[0u8; 0]);
-    }
-
-    #[test]
-    fn test_write_one_padded_string() {
-        let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
-        assert_eq!(writer.write_padded_string("foo", 3).unwrap(), 3);
-        assert_eq!(writer.get_writer().get_ref(), &[102, 111, 111]);
-    }
-
-    #[test]
-    fn test_write_two_padded_strings() {
         let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
         assert_eq!(writer.write_padded_string("foo", 3).unwrap(), 3);
         assert_eq!(writer.write_padded_string("bar", 3).unwrap(), 6);
-        assert_eq!(writer.get_writer().get_ref(), &[102, 111, 111, 98, 97, 114]);
+        assert_eq!(writer.get_writer().get_ref(), b"foobar");
     }
 
     #[test]
-    fn test_write_three_letters_padded_to_ten() {
-        let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
-        assert_eq!(writer.write_padded_string("foo", 10).unwrap(), 10);
-        assert_eq!(
-            writer.get_writer().get_ref(),
-            &[102, 111, 111, 32, 32, 32, 32, 32, 32, 32]
-        );
-    }
-
-    #[test]
-    fn test_write_six_letters_padded_to_three() {
-        let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
-        assert_eq!(writer.write_padded_string("foobar", 3).unwrap(), 3);
-        assert_eq!(writer.get_writer().get_ref(), &[102, 111, 111]);
-    }
-
-    #[test]
-    fn test_write_u32_le() {
+    fn test_write_an_integer() {
         let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
         assert_eq!(writer.write_u32_le(0x12345678).unwrap(), 4);
         assert_eq!(writer.get_writer().get_ref(), &[0x78, 0x56, 0x34, 0x12]);
-    }
 
-    #[test]
-    fn test_write_u32_be() {
         let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
         assert_eq!(writer.write_u32_be(0x12345678).unwrap(), 4);
         assert_eq!(writer.get_writer().get_ref(), &[0x12, 0x34, 0x56, 0x78]);
-    }
 
-    #[test]
-    fn test_write_u32_le_be() {
         let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
         assert_eq!(writer.write_u32_le_be(0x12345678).unwrap(), 8);
         assert_eq!(
             writer.get_writer().get_ref(),
             &[0x78, 0x56, 0x34, 0x12, 0x12, 0x34, 0x56, 0x78]
         );
-    }
 
-    #[test]
-    fn test_write_u16_le_be() {
         let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
         assert_eq!(writer.write_u16_le_be(0x1234).unwrap(), 4);
         assert_eq!(writer.get_writer().get_ref(), &[0x34, 0x12, 0x12, 0x34]);
@@ -199,14 +142,11 @@ mod tests {
     }
 
     #[test]
-    fn test_write_one_byte_and_pad_sector() {
+    fn test_pad_to_sector_end() {
         let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
         assert_eq!(writer.write_byte(1).unwrap(), 1);
         assert_eq!(writer.pad_to_sector_end().unwrap(), 2048);
-    }
 
-    #[test]
-    fn test_skip_3000_bytes_and_pad_sector() {
         let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
         assert_eq!(writer.skip(3000).unwrap(), 3000);
         assert_eq!(writer.pad_to_sector_end().unwrap(), 4096);
