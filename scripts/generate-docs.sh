@@ -115,34 +115,34 @@ Features
 
 **Fast and simple**
 
-* Creates a VM and opens a shell in one command
-* Boots official Linux distribution images in seconds
+* :ref:`Creates a VM and opens a shell in one command <create vm>`
+* :ref:`Boots official Linux distribution images in seconds <image names>`
 * Written in Rust
 
 **Runs anywhere**
 
-* Runs on **Linux**, **macOS** and **Windows** hosts
-* Ships **Alma Linux**, **Arch Linux**, **Debian**, **Fedora**, **Gentoo**, **OpenSUSE**, **Rocky Linux** and **Ubuntu**
-* Runs **amd64** and **arm64** guests
-* Uses the hardware accelerator of the host, **KVM** on Linux, **Hypervisor** on macOS, **WHPX** on Windows and **NVMM** on BSD
+* :ref:`Runs on Linux, macOS and Windows hosts <Install Cubic>`
+* :ref:`Ships Alma Linux, Arch Linux, Debian, Fedora, Gentoo, OpenSUSE, Rocky Linux and Ubuntu <image names>`
+* :ref:`Runs amd64 and arm64 guests <image names>`
+* :ref:`Uses the hardware accelerator of the host, KVM on Linux, Hypervisor on macOS, WHPX on Windows and NVMM on BSD <hardware acceleration>`
 
 **Everyday work**
 
-* Forwards ports from a VM to the host
-* Copies files between host and VM and between two VMs
-* Executes single commands in a VM
-* Creates VM instances from reusable templates
-* Snapshots a VM disk and restores it later
-* Clones and renames VM instances
-* Runs temporary VM instances that are deleted after use
-* Isolates a VM from the network with one flag
+* :ref:`Forwards ports from a VM to the host <port forward>`
+* :ref:`Copies files between host and VM and between two VMs <copy files>`
+* :ref:`Executes single commands in a VM <exec command>`
+* :ref:`Creates VM instances from reusable templates <templates>`
+* :ref:`Snapshots a VM disk and restores it later <snapshots>`
+* :ref:`Clones <ref_cubic_clone>` and :ref:`renames <ref_cubic_rename>` VM instances
+* :ref:`Runs temporary VM instances that are deleted after use <temporary vm>`
+* :ref:`Isolates a VM from the network with one flag <networking>`
 
 **Safe by default**
 
-* Runs every VM as a normal user process without a privileged system service
-* Verifies every image against the checksum of the distribution
-* Protects every VM with its own SSH key and a locked password
-* Encrypts the QEMU control channels with mutual TLS
+* :ref:`Runs every VM as a normal user process without a privileged system service <no privileged service>`
+* :ref:`Verifies every image against the checksum of the distribution <verified images>`
+* :ref:`Protects every VM with its own SSH key and a locked password <ssh access>`
+* :ref:`Encrypts the QEMU control channels with mutual TLS <encrypted control channels>`
 
 Source Code
 -----------

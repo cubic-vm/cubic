@@ -53,6 +53,8 @@ its real features. Windows is the one exception, where the hypervisor accepts a
 named model only. Software emulation uses the widest model available, so an
 emulated guest loses speed but no features.
 
+.. _hardware acceleration:
+
 Hardware Acceleration
 ---------------------
 
