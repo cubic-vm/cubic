@@ -3,13 +3,15 @@ use crate::models::HashAlg;
 use crate::platform::System;
 use crate::view::{Console, TransferView};
 use crate::web::Hasher;
-use reqwest::Client;
+use reqwest::{Client, Response};
 use std::io::{self, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-const REQUEST_TIMEOUT_SEC: u64 = 30;
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const STALL_TIMEOUT: Duration = Duration::from_secs(30);
 const WRITE_BUFFER_SIZE: usize = 1 << 20;
 
 struct ProgressWriter {
@@ -64,19 +66,29 @@ impl WebClient {
         Ok(WebClient {
             client: Client::builder()
                 .user_agent("cubic")
-                .timeout(Duration::from_secs(REQUEST_TIMEOUT_SEC))
+                .connect_timeout(CONNECT_TIMEOUT)
+                .read_timeout(STALL_TIMEOUT)
                 .build()
-                .map_err(Error::from)?,
+                .map_err(Self::map_error)?,
         })
+    }
+
+    fn map_error(error: reqwest::Error) -> Error {
+        if error.is_timeout() {
+            Error::WebTimeout
+        } else {
+            Error::Web(error)
+        }
     }
 
     pub async fn get_file_size(&mut self, url: &str) -> Result<Option<u64>> {
         Ok(self
             .client
             .head(url)
+            .timeout(REQUEST_TIMEOUT)
             .send()
             .await
-            .map_err(Error::from)?
+            .map_err(Self::map_error)?
             .headers()
             .get("Content-Length")
             .and_then(|value| value.to_str().ok())
@@ -92,20 +104,18 @@ impl WebClient {
         console: Arc<Console>,
         hash_alg: HashAlg,
     ) -> Result<String> {
+        if system.exists_path(file_path) {
+            return Ok(String::new());
+        }
+
         // Appends rather than replacing the extension, so an image named
         // `foo.img` downloads through `foo.img.tmp`.
         let mut temp_file = file_path.as_os_str().to_owned();
         temp_file.push(".tmp");
         let temp_file = PathBuf::from(temp_file);
-        if system.exists_path(&temp_file) {
-            system.remove_file(&temp_file)?;
-        }
+        system.remove_file(&temp_file).ok();
 
-        if system.exists_path(file_path) {
-            return Ok(String::new());
-        }
-
-        let mut resp = self.client.get(url).send().await.map_err(Error::from)?;
+        let mut resp = self.client.get(url).send().await.map_err(Self::map_error)?;
 
         let mut writer = ProgressWriter::new(
             system.create_file(&temp_file)?,
@@ -114,25 +124,34 @@ impl WebClient {
             console,
             hash_alg,
         );
-        while let Some(chunk) = resp.chunk().await.map_err(Error::from)? {
-            writer.write_all(&chunk).map_err(Error::from)?;
+        if let Err(error) = Self::write_body(&mut resp, &mut writer).await {
+            system.remove_file(&temp_file).ok();
+            return Err(error);
         }
 
-        // The buffered writer drops its tail without this flush
-        writer.flush().map_err(Error::from)?;
         system.rename_file(&temp_file, file_path)?;
 
         Ok(writer.hasher.finalize())
     }
 
+    async fn write_body(resp: &mut Response, writer: &mut ProgressWriter) -> Result<()> {
+        while let Some(chunk) = resp.chunk().await.map_err(Self::map_error)? {
+            writer.write_all(&chunk).map_err(Error::from)?;
+        }
+
+        // The buffered writer drops its tail without this flush
+        writer.flush().map_err(Error::from)
+    }
+
     pub async fn download_content(&mut self, url: &str) -> Result<String> {
         self.client
             .get(url)
+            .timeout(REQUEST_TIMEOUT)
             .send()
             .await
-            .map_err(Error::from)?
+            .map_err(Self::map_error)?
             .text()
             .await
-            .map_err(Error::from)
+            .map_err(Self::map_error)
     }
 }

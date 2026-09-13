@@ -247,6 +247,9 @@ Troubleshoot:
     #[error("Web Error: {0}")]
     Web(#[from] reqwest::Error),
 
+    #[error("Web Error: the server stopped sending data")]
+    WebTimeout,
+
     // TLS
     #[error("TLS certificate generation error: {0}")]
     TlsCertGeneration(#[from] rcgen::Error),
