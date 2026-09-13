@@ -1,4 +1,4 @@
-use bytes::{Buf, Bytes, BytesMut};
+use tokio_util::bytes::{Buf, Bytes, BytesMut};
 use tokio_util::codec::Decoder;
 
 /// Whether the byte about to be decoded starts a fresh line, or a `~` was
