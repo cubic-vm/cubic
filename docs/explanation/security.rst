@@ -18,6 +18,8 @@ To meet these goals Cubic keeps the amount of trusted code small. It runs
 without a background service, it never asks for extra privileges, and it
 authenticates every connection that reaches a virtual machine.
 
+.. _no privileged service:
+
 No Privileged System Service
 ----------------------------
 
@@ -30,6 +32,8 @@ Because QEMU runs as your normal user with no extra rights, a guest that breaks
 out of its virtual machine cannot gain system wide privileges on the host. Any
 such escape stays inside your own user account, where the operating system keeps
 it isolated from other users in the usual way.
+
+.. _verified images:
 
 Verified Distribution Images
 ----------------------------
@@ -86,6 +90,8 @@ Only expose a port beyond loopback when you really mean to, and make sure the
 service behind it is meant to be public and is properly secured. A port opened
 on ``0.0.0.0`` gives an outside attacker a direct path into the guest.
 
+.. _ssh access:
+
 SSH Access
 ----------
 
@@ -116,6 +122,8 @@ A key that does not match stops the connection. Cubic shows both fingerprints,
 points out that this may be a malicious attempt to take over the connection, and
 asks whether to trust the new key. Answering yes stores it, which is how you
 carry on after you recreated the guest yourself.
+
+.. _encrypted control channels:
 
 Encrypted QEMU Control Channels
 -------------------------------
