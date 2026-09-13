@@ -54,7 +54,7 @@ update: build-image
 	${DOCKER_CMD} ${IMAGE} cargo update
 
 sh: build-image
-	${DOCKER_CMD} -it ${IMAGE} bash
+	${DOCKER_CMD} --device=/dev/kvm -it ${IMAGE} bash
 
 check: format lint yamllint shellcheck test audit
 
