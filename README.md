@@ -242,7 +242,6 @@ drives to run every VM.
 
 | Rust Crate | Usage |
 |------------|-------|
-| bytes | Byte buffers used by the stdin detach-shortcut decoder |
 | clap | Parse CLI commands, arguments, and flags |
 | clap_complete | Generate shell completion scripts |
 | crossterm | Terminal control for the interactive console and views |
@@ -253,7 +252,6 @@ drives to run every VM.
 | russh | Pure-Rust SSH client to connect into VMs |
 | russh-sftp | SFTP file transfer over the SSH connection |
 | rustls | TLS for the QEMU mTLS control channel |
-| rustls-pki-types | Shared certificate and key types backing rustls |
 | serde | Derive serialization for config and QMP messages |
 | serde_json | QMP protocol and firmware descriptor parsing |
 | sha2 | Verify downloaded image checksums |

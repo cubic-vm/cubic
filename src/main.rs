@@ -31,6 +31,12 @@ async fn main() -> ! {
         default_hook(info);
     }));
 
+    // reqwest picks up the process wide crypto provider, and rustls is
+    // built with ring
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .ok();
+
     let system: Arc<dyn System> = Arc::new(OsSystem::new());
     let console = &view::Console::new(Arc::clone(&system));
     let result = CommandDispatcher::parse()

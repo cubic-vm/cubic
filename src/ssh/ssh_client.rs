@@ -63,9 +63,9 @@ impl client::Handler for ServerKeyHandler {
 
     async fn check_server_key(
         &mut self,
-        server_public_key: &ssh_key::PublicKey,
+        server_public_key: &PublicKeyOrCertificate,
     ) -> Result<bool, Self::Error> {
-        let Ok(key) = server_public_key.to_openssh() else {
+        let Ok(key) = server_public_key.public_key().to_openssh() else {
             return Ok(false);
         };
         let check = HostKeyChecker::new().check_key(self.pinned.as_deref(), &key);
@@ -530,7 +530,10 @@ mod tests {
             offered: Arc::clone(&seen),
         };
 
-        let accepted = handler.check_server_key(offered).await.unwrap();
+        let accepted = handler
+            .check_server_key(&PublicKeyOrCertificate::from(offered.clone()))
+            .await
+            .unwrap();
         let recorded =
             seen.lock().unwrap().as_deref() == Some(offered.to_openssh().unwrap().as_str());
 
