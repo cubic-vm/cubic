@@ -86,6 +86,7 @@ impl ImageFetcher {
         if valid_checksum {
             Ok(())
         } else {
+            system.remove_file(target_file).ok();
             Err(Error::InvalidChecksum)
         }
     }
