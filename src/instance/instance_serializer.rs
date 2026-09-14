@@ -58,6 +58,7 @@ ssh_port = 10000
 hostfwd = []
 isolate = false
 auto_remove = false
+first_boot = false
 "#
         );
     }
@@ -80,6 +81,7 @@ auto_remove = false
                     execute: Some("echo hello world".to_string()),
                     isolate: true,
                     ssh_host_key: Some("ssh-ed25519 AAAA".to_string()),
+                    first_boot: true,
                     ..Instance::default()
                 },
                 &mut writer,
@@ -100,6 +102,7 @@ execute = "echo hello world"
 isolate = true
 ssh_host_key = "ssh-ed25519 AAAA"
 auto_remove = false
+first_boot = true
 "#
         );
     }

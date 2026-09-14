@@ -44,6 +44,7 @@ impl CreateInstanceAction {
 
         // Write configuration file
         instance.auto_remove = auto_remove;
+        instance.first_boot = true;
         instance.name = format!("{instance_name}.tmp");
         context.get_instance_store().store(&instance)?;
         instance.name = instance_name;
