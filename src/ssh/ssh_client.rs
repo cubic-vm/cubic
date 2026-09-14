@@ -10,9 +10,12 @@ use russh_sftp::client::SftpSession;
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio_util::codec::FramedRead;
 use tokio_util::io::StreamReader;
+
+const RETRY_DELAY_SECS: u64 = 1;
 
 #[derive(PartialEq)]
 enum AuthMethod {
@@ -228,17 +231,15 @@ impl<'a> SshClient<'a> {
         ConfirmDialog::new("Do you want to trust the new key and continue?").confirm(console)
     }
 
-    pub async fn open_channel(
+    async fn connect(
         &self,
         console: &Arc<Console>,
         machine: &str,
-        client_key: &str,
-        user: &str,
         port: u16,
-    ) -> Result<Channel<russh::client::Msg>, Error> {
-        let mut session;
+        instance: &mut Instance,
+    ) -> Result<client::Handle<ServerKeyHandler>, Error> {
+        let session;
         let store = self.context.get_instance_store();
-        let mut instance = store.load(machine)?;
         let mut pinned = instance.ssh_host_key.clone();
         let offered = Arc::new(Mutex::new(None));
 
@@ -267,7 +268,7 @@ impl<'a> SshClient<'a> {
                 }
 
                 instance.ssh_host_key = Some(key.clone());
-                store.store(&instance)?;
+                store.store(instance)?;
                 pinned = Some(key);
                 continue;
             }
@@ -289,17 +290,53 @@ impl<'a> SshClient<'a> {
                     HostKeyChecker::new().get_fingerprint(&key)
                 ));
                 instance.ssh_host_key = Some(key);
-                store.store(&instance)?;
+                store.store(instance)?;
             }
         }
 
-        let auth_method = self
-            .authenticate(console, &mut session, user, machine, client_key)
-            .await;
+        Ok(session)
+    }
 
-        if auth_method? == AuthMethod::Deprecated {
-            self.warn_deprecated_auth(console, machine, client_key).ok();
-        }
+    pub async fn open_channel(
+        &self,
+        console: &Arc<Console>,
+        machine: &str,
+        client_key: &str,
+        user: &str,
+        port: u16,
+    ) -> Result<Channel<client::Msg>, Error> {
+        let store = self.context.get_instance_store();
+        let mut instance = store.load(machine)?;
+        let first_boot = instance.first_boot && user == instance.user.as_str();
+
+        let session = loop {
+            let mut session = self.connect(console, machine, port, &mut instance).await?;
+
+            if !first_boot {
+                let auth_method = self
+                    .authenticate(console, &mut session, user, machine, client_key)
+                    .await?;
+
+                if auth_method == AuthMethod::Deprecated {
+                    self.warn_deprecated_auth(console, machine, client_key).ok();
+                }
+
+                break session;
+            }
+
+            if self
+                .authenticate_with_keys(&mut session, user, &[client_key.to_string()])
+                .await
+            {
+                instance.first_boot = false;
+                store.store(&instance).ok();
+
+                break session;
+            }
+
+            console.debug("Client key failed, waiting for the first boot to finish");
+            tokio::time::sleep(Duration::from_secs(RETRY_DELAY_SECS)).await;
+        };
 
         session
             .channel_open_session()

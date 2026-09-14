@@ -34,6 +34,9 @@ pub struct Instance {
     /// Set by `cubic run --rm`, the instance is deleted once it stops
     #[serde(default)]
     pub auto_remove: bool,
+    /// Waiting for the first boot, where cloud-init still creates the user
+    #[serde(default)]
+    pub first_boot: bool,
 }
 
 impl Instance {
