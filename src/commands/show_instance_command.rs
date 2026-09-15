@@ -44,13 +44,6 @@ impl Command for ShowInstanceCommand {
         view.add("Disk Total", &instance.disk_capacity.to_size());
         view.add("User", instance.user.as_str());
         view.add("Isolated", util::to_yes_no(instance.isolate));
-        view.add("SSH Port", &instance.ssh_port.to_string());
-        if let Some(monitor_port) = instance.monitor_port {
-            view.add("Monitor Port", &monitor_port.to_string());
-        }
-        if let Some(console_port) = instance.console_port {
-            view.add("Console Port", &console_port.to_string());
-        }
 
         // Port forwarding
         for (index, rule) in instance.hostfwd.iter().enumerate() {
@@ -66,6 +59,13 @@ impl Command for ShowInstanceCommand {
         if self.all.value {
             if let Some(pid) = instance_store.get_pid(&instance) {
                 view.add("PID", &pid.to_string());
+            }
+            view.add("SSH Port", &instance.ssh_port.to_string());
+            if let Some(monitor_port) = instance.monitor_port {
+                view.add("Monitor Port", &monitor_port.to_string());
+            }
+            if let Some(console_port) = instance.console_port {
+                view.add("Console Port", &console_port.to_string());
             }
             view.add("Disk Image", &env.get_instance_image_file(&instance.name));
             view.add("Config", &env.get_instance_toml_config_file(&instance.name));
@@ -143,7 +143,6 @@ Memory:     1024 B
 Disk Total: 1024 K
 User:       myuser
 Isolated:   no
-SSH Port:   9000
 Forward:    127.0.0.1:4000:40/tcp
 "
         );
@@ -224,13 +223,13 @@ Memory:       1 B
 Disk Total:   1 B
 User:         john
 Isolated:     yes
-SSH Port:     8000
-Monitor Port: 8001
-Console Port: 8002
 Forward:      127.0.0.1:4000:40/tcp
               0.0.0.0:80:8000/udp
 Snapshots:    clean
               before-upgrade
+SSH Port:     8000
+Monitor Port: 8001
+Console Port: 8002
 Disk Image:   {disk_image}
 Config:       {config}
 SSH Key:      {ssh_key}

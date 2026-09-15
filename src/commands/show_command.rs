@@ -14,23 +14,23 @@ use std::sync::Arc;
 ///
 ///   Show information of a VM instance
 ///   $ cubic show trixie
-///   Running:      yes
-///   Arch:         amd64
-///   vCPUs:        6
-///   Memory:       16 G
-///   Disk Used:    5325 M
-///   Disk Total:   100 G
-///   User:         cubic
-///   Isolated:     no
-///   SSH Port:     54315
-///   Monitor Port: 54316
-///   Console Port: 54317
-///   Forward:      127.0.0.1:4000:4000/tcp
+///   Running:    yes
+///   Arch:       amd64
+///   vCPUs:      6
+///   Memory:     16 G
+///   Disk Used:  5325 M
+///   Disk Total: 100 G
+///   User:       cubic
+///   Isolated:   no
+///   Forward:    127.0.0.1:4000:4000/tcp
 ///
-///   Show all information, adding the process id, file locations and the SSH command
+///   Show all information, adding the process id, ports, file locations and the SSH command
 ///   $ cubic show --all trixie
 ///   ... (fields above, then)
 ///   PID:          12345
+///   SSH Port:     54315
+///   Monitor Port: 54316
+///   Console Port: 54317
 ///   Disk Image:   ~/.local/share/cubic/machines/trixie/machine.img
 ///   Config:       ~/.local/share/cubic/machines/trixie/instance.toml
 ///   SSH Key:      ~/.local/share/cubic/machines/trixie/ssh_client_key
