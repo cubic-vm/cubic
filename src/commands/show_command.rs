@@ -16,7 +16,7 @@ use std::sync::Arc;
 ///   $ cubic show trixie
 ///   Running:      yes
 ///   Arch:         amd64
-///   CPUs:         6
+///   vCPUs:        6
 ///   Memory:       16 G
 ///   Disk Used:    5325 M
 ///   Disk Total:   100 G

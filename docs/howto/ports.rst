@@ -64,7 +64,7 @@ including every port forwarding rule:
     $ cubic show --all webserver
     Running:      yes
     Arch:         amd64
-    CPUs:         4
+    vCPUs:        4
     Memory:       4096 M
     Disk Used:    1229 M
     Disk Total:   100 G
@@ -103,7 +103,7 @@ Remove the HTTP forward:
 
 When the VM instance is running the command prints a note that changes may
 require a restart. It applies to the other settings of a VM instance, such as
-CPUs and memory, not to the forwards.
+vCPUs and memory, not to the forwards.
 
 List the Forwards
 -----------------

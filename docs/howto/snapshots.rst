@@ -31,7 +31,7 @@ List the Snapshots
     $ cubic show example
     Running:      no
     Arch:         amd64
-    CPUs:         4
+    vCPUs:        4
     Memory:       2048 M
     Disk Used:    941 M
     Disk Total:   100 G
@@ -56,8 +56,8 @@ Everything written since the snapshot is lost. A running VM instance is stopped
 first, so make sure you no longer need its current state. Add ``--yes`` to skip
 the confirmation.
 
-The settings of a VM instance, such as CPUs, memory and forwarded ports, are not
-part of a snapshot and stay as they are. The disk is the exception, because a
+The settings of a VM instance, such as vCPUs, memory and forwarded ports, are
+not part of a snapshot and stay as they are. The disk is the exception, because a
 restore brings back the size the disk had when the snapshot was taken while the
 setting keeps the newer value. ``cubic modify --disk`` grows a disk past the
 size in the settings, so pick a larger size to bring the two back in line.

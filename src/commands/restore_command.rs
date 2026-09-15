@@ -12,7 +12,7 @@ use std::sync::Arc;
 /// snapshot was taken, including its size. Everything written since then is
 /// lost. A running VM instance is stopped first.
 ///
-/// The settings of a VM instance, such as CPUs, memory and forwarded ports, are
+/// The settings of a VM instance, such as vCPUs, memory and forwarded ports, are
 /// not part of a snapshot and stay as they are.
 ///
 /// Examples:
