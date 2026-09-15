@@ -13,7 +13,7 @@ use std::sync::Arc;
 /// same instance share every block that did not change, so keeping several of
 /// them stays cheap.
 ///
-/// The settings of a VM instance, such as CPUs, memory and forwarded ports, are
+/// The settings of a VM instance, such as vCPUs, memory and forwarded ports, are
 /// not part of a snapshot and are never rolled back.
 ///
 /// Examples:

@@ -47,7 +47,7 @@ Override Template Values
 
 Every command line argument overrides the matching value in the template, which
 lets you reuse one file and change a single detail, such as the image or the
-number of CPUs:
+number of vCPUs:
 
 .. code-block::
 

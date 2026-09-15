@@ -1,14 +1,14 @@
 .. _resources:
 
-Change CPUs, Memory and Disk
-============================
+Change vCPUs, Memory and Disk
+=============================
 
 ``cubic modify`` changes the size of a VM instance after it was created.
 
 Stop the VM Instance
 --------------------
 
-CPUs, memory and disk apply when a VM instance starts, so stop it first:
+vCPUs, memory and disk apply when a VM instance starts, so stop it first:
 
 .. code-block::
 
@@ -38,7 +38,7 @@ Check the Result
     $ cubic show demo
     Running:      no
     Arch:         amd64
-    CPUs:         2
+    vCPUs:        2
     Memory:       2048 M
     Disk Used:    448 M
     Disk Total:   200 G

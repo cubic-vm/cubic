@@ -8,14 +8,14 @@ use std::sync::Arc;
 
 /// Modify a VM instance
 ///
-/// Use this command to change the settings of an existing VM instance (CPU, memory,
+/// Use this command to change the settings of an existing VM instance (vCPU, memory,
 /// disk, etc.). Port forwarding rules (--port/--rm-port) take effect immediately if
 /// the instance is running. All other changes are applied on the next (re-)start of
 /// the VM instance.
 ///
 /// Examples:
 ///
-///   Assign 8 virtual CPUs to a VM instance:
+///   Assign 8 vCPUs to a VM instance:
 ///   $ cubic modify example1 --cpus 8
 ///
 ///   Assign 10 GiB of RAM to a VM instance:
@@ -44,7 +44,7 @@ use std::sync::Arc;
 pub struct ModifyCommand {
     #[clap(flatten)]
     instance: commands::InstanceArg,
-    /// Number of CPUs for the virtual machine instance
+    /// Number of vCPUs for the virtual machine instance
     #[clap(short, long)]
     cpus: Option<u16>,
     /// Memory size of the virtual machine instance (e.g. 1G for 1 gigabyte)

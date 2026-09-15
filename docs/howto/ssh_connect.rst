@@ -19,7 +19,7 @@ together:
     $ cubic show --all demo
     Running:      yes
     Arch:         amd64
-    CPUs:         4
+    vCPUs:        4
     Memory:       4096 M
     Disk Used:    1229 M
     Disk Total:   100 G

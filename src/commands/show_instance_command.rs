@@ -36,7 +36,7 @@ impl Command for ShowInstanceCommand {
             util::to_yes_no(instance_store.is_running(&instance)),
         );
         view.add("Arch", &instance.arch.to_string());
-        view.add("CPUs", &instance.cpus.to_string());
+        view.add("vCPUs", &instance.cpus.to_string());
         view.add("Memory", &instance.mem.to_size());
         if let Some(disk_used) = &instance.disk_used {
             view.add("Disk Used", &disk_used.to_size());
@@ -138,7 +138,7 @@ mod tests {
             "\
 Running:    no
 Arch:       amd64
-CPUs:       1
+vCPUs:      1
 Memory:     1024 B
 Disk Total: 1024 K
 User:       myuser
@@ -219,7 +219,7 @@ Forward:    127.0.0.1:4000:40/tcp
                 "\
 Running:      no
 Arch:         arm64
-CPUs:         2
+vCPUs:        2
 Memory:       1 B
 Disk Total:   1 B
 User:         john
