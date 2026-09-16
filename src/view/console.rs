@@ -108,7 +108,15 @@ impl Console {
             && self.system.is_terminal(stream)
             && self.system.read_env_var("NO_COLOR").is_none();
         let text = match style {
-            Some((label, c)) => format!("{} {msg}", colorize(label, c, color)),
+            Some((label, c)) => {
+                // Align follow-up lines with the text after the label.
+                let indent = format!("\n{}", " ".repeat(label.len() + 1));
+                format!(
+                    "{} {}",
+                    colorize(label, c, color),
+                    msg.replace('\n', &indent)
+                )
+            }
             None => msg.to_string(),
         };
         let frame = self.frame.lock().unwrap();
@@ -201,6 +209,20 @@ mod tests {
         assert_eq!(
             system.get_output(),
             format!("{home}first{clear}{home}second{clear}")
+        );
+    }
+
+    #[test]
+    fn test_multiline_message_aligns_with_label() {
+        let system = Arc::new(SystemMock::new());
+        let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
+
+        console.warn("foo\n\nbar");
+        console.error("foo\nbar");
+
+        assert_eq!(
+            system.get_output(),
+            "warn: foo\n      \n      bar\nerror: foo\n       bar\n"
         );
     }
 
