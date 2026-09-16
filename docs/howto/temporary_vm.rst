@@ -12,11 +12,15 @@ Start One
 
 .. code-block::
 
-    $ cubic run --rm scratch --image ubuntu
-    alice@scratch:~$ python3 --version
+    $ cubic run --rm --image ubuntu
+    info: Using generated name grumpy-dragon
+    alice@grumpy-dragon:~$ python3 --version
     Python 3.13.7
-    alice@scratch:~$ exit
+    alice@grumpy-dragon:~$ exit
     logout
+
+Cubic picks the name and prints it, so there is nothing to invent. A given name
+still works, as in ``cubic run --rm scratch --image ubuntu``.
 
 The VM instance is gone once the shell closes. ``cubic instances`` no longer
 lists it:
@@ -51,7 +55,7 @@ and leaves nothing behind:
 
 .. code-block::
 
-    $ cubic run --rm --isolate scratch --image ubuntu
+    $ cubic run --rm --isolate --image ubuntu
 
 See :ref:`first isolation` for what isolation covers.
 

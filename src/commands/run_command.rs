@@ -1,35 +1,43 @@
 use crate::actions::{LoadInstanceAction, StopInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
-use crate::models::Target;
+use crate::models::{InstanceName, Target};
 use clap::{self, ArgAction, Parser};
 
 /// Create and start a VM instance
 ///
 /// This command is a shortcut for the three subcommands `create`, `start` and `ssh`.
 ///
+/// Cubic generates a name like grumpy-dragon when the name is left out.
+///
 /// Examples:
 ///
+///   Run a VM instance:
+///   $ cubic run -i ubuntu
+///
 ///   Run a VM instance with 8 vCPUs, 10G of RAM, 200G of storage:
-///   $ cubic run example1 --cpus 8 --memory 10G --disk 200G -i debian:trixie
+///   $ cubic run --cpus 8 --memory 10G --disk 200G -i debian:trixie
 ///
 ///   Run a VM instance and forward the instance's HTTP port to the host port 8000:
-///   $ cubic run example2 --port 8000:80 -i ubuntu
+///   $ cubic run --port 8000:80 -i ubuntu
 ///
 ///   Run a VM instance and forward the instance's DNS port to the host port 5353:
-///   $ cubic run example3 --port 5353:53/udp -i ubuntu
+///   $ cubic run --port 5353:53/udp -i ubuntu
 ///
 ///   Run a VM instance with multiple port forwarding rules:
-///   $ cubic run example4 -p 8000:80/tcp -p 5353:53/udp -i ubuntu:latest
+///   $ cubic run -p 8000:80/tcp -p 5353:53/udp -i ubuntu:latest
 ///
 ///   Run a VM instance and install Vim:
-///   $ cubic run example5 -e "sudo apt install -y vim" -i ubuntu
+///   $ cubic run -e "sudo apt install -y vim" -i ubuntu
 ///
 ///   Run a VM instance without network access:
-///   $ cubic run example6 --isolate -i ubuntu
+///   $ cubic run --isolate -i ubuntu
 ///
 ///   Run a VM instance and delete it when you exit:
-///   $ cubic run --rm example7 -i debian:trixie
+///   $ cubic run --rm -i debian:trixie
+///
+///   Run a VM instance with a given name:
+///   $ cubic run example -i ubuntu
 ///
 ///   Every distribution has the tags latest and stable. The tag latest is the
 ///   newest release and the tag stable is the newest long term release. A plain
@@ -51,11 +59,10 @@ pub struct RunCommand {
 
 impl RunCommand {
     // Best effort, a failure here must not mask the session result.
-    fn cleanup(&self, context: &commands::Context) {
-        let name = self.create_cmd.instance_name.value.as_str();
+    fn cleanup(&self, context: &commands::Context, name: &InstanceName) {
         let store = context.get_instance_store();
 
-        if let Ok(instance) = LoadInstanceAction::new().run(context, name) {
+        if let Ok(instance) = LoadInstanceAction::new().run(context, name.as_str()) {
             StopInstanceAction::new(&instance).run(store, true).ok();
             store.delete(&instance).ok();
         }
@@ -64,10 +71,10 @@ impl RunCommand {
 
 impl Command for RunCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
-        self.create_cmd.create(context, self.rm).await?;
+        let name = self.create_cmd.create(context, self.rm).await?;
 
         let ssh = commands::SshCommand {
-            target: Target::from_instance_name(self.create_cmd.instance_name.value.clone()),
+            target: Target::from_instance_name(name.clone()),
             accel: self.accel,
             env_args: self.env_args.clone(),
         };
@@ -82,7 +89,7 @@ impl Command for RunCommand {
         };
 
         if self.rm {
-            self.cleanup(context);
+            self.cleanup(context, &name);
         }
         result
     }
@@ -95,6 +102,7 @@ mod tests {
     use crate::models::{Environment, Instance};
     use crate::platform::SystemMock;
     use crate::view::Console;
+    use std::str::FromStr;
     use std::sync::Arc;
 
     #[test]
@@ -117,7 +125,7 @@ mod tests {
 
         RunCommand::try_parse_from(["run", "--rm", "web", "-i", "debian:trixie"])
             .unwrap()
-            .cleanup(&context);
+            .cleanup(&context, &InstanceName::from_str("web").unwrap());
 
         assert_eq!(*killed.lock().unwrap(), ["web"]);
         assert_eq!(*deleted.lock().unwrap(), ["web"]);

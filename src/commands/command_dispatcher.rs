@@ -60,7 +60,9 @@ Examples:
   $ cubic ssh example
 
   Alternatively, use `run` to execute the above commands in a single command:
-  $ cubic run example --image ubuntu
+  $ cubic run --image ubuntu
+
+  Cubic generates a name like grumpy-dragon when the name is left out.
 
   Show all supported VM images:
   $ cubic images
