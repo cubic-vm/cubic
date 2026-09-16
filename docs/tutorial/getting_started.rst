@@ -87,7 +87,8 @@ Connect again at any time with ``cubic ssh example``. Stop the VM instance with
 
     $ cubic delete example
 
-``cubic run example --image ubuntu`` creates and connects in one command.
+``cubic run --image ubuntu`` creates and connects in one command, with a name
+cubic picks.
 
 From here you can:
 

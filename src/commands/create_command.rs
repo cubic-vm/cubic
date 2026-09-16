@@ -1,12 +1,12 @@
 use crate::actions::CreateInstanceAction;
 use crate::commands::{
-    self, Command, Context,
+    Command, Context,
     image::{fetch_image, fetch_image_info},
 };
 use crate::error::{Error, Result};
 use crate::models::{
-    Arch, DataSize, Environment, ImageName, Instance, LOW_DISK_SPACE_WARNING, PortForward,
-    ResourceAllocator, Template, UserName,
+    Arch, DataSize, Environment, ImageName, Instance, InstanceName, InstanceNameGenerator,
+    LOW_DISK_SPACE_WARNING, PortForward, ResourceAllocator, Template, UserName,
 };
 use crate::platform::System;
 use crate::view::Spinner;
@@ -22,31 +22,39 @@ pub const DEFAULT_DISK_SIZE: DataSize = DataSize::new(100 * 1024_usize.pow(3));
 /// This command only creates the VM instance. Use cubic start <instance> to power
 /// it on and cubic ssh <instance> to connect to it.
 ///
+/// Cubic generates a name like grumpy-dragon when the name is left out.
+///
 /// Examples:
 ///
+///   Create a VM instance:
+///   $ cubic create -i ubuntu
+///
 ///   Create a VM instance with 8 vCPUs, 10G of RAM, 200G of storage:
-///   $ cubic create example1 --cpus 8 --memory 10G --disk 200G -i debian:trixie
+///   $ cubic create --cpus 8 --memory 10G --disk 200G -i debian:trixie
 ///
 ///   Create a VM instance and forward the instance's HTTP port to the host port 8000:
-///   $ cubic create example2 --port 8000:80 -i ubuntu
+///   $ cubic create --port 8000:80 -i ubuntu
 ///
 ///   Create a VM instance and forward the instance's DNS port to the host port 5353:
-///   $ cubic create example3 --port 5353:53/udp -i ubuntu
+///   $ cubic create --port 5353:53/udp -i ubuntu
 ///
 ///   Create a VM instance with multiple port forwarding rules:
-///   $ cubic create example4 -p 8000:80/tcp -p 5353:53/udp -i ubuntu:latest
+///   $ cubic create -p 8000:80/tcp -p 5353:53/udp -i ubuntu:latest
 ///
 ///   Create a VM instance and install Vim:
-///   $ cubic create example5 -e "sudo apt install -y vim" -i ubuntu
+///   $ cubic create -e "sudo apt install -y vim" -i ubuntu
 ///
 ///   Create a VM instance without network access:
-///   $ cubic create example6 --isolate -i ubuntu
+///   $ cubic create --isolate -i ubuntu
 ///
 ///   Create a VM instance from a template (command line arguments override the template):
-///   $ cubic create example7 --template ./my-template.toml
+///   $ cubic create --template ./my-template.toml
 ///
 ///   Create a VM instance with network access from a template that isolates it:
-///   $ cubic create example8 --template ./my-template.toml --no-isolate
+///   $ cubic create --template ./my-template.toml --no-isolate
+///
+///   Create a VM instance with a given name:
+///   $ cubic create example -i ubuntu
 ///
 ///   Every distribution has the tags latest and stable. The tag latest is the
 ///   newest release and the tag stable is the newest long term release. A plain
@@ -55,8 +63,9 @@ pub const DEFAULT_DISK_SIZE: DataSize = DataSize::new(100 * 1024_usize.pow(3));
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
 pub struct CreateCommand {
-    #[clap(flatten)]
-    pub instance_name: commands::InstanceArg,
+    /// Name of the virtual machine instance
+    #[clap(id = "instance", value_name = "INSTANCE")]
+    pub instance_name: Option<InstanceName>,
     /// Template file with default values (e.g. --template ./my-template.toml)
     #[clap(short, long)]
     template: Option<String>,
@@ -123,7 +132,6 @@ impl CreateCommand {
         };
 
         Instance {
-            name: self.instance_name.value.to_string(),
             arch,
             user: self
                 .user
@@ -159,12 +167,29 @@ impl CreateCommand {
 }
 
 impl CreateCommand {
-    pub async fn create(&self, context: &Context, auto_remove: bool) -> Result<()> {
+    fn resolve_name(&self, context: &Context) -> InstanceName {
+        self.instance_name.clone().unwrap_or_else(|| {
+            // The generator is endless, so there is always a name.
+            let name = InstanceNameGenerator::new()
+                .find(|name| !context.get_instance_store().exists(name.as_str()))
+                .unwrap();
+
+            context
+                .get_console()
+                .info(&format!("Using generated name {name}"));
+            name
+        })
+    }
+
+    /// Creates the instance and returns the name it runs under, which the
+    /// caller needs when cubic generated it.
+    pub async fn create(&self, context: &Context, auto_remove: bool) -> Result<InstanceName> {
         let console = context.get_console();
         let env = context.get_env();
         let instance_store = context.get_instance_store();
 
-        instance_store.claim_name(self.instance_name.value.as_str())?;
+        let name = self.resolve_name(context);
+        instance_store.claim_name(name.as_str())?;
 
         if ResourceAllocator::is_disk_space_low(context.get_system(), env) {
             console.warn(LOW_DISK_SPACE_WARNING);
@@ -177,21 +202,24 @@ impl CreateCommand {
         let image = &fetch_image_info(context, &image_name).await?;
         fetch_image(context, image).await?;
 
-        let text = format!("Creating {}", self.instance_name.value);
+        let text = format!("Creating {name}");
         let _spinner = Spinner::new(Arc::clone(console), text);
         let ssh_port = context.get_system().bind_port()?;
 
         let (default_cpus, default_mem) =
             ResourceAllocator::read_from_host(context.get_system()).get_default_resources();
 
-        let mut instance = self.build_instance(
-            template.as_ref(),
-            env,
-            image.arch,
-            ssh_port,
-            default_cpus,
-            default_mem,
-        );
+        let mut instance = Instance {
+            name: name.to_string(),
+            ..self.build_instance(
+                template.as_ref(),
+                env,
+                image.arch,
+                ssh_port,
+                default_cpus,
+                default_mem,
+            )
+        };
 
         for warning in ResourceAllocator::enforce_minimums(
             &mut instance.cpus,
@@ -213,7 +241,7 @@ impl CreateCommand {
         let image_path = &env.get_image_file(&image.to_file_name());
         CreateInstanceAction::new().run(context, image_path, instance, auto_remove)?;
 
-        Ok(())
+        Ok(name)
     }
 }
 
@@ -261,6 +289,26 @@ mod tests {
             result,
             Err(Error::InstanceAlreadyExists(ref name)) if name == "test"
         ));
+    }
+
+    #[test]
+    fn test_resolve_name_keeps_a_given_name_and_generates_a_missing_one() {
+        let context = Context::new(
+            Arc::new(SystemMock::new()),
+            Console::new(Arc::new(SystemMock::new())),
+            Environment::default(),
+            Box::new(InstanceStoreMock::new(Vec::new())),
+        );
+
+        let given = CreateCommand::try_parse_from(["create", "web"])
+            .unwrap()
+            .resolve_name(&context);
+        assert_eq!(given.as_str(), "web");
+
+        let generated = CreateCommand::try_parse_from(["create"])
+            .unwrap()
+            .resolve_name(&context);
+        assert_eq!(generated.as_str().split('-').count(), 2);
     }
 
     fn build_env() -> Environment {

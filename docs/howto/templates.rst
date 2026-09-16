@@ -37,7 +37,7 @@ Pass the template to ``cubic create`` or ``cubic run`` with ``--template``:
 
 .. code-block::
 
-    $ cubic create my-instance --template ./template.toml
+    $ cubic create --template ./template.toml
 
 A template carries no instance name, so one file serves as many VM instances as
 you like.
@@ -51,14 +51,14 @@ number of vCPUs:
 
 .. code-block::
 
-    $ cubic create my-instance --template ./template.toml --image ubuntu --cpus 8
+    $ cubic create --template ./template.toml --image ubuntu --cpus 8
 
 A template that sets ``isolate = true`` keeps the VM instance off the network.
 ``--no-isolate`` gives a single VM instance network access anyway:
 
 .. code-block::
 
-    $ cubic create my-instance --template ./template.toml --no-isolate
+    $ cubic create --template ./template.toml --no-isolate
 
 Related
 -------

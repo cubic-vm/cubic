@@ -18,20 +18,20 @@ Export the proxy URL and create a VM instance:
 .. code-block::
 
     $ export HTTPS_PROXY=http://proxy.example.com:3128
-    $ cubic create builder --image ubuntu:resolute
+    $ cubic create --image ubuntu:resolute
 
 On Windows use ``set`` instead:
 
 .. code-block::
 
     > set HTTPS_PROXY=http://proxy.example.com:3128
-    > cubic create builder --image ubuntu:resolute
+    > cubic create --image ubuntu:resolute
 
 Set it for a single command when you do not want it in your shell:
 
 .. code-block::
 
-    $ HTTPS_PROXY=http://proxy.example.com:3128 cubic create builder --image ubuntu:resolute
+    $ HTTPS_PROXY=http://proxy.example.com:3128 cubic create --image ubuntu:resolute
 
 A Proxy That Needs a Login
 --------------------------
