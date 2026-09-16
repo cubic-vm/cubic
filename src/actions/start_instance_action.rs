@@ -118,11 +118,9 @@ impl StartInstanceAction {
         // The hints only help when the arch matches and the host still says no.
         if accel == Accel::Auto && accelerator == SOFTWARE_ACCEL && self.instance.arch == host_arch
         {
-            // One call per line, so every line carries the warn label.
-            console.warn("No hardware acceleration detected on this host.");
-            for hint in QemuAcceleratorProbe::get_enable_hints(system) {
-                console.warn(hint);
-            }
+            let mut lines = vec!["No hardware acceleration detected on this host."];
+            lines.extend(QemuAcceleratorProbe::get_enable_hints(system));
+            console.warn(&lines.join("\n"));
         }
         qemu_system.set_accelerator(accelerator);
 

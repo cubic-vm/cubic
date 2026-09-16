@@ -198,10 +198,8 @@ impl<'a> SshClient<'a> {
             .map_err(|_| ())?;
 
         console.warn(&format!(
-            "Connected to '{machine}' using a deprecated authentication method."
-        ));
-        console.warn(&format!(
-            "Add the following cubic SSH key on '{machine}' to ~/.ssh/authorized_keys:"
+            "Connected to '{machine}' using a deprecated authentication method.\n\
+             Add the following cubic SSH key on '{machine}' to ~/.ssh/authorized_keys:"
         ));
         console.print("");
         console.print(&pubkey);
@@ -222,11 +220,13 @@ impl<'a> SshClient<'a> {
         let checker = HostKeyChecker::new();
 
         console.warn(&format!(
-            "The host key of instance '{machine}' does not match the stored key."
+            "The host key of instance '{machine}' does not match the stored key.\n\
+             \x20 expected  {}\n\
+             \x20 actual    {}\n\
+             This may be a malicious attempt to take over the connection to the guest.",
+            checker.get_fingerprint(pinned),
+            checker.get_fingerprint(offered)
         ));
-        console.warn(&format!("  expected  {}", checker.get_fingerprint(pinned)));
-        console.warn(&format!("  actual    {}", checker.get_fingerprint(offered)));
-        console.warn("This may be a malicious attempt to take over the connection to the guest.");
 
         ConfirmDialog::new("Do you want to trust the new key and continue?").confirm(console)
     }
