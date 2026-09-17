@@ -68,12 +68,7 @@ impl Command for StartCommand {
                     ));
                 }
 
-                self.fit_to_available_memory(
-                    console,
-                    context.get_system(),
-                    instance_store,
-                    instance,
-                )?;
+                self.fit_to_host(console, context.get_system(), instance_store, instance)?;
 
                 let mut action = StartInstanceAction::new(instance);
                 action.run(context, &self.qemu_args, self.accel.value, console)?;
@@ -106,13 +101,15 @@ impl Command for StartCommand {
 }
 
 impl StartCommand {
-    /// Reduce an instance to a size that fits the host's available memory.
+    /// Reduce an instance to a size that fits the host's available memory and
+    /// CPU count.
     ///
-    /// QEMU fails to start when the host cannot back the requested memory, so
-    /// this proposes the largest resource level that fits the available memory
-    /// minus a host reserve. The reduced size is persisted on accept. The start
-    /// is aborted when the user declines or nothing fits.
-    fn fit_to_available_memory(
+    /// QEMU fails to start when the host cannot back the requested memory or
+    /// CPU count, so this proposes the largest resource level that fits the
+    /// available memory minus a host reserve, capped at the host's CPU count.
+    /// The reduced size is persisted on accept. The start is aborted when the
+    /// user declines or nothing fits.
+    fn fit_to_host(
         &self,
         console: &Arc<Console>,
         system: &dyn System,
@@ -120,28 +117,35 @@ impl StartCommand {
         instance: &mut Instance,
     ) -> Result<()> {
         let available = system.get_available_memory() as usize;
+        let host_cpus = system.get_cpu_count();
 
         console.debug(&format!(
-            "Instance '{}' requests {}, host has {} available with {} reserved",
+            "Instance '{}' requests {} vCPUs and {}, host has {} vCPUs and {} available with {} reserved",
             instance.name,
+            instance.cpus,
             instance.mem.to_size(),
+            host_cpus,
             DataSize::new(available).to_size(),
             DataSize::new(HOST_MEMORY_RESERVE).to_size(),
         ));
 
-        if available.saturating_sub(HOST_MEMORY_RESERVE) >= instance.mem.get_bytes() {
+        let mem_fits = available.saturating_sub(HOST_MEMORY_RESERVE) >= instance.mem.get_bytes();
+        let cpus_fit = instance.cpus <= host_cpus;
+
+        if mem_fits && cpus_fit {
             return Ok(());
         }
 
         let (cpus, mem) = ResourceAllocator::get_resources_for_budget(available)
-            .ok_or_else(|| Error::NotEnoughMemory(instance.name.clone()))?;
-        let cpus = cpus.min(instance.cpus);
+            .ok_or_else(|| Error::NotEnoughHostResources(instance.name.clone()))?;
+        let cpus = cpus.min(instance.cpus).min(host_cpus);
 
         console.warn(&format!(
-            "Instance '{}' requests {} vCPUs and {} but only {} is available.\nIt can be started with {} vCPUs and {} instead.",
+            "Instance '{}' requests {} vCPUs and {} but the host has {} vCPUs and {} available.\nIt can be started with {} vCPUs and {} instead.",
             instance.name,
             instance.cpus,
             instance.mem.to_size(),
+            host_cpus,
             DataSize::new(available).to_size(),
             cpus,
             mem.to_size(),
@@ -153,7 +157,7 @@ impl StartCommand {
             instance_store.store(instance)?;
             Ok(())
         } else {
-            Err(Error::NotEnoughMemory(instance.name.clone()))
+            Err(Error::NotEnoughHostResources(instance.name.clone()))
         }
     }
 }
@@ -225,7 +229,7 @@ mod tests {
 
         assert!(matches!(
             command.run(&console, &context).await,
-            Err(Error::NotEnoughMemory(_))
+            Err(Error::NotEnoughHostResources(_))
         ));
         // Read back through the dao, so the new port has to have been written
         // rather than only set on the instance in hand.
@@ -245,7 +249,7 @@ mod tests {
 
         assert!(matches!(
             command.run(&console, &context).await,
-            Err(Error::NotEnoughMemory(_))
+            Err(Error::NotEnoughHostResources(_))
         ));
         assert_eq!(build_dao(&system).load("test").unwrap().ssh_port, 22000);
     }
@@ -264,11 +268,26 @@ mod tests {
         let mut instance = build_instance();
 
         command
-            .fit_to_available_memory(&console, &system, &store, &mut instance)
+            .fit_to_host(&console, &system, &store, &mut instance)
             .unwrap();
 
         assert_eq!(instance.cpus, 8);
         assert_eq!(instance.mem.get_bytes(), 8 * GIB);
+    }
+
+    #[test]
+    fn test_reduces_cpus_when_cpus_alone_exceed_the_host() {
+        let system = SystemMock::new().set_host_resources((32 * GIB) as u64, (32 * GIB) as u64, 4);
+        let console = Console::new(Arc::new(SystemMock::new()));
+        let store = InstanceStoreMock::new(vec![build_instance()]);
+        let command = StartCommand::try_parse_from(["start", "--yes", "test"]).unwrap();
+        let mut instance = build_instance();
+
+        command
+            .fit_to_host(&console, &system, &store, &mut instance)
+            .unwrap();
+
+        assert_eq!(instance.cpus, 4);
     }
 
     #[test]
@@ -281,7 +300,7 @@ mod tests {
         let mut instance = build_instance();
 
         command
-            .fit_to_available_memory(&console, &system, &store, &mut instance)
+            .fit_to_host(&console, &system, &store, &mut instance)
             .unwrap();
 
         assert_eq!(instance.cpus, 8);
@@ -299,7 +318,7 @@ mod tests {
         let mut instance = build_instance();
 
         command
-            .fit_to_available_memory(&console, &*system, &store, &mut instance)
+            .fit_to_host(&console, &*system, &store, &mut instance)
             .unwrap();
 
         assert_eq!(instance.mem.get_bytes(), 4 * GIB);
@@ -316,8 +335,8 @@ mod tests {
         let mut instance = build_instance();
 
         assert!(matches!(
-            command.fit_to_available_memory(&console, &*system, &store, &mut instance),
-            Err(Error::NotEnoughMemory(name)) if name == "test"
+            command.fit_to_host(&console, &*system, &store, &mut instance),
+            Err(Error::NotEnoughHostResources(name)) if name == "test"
         ));
         // The instance keeps its size, the reduction is only applied on accept.
         assert_eq!(instance.mem.get_bytes(), 8 * GIB);
@@ -332,8 +351,8 @@ mod tests {
         let mut instance = build_instance();
 
         assert!(matches!(
-            command.fit_to_available_memory(&console, &system, &store, &mut instance),
-            Err(Error::NotEnoughMemory(name)) if name == "test"
+            command.fit_to_host(&console, &system, &store, &mut instance),
+            Err(Error::NotEnoughHostResources(name)) if name == "test"
         ));
     }
 }

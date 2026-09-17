@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
 use crate::instance::{InstanceSerializer, InstanceStore, TomlInstanceDeserializer};
-use crate::models::{DataSize, Environment, Instance, InstanceName};
+use crate::models::{DataSize, Environment, Instance, InstanceName, MIN_DISK};
 use crate::platform::System;
 use crate::qemu::QemuImg;
 use crate::qemu::QemuMonitorClient;
@@ -117,6 +117,11 @@ impl InstanceStore for InstanceDao {
     fn resize(&self, instance: &mut Instance, size: u64) -> Result<()> {
         if self.is_running(instance) {
             Err(Error::InstanceNotStopped(instance.name.to_string()))
+        } else if (size as usize) < MIN_DISK {
+            Err(Error::DiskBelowMinimum(
+                instance.name.to_string(),
+                DataSize::new(MIN_DISK).to_size(),
+            ))
         } else if instance.disk_capacity.get_bytes() >= size as usize {
             Err(Error::CannotShrinkDisk(instance.name.to_string()))
         } else {

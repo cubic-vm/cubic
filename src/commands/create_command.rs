@@ -188,7 +188,7 @@ impl CreateCommand {
         let (default_cpus, default_mem) =
             ResourceAllocator::read_from_host(context.get_system()).get_default_resources();
 
-        let instance = self.build_instance(
+        let mut instance = self.build_instance(
             template.as_ref(),
             env,
             image.arch,
@@ -196,6 +196,14 @@ impl CreateCommand {
             default_cpus,
             default_mem,
         );
+
+        for warning in ResourceAllocator::enforce_minimums(
+            &mut instance.cpus,
+            &mut instance.mem,
+            &mut instance.disk_capacity,
+        ) {
+            console.warn(&warning);
+        }
 
         console.debug(&format!(
             "Resolved instance '{}': {} vCPUs, {} memory, {} disk, ssh_port={}",
