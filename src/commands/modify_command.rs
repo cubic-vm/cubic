@@ -1,7 +1,7 @@
 use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::Result;
-use crate::models::{DataSize, PortForward};
+use crate::models::{DataSize, MIN_DISK, PortForward, ResourceAllocator};
 use crate::view::Console;
 use clap::{ArgAction, Parser};
 use std::sync::Arc;
@@ -98,8 +98,25 @@ impl Command for ModifyCommand {
             instance.mem = memory.clone();
         }
 
+        for warning in ResourceAllocator::enforce_minimums(
+            &mut instance.cpus,
+            &mut instance.mem,
+            &mut instance.disk_capacity,
+        ) {
+            console.warn(&warning);
+        }
+
         if let Some(disk) = &self.disk {
-            instance_store.resize(&mut instance, disk.get_bytes() as u64)?;
+            let mut size = disk.get_bytes() as u64;
+            if size < MIN_DISK as u64 {
+                console.warn(&format!(
+                    "Disk raised from {} to {} (minimum usable value).",
+                    disk.to_size(),
+                    DataSize::new(MIN_DISK).to_size()
+                ));
+                size = MIN_DISK as u64;
+            }
+            instance_store.resize(&mut instance, size)?;
         }
 
         if self.isolate {
@@ -125,6 +142,8 @@ mod tests {
     use std::str::FromStr;
     use std::sync::Arc;
 
+    const GIB: usize = 1024 * 1024 * 1024;
+
     fn build_context(instance_store: InstanceStoreMock) -> commands::Context {
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
@@ -146,6 +165,9 @@ mod tests {
         let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
         let context = build_context(InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
+            cpus: 2,
+            mem: DataSize::new(GIB),
+            disk_capacity: DataSize::new(GIB),
             ..Instance::default()
         }]));
 
@@ -166,6 +188,9 @@ mod tests {
         let context = build_context(InstanceStoreMock::new_with_running(
             vec![Instance {
                 name: "test".to_string(),
+                cpus: 2,
+                mem: DataSize::new(GIB),
+                disk_capacity: DataSize::new(GIB),
                 ..Instance::default()
             }],
             &["test"],

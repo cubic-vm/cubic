@@ -99,12 +99,15 @@ pub enum Error {
     ConsoleTimeout(String),
 
     #[error(
-        "Not enough free memory to start instance '{0}'.\n\nTroubleshoot:\n  - Free up memory by stopping other instances or processes\n  - Reduce the instance memory: `cubic modify {0} --memory <size>`\n  - Accept the proposed smaller size by running with --yes\n"
+        "Not enough free CPUs or memory to start instance '{0}'.\n\nTroubleshoot:\n  - Free up resources by stopping other instances or processes\n  - Reduce the instance size: `cubic modify {0} --cpus <n> --memory <size>`\n  - Accept the proposed smaller size by running with --yes\n"
     )]
-    NotEnoughMemory(String),
+    NotEnoughHostResources(String),
 
     #[error("Cannot shrink the disk of the instance '{0}'")]
     CannotShrinkDisk(String),
+
+    #[error("Disk size for instance '{0}' is below the minimum usable size.\n\nUse at least {1}.")]
+    DiskBelowMinimum(String, String),
 
     #[error("Instance '{0}' has no snapshot '{1}'")]
     UnknownSnapshot(String, String),
