@@ -17,7 +17,9 @@ jobs:
       matrix:
         include:
           - check: rustup component add rustfmt && cargo fmt --check
-          - check: rustup component add clippy && cargo clippy --version && cargo clippy --locked -- -D warnings
+          - check: |
+              rustup component add clippy && cargo clippy --version &&
+              cargo clippy --locked --all-targets -- -D warnings
           - check: cargo install cargo-audit --locked && cargo audit
 
     runs-on: ubuntu-latest

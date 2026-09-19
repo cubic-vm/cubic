@@ -84,39 +84,40 @@ mod tests {
 
     #[test]
     fn test_write() {
-        let mut pvd = PrimaryVolumeDesc::default();
-        pvd.vd = VolumeDesc::new(0x01);
-        pvd.system_id = "system id".to_string();
-        pvd.volume_id = "volume id".to_string();
-        pvd.volume_space_size = 0x12345678;
-        pvd.volume_set_size = 0x2345;
-        pvd.volume_sequence_number = 0x3456;
-        pvd.logical_block_size = 0x4567;
-        pvd.path_table_size = 0x56789ABC;
-        pvd.lpath_table_loc = 0x6789ABCD;
-        pvd.optional_lpath_table_loc = 0x789ABCDE;
-        pvd.mpath_table_loc = 0x89ABCDEF;
-        pvd.optional_mpath_table_loc = 0x9ABCDEF0;
-        pvd.root_dir = DirRecord {
-            len: 34,
-            extend_attr_len: 0x12,
-            extend_loc: 0x11223344,
-            data_len: 0x55667788,
-            file_flags: 0x02,
-            file_unit_size: 0x34,
-            interleave_gap_size: 0x56,
-            volume_sequence_number: 0x789A,
-            file_id_len: 1,
-            file_id: "A".to_string(),
+        let pvd = PrimaryVolumeDesc {
+            vd: VolumeDesc::new(0x01),
+            system_id: "system id".to_string(),
+            volume_id: "volume id".to_string(),
+            volume_space_size: 0x12345678,
+            volume_set_size: 0x2345,
+            volume_sequence_number: 0x3456,
+            logical_block_size: 0x4567,
+            path_table_size: 0x56789ABC,
+            lpath_table_loc: 0x6789ABCD,
+            optional_lpath_table_loc: 0x789ABCDE,
+            mpath_table_loc: 0x89ABCDEF,
+            optional_mpath_table_loc: 0x9ABCDEF0,
+            root_dir: DirRecord {
+                len: 34,
+                extend_attr_len: 0x12,
+                extend_loc: 0x11223344,
+                data_len: 0x55667788,
+                file_flags: 0x02,
+                file_unit_size: 0x34,
+                interleave_gap_size: 0x56,
+                volume_sequence_number: 0x789A,
+                file_id_len: 1,
+                file_id: "A".to_string(),
+            },
+            volume_set_id: "volume set id".to_string(),
+            publisher_id: "publisher id".to_string(),
+            data_prepare_id: "data prepare id".to_string(),
+            application_id: "application id".to_string(),
+            copyright_file_id: "copyright file id".to_string(),
+            abstract_file_id: "abstract file id".to_string(),
+            bibliographic_file_id: "bibliographic file id".to_string(),
+            file_structure_version: 0xAB,
         };
-        pvd.volume_set_id = "volume set id".to_string();
-        pvd.publisher_id = "publisher id".to_string();
-        pvd.data_prepare_id = "data prepare id".to_string();
-        pvd.application_id = "application id".to_string();
-        pvd.copyright_file_id = "copyright file id".to_string();
-        pvd.abstract_file_id = "abstract file id".to_string();
-        pvd.bibliographic_file_id = "bibliographic file id".to_string();
-        pvd.file_structure_version = 0xAB;
 
         let writer = &mut BinaryWriter::new(Cursor::new(Vec::new()));
         pvd.write(writer).unwrap();

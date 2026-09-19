@@ -185,12 +185,12 @@ make fix
 Alternatively, you can run Clippy directly with Cargo:
 
 ```bash
-cargo clippy -- -D warnings
+cargo clippy --all-targets -- -D warnings
 ```
 
 To automatically apply safe fixes:
 ```bash
-cargo clippy --fix --allow-dirty
+cargo clippy --all-targets --fix --allow-dirty
 ```
 
 ## How to run a security audit?
@@ -241,7 +241,7 @@ This runs formatting, linting (including yamllint and shellcheck), unit tests, a
 
 Alternatively, if running directly with Cargo:
 ```bash
-cargo fmt --check && cargo clippy -- -D warnings && cargo test && cargo audit
+cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test && cargo audit
 ```
 
 ## What license does Cubic use?

@@ -33,10 +33,10 @@ fix-format: build-image
 	${DOCKER_CMD} ${IMAGE} vulnlog fmt vulnlog.yml
 
 lint: build-image
-	${DOCKER_CMD} ${IMAGE} cargo clippy -- -D warnings
+	${DOCKER_CMD} ${IMAGE} cargo clippy --all-targets -- -D warnings
 
 fix-lint: build-image
-	${DOCKER_CMD} ${IMAGE} cargo clippy --fix --allow-dirty --allow-staged
+	${DOCKER_CMD} ${IMAGE} cargo clippy --all-targets --fix --allow-dirty --allow-staged
 
 yamllint: build-image
 	${DOCKER_CMD} ${IMAGE} yamllint --strict .

@@ -97,14 +97,12 @@ mod tests {
 
         assert_eq!(
             provider.find_stable_version(
-                &["24.04", "24.10", "25.04", "25.10", "26.04"]
-                    .map(String::from)
-                    .to_vec()
+                &["24.04", "24.10", "25.04", "25.10", "26.04"].map(String::from)
             ),
             Some("26.04".to_string())
         );
         assert_eq!(
-            provider.find_stable_version(&["25.04", "25.10"].map(String::from).to_vec()),
+            provider.find_stable_version(&["25.04", "25.10"].map(String::from)),
             Some("25.10".to_string())
         );
     }

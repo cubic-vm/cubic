@@ -1,6 +1,5 @@
 use crate::models::UserName;
 
-#[derive(Default)]
 pub struct UserDataFactory;
 
 impl UserDataFactory {
@@ -45,8 +44,7 @@ mod tests {
 
     #[test]
     fn test_write_user_data_without_execute() {
-        let actual =
-            UserDataFactory::default().create(&UserName::from_str("tux").unwrap(), "pubkey", None);
+        let actual = UserDataFactory.create(&UserName::from_str("tux").unwrap(), "pubkey", None);
         let expected = r#"#cloud-config
 users:
   - name: tux
@@ -68,7 +66,7 @@ write_files:
 
     #[test]
     fn test_write_user_data_with_execute() {
-        let actual = UserDataFactory::default().create(
+        let actual = UserDataFactory.create(
             &UserName::from_str("tux").unwrap(),
             "pubkey",
             Some("\"sudo apt install vim\""),
@@ -96,7 +94,7 @@ runcmd:
 
     #[test]
     fn test_write_user_data_escapes_execute() {
-        let actual = UserDataFactory::default().create(
+        let actual = UserDataFactory.create(
             &UserName::from_str("tux").unwrap(),
             "pubkey",
             Some("a\\b\t\"c\"\nd\re"),
