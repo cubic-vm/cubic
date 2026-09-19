@@ -1,4 +1,3 @@
-#[derive(Default)]
 pub struct MetaDataFactory;
 
 impl MetaDataFactory {
@@ -14,7 +13,7 @@ mod tests {
     #[test]
     fn test_meta_user_data() {
         assert_eq!(
-            &MetaDataFactory::default().create("myinstance"),
+            &MetaDataFactory.create("myinstance"),
             "instance-id: myinstance\nlocal-hostname: myinstance\n"
         );
     }

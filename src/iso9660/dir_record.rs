@@ -46,17 +46,18 @@ mod tests {
     #[test]
     fn test_write_dir_record() {
         let writer = &mut BinaryWriter::new(Cursor::new(Vec::new()));
-        let mut dir = DirRecord::default();
-        dir.len = 34;
-        dir.extend_attr_len = 1;
-        dir.extend_loc = 0xABCDEF01;
-        dir.data_len = 0x98765432;
-        dir.file_flags = 0x12;
-        dir.file_unit_size = 0x23;
-        dir.interleave_gap_size = 0xAB;
-        dir.volume_sequence_number = 0xFEDC;
-        dir.file_id_len = 6;
-        dir.file_id = "foobar".to_string();
+        let dir = DirRecord {
+            len: 34,
+            extend_attr_len: 1,
+            extend_loc: 0xABCDEF01,
+            data_len: 0x98765432,
+            file_flags: 0x12,
+            file_unit_size: 0x23,
+            interleave_gap_size: 0xAB,
+            volume_sequence_number: 0xFEDC,
+            file_id_len: 6,
+            file_id: "foobar".to_string(),
+        };
         dir.write(writer).unwrap();
 
         let result = writer.get_writer().get_ref();
@@ -80,9 +81,11 @@ mod tests {
     #[test]
     fn test_write_dir_record_with_odd_file_id_skips_padding() {
         let writer = &mut BinaryWriter::new(Cursor::new(Vec::new()));
-        let mut dir = DirRecord::default();
-        dir.file_id_len = 5;
-        dir.file_id = "fooba".to_string();
+        let dir = DirRecord {
+            file_id_len: 5,
+            file_id: "fooba".to_string(),
+            ..Default::default()
+        };
         dir.write(writer).unwrap();
 
         let result = writer.get_writer().get_ref();
