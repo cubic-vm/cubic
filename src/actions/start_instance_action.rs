@@ -28,8 +28,8 @@ impl StartInstanceAction {
         context: &Context,
         qemu_args: &Option<String>,
         accel: Accel,
-        console: &Arc<Console>,
     ) -> Result<()> {
+        let console = context.get_console();
         if context.get_instance_store().is_running(&self.instance) {
             return Ok(());
         }
@@ -201,7 +201,9 @@ impl StartInstanceAction {
 mod tests {
     use super::*;
     use crate::platform::SystemMock;
+    use crate::view::Console;
     use std::path::Path;
+    use std::sync::Arc;
 
     fn build_action(guest_arch: Arch) -> StartInstanceAction {
         StartInstanceAction::new(&Instance {

@@ -2,8 +2,6 @@ use crate::commands::{Context, DEFAULT_DISK_SIZE};
 use crate::error::{Error, Result};
 use crate::models::{Arch, Instance, ResourceAllocator};
 use crate::qemu::QemuImg;
-use crate::view::Console;
-use std::sync::Arc;
 
 /// Load an instance and replace an unreadable config with a machine of the
 /// same defaults `cubic create` picks.
@@ -15,10 +13,10 @@ impl LoadInstanceAction {
         Self
     }
 
-    pub fn run(&self, context: &Context, console: &Arc<Console>, name: &str) -> Result<Instance> {
+    pub fn run(&self, context: &Context, name: &str) -> Result<Instance> {
         match context.get_instance_store().load(name) {
             Err(error @ Error::InvalidInstanceConfig { .. }) => {
-                console.warn(&format!(
+                context.get_console().warn(&format!(
                     "{error}\n\nResetting instance '{name}' to the default settings."
                 ));
 
@@ -57,6 +55,7 @@ mod tests {
     use crate::instance::{InstanceDao, InstanceStore};
     use crate::models::{Environment, UserName};
     use crate::platform::{FileSystem, System, SystemMock};
+    use crate::view::Console;
     use std::path::Path;
     use std::str::FromStr;
     use std::sync::Arc;
@@ -78,6 +77,7 @@ mod tests {
     fn build_context(system: &Arc<SystemMock>) -> Context {
         Context::new(
             Arc::clone(system) as Arc<dyn System>,
+            Console::new(Arc::clone(system) as Arc<dyn System>),
             build_env(),
             Box::new(build_dao(system)),
         )
@@ -96,11 +96,8 @@ mod tests {
     fn test_run_replaces_a_broken_config_with_the_default_machine() {
         let system = build_system(b"cpus = ");
         let context = build_context(&system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
 
-        let instance = LoadInstanceAction::new()
-            .run(&context, console, "test")
-            .unwrap();
+        let instance = LoadInstanceAction::new().run(&context, "test").unwrap();
 
         let (cpus, mem) = ResourceAllocator::new(16 * GIB, 8).get_default_resources();
         assert_eq!(instance.cpus, cpus);
@@ -114,11 +111,8 @@ mod tests {
     fn test_run_writes_the_default_machine_back() {
         let system = build_system(b"cpus = ");
         let context = build_context(&system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
 
-        let instance = LoadInstanceAction::new()
-            .run(&context, console, "test")
-            .unwrap();
+        let instance = LoadInstanceAction::new().run(&context, "test").unwrap();
         let reloaded = build_dao(&system).load("test").unwrap();
 
         assert_eq!(reloaded.cpus, instance.cpus);
@@ -136,11 +130,8 @@ ssh_port = 14357
 "#;
         let system = build_system(config.as_bytes());
         let context = build_context(&system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
 
-        let instance = LoadInstanceAction::new()
-            .run(&context, console, "test")
-            .unwrap();
+        let instance = LoadInstanceAction::new().run(&context, "test").unwrap();
 
         assert_eq!(instance.cpus, 3);
         assert_eq!(instance.ssh_port, 14357);
@@ -158,10 +149,9 @@ ssh_port = 14357
     fn test_run_passes_an_unknown_instance_on() {
         let system = Arc::new(SystemMock::new());
         let context = build_context(&system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
 
         assert!(matches!(
-            LoadInstanceAction::new().run(&context, console, "missing"),
+            LoadInstanceAction::new().run(&context, "missing"),
             Err(Error::UnknownInstance(name)) if name == "missing"
         ));
     }

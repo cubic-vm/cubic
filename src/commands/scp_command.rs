@@ -3,18 +3,14 @@ use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::{TargetInstancePath, TargetPath};
 use crate::ssh::SshClient;
-use crate::view::Console;
 use clap::Parser;
-use std::sync::Arc;
 
 fn resolve_target_path(
     context: &commands::Context,
-    console: &Arc<Console>,
     target_path: &TargetPath,
 ) -> Result<TargetInstancePath> {
     if let Some(target) = target_path.get_target() {
-        let instance =
-            LoadInstanceAction::new().run(context, console, target.get_instance().as_str())?;
+        let instance = LoadInstanceAction::new().run(context, target.get_instance().as_str())?;
         Ok(TargetInstancePath {
             user: target.get_user().map(|user| user.to_string()),
             instance: Some(instance),
@@ -29,15 +25,10 @@ fn resolve_target_path(
     }
 }
 
-fn check_target_is_running(
-    context: &commands::Context,
-    console: &Arc<Console>,
-    target: &TargetPath,
-) -> Result<()> {
+fn check_target_is_running(context: &commands::Context, target: &TargetPath) -> Result<()> {
     if let Some(target) = target.get_target() {
         let instance_store = context.get_instance_store();
-        let instance =
-            LoadInstanceAction::new().run(context, console, target.get_instance().as_str())?;
+        let instance = LoadInstanceAction::new().run(context, target.get_instance().as_str())?;
         if !instance_store.is_running(&instance) {
             return Err(Error::InstanceNotRunning(instance.name.clone()));
         }
@@ -74,13 +65,13 @@ pub struct ScpCommand {
 }
 
 impl Command for ScpCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
-        check_target_is_running(context, console, &self.from)?;
-        check_target_is_running(context, console, &self.to)?;
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
+        check_target_is_running(context, &self.from)?;
+        check_target_is_running(context, &self.to)?;
 
         let env = context.get_env();
-        let from = resolve_target_path(context, console, &self.from)?;
-        let to = resolve_target_path(context, console, &self.to)?;
+        let from = resolve_target_path(context, &self.from)?;
+        let to = resolve_target_path(context, &self.to)?;
         let from_key = from
             .instance
             .as_ref()
@@ -90,11 +81,13 @@ impl Command for ScpCommand {
             .as_ref()
             .map(|instance| env.get_ssh_private_key_file(&instance.name));
 
-        console.debug(&format!("Copying '{}' to '{}'", self.from, self.to));
+        context
+            .get_console()
+            .debug(&format!("Copying '{}' to '{}'", self.from, self.to));
 
         let mut ssh = SshClient::new(context);
         ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system()));
-        ssh.copy(console, &from, from_key.as_deref(), &to, to_key.as_deref())
+        ssh.copy(&from, from_key.as_deref(), &to, to_key.as_deref())
             .await?;
         Ok(0)
     }
@@ -106,6 +99,7 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, Instance, UserName};
     use crate::platform::SystemMock;
+    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::Arc;
 
@@ -115,36 +109,35 @@ mod tests {
             String::new(),
             String::new(),
         );
-        commands::Context::new(Arc::new(SystemMock::new()), env, Box::new(instance_store))
+        commands::Context::new(
+            Arc::new(SystemMock::new()),
+            Console::new(Arc::new(SystemMock::new())),
+            env,
+            Box::new(instance_store),
+        )
     }
 
     #[test]
     fn test_check_local_path_needs_no_instance() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let context = build_context(InstanceStoreMock::new(Vec::new()));
         let path = TargetPath::from_str("/home/cubic/file").unwrap();
 
-        assert!(check_target_is_running(&context, console, &path).is_ok());
+        assert!(check_target_is_running(&context, &path).is_ok());
     }
 
     #[test]
     fn test_check_rejects_unknown_instance() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let context = build_context(InstanceStoreMock::new(Vec::new()));
         let path = TargetPath::from_str("missing:~/file").unwrap();
 
         assert!(matches!(
-            check_target_is_running(&context, console, &path),
+            check_target_is_running(&context, &path),
             Err(Error::UnknownInstance(ref name)) if name == "missing"
         ));
     }
 
     #[test]
     fn test_check_rejects_stopped_instance() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let context = build_context(InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
@@ -152,7 +145,7 @@ mod tests {
         let path = TargetPath::from_str("test:~/file").unwrap();
 
         assert!(matches!(
-            check_target_is_running(&context, console, &path),
+            check_target_is_running(&context, &path),
             Err(Error::InstanceNotRunning(ref name)) if name == "test"
         ));
     }

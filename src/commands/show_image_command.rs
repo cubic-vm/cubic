@@ -3,9 +3,8 @@ use crate::error::Result;
 use crate::image::ImageStore;
 use crate::models::{DataSize, ImageName};
 use crate::util;
-use crate::view::{Console, MapView};
+use crate::view::MapView;
 use clap::Parser;
-use std::sync::Arc;
 
 /// Show VM images
 #[derive(Parser)]
@@ -18,9 +17,9 @@ pub struct ShowImageCommand {
 }
 
 impl Command for ShowImageCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
         let env = context.get_env();
-        let image = fetch_image_info(console, context.get_system(), env, &self.name).await?;
+        let image = fetch_image_info(context, &self.name).await?;
 
         let mut view = MapView::new();
         view.add("Name", &image.get_image_name());
@@ -44,7 +43,7 @@ impl Command for ShowImageCommand {
             view.add("Checksum URL", &image.checksum_url);
         }
 
-        view.print(console);
+        view.print(context.get_console());
         Ok(0)
     }
 }

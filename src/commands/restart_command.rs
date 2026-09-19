@@ -1,8 +1,6 @@
 use crate::commands::{self, Command};
 use crate::error::Result;
-use crate::view::Console;
 use clap::Parser;
-use std::sync::Arc;
 
 /// Restart VM instances
 ///
@@ -24,14 +22,14 @@ pub struct RestartCommand {
 }
 
 impl Command for RestartCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
         commands::StopCommand {
             all: false.into(),
             wait: true,
             kill: false,
             instances: self.instances.value.clone().into(),
         }
-        .run(console, context)
+        .run(context)
         .await?;
         commands::StartCommand {
             qemu_args: None,
@@ -40,7 +38,7 @@ impl Command for RestartCommand {
             yes: commands::YesArg { value: false },
             instances: self.instances.value.clone().into(),
         }
-        .run(console, context)
+        .run(context)
         .await
     }
 }

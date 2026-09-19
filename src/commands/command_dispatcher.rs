@@ -3,7 +3,7 @@ use crate::env::EnvironmentFactory;
 use crate::error::Result;
 use crate::instance::InstanceDao;
 use crate::platform::System;
-use crate::view::Console;
+use crate::view::{Console, Verbosity};
 use clap::{CommandFactory, Parser, Subcommand};
 use std::sync::Arc;
 
@@ -107,39 +107,37 @@ impl CommandDispatcher {
             return Ok(0);
         };
 
-        console.set_verbosity(commands::Verbosity::new(
-            self.global.verbose,
-            self.global.quiet,
-        ));
+        console.set_verbosity(Verbosity::new(self.global.verbose, self.global.quiet));
         let env = EnvironmentFactory::create_env(system.as_ref())?;
         let context = &commands::Context::new(
             Arc::clone(&system),
+            Arc::clone(console),
             env.clone(),
             Box::new(InstanceDao::new(Arc::clone(&system), &env)?),
         );
 
         let result = match &command {
-            Commands::Run(cmd) => cmd.run(console, context).await,
-            Commands::Instances(cmd) => cmd.run(console, context).await,
-            Commands::Images(cmd) => cmd.run(console, context).await,
-            Commands::Ports(cmd) => cmd.run(console, context).await,
-            Commands::Create(cmd) => cmd.run(console, context).await,
-            Commands::Modify(cmd) => cmd.run(console, context).await,
-            Commands::Clone(cmd) => cmd.run(console, context).await,
-            Commands::Snapshot(cmd) => cmd.run(console, context).await,
-            Commands::Restore(cmd) => cmd.run(console, context).await,
-            Commands::Rename(cmd) => cmd.run(console, context).await,
-            Commands::Show(cmd) => cmd.run(console, context).await,
-            Commands::Start(cmd) => cmd.run(console, context).await,
-            Commands::Stop(cmd) => cmd.run(console, context).await,
-            Commands::Restart(cmd) => cmd.run(console, context).await,
-            Commands::Console(cmd) => cmd.run(console, context).await,
-            Commands::Ssh(cmd) => cmd.run(console, context).await,
-            Commands::Scp(cmd) => cmd.run(console, context).await,
-            Commands::Exec(cmd) => cmd.run(console, context).await,
-            Commands::Delete(cmd) => cmd.run(console, context).await,
-            Commands::Prune(cmd) => cmd.run(console, context).await,
-            Commands::Completions(cmd) => cmd.run(console, context).await,
+            Commands::Run(cmd) => cmd.run(context).await,
+            Commands::Instances(cmd) => cmd.run(context).await,
+            Commands::Images(cmd) => cmd.run(context).await,
+            Commands::Ports(cmd) => cmd.run(context).await,
+            Commands::Create(cmd) => cmd.run(context).await,
+            Commands::Modify(cmd) => cmd.run(context).await,
+            Commands::Clone(cmd) => cmd.run(context).await,
+            Commands::Snapshot(cmd) => cmd.run(context).await,
+            Commands::Restore(cmd) => cmd.run(context).await,
+            Commands::Rename(cmd) => cmd.run(context).await,
+            Commands::Show(cmd) => cmd.run(context).await,
+            Commands::Start(cmd) => cmd.run(context).await,
+            Commands::Stop(cmd) => cmd.run(context).await,
+            Commands::Restart(cmd) => cmd.run(context).await,
+            Commands::Console(cmd) => cmd.run(context).await,
+            Commands::Ssh(cmd) => cmd.run(context).await,
+            Commands::Scp(cmd) => cmd.run(context).await,
+            Commands::Exec(cmd) => cmd.run(context).await,
+            Commands::Delete(cmd) => cmd.run(context).await,
+            Commands::Prune(cmd) => cmd.run(context).await,
+            Commands::Completions(cmd) => cmd.run(context).await,
         };
 
         // Clear any animation the command left running, including on error.

@@ -1,5 +1,5 @@
-use crate::commands::Verbosity;
 use crate::platform::{Stream, System};
+use crate::view::Verbosity;
 use crossterm::cursor::{MoveToColumn, MoveUp};
 use crossterm::style::{Attribute, Color, SetAttribute, SetForegroundColor};
 use crossterm::terminal::{Clear, ClearType};

@@ -2,9 +2,7 @@ use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::{ImageName, InstanceName};
 use crate::util::Either;
-use crate::view::Console;
 use clap::Parser;
-use std::sync::Arc;
 
 /// Show VM images and instances
 ///
@@ -69,14 +67,14 @@ pub struct ShowCommand {
 }
 
 impl Command for ShowCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
         match &self.name {
             Either::Left(instance) => {
                 commands::ShowInstanceCommand {
                     instance: instance.clone().into(),
                     all: self.all.value.into(),
                 }
-                .run(console, context)
+                .run(context)
                 .await
             }
             Either::Right(name) => {
@@ -84,7 +82,7 @@ impl Command for ShowCommand {
                     name: name.clone(),
                     all: self.all.value.into(),
                 }
-                .run(console, context)
+                .run(context)
                 .await
             }
         }
@@ -98,10 +96,11 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, Instance, UserName};
     use crate::platform::{System, SystemMock};
+    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::Arc;
 
-    fn build_context(instances: Vec<Instance>) -> commands::Context {
+    fn build_context(system: &Arc<SystemMock>, instances: Vec<Instance>) -> commands::Context {
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
             String::new(),
@@ -109,6 +108,7 @@ mod tests {
         );
         commands::Context::new(
             Arc::new(SystemMock::new()),
+            Console::new(Arc::clone(system) as Arc<dyn System>),
             env,
             Box::new(InstanceStoreMock::new(instances)),
         )
@@ -116,19 +116,20 @@ mod tests {
 
     #[tokio::test]
     async fn test_show_routes_plain_name_to_instance_view() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
-        let context = build_context(vec![Instance {
-            name: "test".to_string(),
-            ..Instance::default()
-        }]);
+        let system = Arc::new(SystemMock::new());
+        let context = build_context(
+            &system,
+            vec![Instance {
+                name: "test".to_string(),
+                ..Instance::default()
+            }],
+        );
 
         ShowCommand {
             name: "test".parse().unwrap(),
             all: false.into(),
         }
-        .run(console, &context)
+        .run(&context)
         .await
         .unwrap();
 
@@ -137,16 +138,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_show_rejects_unknown_instance() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
-        let context = build_context(Vec::new());
+        let system = Arc::new(SystemMock::new());
+        let context = build_context(&system, Vec::new());
 
         let result = ShowCommand {
             name: "missing".parse().unwrap(),
             all: false.into(),
         }
-        .run(console, &context)
+        .run(&context)
         .await;
 
         assert!(matches!(

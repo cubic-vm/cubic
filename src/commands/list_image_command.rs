@@ -2,9 +2,8 @@ use crate::commands::{AllImagesArg, Command, Context, fetch_image_list};
 use crate::error::Result;
 use crate::image::ImageStore;
 use crate::models::{Arch, DataSize};
-use crate::view::{Alignment, Console, TableView};
+use crate::view::{Alignment, TableView};
 use clap::Parser;
-use std::sync::Arc;
 
 /// List VM images
 ///
@@ -38,8 +37,8 @@ pub struct ListImageCommand {
 }
 
 impl Command for ListImageCommand {
-    async fn run(&self, console: &Arc<Console>, context: &Context) -> Result<u8> {
-        let images = fetch_image_list(console, context.get_system(), context.get_env()).await;
+    async fn run(&self, context: &Context) -> Result<u8> {
+        let images = fetch_image_list(context).await;
 
         let mut view = TableView::new();
         view.add_row()
@@ -73,7 +72,7 @@ impl Command for ListImageCommand {
                     Alignment::Right,
                 );
         }
-        view.print(console);
+        view.print(context.get_console());
         Ok(0)
     }
 }

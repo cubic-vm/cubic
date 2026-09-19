@@ -2,7 +2,7 @@ use crate::actions::{CreateInstanceAction, LoadInstanceAction};
 use crate::commands::{Command, Context};
 use crate::error::{Error, Result};
 use crate::models::{InstanceName, LOW_DISK_SPACE_WARNING, ResourceAllocator};
-use crate::view::{Console, Spinner};
+use crate::view::Spinner;
 use clap::Parser;
 use std::sync::Arc;
 
@@ -23,7 +23,8 @@ pub struct CloneCommand {
 }
 
 impl Command for CloneCommand {
-    async fn run(&self, console: &Arc<Console>, context: &Context) -> Result<u8> {
+    async fn run(&self, context: &Context) -> Result<u8> {
+        let console = context.get_console();
         let instance_store = context.get_instance_store();
 
         if ResourceAllocator::is_disk_space_low(context.get_system(), context.get_env()) {
@@ -31,7 +32,7 @@ impl Command for CloneCommand {
         }
 
         // Load source instance info
-        let source = &LoadInstanceAction::new().run(context, console, self.name.as_str())?;
+        let source = &LoadInstanceAction::new().run(context, self.name.as_str())?;
 
         // Verify that the source instance is stopped
         if instance_store.is_running(source) {
@@ -72,6 +73,7 @@ mod tests {
     use crate::models::Instance;
     use crate::models::UserName;
     use crate::platform::SystemMock;
+    use crate::view::Console;
     use std::path::PathBuf;
     use std::str::FromStr;
     use std::sync::Arc;
@@ -84,6 +86,7 @@ mod tests {
         );
         Context::new(
             Arc::new(SystemMock::new()),
+            Console::new(Arc::new(SystemMock::new())),
             env,
             Box::new(InstanceStoreMock::new(instances)),
         )
@@ -91,8 +94,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_clone_rejects_existing_target_name() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let context = build_context(vec![
             Instance {
                 name: "test".to_string(),
@@ -108,7 +109,7 @@ mod tests {
             name: InstanceName::from_str("test").unwrap(),
             new_name: InstanceName::from_str("test2").unwrap(),
         }
-        .run(console, &context)
+        .run(&context)
         .await;
 
         assert!(matches!(
@@ -119,8 +120,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_clone_rejects_running_source() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
             String::new(),
@@ -128,6 +127,7 @@ mod tests {
         );
         let context = Context::new(
             Arc::new(SystemMock::new()),
+            Console::new(Arc::new(SystemMock::new())),
             env,
             Box::new(InstanceStoreMock::new_with_running(
                 vec![Instance {
@@ -142,7 +142,7 @@ mod tests {
             name: InstanceName::from_str("test").unwrap(),
             new_name: InstanceName::from_str("newname").unwrap(),
         }
-        .run(console, &context)
+        .run(&context)
         .await;
 
         assert!(matches!(
@@ -168,8 +168,6 @@ mod tests {
         let system = SystemMock::new()
             .add_file(&source_image, b"qcow2 image")
             .add_command_output(&format!("qemu-img resize {target_image} 0"), b"");
-        let console_system = SystemMock::new();
-        let console = &Console::new(Arc::new(console_system));
         let store = InstanceStoreMock::new(vec![Instance {
             name: "test".to_string(),
             ssh_host_key: Some("ssh-ed25519 AAAA".to_string()),
@@ -178,6 +176,7 @@ mod tests {
         let stored = Arc::clone(&store.stored);
         let context = Context::new(
             Arc::new(system),
+            Console::new(Arc::new(SystemMock::new())),
             Environment::new(
                 UserName::from_str("cubic").unwrap(),
                 String::new(),
@@ -190,7 +189,7 @@ mod tests {
             name: InstanceName::from_str("test").unwrap(),
             new_name: InstanceName::from_str("test2").unwrap(),
         }
-        .run(console, &context)
+        .run(&context)
         .await
         .unwrap();
 
@@ -201,15 +200,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_clone_rejects_unknown_source() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let context = build_context(Vec::new());
 
         let result = CloneCommand {
             name: InstanceName::from_str("missing").unwrap(),
             new_name: InstanceName::from_str("newname").unwrap(),
         }
-        .run(console, &context)
+        .run(&context)
         .await;
 
         assert!(matches!(
