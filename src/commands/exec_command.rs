@@ -3,9 +3,7 @@ use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::Target;
 use crate::ssh::SshClient;
-use crate::view::Console;
 use clap::Parser;
-use std::sync::Arc;
 
 /// Execute a command in a VM instance
 ///
@@ -45,7 +43,7 @@ impl ExecCommand {
 }
 
 impl Command for ExecCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
         let env = context.get_env();
         let name = self.target.get_instance();
 
@@ -56,10 +54,10 @@ impl Command for ExecCommand {
             yes: commands::YesArg { value: false },
             instances: name.clone().into(),
         }
-        .run(console, context)
+        .run(context)
         .await?;
 
-        let instance = LoadInstanceAction::new().run(context, console, name.as_str())?;
+        let instance = LoadInstanceAction::new().run(context, name.as_str())?;
         let user = self
             .target
             .get_user()
@@ -68,7 +66,7 @@ impl Command for ExecCommand {
         let ssh_port = instance.ssh_port;
         let client_key = env.get_ssh_private_key_file(name.as_str());
         let cmd = self.build_cmd();
-        console.debug(&format!(
+        context.get_console().debug(&format!(
             "Executing on '{name}' as '{user}' on port {ssh_port} using key '{client_key}': {cmd}"
         ));
         let mut ssh = SshClient::new(context);
@@ -76,9 +74,9 @@ impl Command for ExecCommand {
         ssh.set_cmd(Some(cmd));
         ssh.set_env_vars(self.env_args.env_vars.clone());
         let channel = ssh
-            .open_channel(console, &instance.name, &client_key, &user, ssh_port)
+            .open_channel(&instance.name, &client_key, &user, ssh_port)
             .await?;
-        ssh.shell(console, name.as_str(), channel).await
+        ssh.shell(name.as_str(), channel).await
     }
 }
 

@@ -30,7 +30,6 @@ mod snapshot_command;
 mod ssh_command;
 mod start_command;
 mod stop_command;
-mod verbosity;
 mod yes_arg;
 
 pub use accel_arg::*;
@@ -65,15 +64,12 @@ pub use snapshot_command::*;
 pub use ssh_command::*;
 pub use start_command::*;
 pub use stop_command::*;
-pub use verbosity::*;
 pub use yes_arg::*;
 
 use crate::error::Result;
-use crate::view::Console;
-use std::sync::Arc;
 
 // The runtime is single threaded, so the returned futures never need Send.
 #[allow(async_fn_in_trait)]
 trait Command {
-    async fn run(&self, console: &Arc<Console>, context: &Context) -> Result<u8>;
+    async fn run(&self, context: &Context) -> Result<u8>;
 }

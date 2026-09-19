@@ -1,48 +1,37 @@
+use crate::commands::Context;
 use crate::error::Result;
 use crate::image::{ImageFactory, ImageFetcher, ImageStore};
-use crate::models::{Environment, Image, ImageName};
-use crate::platform::System;
-use crate::view::{Console, Spinner};
+use crate::models::{Image, ImageName};
+use crate::view::Spinner;
 use std::path::Path;
 use std::sync::Arc;
 
-pub async fn fetch_image_list(
-    console: &Arc<Console>,
-    system: &dyn System,
-    env: &Environment,
-) -> Vec<Image> {
+pub async fn fetch_image_list(context: &Context) -> Vec<Image> {
+    let console = context.get_console();
     let _spinner = Spinner::new(Arc::clone(console), "Fetching image list".to_string());
-    ImageFactory::new(system, env)
+    ImageFactory::new(context.get_system(), context.get_env())
         .get_all_images(console)
         .await
         .unwrap_or_default()
 }
 
-pub async fn fetch_image_info(
-    console: &Arc<Console>,
-    system: &dyn System,
-    env: &Environment,
-    image: &ImageName,
-) -> Result<Image> {
+pub async fn fetch_image_info(context: &Context, image: &ImageName) -> Result<Image> {
+    let console = context.get_console();
     let (distro, name) = (image.get_distro(), image.get_name());
     let text = format!("Looking up image {distro}:{name}");
     let _spinner = Spinner::new(Arc::clone(console), text);
-    ImageFactory::new(system, env)
+    ImageFactory::new(context.get_system(), context.get_env())
         .find_image(console, image)
         .await
 }
 
-pub async fn fetch_image(
-    console: &Arc<Console>,
-    system: &dyn System,
-    env: &Environment,
-    image: &Image,
-) -> Result<()> {
+pub async fn fetch_image(context: &Context, image: &Image) -> Result<()> {
+    let (system, env) = (context.get_system(), context.get_env());
     if !ImageStore::new().exists(system, env, image) {
         system.create_writable_dir(Path::new(&env.get_image_dir()))?;
         ImageFetcher::new()
             .fetch(
-                console,
+                context.get_console(),
                 system,
                 image,
                 Path::new(&env.get_image_file(&image.to_file_name())),
@@ -55,18 +44,26 @@ pub async fn fetch_image(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{Arch, HashAlg, UserName};
+    use crate::instance::InstanceStoreMock;
+    use crate::models::{Arch, Environment, HashAlg, UserName};
     use crate::platform::SystemMock;
+    use crate::view::Console;
     use std::str::FromStr;
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn test_fetch_image_skips_cached_image() {
-        let system = SystemMock::new().add_file("images/debian_bookworm_amd64", b"");
-        let console = &Console::new(Arc::new(SystemMock::new()));
+        let system = Arc::new(SystemMock::new().add_file("images/debian_bookworm_amd64", b""));
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
+        );
+        let context = Context::new(
+            Arc::clone(&system) as Arc<dyn crate::platform::System>,
+            Console::new(Arc::new(SystemMock::new())),
+            env,
+            Box::new(InstanceStoreMock::new(Vec::new())),
         );
         let image = Image {
             distro: "debian".to_string(),
@@ -82,6 +79,6 @@ mod tests {
 
         // A cached image must return without touching the image directory
         // or the network.
-        fetch_image(console, &system, &env, &image).await.unwrap();
+        fetch_image(&context, &image).await.unwrap();
     }
 }

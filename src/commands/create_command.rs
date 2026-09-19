@@ -9,7 +9,7 @@ use crate::models::{
     ResourceAllocator, Template, UserName,
 };
 use crate::platform::System;
-use crate::view::{Console, Spinner};
+use crate::view::Spinner;
 use clap::{ArgAction, Parser};
 use std::path::Path;
 use std::sync::Arc;
@@ -159,12 +159,8 @@ impl CreateCommand {
 }
 
 impl CreateCommand {
-    pub async fn create(
-        &self,
-        console: &Arc<Console>,
-        context: &Context,
-        auto_remove: bool,
-    ) -> Result<()> {
+    pub async fn create(&self, context: &Context, auto_remove: bool) -> Result<()> {
+        let console = context.get_console();
         let env = context.get_env();
         let instance_store = context.get_instance_store();
 
@@ -178,8 +174,8 @@ impl CreateCommand {
         let image_name = self.resolve_image(template.as_ref())?;
 
         // Fetch image
-        let image = &fetch_image_info(console, context.get_system(), env, &image_name).await?;
-        fetch_image(console, context.get_system(), env, image).await?;
+        let image = &fetch_image_info(context, &image_name).await?;
+        fetch_image(context, image).await?;
 
         let text = format!("Creating {}", self.instance_name.value);
         let _spinner = Spinner::new(Arc::clone(console), text);
@@ -222,8 +218,8 @@ impl CreateCommand {
 }
 
 impl Command for CreateCommand {
-    async fn run(&self, console: &Arc<Console>, context: &Context) -> Result<u8> {
-        self.create(console, context, false).await?;
+    async fn run(&self, context: &Context) -> Result<u8> {
+        self.create(context, false).await?;
         Ok(0)
     }
 }
@@ -233,6 +229,7 @@ mod tests {
     use super::*;
     use crate::instance::InstanceStoreMock;
     use crate::platform::SystemMock;
+    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::Arc;
 
@@ -240,8 +237,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_rejects_existing_instance_name() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
             String::new(),
@@ -249,6 +244,7 @@ mod tests {
         );
         let context = Context::new(
             Arc::new(SystemMock::new()),
+            Console::new(Arc::new(SystemMock::new())),
             env,
             Box::new(InstanceStoreMock::new(vec![Instance {
                 name: "test".to_string(),
@@ -258,7 +254,7 @@ mod tests {
 
         let result = CreateCommand::try_parse_from(["create", "test", "-i", "debian:bookworm"])
             .unwrap()
-            .run(console, &context)
+            .run(&context)
             .await;
 
         assert!(matches!(

@@ -3,10 +3,9 @@ use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::{InstanceName, SnapshotName};
 use crate::util::Either;
-use crate::view::{ConfirmDialog, Console};
+use crate::view::ConfirmDialog;
 use clap::Parser;
 use std::collections::HashSet;
-use std::sync::Arc;
 
 /// Delete VM instances and snapshots
 ///
@@ -76,7 +75,8 @@ impl DeleteCommand {
 }
 
 impl Command for DeleteCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
+        let console = context.get_console();
         let instance_store = context.get_instance_store();
 
         if self.targets.is_empty() {
@@ -90,8 +90,7 @@ impl Command for DeleteCommand {
             }
 
             if let Either::Right(snapshot_name) = target {
-                let instance =
-                    LoadInstanceAction::new().run(context, console, instance_name.as_str())?;
+                let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
                 if !instance.has_snapshot(snapshot_name.as_str()) {
                     return Err(Error::UnknownSnapshot(
                         instance_name.to_string(),
@@ -119,11 +118,10 @@ impl Command for DeleteCommand {
                 kill: Self::is_instance(target),
                 instances: vec![instance_name.clone()].into(),
             }
-            .run(console, context)
+            .run(context)
             .await?;
 
-            let instance =
-                LoadInstanceAction::new().run(context, console, instance_name.as_str())?;
+            let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
             match target {
                 Either::Right(snapshot_name) => {
                     instance_store.delete_snapshot(&instance, snapshot_name.as_str())?
@@ -144,6 +142,7 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, Instance, Snapshot, UserName};
     use crate::platform::SystemMock;
+    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::{Arc, Mutex};
 
@@ -164,7 +163,12 @@ mod tests {
             String::new(),
         );
         (
-            commands::Context::new(Arc::new(SystemMock::new()), env, Box::new(store)),
+            commands::Context::new(
+                Arc::new(SystemMock::new()),
+                Console::new(Arc::new(SystemMock::new())),
+                env,
+                Box::new(store),
+            ),
             recorders,
         )
     }
@@ -195,14 +199,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_instance() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let (context, recorders) = build_context(vec![build_instance("test", vec!["clean"])]);
 
-        build_command(&["test"])
-            .run(console, &context)
-            .await
-            .unwrap();
+        build_command(&["test"]).run(&context).await.unwrap();
 
         assert_eq!(*recorders.deleted.lock().unwrap(), vec!["test"]);
         assert!(recorders.snapshots.lock().unwrap().is_empty());
@@ -210,14 +209,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_snapshot_keeps_the_instance() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let (context, recorders) = build_context(vec![build_instance("test", vec!["clean"])]);
 
-        build_command(&["test/clean"])
-            .run(console, &context)
-            .await
-            .unwrap();
+        build_command(&["test/clean"]).run(&context).await.unwrap();
 
         assert_eq!(
             *recorders.snapshots.lock().unwrap(),
@@ -228,12 +222,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_ignores_duplicate_targets() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let (context, recorders) = build_context(vec![build_instance("test", vec!["clean"])]);
 
         build_command(&["test/clean", "test/clean"])
-            .run(console, &context)
+            .run(&context)
             .await
             .unwrap();
 
@@ -245,12 +237,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_instance_skips_its_own_snapshot() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let (context, recorders) = build_context(vec![build_instance("test", vec!["clean"])]);
 
         build_command(&["test/clean", "test"])
-            .run(console, &context)
+            .run(&context)
             .await
             .unwrap();
 
@@ -260,24 +250,20 @@ mod tests {
 
     #[tokio::test]
     async fn test_reject_an_empty_target_list() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let (context, _) = build_context(Vec::new());
 
         assert!(matches!(
-            build_command(&[]).run(console, &context).await,
+            build_command(&[]).run(&context).await,
             Err(Error::MissingInstanceName)
         ));
     }
 
     #[tokio::test]
     async fn test_reject_an_unknown_snapshot() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let (context, recorders) = build_context(vec![build_instance("test", vec!["deps"])]);
 
         assert!(matches!(
-            build_command(&["test/clean"]).run(console, &context).await,
+            build_command(&["test/clean"]).run(&context).await,
             Err(Error::UnknownSnapshot(instance, snapshot))
                 if instance == "test" && snapshot == "clean"
         ));

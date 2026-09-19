@@ -4,10 +4,8 @@ use crate::error::{Error, Result};
 use crate::models::InstanceCertPaths;
 use crate::qemu::TlsClient;
 use crate::util;
-use crate::view::Console;
 use clap::Parser;
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio_util::codec::FramedRead;
@@ -37,7 +35,8 @@ pub struct ConsoleCommand {
 }
 
 impl Command for ConsoleCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
+        let console = context.get_console();
         commands::StartCommand {
             qemu_args: None,
             accel: self.accel,
@@ -45,11 +44,10 @@ impl Command for ConsoleCommand {
             yes: commands::YesArg { value: false },
             instances: self.instance.value.clone().into(),
         }
-        .run(console, context)
+        .run(context)
         .await?;
 
-        let instance =
-            LoadInstanceAction::new().run(context, console, self.instance.value.as_str())?;
+        let instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
 
         console.info("Login requires a password. Set one with 'sudo passwd' over cubic ssh.");
         console.info("Press Enter, ~, . to exit the console.");

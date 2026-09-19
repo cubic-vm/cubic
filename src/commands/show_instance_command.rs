@@ -3,9 +3,8 @@ use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::ssh::HostKeyChecker;
 use crate::util;
-use crate::view::{Console, MapView};
+use crate::view::MapView;
 use clap::Parser;
-use std::sync::Arc;
 
 /// Show a VM instance
 #[derive(Parser)]
@@ -18,7 +17,7 @@ pub struct ShowInstanceCommand {
 }
 
 impl Command for ShowInstanceCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
         let env = context.get_env();
         let instance_store = context.get_instance_store();
 
@@ -26,8 +25,7 @@ impl Command for ShowInstanceCommand {
             return Err(Error::UnknownInstance(self.instance.value.to_string()));
         }
 
-        let instance =
-            LoadInstanceAction::new().run(context, console, self.instance.value.as_str())?;
+        let instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
         let ssh_key = env.get_ssh_private_key_file(&instance.name);
 
         let mut view = MapView::new();
@@ -85,7 +83,7 @@ impl Command for ShowInstanceCommand {
             );
         }
 
-        view.print(console);
+        view.print(context.get_console());
 
         Ok(0)
     }
@@ -97,15 +95,14 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Arch, DataSize, Environment, Instance, InstanceName, Snapshot, UserName};
     use crate::platform::{System, SystemMock};
+    use crate::view::Console;
     use std::path::PathBuf;
     use std::str::FromStr;
     use std::sync::Arc;
 
     #[tokio::test]
     async fn test_show_basic_fields() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
+        let system = Arc::new(SystemMock::new());
         let env = Environment::new(
             UserName::from_str("myuser").unwrap(),
             String::new(),
@@ -122,14 +119,18 @@ mod tests {
             hostfwd: vec!["127.0.0.1:4000:40/tcp".parse().unwrap()],
             ..Instance::default()
         }]);
-        let context =
-            commands::Context::new(Arc::new(SystemMock::new()), env, Box::new(instance_store));
+        let context = commands::Context::new(
+            Arc::new(SystemMock::new()),
+            Console::new(Arc::clone(&system) as Arc<dyn System>),
+            env,
+            Box::new(instance_store),
+        );
 
         ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap().into(),
             all: false.into(),
         }
-        .run(console, &context)
+        .run(&context)
         .await
         .unwrap();
 
@@ -150,9 +151,7 @@ Forward:    127.0.0.1:4000:40/tcp
 
     #[tokio::test]
     async fn test_show_all_fields() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
+        let system = Arc::new(SystemMock::new());
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
             String::new(),
@@ -187,8 +186,12 @@ Forward:    127.0.0.1:4000:40/tcp
             ),
             ..Instance::default()
         }]);
-        let context =
-            commands::Context::new(Arc::new(SystemMock::new()), env, Box::new(instance_store));
+        let context = commands::Context::new(
+            Arc::new(SystemMock::new()),
+            Console::new(Arc::clone(&system) as Arc<dyn System>),
+            env,
+            Box::new(instance_store),
+        );
 
         let instance_dir = PathBuf::from("machines").join("test");
         let disk_image = instance_dir
@@ -208,7 +211,7 @@ Forward:    127.0.0.1:4000:40/tcp
             instance: InstanceName::from_str("test").unwrap().into(),
             all: true.into(),
         }
-        .run(console, &context)
+        .run(&context)
         .await
         .unwrap();
 
@@ -242,24 +245,26 @@ SSH:          ssh -i {ssh_key} -p 8000 john@localhost
 
     #[tokio::test]
     async fn test_show_command_failed() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
+        let system = Arc::new(SystemMock::new());
         let env = Environment::new(
             UserName::from_str("testuser").unwrap(),
             String::new(),
             String::new(),
         );
         let instance_store = InstanceStoreMock::new(Vec::new());
-        let context =
-            commands::Context::new(Arc::new(SystemMock::new()), env, Box::new(instance_store));
+        let context = commands::Context::new(
+            Arc::new(SystemMock::new()),
+            Console::new(Arc::clone(&system) as Arc<dyn System>),
+            env,
+            Box::new(instance_store),
+        );
 
         assert!(matches!(
             ShowInstanceCommand {
                 instance: InstanceName::from_str("test").unwrap().into(),
                 all: false.into(),
             }
-            .run(console, &context)
+            .run(&context)
             .await,
             Err(Error::UnknownInstance(_))
         ));

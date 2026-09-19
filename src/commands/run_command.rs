@@ -2,9 +2,7 @@ use crate::actions::{LoadInstanceAction, StopInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::Target;
-use crate::view::Console;
 use clap::{self, ArgAction, Parser};
-use std::sync::Arc;
 
 /// Create and start a VM instance
 ///
@@ -53,11 +51,11 @@ pub struct RunCommand {
 
 impl RunCommand {
     // Best effort, a failure here must not mask the session result.
-    fn cleanup(&self, console: &Arc<Console>, context: &commands::Context) {
+    fn cleanup(&self, context: &commands::Context) {
         let name = self.create_cmd.instance_name.value.as_str();
         let store = context.get_instance_store();
 
-        if let Ok(instance) = LoadInstanceAction::new().run(context, console, name) {
+        if let Ok(instance) = LoadInstanceAction::new().run(context, name) {
             StopInstanceAction::new(&instance).run(store, true).ok();
             store.delete(&instance).ok();
         }
@@ -65,8 +63,8 @@ impl RunCommand {
 }
 
 impl Command for RunCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
-        self.create_cmd.create(console, context, self.rm).await?;
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
+        self.create_cmd.create(context, self.rm).await?;
 
         let ssh = commands::SshCommand {
             target: Target::from_instance_name(self.create_cmd.instance_name.value.clone()),
@@ -76,15 +74,15 @@ impl Command for RunCommand {
         // Ctrl+C ends the session like an exit. The dropped shell cannot
         // reset the terminal, so reset it here.
         let result = tokio::select! {
-            result = ssh.run(console, context) => result,
+            result = ssh.run(context) => result,
             _ = tokio::signal::ctrl_c() => {
-                console.reset();
+                context.get_console().reset();
                 Ok(130)
             }
         };
 
         if self.rm {
-            self.cleanup(console, context);
+            self.cleanup(context);
         }
         result
     }
@@ -96,12 +94,11 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, Instance};
     use crate::platform::SystemMock;
+    use crate::view::Console;
     use std::sync::Arc;
 
     #[test]
     fn test_rm_stops_and_deletes_the_instance() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let store = InstanceStoreMock::new_with_running(
             vec![Instance {
                 name: "web".to_string(),
@@ -113,13 +110,14 @@ mod tests {
         let deleted = Arc::clone(&store.deleted);
         let context = commands::Context::new(
             Arc::new(SystemMock::new()),
+            Console::new(Arc::new(SystemMock::new())),
             Environment::default(),
             Box::new(store),
         );
 
         RunCommand::try_parse_from(["run", "--rm", "web", "-i", "debian:trixie"])
             .unwrap()
-            .cleanup(console, &context);
+            .cleanup(&context);
 
         assert_eq!(*killed.lock().unwrap(), ["web"]);
         assert_eq!(*deleted.lock().unwrap(), ["web"]);

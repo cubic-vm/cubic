@@ -118,13 +118,14 @@ impl<'a> SshClient<'a> {
 
     async fn authenticate_with_password(
         &self,
-        console: &Arc<Console>,
         session: &mut russh::client::Handle<ServerKeyHandler>,
         user: &str,
         machine: &str,
     ) -> Result<(), Error> {
         loop {
-            let password = console
+            let password = self
+                .context
+                .get_console()
                 .prompt(&format!("Enter password for {user}@{machine}: "), true)
                 .map_err(|_| Error::SshAuthCancelled(machine.to_string()))?;
 
@@ -143,12 +144,12 @@ impl<'a> SshClient<'a> {
 
     async fn authenticate(
         &self,
-        console: &Arc<Console>,
         session: &mut russh::client::Handle<ServerKeyHandler>,
         user: &str,
         machine: &str,
         client_key: &str,
     ) -> Result<AuthMethod, Error> {
+        let console = self.context.get_console();
         // The cubic per-instance ssh_client_key is the only supported method.
         // Everything below is a deprecated fallback.
         console.debug(&format!(
@@ -175,17 +176,13 @@ impl<'a> SshClient<'a> {
         }
 
         console.debug("Deprecated keys failed, prompting for a password");
-        self.authenticate_with_password(console, session, user, machine)
+        self.authenticate_with_password(session, user, machine)
             .await
             .map(|_| AuthMethod::Deprecated)
     }
 
-    fn warn_deprecated_auth(
-        &self,
-        console: &Arc<Console>,
-        machine: &str,
-        client_key: &str,
-    ) -> Result<(), ()> {
+    fn warn_deprecated_auth(&self, machine: &str, client_key: &str) -> Result<(), ()> {
+        let console = self.context.get_console();
         // create the cubic ssh key if it does not exist yet
         if !self.context.get_system().exists_path(Path::new(client_key)) {
             SshKeyGenerator::new()
@@ -210,13 +207,8 @@ impl<'a> SshClient<'a> {
 
     /// Reports a host key that does not match the pinned one and asks whether
     /// to trust it from now on.
-    fn confirm_new_host_key(
-        &self,
-        console: &Arc<Console>,
-        machine: &str,
-        pinned: &str,
-        offered: &str,
-    ) -> bool {
+    fn confirm_new_host_key(&self, machine: &str, pinned: &str, offered: &str) -> bool {
+        let console = self.context.get_console();
         let checker = HostKeyChecker::new();
 
         console.warn(&format!(
@@ -233,11 +225,11 @@ impl<'a> SshClient<'a> {
 
     async fn connect(
         &self,
-        console: &Arc<Console>,
         machine: &str,
         port: u16,
         instance: &mut Instance,
     ) -> Result<client::Handle<ServerKeyHandler>, Error> {
+        let console = self.context.get_console();
         let session;
         let store = self.context.get_instance_store();
         let mut pinned = instance.ssh_host_key.clone();
@@ -263,7 +255,7 @@ impl<'a> SshClient<'a> {
             if let (Some(key), Some(pinned_key)) = (key, pinned.clone())
                 && HostKeyChecker::new().check_key(Some(&pinned_key), &key) == KeyCheck::Changed
             {
-                if !self.confirm_new_host_key(console, machine, &pinned_key, &key) {
+                if !self.confirm_new_host_key(machine, &pinned_key, &key) {
                     return Err(Error::SshHostKeyRejected(machine.to_string()));
                 }
 
@@ -299,7 +291,6 @@ impl<'a> SshClient<'a> {
 
     pub async fn open_channel(
         &self,
-        console: &Arc<Console>,
         machine: &str,
         client_key: &str,
         user: &str,
@@ -310,15 +301,15 @@ impl<'a> SshClient<'a> {
         let first_boot = instance.first_boot && user == instance.user.as_str();
 
         let session = loop {
-            let mut session = self.connect(console, machine, port, &mut instance).await?;
+            let mut session = self.connect(machine, port, &mut instance).await?;
 
             if !first_boot {
                 let auth_method = self
-                    .authenticate(console, &mut session, user, machine, client_key)
+                    .authenticate(&mut session, user, machine, client_key)
                     .await?;
 
                 if auth_method == AuthMethod::Deprecated {
-                    self.warn_deprecated_auth(console, machine, client_key).ok();
+                    self.warn_deprecated_auth(machine, client_key).ok();
                 }
 
                 break session;
@@ -334,7 +325,9 @@ impl<'a> SshClient<'a> {
                 break session;
             }
 
-            console.debug("Client key failed, waiting for the first boot to finish");
+            self.context
+                .get_console()
+                .debug("Client key failed, waiting for the first boot to finish");
             tokio::time::sleep(Duration::from_secs(RETRY_DELAY_SECS)).await;
         };
 
@@ -388,10 +381,10 @@ impl<'a> SshClient<'a> {
     /// Runs the session and returns the exit status of the guest.
     pub async fn shell(
         &self,
-        console: &Arc<Console>,
         instance: &str,
         channel: Channel<russh::client::Msg>,
     ) -> Result<u8, Error> {
+        let console = self.context.get_console();
         // A pty is what an interactive session needs, but it also keeps the
         // guest from ever seeing the end of stdin. Ask for one only when stdin
         // is a terminal, the same rule the OpenSSH client follows.
@@ -471,14 +464,13 @@ impl<'a> SshClient<'a> {
 
     async fn open_sftp(
         &self,
-        console: &Arc<Console>,
         instance: &Instance,
         user: &Option<String>,
         client_key: &str,
     ) -> Result<Rc<SftpSession>, Error> {
         let user = user.as_deref().unwrap_or(instance.user.as_str());
         let channel = self
-            .open_channel(console, &instance.name, client_key, user, instance.ssh_port)
+            .open_channel(&instance.name, client_key, user, instance.ssh_port)
             .await?;
         channel
             .request_subsystem(true, "sftp")
@@ -492,19 +484,13 @@ impl<'a> SshClient<'a> {
 
     async fn open_target_fs(
         &self,
-        console: &Arc<Console>,
         path: &TargetInstancePath,
         client_key: Option<&str>,
     ) -> Result<SftpPath, Error> {
         let sftp = if let Some(instance) = &path.instance {
             Some(
-                self.open_sftp(
-                    console,
-                    instance,
-                    &path.user,
-                    client_key.unwrap_or_default(),
-                )
-                .await?,
+                self.open_sftp(instance, &path.user, client_key.unwrap_or_default())
+                    .await?,
             )
         } else {
             None
@@ -517,16 +503,15 @@ impl<'a> SshClient<'a> {
 
     pub async fn copy(
         &self,
-        console: &Arc<Console>,
         from: &TargetInstancePath,
         from_key: Option<&str>,
         to: &TargetInstancePath,
         to_key: Option<&str>,
     ) -> Result<(), Error> {
-        let source = self.open_target_fs(console, from, from_key).await?;
-        let target = self.open_target_fs(console, to, to_key).await?;
+        let source = self.open_target_fs(from, from_key).await?;
+        let target = self.open_target_fs(to, to_key).await?;
 
-        source.copy(console, target).await
+        source.copy(self.context.get_console(), target).await
     }
 
     pub fn set_private_keys(&mut self, private_keys: Vec<String>) {

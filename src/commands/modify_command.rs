@@ -2,9 +2,7 @@ use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::{DataSize, MIN_DISK, PortForward, ResourceAllocator};
-use crate::view::Console;
 use clap::{ArgAction, Parser};
-use std::sync::Arc;
 
 /// Modify a VM instance
 ///
@@ -68,10 +66,10 @@ pub struct ModifyCommand {
 }
 
 impl Command for ModifyCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
+        let console = context.get_console();
         let instance_store = context.get_instance_store();
-        let mut instance =
-            LoadInstanceAction::new().run(context, console, self.instance.value.as_str())?;
+        let mut instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
 
         let is_running = instance_store.is_running(&instance);
         let hostfwd_changed = !self.port.is_empty() || !self.rm_port.is_empty();
@@ -139,18 +137,27 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, Instance, UserName};
     use crate::platform::{System, SystemMock};
+    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::Arc;
 
     const GIB: usize = 1024 * 1024 * 1024;
 
-    fn build_context(instance_store: InstanceStoreMock) -> commands::Context {
+    fn build_context(
+        system: &Arc<SystemMock>,
+        instance_store: InstanceStoreMock,
+    ) -> commands::Context {
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
         );
-        commands::Context::new(Arc::new(SystemMock::new()), env, Box::new(instance_store))
+        commands::Context::new(
+            Arc::new(SystemMock::new()),
+            Console::new(Arc::clone(system) as Arc<dyn System>),
+            env,
+            Box::new(instance_store),
+        )
     }
 
     #[test]
@@ -160,20 +167,21 @@ mod tests {
 
     #[tokio::test]
     async fn test_modify_stopped_instance_prints_nothing() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
-        let context = build_context(InstanceStoreMock::new(vec![Instance {
-            name: "test".to_string(),
-            cpus: 2,
-            mem: DataSize::new(GIB),
-            disk_capacity: DataSize::new(GIB),
-            ..Instance::default()
-        }]));
+        let system = Arc::new(SystemMock::new());
+        let context = build_context(
+            &system,
+            InstanceStoreMock::new(vec![Instance {
+                name: "test".to_string(),
+                cpus: 2,
+                mem: DataSize::new(GIB),
+                disk_capacity: DataSize::new(GIB),
+                ..Instance::default()
+            }]),
+        );
 
         ModifyCommand::try_parse_from(["modify", "test", "--cpus", "2"])
             .unwrap()
-            .run(console, &context)
+            .run(&context)
             .await
             .unwrap();
 
@@ -182,23 +190,24 @@ mod tests {
 
     #[tokio::test]
     async fn test_modify_running_instance_notes_restart() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
-        let context = build_context(InstanceStoreMock::new_with_running(
-            vec![Instance {
-                name: "test".to_string(),
-                cpus: 2,
-                mem: DataSize::new(GIB),
-                disk_capacity: DataSize::new(GIB),
-                ..Instance::default()
-            }],
-            &["test"],
-        ));
+        let system = Arc::new(SystemMock::new());
+        let context = build_context(
+            &system,
+            InstanceStoreMock::new_with_running(
+                vec![Instance {
+                    name: "test".to_string(),
+                    cpus: 2,
+                    mem: DataSize::new(GIB),
+                    disk_capacity: DataSize::new(GIB),
+                    ..Instance::default()
+                }],
+                &["test"],
+            ),
+        );
 
         ModifyCommand::try_parse_from(["modify", "test", "--cpus", "2"])
             .unwrap()
-            .run(console, &context)
+            .run(&context)
             .await
             .unwrap();
 
@@ -210,16 +219,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_modify_running_instance_port_attempts_live_apply() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
-        let context = build_context(InstanceStoreMock::new_with_running(
-            vec![Instance {
-                name: "test".to_string(),
-                ..Instance::default()
-            }],
-            &["test"],
-        ));
+        let system = Arc::new(SystemMock::new());
+        let context = build_context(
+            &system,
+            InstanceStoreMock::new_with_running(
+                vec![Instance {
+                    name: "test".to_string(),
+                    ..Instance::default()
+                }],
+                &["test"],
+            ),
+        );
 
         // InstanceStoreMock has no real monitor, so a live hostfwd change on
         // a running instance surfaces the mock's InstanceNotRunning error
@@ -227,7 +237,7 @@ mod tests {
         // is never printed.
         let result = ModifyCommand::try_parse_from(["modify", "test", "--port", "8080:80"])
             .unwrap()
-            .run(console, &context)
+            .run(&context)
             .await;
 
         assert!(result.is_err());

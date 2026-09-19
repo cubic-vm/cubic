@@ -3,7 +3,7 @@ use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::Target;
 use crate::ssh::SshClient;
-use crate::view::{Console, Spinner};
+use crate::view::Spinner;
 use clap::Parser;
 use std::sync::Arc;
 
@@ -27,7 +27,8 @@ pub struct SshCommand {
 }
 
 impl Command for SshCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
+        let console = context.get_console();
         let env = context.get_env();
 
         let name = self.target.get_instance();
@@ -39,10 +40,10 @@ impl Command for SshCommand {
             yes: commands::YesArg { value: false },
             instances: name.clone().into(),
         }
-        .run(console, context)
+        .run(context)
         .await?;
 
-        let instance = LoadInstanceAction::new().run(context, console, name.as_str())?;
+        let instance = LoadInstanceAction::new().run(context, name.as_str())?;
         let text = format!("Connecting to {}", instance.name);
         let mut spinner = Spinner::new(Arc::clone(console), text);
 
@@ -60,9 +61,9 @@ impl Command for SshCommand {
         ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system()));
         ssh.set_env_vars(self.env_args.env_vars.clone());
         let channel = ssh
-            .open_channel(console, &instance.name, &client_key, &user, ssh_port)
+            .open_channel(&instance.name, &client_key, &user, ssh_port)
             .await?;
         spinner.stop();
-        ssh.shell(console, &instance.name, channel).await
+        ssh.shell(&instance.name, channel).await
     }
 }

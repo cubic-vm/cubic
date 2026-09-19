@@ -45,7 +45,8 @@ pub struct StartCommand {
 }
 
 impl Command for StartCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
+        let console = context.get_console();
         self.instances.require_names()?;
 
         let instance_store = context.get_instance_store();
@@ -56,7 +57,7 @@ impl Command for StartCommand {
         let mut actions = Vec::new();
         let mut starting = Vec::new();
         for name in &self.instances.value {
-            let instance = &mut LoadInstanceAction::new().run(context, console, name.as_str())?;
+            let instance = &mut LoadInstanceAction::new().run(context, name.as_str())?;
             if !instance_store.is_running(instance) {
                 if port_checker.is_open(context.get_system(), instance.ssh_port) {
                     let old_port = instance.ssh_port;
@@ -71,7 +72,7 @@ impl Command for StartCommand {
                 self.fit_to_host(console, context.get_system(), instance_store, instance)?;
 
                 let mut action = StartInstanceAction::new(instance);
-                action.run(context, &self.qemu_args, self.accel.value, console)?;
+                action.run(context, &self.qemu_args, self.accel.value)?;
 
                 actions.push(action);
                 // Only the instances that are launched are named
@@ -169,6 +170,7 @@ mod tests {
     use crate::instance::{InstanceDao, InstanceStoreMock};
     use crate::models::{Environment, UserName};
     use crate::platform::SystemMock;
+    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::Arc;
 
@@ -210,6 +212,7 @@ mod tests {
 
         Context::new(
             Arc::clone(system) as Arc<dyn System>,
+            Console::new(Arc::new(SystemMock::new())),
             build_env(),
             Box::new(build_dao(system)),
         )
@@ -224,11 +227,10 @@ mod tests {
                 .add_open_port(22000),
         );
         let context = build_starved_context(&system, 22000);
-        let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
         let command = StartCommand::try_parse_from(["start", "--yes", "test"]).unwrap();
 
         assert!(matches!(
-            command.run(&console, &context).await,
+            command.run(&context).await,
             Err(Error::NotEnoughHostResources(_))
         ));
         // Read back through the dao, so the new port has to have been written
@@ -244,11 +246,10 @@ mod tests {
                 .add_dir("/data/machines/test"),
         );
         let context = build_starved_context(&system, 22000);
-        let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
         let command = StartCommand::try_parse_from(["start", "--yes", "test"]).unwrap();
 
         assert!(matches!(
-            command.run(&console, &context).await,
+            command.run(&context).await,
             Err(Error::NotEnoughHostResources(_))
         ));
         assert_eq!(build_dao(&system).load("test").unwrap().ssh_port, 22000);

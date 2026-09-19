@@ -1,10 +1,9 @@
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::{DataSize, Instance};
-use crate::view::{ConfirmDialog, Console};
+use crate::view::ConfirmDialog;
 use clap::Parser;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 const LEGACY_INSTANCES_DIR: &str = "instances";
 
@@ -22,7 +21,8 @@ pub struct PruneCommand {
 }
 
 impl Command for PruneCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
+        let console = context.get_console();
         let env = context.get_env();
         let system = context.get_system();
         let instance_store = context.get_instance_store();
@@ -93,6 +93,7 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, UserName};
     use crate::platform::{FileSystem, System, SystemMock};
+    use crate::view::Console;
     use std::path::Path;
     use std::str::FromStr;
     use std::sync::Arc;
@@ -116,6 +117,7 @@ mod tests {
     ) -> commands::Context {
         commands::Context::new(
             Arc::clone(system) as Arc<dyn System>,
+            Console::new(Arc::clone(system) as Arc<dyn System>),
             env.clone(),
             Box::new(store),
         )
@@ -129,11 +131,10 @@ mod tests {
         system: &Arc<SystemMock>,
         context: commands::Context,
     ) -> String {
-        let console = &Console::new(Arc::clone(system) as Arc<dyn System>);
         PruneCommand {
             yes: commands::YesArg { value: true },
         }
-        .run(console, &context)
+        .run(&context)
         .await
         .unwrap();
         system.get_output()

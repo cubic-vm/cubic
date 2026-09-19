@@ -2,9 +2,8 @@ use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::util;
-use crate::view::{Alignment, Console, TableView};
+use crate::view::{Alignment, TableView};
 use clap::Parser;
-use std::sync::Arc;
 
 /// List VM instances
 ///
@@ -31,7 +30,7 @@ pub struct ListInstanceCommand {
 }
 
 impl Command for ListInstanceCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
         let instance_store = context.get_instance_store();
         let instance_names = instance_store.get_instances();
 
@@ -49,7 +48,7 @@ impl Command for ListInstanceCommand {
             .add("Running", Alignment::Right);
 
         for instance_name in &instance_names {
-            let instance = LoadInstanceAction::new().run(context, console, instance_name)?;
+            let instance = LoadInstanceAction::new().run(context, instance_name)?;
             if instance_store.is_stale(&instance) {
                 continue;
             }
@@ -80,7 +79,7 @@ impl Command for ListInstanceCommand {
                     Alignment::Right,
                 );
         }
-        view.print(console);
+        view.print(context.get_console());
         Ok(0)
     }
 }
@@ -91,20 +90,29 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Arch, DataSize, Environment, Instance, UserName};
     use crate::platform::{System, SystemMock};
+    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::Arc;
 
-    fn build_context(instances: Vec<Instance>) -> commands::Context {
-        build_context_with_store(InstanceStoreMock::new(instances))
+    fn build_context(system: &Arc<SystemMock>, instances: Vec<Instance>) -> commands::Context {
+        build_context_with_store(system, InstanceStoreMock::new(instances))
     }
 
-    fn build_context_with_store(store: InstanceStoreMock) -> commands::Context {
+    fn build_context_with_store(
+        system: &Arc<SystemMock>,
+        store: InstanceStoreMock,
+    ) -> commands::Context {
         let env = Environment::new(
             UserName::from_str("cubic").unwrap(),
             String::new(),
             String::new(),
         );
-        commands::Context::new(Arc::new(SystemMock::new()), env, Box::new(store))
+        commands::Context::new(
+            Arc::new(SystemMock::new()),
+            Console::new(Arc::clone(system) as Arc<dyn System>),
+            env,
+            Box::new(store),
+        )
     }
 
     fn build_instances() -> Vec<Instance> {
@@ -137,13 +145,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_instance_command() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
-        let context = build_context(build_instances());
+        let system = Arc::new(SystemMock::new());
+        let context = build_context(&system, build_instances());
 
         ListInstanceCommand { all: false.into() }
-            .run(console, &context)
+            .run(&context)
             .await
             .unwrap();
 
@@ -159,13 +165,11 @@ test2   amd64       5      0 B       5000 B        no
 
     #[tokio::test]
     async fn test_list_instance_command_all_adds_the_pid_column() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
-        let context = build_context(build_instances());
+        let system = Arc::new(SystemMock::new());
+        let context = build_context(&system, build_instances());
 
         ListInstanceCommand { all: true.into() }
-            .run(console, &context)
+            .run(&context)
             .await
             .unwrap();
 
@@ -181,16 +185,15 @@ PID   Name    Arch    vCPUs   Memory         Disk   Running
 
     #[tokio::test]
     async fn test_list_instance_command_all_shows_the_pid_of_a_running_instance() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
+        let system = Arc::new(SystemMock::new());
         let context = build_context_with_store(
+            &system,
             InstanceStoreMock::new_with_running(build_instances(), &["test2"])
                 .set_pid("test2", 1059),
         );
 
         ListInstanceCommand { all: true.into() }
-            .run(console, &context)
+            .run(&context)
             .await
             .unwrap();
 
@@ -206,17 +209,17 @@ PID    Name    Arch    vCPUs   Memory         Disk   Running
 
     #[tokio::test]
     async fn test_list_instance_command_hides_a_stale_instance() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
+        let system = Arc::new(SystemMock::new());
         let mut instances = build_instances();
         instances[0].auto_remove = true;
         instances[1].auto_remove = true;
-        let context =
-            build_context_with_store(InstanceStoreMock::new_with_running(instances, &["test2"]));
+        let context = build_context_with_store(
+            &system,
+            InstanceStoreMock::new_with_running(instances, &["test2"]),
+        );
 
         ListInstanceCommand { all: false.into() }
-            .run(console, &context)
+            .run(&context)
             .await
             .unwrap();
 
@@ -231,13 +234,11 @@ test2   amd64       5      0 B   5000 B       yes
 
     #[tokio::test]
     async fn test_list_instance_command_empty() {
-        let system = SystemMock::new();
-        let system = Arc::new(system);
-        let console = &Console::new(Arc::clone(&system) as Arc<dyn System>);
-        let context = build_context(Vec::new());
+        let system = Arc::new(SystemMock::new());
+        let context = build_context(&system, Vec::new());
 
         ListInstanceCommand { all: false.into() }
-            .run(console, &context)
+            .run(&context)
             .await
             .unwrap();
 

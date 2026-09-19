@@ -1,7 +1,7 @@
 use crate::actions::{LoadInstanceAction, StopInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
-use crate::view::{Console, Spinner};
+use crate::view::Spinner;
 use clap::Parser;
 use std::sync::Arc;
 use std::time::Duration;
@@ -38,7 +38,7 @@ pub struct StopCommand {
 }
 
 impl Command for StopCommand {
-    async fn run(&self, console: &Arc<Console>, context: &commands::Context) -> Result<u8> {
+    async fn run(&self, context: &commands::Context) -> Result<u8> {
         let instance_store = context.get_instance_store();
 
         if !self.all.value {
@@ -54,7 +54,7 @@ impl Command for StopCommand {
         // Only stop instances that are running
         let mut stopping = Vec::new();
         for name in &stop_instances {
-            let instance = LoadInstanceAction::new().run(context, console, name)?;
+            let instance = LoadInstanceAction::new().run(context, name)?;
             if instance_store.is_running(&instance) {
                 stopping.push(instance);
             }
@@ -65,7 +65,10 @@ impl Command for StopCommand {
             .map(|instance| instance.name.to_string())
             .collect::<Vec<_>>()
             .join(", ");
-        let _spinner = Spinner::new(Arc::clone(console), format!("Stopping {names}"));
+        let _spinner = Spinner::new(
+            Arc::clone(context.get_console()),
+            format!("Stopping {names}"),
+        );
 
         // Stop instances
         let mut actions = Vec::new();
@@ -92,6 +95,7 @@ mod tests {
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, UserName};
     use crate::platform::SystemMock;
+    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::Arc;
 
@@ -102,8 +106,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_reject_empty_instance_list_without_all() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let env = Environment::new(
             UserName::from_str("myuser").unwrap(),
             String::new(),
@@ -111,6 +113,7 @@ mod tests {
         );
         let context = commands::Context::new(
             Arc::new(SystemMock::new()),
+            Console::new(Arc::new(SystemMock::new())),
             env,
             Box::new(InstanceStoreMock::new(Vec::new())),
         );
@@ -122,7 +125,7 @@ mod tests {
                 kill: false,
                 instances: Vec::new().into(),
             }
-            .run(console, &context)
+            .run(&context)
             .await,
             Err(Error::MissingInstanceName)
         ));
@@ -130,8 +133,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_allow_empty_instance_list_with_all() {
-        let system = SystemMock::new();
-        let console = &Console::new(Arc::new(system));
         let env = Environment::new(
             UserName::from_str("myuser").unwrap(),
             String::new(),
@@ -139,6 +140,7 @@ mod tests {
         );
         let context = commands::Context::new(
             Arc::new(SystemMock::new()),
+            Console::new(Arc::new(SystemMock::new())),
             env,
             Box::new(InstanceStoreMock::new(Vec::new())),
         );
@@ -150,7 +152,7 @@ mod tests {
                 kill: false,
                 instances: Vec::new().into(),
             }
-            .run(console, &context)
+            .run(&context)
             .await
             .is_ok()
         );

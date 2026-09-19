@@ -6,6 +6,7 @@ mod progress_bar;
 mod spinner;
 mod table_view;
 mod transfer_view;
+mod verbosity;
 
 pub use async_transfer_view::*;
 pub use confirm_dialog::*;
@@ -15,3 +16,4 @@ pub use progress_bar::*;
 pub use spinner::*;
 pub use table_view::*;
 pub use transfer_view::*;
+pub use verbosity::*;
