@@ -73,6 +73,7 @@ first_boot = false
                     name: "test".to_string(),
                     arch: Arch::AMD64,
                     user: UserName::from_str("tux").unwrap(),
+                    os: Some("debian:12".to_string()),
                     cpus: 1,
                     mem: DataSize::new(1000),
                     disk_capacity: DataSize::new(1000),
@@ -93,6 +94,7 @@ first_boot = false
             config,
             r#"arch = "AMD64"
 user = "tux"
+os = "debian:12"
 cpus = 1
 mem = 1000
 disk_capacity = 1000

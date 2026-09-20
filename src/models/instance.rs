@@ -9,6 +9,9 @@ pub struct Instance {
     pub arch: Arch,
     #[serde(default)]
     pub user: UserName,
+    /// Guest OS, seeded from the image the instance was created from
+    #[serde(default)]
+    pub os: Option<String>,
     pub cpus: u16,
     pub mem: DataSize,
     #[serde(skip)]

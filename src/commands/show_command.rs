@@ -12,6 +12,7 @@ use clap::Parser;
 ///
 ///   Show information of a VM instance
 ///   $ cubic show trixie
+///   OS:         debian:13
 ///   Running:    yes
 ///   Arch:       amd64
 ///   vCPUs:      6

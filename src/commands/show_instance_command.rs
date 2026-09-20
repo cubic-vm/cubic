@@ -29,6 +29,9 @@ impl Command for ShowInstanceCommand {
         let ssh_key = env.get_ssh_private_key_file(&instance.name);
 
         let mut view = MapView::new();
+        if let Some(os) = &instance.os {
+            view.add("OS", os);
+        }
         view.add(
             "Running",
             util::to_yes_no(instance_store.is_running(&instance)),
@@ -115,6 +118,7 @@ mod tests {
             cpus: 1,
             mem: DataSize::new(1024),
             disk_capacity: DataSize::new(1048576),
+            os: Some("ubuntu:24.04".to_string()),
             ssh_port: 9000,
             hostfwd: vec!["127.0.0.1:4000:40/tcp".parse().unwrap()],
             ..Instance::default()
@@ -137,6 +141,7 @@ mod tests {
         assert_eq!(
             system.get_output(),
             "\
+OS:         ubuntu:24.04
 Running:    no
 Arch:       amd64
 vCPUs:      1
