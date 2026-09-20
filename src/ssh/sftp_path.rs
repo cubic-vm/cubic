@@ -1,5 +1,6 @@
 use crate::error::{Error, FsOperation, Result};
 use crate::view::{AsyncTransferView, Console, TransferView};
+use russh::{Channel, client};
 use russh_sftp::{self, client::SftpSession};
 use std::cmp::max;
 use std::path::{Path, PathBuf};
@@ -30,6 +31,21 @@ pub struct SftpPath {
 }
 
 impl SftpPath {
+    /// Turns an open channel of a guest into an SFTP session.
+    pub async fn start_session(
+        machine: &str,
+        channel: Channel<client::Msg>,
+    ) -> Result<Rc<SftpSession>> {
+        channel
+            .request_subsystem(true, "sftp")
+            .await
+            .map_err(|error| Error::from_sftp_session(machine, error))?;
+        SftpSession::new(channel.into_stream())
+            .await
+            .map(Rc::new)
+            .map_err(|error| Error::from_sftp_session(machine, error))
+    }
+
     pub fn name(&self) -> Result<String> {
         self.path
             .file_name()

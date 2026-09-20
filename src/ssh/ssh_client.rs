@@ -1,7 +1,7 @@
 use crate::commands::Context;
 use crate::error::Error;
 use crate::models::{Instance, TargetInstancePath};
-use crate::ssh::{HostKeyChecker, KeyCheck, SftpPath, SshKeyGenerator};
+use crate::ssh::{GuestOsReader, HostKeyChecker, KeyCheck, SftpPath, SshKeyGenerator};
 use crate::util;
 use crate::view::{ConfirmDialog, Console};
 use russh::keys::*;
@@ -331,6 +331,15 @@ impl<'a> SshClient<'a> {
             tokio::time::sleep(Duration::from_secs(RETRY_DELAY_SECS)).await;
         };
 
+        if let Ok(channel) = session.channel_open_session().await {
+            GuestOsReader::new(
+                self.context.get_console(),
+                self.context.get_instance_store(),
+            )
+            .refresh(channel, &mut instance)
+            .await;
+        }
+
         session
             .channel_open_session()
             .await
@@ -472,14 +481,8 @@ impl<'a> SshClient<'a> {
         let channel = self
             .open_channel(&instance.name, client_key, user, instance.ssh_port)
             .await?;
-        channel
-            .request_subsystem(true, "sftp")
-            .await
-            .map_err(|error| Error::from_sftp_session(&instance.name, error))?;
-        SftpSession::new(channel.into_stream())
-            .await
-            .map(Rc::new)
-            .map_err(|error| Error::from_sftp_session(&instance.name, error))
+
+        SftpPath::start_session(&instance.name, channel).await
     }
 
     async fn open_target_fs(
