@@ -26,6 +26,10 @@ Fields
      - ``"AMD64"`` or ``"ARM64"``
      - Architecture of the guest. Set when the VM instance is created and never
        changed afterwards.
+   * - ``os``
+     - image name
+     - Guest OS, such as ``debian:13``. Set from the image when the VM instance
+       is created. Instances created by an older Cubic have no value.
    * - ``user``
      - user name
      - User account inside the guest. cloud-init created it on the first boot,

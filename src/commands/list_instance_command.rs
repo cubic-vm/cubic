@@ -10,17 +10,17 @@ use clap::Parser;
 /// Examples:
 ///
 ///   $ cubic instances
-///   Name          Arch    vCPUs   Memory       Disk   Running
-///   noble-arm64   arm64       8   8192 M    4/100 G       yes
-///   trixie        amd64       6     16 G      100 G       yes
-///   fedora        amd64       4   4096 M   10/100 G        no
+///   Name          OS             Arch    vCPUs   Memory       Disk   Running
+///   noble-arm64   ubuntu:24.04   arm64       8   8192 M    4/100 G       yes
+///   trixie        debian:13      amd64       6     16 G      100 G       yes
+///   fedora        fedora:42      amd64       4   4096 M   10/100 G        no
 ///
 ///   Show the process id of each running VM instance:
 ///   $ cubic instances --all
-///   PID    Name          Arch    vCPUs   Memory       Disk   Running
-///          noble-arm64   arm64       8   8192 M    4/100 G       yes
-///   1059   trixie        amd64       6     16 G      100 G       yes
-///          fedora        amd64       4   4096 M   10/100 G        no
+///   PID    Name          OS             Arch    vCPUs   Memory       Disk   Running
+///          noble-arm64   ubuntu:24.04   arm64       8   8192 M    4/100 G       yes
+///   1059   trixie        debian:13      amd64       6     16 G      100 G       yes
+///          fedora        fedora:42      amd64       4   4096 M   10/100 G        no
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
@@ -41,6 +41,7 @@ impl Command for ListInstanceCommand {
         }
         header
             .add("Name", Alignment::Left)
+            .add("OS", Alignment::Left)
             .add("Arch", Alignment::Left)
             .add("vCPUs", Alignment::Right)
             .add("Memory", Alignment::Right)
@@ -70,6 +71,7 @@ impl Command for ListInstanceCommand {
                 None => instance.disk_capacity.to_size(),
             };
             row.add(instance_name, Alignment::Left)
+                .add(instance.os.as_deref().unwrap_or_default(), Alignment::Left)
                 .add(&instance.arch.to_string(), Alignment::Left)
                 .add(&instance.cpus.to_string(), Alignment::Right)
                 .add(&instance.mem.to_size(), Alignment::Right)
@@ -125,6 +127,7 @@ mod tests {
                 mem: DataSize::new(1024),
                 disk_used: Some(DataSize::new(512 * 1024)),
                 disk_capacity: DataSize::new(1048576),
+                os: Some("ubuntu:24.04".to_string()),
                 ssh_port: 9000,
                 hostfwd: Vec::new(),
                 ..Instance::default()
@@ -156,9 +159,9 @@ mod tests {
         assert_eq!(
             system.get_output(),
             "\
-Name    Arch    vCPUs   Memory         Disk   Running
-test    amd64       1   1024 B   512/1024 K        no
-test2   amd64       5      0 B       5000 B        no
+Name    OS             Arch    vCPUs   Memory         Disk   Running
+test    ubuntu:24.04   amd64       1   1024 B   512/1024 K        no
+test2                  amd64       5      0 B       5000 B        no
 "
         );
     }
@@ -176,9 +179,9 @@ test2   amd64       5      0 B       5000 B        no
         assert_eq!(
             system.get_output(),
             "\
-PID   Name    Arch    vCPUs   Memory         Disk   Running
-      test    amd64       1   1024 B   512/1024 K        no
-      test2   amd64       5      0 B       5000 B        no
+PID   Name    OS             Arch    vCPUs   Memory         Disk   Running
+      test    ubuntu:24.04   amd64       1   1024 B   512/1024 K        no
+      test2                  amd64       5      0 B       5000 B        no
 "
         );
     }
@@ -200,9 +203,9 @@ PID   Name    Arch    vCPUs   Memory         Disk   Running
         assert_eq!(
             system.get_output(),
             "\
-PID    Name    Arch    vCPUs   Memory         Disk   Running
-       test    amd64       1   1024 B   512/1024 K        no
-1059   test2   amd64       5      0 B       5000 B       yes
+PID    Name    OS             Arch    vCPUs   Memory         Disk   Running
+       test    ubuntu:24.04   amd64       1   1024 B   512/1024 K        no
+1059   test2                  amd64       5      0 B       5000 B       yes
 "
         );
     }
@@ -226,8 +229,8 @@ PID    Name    Arch    vCPUs   Memory         Disk   Running
         assert_eq!(
             system.get_output(),
             "\
-Name    Arch    vCPUs   Memory     Disk   Running
-test2   amd64       5      0 B   5000 B       yes
+Name    OS   Arch    vCPUs   Memory     Disk   Running
+test2        amd64       5      0 B   5000 B       yes
 "
         );
     }
@@ -244,7 +247,7 @@ test2   amd64       5      0 B   5000 B       yes
 
         assert_eq!(
             system.get_output(),
-            "Name   Arch   vCPUs   Memory   Disk   Running\n"
+            "Name   OS   Arch   vCPUs   Memory   Disk   Running\n"
         );
     }
 }

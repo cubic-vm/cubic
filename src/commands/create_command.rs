@@ -5,7 +5,7 @@ use crate::commands::{
 };
 use crate::error::{Error, Result};
 use crate::models::{
-    Arch, DataSize, Environment, ImageName, Instance, InstanceName, InstanceNameGenerator,
+    DataSize, Environment, Image, ImageName, Instance, InstanceName, InstanceNameGenerator,
     LOW_DISK_SPACE_WARNING, PortForward, ResourceAllocator, Template, UserName,
 };
 use crate::platform::System;
@@ -119,7 +119,7 @@ impl CreateCommand {
         &self,
         template: Option<&Template>,
         env: &Environment,
-        arch: Arch,
+        image: &Image,
         ssh_port: u16,
         default_cpus: u16,
         default_mem: DataSize,
@@ -132,7 +132,8 @@ impl CreateCommand {
         };
 
         Instance {
-            arch,
+            arch: image.arch,
+            os: Some(image.get_image_name()),
             user: self
                 .user
                 .clone()
@@ -214,7 +215,7 @@ impl CreateCommand {
             ..self.build_instance(
                 template.as_ref(),
                 env,
-                image.arch,
+                image,
                 ssh_port,
                 default_cpus,
                 default_mem,
@@ -256,6 +257,7 @@ impl Command for CreateCommand {
 mod tests {
     use super::*;
     use crate::instance::InstanceStoreMock;
+    use crate::models::{Arch, HashAlg};
     use crate::platform::SystemMock;
     use crate::view::Console;
     use std::str::FromStr;
@@ -323,11 +325,25 @@ mod tests {
         CreateCommand::try_parse_from(args).unwrap().build_instance(
             template,
             &build_env(),
-            Arch::AMD64,
+            &build_image(),
             22,
             2,
             DataSize::new(GIB),
         )
+    }
+
+    fn build_image() -> Image {
+        Image {
+            distro: "debian".to_string(),
+            version: "12".to_string(),
+            codename: Some("bookworm".to_string()),
+            tags: Vec::new(),
+            arch: Arch::AMD64,
+            image_url: String::new(),
+            checksum_url: String::new(),
+            hash_alg: HashAlg::Sha512,
+            size: None,
+        }
     }
 
     fn build_template() -> Template {
@@ -403,6 +419,7 @@ run = ["sudo apt update", "sudo apt install vim"]
         let instance = build_instance_from(&["create", "web"], None);
 
         assert_eq!(instance.user.as_str(), "host-user");
+        assert_eq!(instance.os.as_deref(), Some("debian:12"));
         assert_eq!(instance.cpus, 2);
         assert_eq!(instance.mem.get_bytes(), GIB);
         assert_eq!(instance.disk_capacity, DEFAULT_DISK_SIZE);

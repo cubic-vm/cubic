@@ -28,7 +28,7 @@ lists it:
 .. code-block::
 
     $ cubic instances
-    Name    Arch    vCPUs    Memory   Disk Used   Disk Total   Running
+    Name   OS   Arch   vCPUs   Memory   Disk   Running
 
 Cubic deletes the VM instance whenever the session ends, so a dropped connection
 or a crash of the guest cleans up as well.
