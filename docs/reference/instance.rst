@@ -27,9 +27,11 @@ Fields
      - Architecture of the guest. Set when the VM instance is created and never
        changed afterwards.
    * - ``os``
-     - image name
+     - os name
      - Guest OS, such as ``debian:13``. Set from the image when the VM instance
-       is created. Instances created by an older Cubic have no value.
+       is created and refreshed from ``/etc/os-release`` in the guest on every
+       ssh, scp and exec connection. A guest that keeps the file to itself keeps
+       the stored value.
    * - ``user``
      - user name
      - User account inside the guest. cloud-init created it on the first boot,
