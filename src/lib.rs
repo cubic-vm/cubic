@@ -4,6 +4,7 @@ mod commands;
 mod cubic_app;
 mod env;
 mod error;
+mod generate_image_list_app;
 mod image;
 mod instance;
 mod iso9660;
@@ -16,3 +17,4 @@ mod view;
 mod web;
 
 pub use cubic_app::CubicApp;
+pub use generate_image_list_app::GenerateImageListApp;

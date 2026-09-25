@@ -13,6 +13,10 @@ impl ImageProvider for OpenSuseImageProvider {
         "https://download.opensuse.org/repositories/Cloud:/Images:/"
     }
 
+    fn get_content_url(&self) -> &str {
+        "https://downloadcontent.opensuse.org/repositories/Cloud:/Images:/"
+    }
+
     fn find_image_names(&self, content: &str) -> Vec<String> {
         util::find_and_extract(r#">Leap_([0-9]+\.[0-9]+)/<"#, content)
     }

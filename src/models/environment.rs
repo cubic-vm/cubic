@@ -47,6 +47,7 @@ impl Environment {
             .into_owned()
     }
 
+    /// Image list of an older Cubic, removed by `cubic prune`
     pub fn get_image_cache_file(&self) -> String {
         PathBuf::from(&self.cache_dir)
             .join("images.cache")

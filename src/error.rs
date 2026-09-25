@@ -127,6 +127,12 @@ pub enum Error {
     #[error("Verification of image failed")]
     InvalidChecksum,
 
+    #[error("No image found in '{0}'")]
+    NoImageFound(String),
+
+    #[error("Provider '{0}' returned no image. Refusing to write an incomplete image list.")]
+    EmptyImageProvider(String),
+
     // QEMU and system commands
     #[error("{}", format_qemu_not_found_help())]
     QemuNotFound,

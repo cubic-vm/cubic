@@ -25,12 +25,14 @@ pub struct Image {
     pub distro: String,
     pub version: String,
     pub codename: Option<String>,
-    /// Derived when the image list is read, never cached
-    #[serde(skip)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
     pub arch: Arch,
-    pub image_url: String,
-    pub checksum_url: String,
+    pub base_url: String,
+    /// A `*` marks a timestamped name resolved at download time
+    pub image_file: String,
+    /// `{image_file}` stands for the image file name
+    pub checksum_file: String,
     pub hash_alg: HashAlg,
     pub size: Option<u64>,
 }
@@ -41,6 +43,8 @@ impl Image {
     pub const STABLE_TAG: &'static str = "stable";
     /// Version of a rolling release
     pub const ROLLING: &'static str = "rolling";
+    /// Placeholder for the image file name in the checksum file name
+    pub const IMAGE_FILE: &'static str = "{image_file}";
 
     pub fn get_version(&self) -> &str {
         &self.version
@@ -70,6 +74,21 @@ impl Image {
             .cloned()
             .collect::<Vec<_>>()
             .join(", ")
+    }
+
+    pub fn get_image_url(&self) -> String {
+        format!("{}{}", self.base_url, self.image_file)
+    }
+
+    pub fn get_checksum_url(&self) -> String {
+        let checksum_file = self
+            .checksum_file
+            .replace(Self::IMAGE_FILE, &self.image_file);
+        format!("{}{checksum_file}", self.base_url)
+    }
+
+    pub fn has_image_file_pattern(&self) -> bool {
+        self.image_file.contains('*')
     }
 
     pub fn to_name(&self) -> String {
@@ -119,8 +138,9 @@ mod tests {
             codename: codename.map(str::to_string),
             tags: Vec::new(),
             arch: Arch::AMD64,
-            image_url: String::new(),
-            checksum_url: String::new(),
+            base_url: String::new(),
+            image_file: String::new(),
+            checksum_file: String::new(),
             hash_alg: HashAlg::Sha512,
             size: None,
         }

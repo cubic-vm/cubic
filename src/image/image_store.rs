@@ -37,8 +37,9 @@ mod tests {
             codename: Some("bookworm".to_string()),
             tags: Vec::new(),
             arch,
-            image_url: String::new(),
-            checksum_url: String::new(),
+            base_url: String::new(),
+            image_file: String::new(),
+            checksum_file: String::new(),
             hash_alg: HashAlg::Sha512,
             size: None,
         }
