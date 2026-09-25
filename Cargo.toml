@@ -11,6 +11,7 @@ keywords = ["cli", "vm", "qemu", "virtual-machine", "cloud-init"]
 categories = ["command-line-utilities"]
 edition = "2024"
 rust-version = "1.92"
+default-run = "cubic"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

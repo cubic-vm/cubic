@@ -1,6 +1,6 @@
-use crate::commands::{self, Command, image::fetch_image_info};
+use crate::commands::{self, Command};
 use crate::error::Result;
-use crate::image::ImageStore;
+use crate::image::{ImageFactory, ImageStore};
 use crate::models::{DataSize, ImageName};
 use crate::util;
 use crate::view::MapView;
@@ -19,7 +19,7 @@ pub struct ShowImageCommand {
 impl Command for ShowImageCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let env = context.get_env();
-        let image = fetch_image_info(context, &self.name).await?;
+        let image = ImageFactory::find_image(&self.name)?;
 
         let mut view = MapView::new();
         view.add("Name", &image.get_image_name());
@@ -39,8 +39,8 @@ impl Command for ShowImageCommand {
                 "Image File",
                 &format!("{}/{}", env.get_image_dir(), image.to_file_name()),
             );
-            view.add("Image URL", &image.image_url);
-            view.add("Checksum URL", &image.checksum_url);
+            view.add("Image URL", &image.get_image_url());
+            view.add("Checksum URL", &image.get_checksum_url());
         }
 
         view.print(context.get_console());

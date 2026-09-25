@@ -1,9 +1,7 @@
 use crate::actions::CreateInstanceAction;
-use crate::commands::{
-    Command, Context,
-    image::{fetch_image, fetch_image_info},
-};
+use crate::commands::{Command, Context};
 use crate::error::{Error, Result};
+use crate::image::{ImageFactory, ImageFetcher};
 use crate::models::{
     DataSize, Environment, Image, ImageName, Instance, InstanceName, InstanceNameGenerator,
     LOW_DISK_SPACE_WARNING, PortForward, ResourceAllocator, Template, UserName,
@@ -200,8 +198,8 @@ impl CreateCommand {
         let image_name = self.resolve_image(template.as_ref())?;
 
         // Fetch image
-        let image = &fetch_image_info(context, &image_name).await?;
-        fetch_image(context, image).await?;
+        let image = &ImageFactory::find_image(&image_name)?;
+        ImageFetcher::new().fetch(context, image).await?;
 
         let text = format!("Creating {name}");
         let _spinner = Spinner::new(Arc::clone(console), text);
@@ -339,8 +337,9 @@ mod tests {
             codename: Some("bookworm".to_string()),
             tags: Vec::new(),
             arch: Arch::AMD64,
-            image_url: String::new(),
-            checksum_url: String::new(),
+            base_url: String::new(),
+            image_file: String::new(),
+            checksum_file: String::new(),
             hash_alg: HashAlg::Sha512,
             size: None,
         }

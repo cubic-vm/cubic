@@ -1,5 +1,6 @@
 use crate::image::ImageProvider;
 use crate::models::{Arch, HashAlg, Image};
+use crate::util;
 
 pub struct GentooImageProvider {}
 
@@ -25,9 +26,14 @@ impl ImageProvider for GentooImageProvider {
         Image::ROLLING.to_string()
     }
 
+    fn get_image_file_glob(&self, arch: Arch) -> Option<String> {
+        Some(format!("di-{}-cloudinit-*.qcow2", arch.as_vendor_str()))
+    }
+
     fn get_image_file_pattern(&self, _name: &str, arch: Arch) -> String {
-        let arch_name = arch.as_vendor_str();
-        format!("di-{arch_name}-cloudinit-[A-Za-z0-9]+.qcow2")
+        self.get_image_file_glob(arch)
+            .map(|glob| util::convert_glob_to_regex(&glob))
+            .unwrap_or_default()
     }
 
     fn get_checksum_file(&self, image_file: &str, _name: &str, _arch: Arch) -> String {

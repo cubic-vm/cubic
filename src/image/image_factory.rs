@@ -1,11 +1,9 @@
 use crate::error::{Error, Result};
-use crate::image::{self, ImageCache};
-use crate::models::{Arch, Environment, Image, ImageName};
-use crate::platform::System;
+use crate::image::{self, ImageList};
+use crate::models::{Arch, Image, ImageName};
 use crate::util;
 use crate::view::Console;
 use crate::web::WebClient;
-use std::path::Path;
 use std::sync::Arc;
 
 const IMAGE_PROVIDERS: &[&dyn image::ImageProvider] = &[
@@ -19,29 +17,9 @@ const IMAGE_PROVIDERS: &[&dyn image::ImageProvider] = &[
     &image::UbuntuImageProvider {},
 ];
 
-pub struct ImageFactory<'a> {
-    env: Environment,
-    system: &'a dyn System,
-}
+pub struct ImageFactory;
 
-impl<'a> ImageFactory<'a> {
-    pub fn new(system: &'a dyn System, env: &Environment) -> Self {
-        Self {
-            env: env.clone(),
-            system,
-        }
-    }
-
-    fn filter_arch(filter: Option<ImageName>) -> Vec<Arch> {
-        let mut arches = vec![Arch::AMD64, Arch::ARM64];
-
-        if let Some(filter) = filter {
-            arches.retain(|a| filter.get_arch() == *a);
-        }
-
-        arches
-    }
-
+impl ImageFactory {
     async fn get_images_from_provider_name_arch(
         console: &Arc<Console>,
         web: &mut WebClient,
@@ -49,11 +27,10 @@ impl<'a> ImageFactory<'a> {
         name: &str,
         arch: Arch,
     ) -> Option<Image> {
-        let image_dir_url = format!(
-            "{}{}",
-            image_provider.get_base_url(),
-            &image_provider.get_image_dir_path(name, arch)
-        );
+        let image_dir_path = image_provider.get_image_dir_path(name, arch);
+        let image_dir_url = format!("{}{image_dir_path}", image_provider.get_base_url());
+        // The content URL serves the image and its checksum from one host
+        let content_dir_url = format!("{}{image_dir_path}", image_provider.get_content_url());
         console.debug(&format!(
             "Fetching image directory listing '{image_dir_url}'"
         ));
@@ -77,8 +54,18 @@ impl<'a> ImageFactory<'a> {
         let image_file = image_file.first();
 
         if let Some(image_file) = image_file {
-            let image_url = format!("{image_dir_url}{image_file}");
-            web.get_file_size(&image_url)
+            // A timestamped file name is stored as a glob
+            let (stored_file, checksum_file) = match image_provider.get_image_file_glob(arch) {
+                Some(glob) => (
+                    glob,
+                    image_provider.get_checksum_file(Image::IMAGE_FILE, name, arch),
+                ),
+                None => (
+                    image_file.clone(),
+                    image_provider.get_checksum_file(image_file, name, arch),
+                ),
+            };
+            web.get_file_size(&format!("{content_dir_url}{image_file}"))
                 .await
                 .ok()
                 .and_then(|size| size)
@@ -88,11 +75,9 @@ impl<'a> ImageFactory<'a> {
                     codename: image_provider.get_codename(name),
                     tags: Vec::new(),
                     arch,
-                    image_url,
-                    checksum_url: format!(
-                        "{image_dir_url}{}",
-                        image_provider.get_checksum_file(image_file, name, arch)
-                    ),
+                    base_url: content_dir_url,
+                    image_file: stored_file,
+                    checksum_file,
                     hash_alg: image_provider.get_checksum_alg(),
                     size: Some(size),
                 })
@@ -101,9 +86,7 @@ impl<'a> ImageFactory<'a> {
         }
     }
 
-    /// Derive the stable and latest tag of every distro and arch. Tags follow
-    /// from the version list, so they are never stored and never go stale.
-    fn tag_images(mut images: Vec<Image>) -> Vec<Image> {
+    pub fn tag_images(mut images: Vec<Image>) -> Vec<Image> {
         images.sort();
 
         for image_provider in IMAGE_PROVIDERS {
@@ -137,7 +120,6 @@ impl<'a> ImageFactory<'a> {
         console: &Arc<Console>,
         web: &mut WebClient,
         image_provider: &dyn image::ImageProvider,
-        filter: Option<ImageName>,
     ) -> Vec<Image> {
         let Ok(content) = web.download_content(image_provider.get_base_url()).await else {
             return Vec::new();
@@ -145,7 +127,7 @@ impl<'a> ImageFactory<'a> {
 
         let mut images = Vec::new();
         for name in image_provider.find_image_names(&content) {
-            for arch in Self::filter_arch(filter.clone()) {
+            for arch in [Arch::AMD64, Arch::ARM64] {
                 if let Some(image) = Self::get_images_from_provider_name_arch(
                     console,
                     web,
@@ -162,20 +144,31 @@ impl<'a> ImageFactory<'a> {
         images
     }
 
-    async fn get_images(
-        console: &Arc<Console>,
-        web: &mut WebClient,
-        filter: Option<ImageName>,
-    ) -> Vec<Image> {
+    pub async fn get_images(console: &Arc<Console>) -> Result<Vec<Image>> {
+        let mut web = WebClient::new()?;
         let mut images = Vec::new();
-        for provider in IMAGE_PROVIDERS {
-            if filter.is_none() || filter.as_ref().unwrap().get_distro() == provider.get_distro() {
-                images.extend(
-                    Self::get_images_from_provider(console, web, *provider, filter.clone()).await,
-                );
+
+        for image_provider in IMAGE_PROVIDERS {
+            let found = Self::get_images_from_provider(console, &mut web, *image_provider).await;
+
+            // An empty mirror would drop a whole distribution
+            if found.is_empty() {
+                return Err(Error::EmptyImageProvider(
+                    image_provider.get_distro().to_string(),
+                ));
             }
+
+            images.extend(found);
         }
-        images
+
+        Ok(Self::tag_images(images))
+    }
+
+    pub fn serialize(images: &[Image]) -> Result<String> {
+        toml::to_string(&ImageList {
+            images: images.to_vec(),
+        })
+        .map_err(Error::from)
     }
 
     fn find_matching_image(images: &[Image], filter: &ImageName) -> Option<Image> {
@@ -189,65 +182,13 @@ impl<'a> ImageFactory<'a> {
             .cloned()
     }
 
-    async fn read_images(
-        &self,
-        console: &Arc<Console>,
-        filter: Option<ImageName>,
-    ) -> Result<Vec<Image>> {
-        // Read cache
-        let cache =
-            ImageCache::read_from_file(self.system, Path::new(&self.env.get_image_cache_file()));
-
-        // Use cache if valid
-        let images = if let Some(cache) = &cache
-            && cache.is_valid()
-        {
-            console.debug("Using cached image list");
-            cache.images.clone()
-        } else {
-            // Fetch image info
-            console.debug("Image cache missing or stale, fetching image list from providers");
-            let images = Self::get_images(console, &mut WebClient::new()?, filter.clone()).await;
-
-            // Return cache if fetching failed
-            if images.is_empty()
-                && let Some(cache) = &cache
-            {
-                console.debug("Fetching image list failed, falling back to stale cache");
-                cache.images.clone()
-            } else {
-                // Write cache
-                if filter.is_none() {
-                    ImageCache::new(images.clone())
-                        .write_to_file(self.system, Path::new(&self.env.get_image_cache_file()));
-                }
-                images
-            }
-        };
-
-        let images = Self::tag_images(images);
-
-        Ok(match &filter {
-            Some(name) => Self::find_matching_image(&images, name)
-                .into_iter()
-                .collect(),
-            None => images,
-        })
+    pub fn get_all_images() -> Vec<Image> {
+        ImageList::read().to_vec()
     }
 
-    pub async fn get_all_images(&self, console: &Arc<Console>) -> Result<Vec<Image>> {
-        self.read_images(console, None).await
-    }
-
-    pub async fn find_image(&self, console: &Arc<Console>, name: &ImageName) -> Result<Image> {
-        self.read_images(console, Some(name.clone()))
-            .await
-            .and_then(|images| {
-                images
-                    .into_iter()
-                    .next()
-                    .ok_or_else(|| Error::UnknownImage(name.to_string()))
-            })
+    pub fn find_image(name: &ImageName) -> Result<Image> {
+        Self::find_matching_image(ImageList::read(), name)
+            .ok_or_else(|| Error::UnknownImage(name.to_string()))
     }
 }
 
@@ -264,8 +205,9 @@ mod tests {
             codename: codename.map(str::to_string),
             tags: Vec::new(),
             arch,
-            image_url: "image_url".to_string(),
-            checksum_url: "checksum_url".to_string(),
+            base_url: "base_url/".to_string(),
+            image_file: "image_file".to_string(),
+            checksum_file: "checksum_file".to_string(),
             hash_alg: HashAlg::Sha256,
             size: None,
         }
@@ -347,13 +289,12 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_arch_keeps_the_filtered_arch_only() {
-        let filter = ImageName::from_str("debian:bookworm:arm64").unwrap();
+    fn test_find_image_reads_the_baked_list() {
+        let name = ImageName::from_str("ubuntu:stable:amd64").unwrap();
 
-        assert_eq!(
-            ImageFactory::filter_arch(None),
-            vec![Arch::AMD64, Arch::ARM64]
-        );
-        assert_eq!(ImageFactory::filter_arch(Some(filter)), vec![Arch::ARM64]);
+        let image = ImageFactory::find_image(&name).unwrap();
+
+        assert_eq!(image.distro, "ubuntu");
+        assert_eq!(image.arch, Arch::AMD64);
     }
 }

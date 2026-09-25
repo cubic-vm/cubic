@@ -63,6 +63,9 @@ fix: fix-format fix-lint
 build: build-image
 	${DOCKER_CMD} ${IMAGE} cargo build
 
+generate-image-list: build-image
+	${DOCKER_CMD} ${IMAGE} cargo run --bin cubic-generate-image-list -- src/image/images.toml
+
 doc: build-image
 	@${DOCKER_CMD} -it ${IMAGE} ./scripts/generate-page.sh v0.0.0-dev
 	@${DOCKER_CMD} -p 4000:4000 -it ${IMAGE} python3 -m http.server -d target/page 4000

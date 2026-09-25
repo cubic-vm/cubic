@@ -1,6 +1,6 @@
-use crate::commands::{AllImagesArg, Command, Context, fetch_image_list};
+use crate::commands::{AllImagesArg, Command, Context};
 use crate::error::Result;
-use crate::image::ImageStore;
+use crate::image::{ImageFactory, ImageStore};
 use crate::models::{Arch, DataSize};
 use crate::view::{Alignment, TableView};
 use clap::Parser;
@@ -38,7 +38,7 @@ pub struct ListImageCommand {
 
 impl Command for ListImageCommand {
     async fn run(&self, context: &Context) -> Result<u8> {
-        let images = fetch_image_list(context).await;
+        let images = ImageFactory::get_all_images();
 
         let mut view = TableView::new();
         view.add_row()
