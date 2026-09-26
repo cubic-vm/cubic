@@ -81,5 +81,4 @@ Downloaded distribution images are shared by every VM instance that uses them:
      - ``C:\Users\<user>\AppData\Local\Temp\cubic``
 
 The directory holds ``images`` with one file per image, named
-``<distribution>_<release>_<architecture>`` such as ``ubuntu_resolute_amd64``,
-and ``images.cache`` with the image list Cubic downloaded last.
+``<distribution>_<release>_<architecture>`` such as ``ubuntu_resolute_amd64``.

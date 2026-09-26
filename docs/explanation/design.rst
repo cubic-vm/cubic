@@ -32,13 +32,13 @@ Cubic boots the cloud image the distribution publishes and changes nothing in
 it. The guest you get is the one the distribution ships and supports.
 
 This is why Cubic can offer eight distributions without maintaining anything
-inside any of them. A new release shows up because it appears on the mirror of
-the distribution, not because Cubic shipped a new version. Nothing has to be
-rebuilt and nothing goes stale.
+inside any of them. Nothing has to be rebuilt.
 
-Cubic reads the release list of each distribution and derives the ``stable`` and
-``latest`` tags from it, so a name never points at a release Cubic knew about
-once. :ref:`image names` covers the naming.
+Cubic ships with a list of the official images and their ``stable`` and
+``latest`` tags. Maintainers refresh the list before each release, so a new
+Cubic version brings the new distribution releases. Reading the list from the
+binary keeps Cubic fast. It also lets Cubic create a VM instance offline once
+the image is cached. :ref:`image names` covers the naming.
 
 cloud-init Instead of Custom Provisioning
 -----------------------------------------
