@@ -1,4 +1,8 @@
 use regex::Regex;
+use std::cmp::Ordering;
+use std::sync::LazyLock;
+
+static CHUNK_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new("[0-9]+|[^0-9]+").unwrap());
 
 pub fn find_and_extract(regex: &str, input: &str) -> Vec<String> {
     Regex::new(regex)
@@ -12,6 +16,20 @@ pub fn find_and_extract(regex: &str, input: &str) -> Vec<String> {
 /// A `*` matches any characters within one file name
 pub fn convert_glob_to_regex(glob: &str) -> String {
     regex::escape(glob).replace("\\*", "[^\"/]*")
+}
+
+/// Compares digit runs as numbers, so 3.9 sorts before 3.22
+pub fn compare_natural(a: &str, b: &str) -> Ordering {
+    let chunks_a = CHUNK_REGEX.find_iter(a).map(|chunk| chunk.as_str());
+    let chunks_b = CHUNK_REGEX.find_iter(b).map(|chunk| chunk.as_str());
+    chunks_a
+        .zip(chunks_b)
+        .map(|(a, b)| match (a.parse::<u64>(), b.parse::<u64>()) {
+            (Ok(a), Ok(b)) => a.cmp(&b),
+            _ => a.cmp(b),
+        })
+        .find(|ordering| ordering.is_ne())
+        .unwrap_or_else(|| a.cmp(b))
 }
 
 pub fn to_yes_no(condition: bool) -> &'static str {
@@ -47,6 +65,13 @@ mod tests {
         assert!(!regex.is_match("di-amd64-20260920T170055Z.qcow2.asc"));
         assert!(!regex.is_match("di-amd64-20260920T170055Z_qcow2"));
         assert!(!regex.is_match("di-amd64-dir/image.qcow2"));
+    }
+
+    #[test]
+    fn test_compare_natural_compares_digit_runs_as_numbers() {
+        assert_eq!(compare_natural("3.9", "3.22"), Ordering::Less);
+        assert_eq!(compare_natural("3.22.10", "3.22.9"), Ordering::Greater);
+        assert_eq!(compare_natural("3.22", "3.22.1"), Ordering::Less);
     }
 
     #[test]

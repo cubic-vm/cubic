@@ -95,6 +95,10 @@ Distributions
      - versions
      - ``raw.repo.almalinux.org``
      - SHA256
+   * - ``alpine``
+     - versions
+     - ``dl-cdn.alpinelinux.org``
+     - SHA512
    * - ``archlinux``
      - rolling
      - ``geo.mirror.pkgbuild.com``

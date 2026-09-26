@@ -61,6 +61,88 @@ hash_alg = "Sha256"
 size = 442433536
 
 [[images]]
+distro = "alpine"
+version = "3.21"
+arch = "AMD64"
+base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/"
+image_file = "alpine-3.21.8-x86_64-uefi-cloudinit-r0.qcow2"
+checksum_file = "alpine-3.21.8-x86_64-uefi-cloudinit-r0.qcow2.sha512"
+hash_alg = "Sha512"
+size = 179961856
+
+[[images]]
+distro = "alpine"
+version = "3.21"
+arch = "ARM64"
+base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/"
+image_file = "alpine-3.21.8-aarch64-uefi-cloudinit-r0.qcow2"
+checksum_file = "alpine-3.21.8-aarch64-uefi-cloudinit-r0.qcow2.sha512"
+hash_alg = "Sha512"
+size = 208601088
+
+[[images]]
+distro = "alpine"
+version = "3.22"
+arch = "AMD64"
+base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/"
+image_file = "alpine-3.22.6-x86_64-uefi-cloudinit-r0.qcow2"
+checksum_file = "alpine-3.22.6-x86_64-uefi-cloudinit-r0.qcow2.sha512"
+hash_alg = "Sha512"
+size = 188547072
+
+[[images]]
+distro = "alpine"
+version = "3.22"
+arch = "ARM64"
+base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/"
+image_file = "alpine-3.22.6-aarch64-uefi-cloudinit-r0.qcow2"
+checksum_file = "alpine-3.22.6-aarch64-uefi-cloudinit-r0.qcow2.sha512"
+hash_alg = "Sha512"
+size = 209387520
+
+[[images]]
+distro = "alpine"
+version = "3.23"
+arch = "AMD64"
+base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/"
+image_file = "alpine-3.23.6-x86_64-uefi-cloudinit-r0.qcow2"
+checksum_file = "alpine-3.23.6-x86_64-uefi-cloudinit-r0.qcow2.sha512"
+hash_alg = "Sha512"
+size = 199426048
+
+[[images]]
+distro = "alpine"
+version = "3.23"
+arch = "ARM64"
+base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/"
+image_file = "alpine-3.23.6-aarch64-uefi-cloudinit-r0.qcow2"
+checksum_file = "alpine-3.23.6-aarch64-uefi-cloudinit-r0.qcow2.sha512"
+hash_alg = "Sha512"
+size = 248119296
+
+[[images]]
+distro = "alpine"
+version = "3.24"
+tags = ["stable", "latest"]
+arch = "AMD64"
+base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/"
+image_file = "alpine-3.24.2-x86_64-cloudinit-r0.qcow2"
+checksum_file = "alpine-3.24.2-x86_64-cloudinit-r0.qcow2.sha512"
+hash_alg = "Sha512"
+size = 175636480
+
+[[images]]
+distro = "alpine"
+version = "3.24"
+tags = ["stable", "latest"]
+arch = "ARM64"
+base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/"
+image_file = "alpine-3.24.2-aarch64-cloudinit-r0.qcow2"
+checksum_file = "alpine-3.24.2-aarch64-cloudinit-r0.qcow2.sha512"
+hash_alg = "Sha512"
+size = 203161600
+
+[[images]]
 distro = "archlinux"
 version = "rolling"
 tags = ["stable", "latest"]

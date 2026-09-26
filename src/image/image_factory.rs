@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 const IMAGE_PROVIDERS: &[&dyn image::ImageProvider] = &[
     &image::AlmaLinuxImageProvider {},
+    &image::AlpineImageProvider {},
     &image::ArchLinuxImageProvider {},
     &image::DebianImageProvider {},
     &image::FedoraImageProvider {},
@@ -51,7 +52,8 @@ impl ImageFactory {
             ),
             &image_content,
         );
-        let image_file = image_file.first();
+        // A release directory can hold several patch releases
+        let image_file = image_file.iter().max_by(|a, b| util::compare_natural(a, b));
 
         if let Some(image_file) = image_file {
             // A timestamped file name is stored as a glob

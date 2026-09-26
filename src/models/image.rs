@@ -1,4 +1,5 @@
 use crate::models::Arch;
+use crate::util;
 use serde::{Deserialize, Serialize};
 use std::cmp::{Ord, Ordering};
 use std::fmt;
@@ -102,22 +103,9 @@ impl Image {
 
 impl Ord for Image {
     fn cmp(&self, other: &Self) -> Ordering {
-        let mut result = self.distro.cmp(&other.distro);
-
-        if result == Ordering::Equal {
-            let a = self.get_version();
-            let b = other.get_version();
-
-            if let Ok(a) = a.parse::<u32>()
-                && let Ok(b) = b.parse::<u32>()
-            {
-                result = a.cmp(&b);
-            } else {
-                result = a.cmp(b);
-            }
-        }
-
-        result
+        self.distro
+            .cmp(&other.distro)
+            .then_with(|| util::compare_natural(self.get_version(), other.get_version()))
     }
 }
 
