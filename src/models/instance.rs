@@ -46,4 +46,22 @@ impl Instance {
     pub fn has_snapshot(&self, name: &str) -> bool {
         self.snapshots.iter().any(|snapshot| snapshot.name == name)
     }
+
+    pub fn get_shell(&self) -> &str {
+        if self.is_alpine() {
+            "/bin/ash"
+        } else {
+            "/bin/bash"
+        }
+    }
+
+    pub fn get_privilege_tool(&self) -> &str {
+        if self.is_alpine() { "doas" } else { "sudo" }
+    }
+
+    fn is_alpine(&self) -> bool {
+        self.os
+            .as_deref()
+            .is_some_and(|os| os.starts_with("alpine:"))
+    }
 }

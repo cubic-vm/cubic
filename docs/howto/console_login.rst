@@ -6,7 +6,7 @@ Use the Serial Console
 The serial console shows the login prompt of the guest and that prompt accepts
 only a password, so set one now, while SSH still works. A new VM instance has no
 account password at all, and once SSH is broken it is too late to add one.
-:ref:`security` explains why the account starts out locked.
+:ref:`security` explains why the account starts out without a password.
 
 Set a Password
 --------------
@@ -47,5 +47,5 @@ press Enter, then ``~``, then ``.``. The VM instance keeps running.
 Related
 -------
 
-* :ref:`security` covers the SSH key and the locked account password
+* :ref:`security` covers the SSH key and the disabled account password
 * :ref:`qemu not found` helps when a VM instance does not start at all

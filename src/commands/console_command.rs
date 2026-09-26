@@ -49,7 +49,10 @@ impl Command for ConsoleCommand {
 
         let instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
 
-        console.info("Login requires a password. Set one with 'sudo passwd' over cubic ssh.");
+        console.info(&format!(
+            "Login requires a password. Set one with '{} passwd' over cubic ssh.",
+            instance.get_privilege_tool()
+        ));
         console.info("Press Enter, ~, . to exit the console.");
 
         let port = instance

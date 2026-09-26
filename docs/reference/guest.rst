@@ -38,16 +38,21 @@ User Account
      - Your user name on the host, or the one you passed to ``--user``. See
        :ref:`values` for the fallback.
    * - ``lock_passwd``
-     - ``true``. The account has no password, so there is no password to guess
-       and no password login over SSH.
+     - ``false``. The ``hashed_passwd`` below keeps password logins closed.
+   * - ``hashed_passwd``
+     - ``*``. The account has no valid password, so there is no password to
+       guess and no password login over SSH.
    * - ``ssh_authorized_keys``
      - Public key of the VM instance. The private half is ``ssh_client_key`` in
        the instance directory and belongs to this VM instance alone.
    * - ``shell``
-     - ``/bin/bash``
-   * - ``sudo``
-     - ``ALL=(ALL) NOPASSWD:ALL``. The account is a full administrator inside
-       the guest and needs no password, which is why the password is locked.
+     - Login shell of the distribution, such as ``/bin/bash``.
+   * - ``sudo`` or ``doas``
+     - Privilege tool of the distribution. ``sudo`` gets
+       ``ALL=(ALL) NOPASSWD:ALL`` and ``doas`` gets ``permit nopass`` for the
+       account. The account is a
+       full administrator inside the guest and needs no password, which is why
+       it has no password at all.
 
 System Settings
 ---------------
@@ -87,6 +92,6 @@ What Cubic Does Not Configure
 Related
 -------
 
-* :ref:`security` and why the password is locked
+* :ref:`security` and why the account has no password
 * :ref:`forward env vars` into a running guest
 * :ref:`instance file` where the settings of a VM instance live
