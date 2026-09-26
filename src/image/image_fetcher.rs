@@ -24,8 +24,11 @@ impl ImageFetcher {
         client: &mut WebClient,
         image: &Image,
     ) -> Result<Option<String>> {
-        let file_name = image.image_file.as_str();
         let content = client.download_content(&image.get_checksum_url()).await?;
+        Ok(Self::find_checksum(&content, &image.image_file))
+    }
+
+    fn find_checksum(content: &str, file_name: &str) -> Option<String> {
         for line in content.lines() {
             let line = line
                 .replace("*", "")
@@ -45,11 +48,12 @@ impl ImageFetcher {
                 .collect::<Vec<_>>();
 
             if let (&[_], &[hashsum]) = (file_names.as_slice(), hashsums.as_slice()) {
-                return Ok(Some(hashsum.to_string()));
+                return Some(hashsum.to_string());
             }
         }
 
-        Ok(None)
+        let content = content.trim();
+        HEX_REGEX.is_match(content).then(|| content.to_string())
     }
 
     /// The timestamp in the file name sorts in date order
@@ -160,6 +164,14 @@ mod tests {
         };
 
         ImageFetcher::new().fetch(&context, &image).await.unwrap();
+    }
+
+    #[test]
+    fn test_find_checksum_reads_a_bare_hash() {
+        assert_eq!(
+            ImageFetcher::find_checksum("def456\n", "image.qcow2"),
+            Some("def456".to_string())
+        );
     }
 
     #[test]

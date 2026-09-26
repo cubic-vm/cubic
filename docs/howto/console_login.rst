@@ -21,6 +21,8 @@ Connect over SSH and set a password for your own account:
 The command asks for the new password twice. Nothing else is needed, because
 the account already has passwordless sudo.
 
+On Alpine, run ``doas passwd alice`` in place of ``sudo``.
+
 Look Up the User Name
 ---------------------
 
