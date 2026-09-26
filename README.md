@@ -66,7 +66,7 @@ Cubic fits a lot of everyday workflows:
 
 - Runs every VM as a normal user process without a privileged system service
 - Verifies every image against the checksum of the distribution
-- Protects every VM with its own SSH key and a locked password
+- Protects every VM with its own SSH key and a disabled password
 - Encrypts the QEMU control channels with mutual TLS
 
 # 🚀 Quick Start

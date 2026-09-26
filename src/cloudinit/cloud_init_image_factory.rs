@@ -33,8 +33,7 @@ impl CloudInitImageFactory {
 
         // Generate Cloud Init files
         let meta_data = MetaDataFactory.create(&instance.name);
-        let user_data =
-            UserDataFactory.create(&instance.user, &pubkey, instance.execute.as_deref());
+        let user_data = UserDataFactory.create(instance, &pubkey);
 
         // Generate ISO file
         let mut iso_writer = IsoWriter::new();

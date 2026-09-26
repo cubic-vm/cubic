@@ -106,7 +106,7 @@ holding the private key that Cubic stores alongside the virtual machine rather
 than on a password that could be guessed or shared.
 
 A new machine has no account password at all. The user account is created with a
-locked password, so the SSH key is the only way in.
+disabled password, so the SSH key is the only way in.
 
 This shapes how you use the serial console. The console shows the login prompt
 of the guest, and that prompt accepts only a password, so it stays closed until
