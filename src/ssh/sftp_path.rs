@@ -31,6 +31,22 @@ pub struct SftpPath {
 }
 
 impl SftpPath {
+    pub async fn new(sftp: Option<Rc<SftpSession>>, path: PathBuf) -> Result<Self> {
+        let path = match &sftp {
+            _ if path.file_name().is_some() => path,
+            None => fs::canonicalize(&path)
+                .map_err(|e| Error::from_fs(FsOperation::ReadMetadata, &path, e))?,
+            Some(sftp) => {
+                let path = path.to_str().unwrap();
+                sftp.canonicalize(path)
+                    .await
+                    .map(PathBuf::from)
+                    .map_err(|e| Error::from_sftp(FsOperation::ReadMetadata, path, e))?
+            }
+        };
+        Ok(Self { sftp, path })
+    }
+
     /// Turns an open channel of a guest into an SFTP session.
     pub async fn start_session(
         machine: &str,

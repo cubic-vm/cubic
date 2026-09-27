@@ -49,6 +49,9 @@ fn check_target_is_running(context: &commands::Context, target: &TargetPath) -> 
 ///   Upload a file from host to the VM instance 'trixie':
 ///   $ cubic scp ./cubic.tar.gz trixie:~/
 ///
+///   Upload the current directory to the VM instance 'trixie':
+///   $ cubic scp . trixie:~/
+///
 ///   Download a directory from the VM instance 'trixie' to host:
 ///   $ cubic scp trixie:~/Downloads .
 ///
