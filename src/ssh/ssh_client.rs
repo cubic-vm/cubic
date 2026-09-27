@@ -498,10 +498,7 @@ impl<'a> SshClient<'a> {
         } else {
             None
         };
-        Ok(SftpPath {
-            sftp,
-            path: path.to_pathbuf(),
-        })
+        SftpPath::new(sftp, path.to_pathbuf()).await
     }
 
     pub async fn copy(
