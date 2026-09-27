@@ -510,11 +510,12 @@ impl<'a> SshClient<'a> {
         from_key: Option<&str>,
         to: &TargetInstancePath,
         to_key: Option<&str>,
+        name: &str,
     ) -> Result<(), Error> {
         let source = self.open_target_fs(from, from_key).await?;
         let target = self.open_target_fs(to, to_key).await?;
 
-        source.copy(self.context.get_console(), target).await
+        source.copy(self.context.get_console(), target, name).await
     }
 
     pub fn set_private_keys(&mut self, private_keys: Vec<String>) {
