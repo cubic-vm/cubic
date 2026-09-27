@@ -259,7 +259,9 @@ impl SftpPath {
             }
         } else if self.is_dir().await? {
             let target_dir = target.append(&self.name()?);
-            target_dir.create_path().await?;
+            if !target_dir.exists().await? {
+                target_dir.create_path().await?;
+            }
             for entry in self.read_dir().await? {
                 Box::pin(entry.recursive_copy(console, name, total, copied, target_dir.clone()))
                     .await?;
