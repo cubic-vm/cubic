@@ -1,5 +1,5 @@
 use crate::error::{Error, FsOperation, Result};
-use crate::view::{AsyncTransferView, Console, TransferView};
+use crate::view::{AsyncTransferView, Console, Spinner, TransferView};
 use russh::{Channel, client};
 use russh_sftp::{self, client::SftpSession};
 use std::cmp::max;
@@ -88,6 +88,19 @@ impl SftpPath {
         }
     }
 
+    pub async fn get_size(&self) -> Result<usize> {
+        if self.is_file().await? {
+            return self.get_file_size().await;
+        }
+        let mut size = 0;
+        if self.is_dir().await? {
+            for entry in self.read_dir().await? {
+                size += Box::pin(entry.get_size()).await?;
+            }
+        }
+        Ok(size)
+    }
+
     pub async fn is_file(&self) -> Result<bool> {
         match &self.sftp {
             None => Ok(self.path.is_file()),
@@ -150,7 +163,8 @@ impl SftpPath {
         &self,
         console: &Arc<Console>,
         name: &str,
-        size: usize,
+        total: usize,
+        copied: &mut usize,
         content: Box<dyn AsyncRead + Unpin>,
     ) -> Result<()> {
         let name = &format!("{:30}", &name[max(30, name.len()) - 30..name.len()]);
@@ -159,13 +173,14 @@ impl SftpPath {
             Arc::clone(console),
             view,
             std::pin::Pin::new(content),
-            size,
+            total,
         );
+        read.transfered = *copied;
         let result = tokio::io::copy(read, &mut self.create_file().await?)
             .await
             .map(|_| ())
             .map_err(|e| Error::from_fs(FsOperation::WriteFile, &self.path, e));
-        console.clear_animation();
+        *copied = read.transfered;
         result
     }
 
@@ -210,41 +225,58 @@ impl SftpPath {
         }
     }
 
-    pub async fn recursive_copy(&self, console: &Arc<Console>, target: SftpPath) -> Result<()> {
+    pub async fn recursive_copy(
+        &self,
+        console: &Arc<Console>,
+        name: &str,
+        total: usize,
+        copied: &mut usize,
+        target: SftpPath,
+    ) -> Result<()> {
         if self.is_file().await? {
-            let name = &self.path.display().to_string();
-            let size = self.get_file_size().await?;
             let reader = self.open_file().await?;
             if target.exists().await? && target.is_dir().await? {
                 target
                     .append(&self.name()?)
-                    .write_file(console, name, size, reader)
+                    .write_file(console, name, total, copied, reader)
                     .await?;
             } else {
-                target.write_file(console, name, size, reader).await?;
+                target
+                    .write_file(console, name, total, copied, reader)
+                    .await?;
             }
         } else if self.is_dir().await? {
             let target_dir = target.append(&self.name()?);
             target_dir.create_path().await?;
             for entry in self.read_dir().await? {
-                Box::pin(entry.recursive_copy(console, target_dir.clone())).await?;
+                Box::pin(entry.recursive_copy(console, name, total, copied, target_dir.clone()))
+                    .await?;
             }
         }
 
         Ok(())
     }
 
-    pub async fn copy(&self, console: &Arc<Console>, target: SftpPath) -> Result<()> {
+    pub async fn copy(&self, console: &Arc<Console>, target: SftpPath, name: &str) -> Result<()> {
         if !self.exists().await? {
             return Err(Error::InvalidPath(self.path.display().to_string()));
         }
 
+        let total = {
+            let _spinner = Spinner::new(Arc::clone(console), format!("Scanning {name}"));
+            self.get_size().await?
+        };
+        let name = &format!("Copying {name}");
+        let copied = &mut 0;
         if target.exists().await? || self.is_file().await? {
-            self.recursive_copy(console, target).await?;
+            self.recursive_copy(console, name, total, copied, target)
+                .await?;
         } else if self.is_dir().await? {
             target.create_path().await?;
             for entry in self.read_dir().await? {
-                entry.recursive_copy(console, target.clone()).await?;
+                entry
+                    .recursive_copy(console, name, total, copied, target.clone())
+                    .await?;
             }
         }
 

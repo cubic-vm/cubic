@@ -87,7 +87,8 @@ impl Command for ScpCommand {
 
         let mut ssh = SshClient::new(context);
         ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system()));
-        ssh.copy(&from, from_key.as_deref(), &to, to_key.as_deref())
+        let source = self.from.to_string();
+        ssh.copy(&from, from_key.as_deref(), &to, to_key.as_deref(), &source)
             .await?;
         Ok(0)
     }
