@@ -3,10 +3,14 @@ use std::io;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
-use tokio::io::{AsyncRead, ReadBuf};
+use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
+
+pub trait AsyncFile: AsyncRead + AsyncWrite + Unpin {}
+
+impl<T: AsyncRead + AsyncWrite + Unpin> AsyncFile for T {}
 
 pub struct AsyncTransferView {
-    pub read: Pin<Box<dyn AsyncRead + Unpin>>,
+    pub read: Box<dyn AsyncFile>,
     pub size: usize,
     pub transfered: usize,
     pub view: TransferView,
@@ -17,7 +21,7 @@ impl AsyncTransferView {
     pub fn new(
         console: Arc<Console>,
         view: TransferView,
-        read: Pin<Box<dyn AsyncRead + Unpin>>,
+        read: Box<dyn AsyncFile>,
         size: usize,
     ) -> Self {
         Self {
@@ -39,7 +43,7 @@ impl AsyncRead for AsyncTransferView {
         let is_done = self.transfered >= self.size;
 
         let before = buf.filled().len();
-        let result = self.read.as_mut().poll_read(cx, buf);
+        let result = Pin::new(&mut self.read).poll_read(cx, buf);
         let after = buf.filled().len();
         self.transfered += after - before;
         let transfered = self.transfered;

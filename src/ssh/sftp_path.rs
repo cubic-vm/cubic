@@ -1,5 +1,5 @@
 use crate::error::{Error, FsOperation, Result};
-use crate::view::{AsyncTransferView, Console, Spinner, TransferView};
+use crate::view::{AsyncFile, AsyncTransferView, Console, Spinner, TransferView};
 use russh::{Channel, client};
 use russh_sftp::{self, client::SftpSession};
 use std::cmp::max;
@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
 use std::{self, fs};
-use tokio::io::{AsyncRead, AsyncWrite};
+use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 // SFTP always requires forward-slash paths, regardless of the host OS.
 // PathBuf::push/join would insert the compile-target's native separator
@@ -131,16 +131,16 @@ impl SftpPath {
         }
     }
 
-    pub async fn open_file(&self) -> Result<Box<dyn AsyncRead + Unpin>> {
+    pub async fn open_file(&self) -> Result<Box<dyn AsyncFile>> {
         match &self.sftp {
             None => tokio::fs::File::open(self.path.clone())
                 .await
-                .map(|f| Box::new(f) as Box<dyn AsyncRead + Unpin>)
+                .map(|f| Box::new(f) as Box<dyn AsyncFile>)
                 .map_err(|e| Error::from_fs(FsOperation::OpenFile, &self.path, e)),
             Some(sftp) => sftp
                 .open(self.to_str())
                 .await
-                .map(|f| Box::new(f) as Box<dyn AsyncRead + Unpin>)
+                .map(|f| Box::new(f) as Box<dyn AsyncFile>)
                 .map_err(|e| Error::from_sftp(FsOperation::OpenFile, self.to_str(), e)),
         }
     }
@@ -165,23 +165,19 @@ impl SftpPath {
         name: &str,
         total: usize,
         copied: &mut usize,
-        content: Box<dyn AsyncRead + Unpin>,
+        content: Box<dyn AsyncFile>,
     ) -> Result<()> {
         let name = &format!("{:30}", &name[max(30, name.len()) - 30..name.len()]);
         let view = TransferView::new(name);
-        let read = &mut AsyncTransferView::new(
-            Arc::clone(console),
-            view,
-            std::pin::Pin::new(content),
-            total,
-        );
+        let read = &mut AsyncTransferView::new(Arc::clone(console), view, content, total);
         read.transfered = *copied;
-        let result = tokio::io::copy(read, &mut self.create_file().await?)
-            .await
-            .map(|_| ())
-            .map_err(|e| Error::from_fs(FsOperation::WriteFile, &self.path, e));
+        let file = &mut self.create_file().await?;
+        let result = tokio::io::copy(read, file).await;
         *copied = read.transfered;
         result
+            .and(file.shutdown().await)
+            .and(read.read.shutdown().await)
+            .map_err(|e| Error::from_fs(FsOperation::WriteFile, &self.path, e))
     }
 
     pub async fn read_dir(&self) -> Result<Vec<SftpPath>> {
