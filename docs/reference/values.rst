@@ -24,9 +24,9 @@ Names
      - Always written as ``<instance>/<snapshot>``, such as
        ``builder/before-upgrade``.
    * - Guest user
-     - lowercase letters, numbers, underscore and dash
-     - Must start with a lowercase letter or an underscore, which is the usual
-       Linux rule. ``cubic create --user`` rejects a name that breaks the rule.
+     - letters, numbers, underscore and dash
+     - Must start with a letter or an underscore. Cubic turns the name into
+       lowercase, so ``Tux`` becomes ``tux``.
    * - Image
      - see :ref:`image names`
      - Written as ``distro[:name][:arch]``.

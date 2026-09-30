@@ -1,15 +1,8 @@
-use regex::Regex;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{Display, Error, Formatter};
 use std::net::IpAddr;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
-use std::sync::LazyLock;
-
-static QEMU_PORT_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^(\w+)?:([\d.:]+)?:(\d+)-:(\d+)$").unwrap());
-static PORT_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^(([\d.:]+):)?(\d+):(\d+)(/(\w+))?$").unwrap());
 
 const FORMAT_ERROR: &str = "Must comply with format: [host_ip:]host_port:guest_port[/(udp|tcp)] (e.g. -p 8000:80 or -p 127.0.0.1:9000:90/tcp)";
 const QEMU_FORMAT_ERROR: &str = "Must comply with format: [tcp|udp]:[hostaddr]:hostport-[guestaddr]:guestport (e.g. ::8000-:80 or -p tcp:127.0.0.1:9000-:90)";
@@ -102,23 +95,17 @@ impl PortForward {
     }
 
     pub fn from_qemu(value: &str) -> Result<Self, String> {
-        let caps: Vec<_> = QEMU_PORT_REGEX
-            .captures(value)
-            .ok_or_else(|| QEMU_FORMAT_ERROR.to_string())?
-            .iter()
-            .collect();
+        let (host, guest_port) = value.split_once("-:").ok_or(QEMU_FORMAT_ERROR)?;
+        let (protocol, host) = host.split_once(':').ok_or(QEMU_FORMAT_ERROR)?;
+        let (host_ip, host_port) = host.rsplit_once(':').ok_or(QEMU_FORMAT_ERROR)?;
 
-        if let &[_, protocol, host_ip, Some(host_port), Some(guest_port)] = caps.as_slice() {
-            Self::from_value(
-                protocol.map(|p| p.as_str()),
-                host_ip.map(|ip| ip.as_str()),
-                host_port.as_str(),
-                guest_port.as_str(),
-            )
-            .map_err(|_| QEMU_FORMAT_ERROR.to_string())
-        } else {
-            Err(QEMU_FORMAT_ERROR.to_string())
-        }
+        Self::from_value(
+            Some(protocol).filter(|protocol| !protocol.is_empty()),
+            Some(host_ip).filter(|host_ip| !host_ip.is_empty()),
+            host_port,
+            guest_port,
+        )
+        .map_err(|_| QEMU_FORMAT_ERROR.to_string())
     }
 
     pub fn to_qemu(&self) -> String {
@@ -143,32 +130,18 @@ impl FromStr for PortForward {
     type Err = String;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let caps: Vec<_> = PORT_REGEX
-            .captures(value)
-            .ok_or_else(|| FORMAT_ERROR.to_string())?
-            .iter()
-            .collect();
+        let (address, protocol) = match value.split_once('/') {
+            Some((address, protocol)) => (address, Some(protocol)),
+            None => (value, None),
+        };
+        let (host, guest_port) = address.rsplit_once(':').ok_or(FORMAT_ERROR)?;
+        let (host_ip, host_port) = match host.rsplit_once(':') {
+            Some((host_ip, host_port)) => (Some(host_ip), host_port),
+            None => (None, host),
+        };
 
-        if let &[
-            _,
-            _,
-            host_ip,
-            Some(host_port),
-            Some(guest_port),
-            _,
-            protocol,
-        ] = caps.as_slice()
-        {
-            Self::from_value(
-                protocol.map(|p| p.as_str()),
-                host_ip.map(|ip| ip.as_str()),
-                host_port.as_str(),
-                guest_port.as_str(),
-            )
+        Self::from_value(protocol, host_ip, host_port, guest_port)
             .map_err(|_| FORMAT_ERROR.to_string())
-        } else {
-            Err(FORMAT_ERROR.to_string())
-        }
     }
 }
 
@@ -236,6 +209,7 @@ mod tests {
         assert_eq!(parse("4000:40/tcp"), "127.0.0.1:4000:40/tcp");
         assert_eq!(parse("0.0.0.0:5000:50/udp"), "0.0.0.0:5000:50/udp");
         assert_eq!(parse("192.168.0.1:6000:60/tcp"), "192.168.0.1:6000:60/tcp");
+        assert_eq!(parse("::1:7000:70"), "::1:7000:70/tcp");
     }
 
     #[test]

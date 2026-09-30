@@ -273,7 +273,7 @@ Troubleshoot:
     UnknownArch(String),
 
     #[error(
-        "Invalid username '{0}'.\n\nUsernames must start with a lowercase letter or underscore, followed by lowercase letters, numbers, underlines or dashes"
+        "Invalid username '{0}'.\n\nUsernames must start with a letter or underscore, followed by letters, numbers, underlines or dashes"
     )]
     InvalidUsername(String),
 

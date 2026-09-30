@@ -24,7 +24,7 @@ impl EnvironmentFactory {
     pub fn get_username(system: &dyn System) -> UserName {
         let username =
             Self::read_current_username(system).unwrap_or_else(|| DEFAULT_USERNAME.to_string());
-        if username == ROOT_USERNAME {
+        if username.eq_ignore_ascii_case(ROOT_USERNAME) {
             return UserName::default();
         }
         UserName::from_str(&username).unwrap_or_default()
@@ -111,12 +111,14 @@ mod tests {
 
     #[test]
     fn test_get_username_maps_root_to_default() {
-        let system = SystemMock::new().add_env_var("USER", ROOT_USERNAME);
+        for name in [ROOT_USERNAME, "Root"] {
+            let system = SystemMock::new().add_env_var("USER", name);
 
-        assert_eq!(
-            EnvironmentFactory::get_username(&system).as_str(),
-            DEFAULT_USERNAME
-        );
+            assert_eq!(
+                EnvironmentFactory::get_username(&system).as_str(),
+                DEFAULT_USERNAME
+            );
+        }
     }
 
     #[test]

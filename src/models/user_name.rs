@@ -1,14 +1,10 @@
 use crate::error::Error;
-use regex::Regex;
+use crate::util;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 use std::str::FromStr;
-use std::sync::LazyLock;
 
 pub const DEFAULT_USERNAME: &str = "cubic";
-
-static USER_NAME_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new("^[a-z_][a-z0-9_-]*$").unwrap());
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct UserName {
@@ -18,6 +14,12 @@ pub struct UserName {
 impl UserName {
     pub fn as_str(&self) -> &str {
         self.name.as_str()
+    }
+
+    pub fn to_ascii_lowercase(&self) -> Self {
+        Self {
+            name: self.name.to_ascii_lowercase(),
+        }
     }
 }
 
@@ -33,7 +35,10 @@ impl FromStr for UserName {
     type Err = Error;
 
     fn from_str(name: &str) -> Result<Self, Self::Err> {
-        if USER_NAME_REGEX.is_match(name) {
+        if util::is_name(name)
+            && name.is_ascii()
+            && name.starts_with(|c: char| c.is_alphabetic() || c == '_')
+        {
             Ok(Self {
                 name: name.to_string(),
             })
@@ -83,6 +88,14 @@ mod tests {
     }
 
     #[test]
+    fn test_lower_the_name() {
+        let name = UserName::from_str("Tux").unwrap();
+
+        assert_eq!(name.as_str(), "Tux");
+        assert_eq!(name.to_ascii_lowercase().as_str(), "tux");
+    }
+
+    #[test]
     fn test_reject_an_invalid_name() {
         assert!(UserName::from_str("1tux").is_err());
         assert!(UserName::from_str("-tux").is_err());
@@ -90,7 +103,7 @@ mod tests {
         assert!(UserName::from_str("bad name").is_err());
         assert!(UserName::from_str("tux\nroot").is_err());
         assert!(UserName::from_str("tux\n  - name: root").is_err());
-        assert!(UserName::from_str("Tux").is_err());
+        assert!(UserName::from_str("tuxé").is_err());
     }
 
     #[test]

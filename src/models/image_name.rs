@@ -1,12 +1,7 @@
 use crate::models::{Arch, Image};
-use regex::Regex;
+use crate::util;
 use std::fmt;
 use std::str::FromStr;
-use std::sync::LazyLock;
-
-static IMAGE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new("^(?<distro>[\\w-]+)(:(?<name>[\\w\\.]+))?(:(?<arch>amd64|arm64))?$").unwrap()
-});
 
 #[derive(Clone, Debug)]
 pub struct ImageName {
@@ -33,24 +28,26 @@ impl FromStr for ImageName {
     type Err = String;
 
     fn from_str(name: &str) -> Result<Self, Self::Err> {
-        IMAGE_NAME_REGEX
-            .captures(name)
-            .map(|captures| Self {
-                distro: captures["distro"].to_string(),
-                // A bare distro is a shortcut for the stable release
-                name: captures
-                    .name("name")
-                    .map(|name| name.as_str().to_string())
-                    .unwrap_or(Image::STABLE_TAG.to_string()),
-                arch: captures
-                    .name("arch")
-                    .and_then(|arch| Arch::from_str(arch.as_str()).ok())
-                    .unwrap_or(Arch::get_host()),
+        let mut parts = name.split(':');
+        let distro = parts.next().unwrap_or_default();
+        // A bare distro is a shortcut for the stable release
+        let image_name = parts.next().unwrap_or(Image::STABLE_TAG);
+        let arch = parts.next().map_or(Ok(Arch::get_host()), Arch::from_str);
+
+        if parts.next().is_none()
+            && util::is_name(distro)
+            && image_name.split('.').all(util::is_name)
+            && let Ok(arch) = arch
+        {
+            Ok(Self {
+                distro: distro.to_string(),
+                name: image_name.to_string(),
+                arch,
             })
-            .ok_or_else(|| {
-                "Image name must have the format: distro[:name][:arch] (e.g. debian, debian:bookworm, debian:stable:amd64)"
-                    .to_string()
-            })
+        } else {
+            Err("Image name must have the format: distro[:name][:arch] (e.g. debian, debian:bookworm, debian:stable:amd64)"
+                .to_string())
+        }
     }
 }
 
@@ -95,6 +92,8 @@ mod tests {
     #[test]
     fn test_reject_unknown_arch() {
         assert!(ImageName::from_str("debian:bookworm:mips").is_err());
+        assert!(ImageName::from_str("debian:bookworm:arm64:x").is_err());
+        assert!(ImageName::from_str("debian:").is_err());
     }
 
     #[test]

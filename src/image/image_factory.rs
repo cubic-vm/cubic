@@ -69,6 +69,7 @@ impl ImageFactory {
                 .unwrap_or(false)
                 .then(|| Image {
                     distro: image_provider.get_distro().to_string(),
+                    display_name: image_provider.get_display_name().to_string(),
                     version: image_provider.get_version(image_file, name),
                     codename: image_provider.get_codename(name),
                     tags: Vec::new(),
@@ -192,15 +193,10 @@ impl ImageFactory {
     }
 
     pub fn get_display_name(image: &Image) -> String {
-        let name = IMAGE_PROVIDERS
-            .iter()
-            .find(|provider| provider.get_distro() == image.distro)
-            .map_or(image.distro.as_str(), |provider| {
-                provider.get_display_name()
-            });
+        let name = &image.display_name;
 
         if image.version == Image::ROLLING {
-            name.to_string()
+            name.clone()
         } else {
             format!("{name} {}", image.version)
         }
@@ -216,6 +212,7 @@ mod tests {
     fn build_image(distro: &str, version: &str, codename: Option<&str>, arch: Arch) -> Image {
         Image {
             distro: distro.to_string(),
+            display_name: distro.to_string(),
             version: version.to_string(),
             codename: codename.map(str::to_string),
             tags: Vec::new(),
@@ -300,8 +297,10 @@ mod tests {
 
     #[test]
     fn test_get_display_name_adds_the_version_except_for_a_rolling_release() {
-        let debian = build_image("debian", "13", Some("trixie"), Arch::AMD64);
-        let archlinux = build_image("archlinux", Image::ROLLING, None, Arch::AMD64);
+        let mut debian = build_image("debian", "13", Some("trixie"), Arch::AMD64);
+        debian.display_name = "Debian".to_string();
+        let mut archlinux = build_image("archlinux", Image::ROLLING, None, Arch::AMD64);
+        archlinux.display_name = "Arch Linux".to_string();
 
         assert_eq!(ImageFactory::get_display_name(&debian), "Debian 13");
         assert_eq!(ImageFactory::get_display_name(&archlinux), "Arch Linux");
