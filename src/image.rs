@@ -10,7 +10,7 @@ mod image_fetcher;
 mod image_list;
 mod image_provider;
 mod image_store;
-mod opensuse_image_provider;
+mod opensuse_leap_image_provider;
 mod rockylinux_image_provider;
 mod ubuntu_image_provider;
 
@@ -26,6 +26,6 @@ pub use image_fetcher::*;
 pub use image_list::*;
 pub use image_provider::*;
 pub use image_store::*;
-pub use opensuse_image_provider::*;
+pub use opensuse_leap_image_provider::*;
 pub use rockylinux_image_provider::*;
 pub use ubuntu_image_provider::*;

@@ -330,106 +330,46 @@ hash_alg = "Sha256"
 size = 1187643392
 
 [[images]]
-distro = "opensuse"
-version = "15.2"
-arch = "AMD64"
-base_url = "https://downloadcontent.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/"
-image_file = "openSUSE-Leap-15.2.x86_64-NoCloud.qcow2"
-checksum_file = "openSUSE-Leap-15.2.x86_64-NoCloud.qcow2.sha256"
-hash_alg = "Sha256"
-size = 570556416
-
-[[images]]
-distro = "opensuse"
-version = "15.2"
-arch = "ARM64"
-base_url = "https://downloadcontent.opensuse.org/repositories/Cloud:/Images:/Leap_15.2/images/"
-image_file = "openSUSE-Leap-15.2.aarch64-NoCloud.qcow2"
-checksum_file = "openSUSE-Leap-15.2.aarch64-NoCloud.qcow2.sha256"
-hash_alg = "Sha256"
-size = 545193984
-
-[[images]]
-distro = "opensuse"
-version = "15.3"
-arch = "AMD64"
-base_url = "https://downloadcontent.opensuse.org/repositories/Cloud:/Images:/Leap_15.3/images/"
-image_file = "openSUSE-Leap-15.3.x86_64-NoCloud.qcow2"
-checksum_file = "openSUSE-Leap-15.3.x86_64-NoCloud.qcow2.sha256"
-hash_alg = "Sha256"
-size = 587595776
-
-[[images]]
-distro = "opensuse"
-version = "15.3"
-arch = "ARM64"
-base_url = "https://downloadcontent.opensuse.org/repositories/Cloud:/Images:/Leap_15.3/images/"
-image_file = "openSUSE-Leap-15.3.aarch64-NoCloud.qcow2"
-checksum_file = "openSUSE-Leap-15.3.aarch64-NoCloud.qcow2.sha256"
-hash_alg = "Sha256"
-size = 560005120
-
-[[images]]
-distro = "opensuse"
-version = "15.4"
-arch = "AMD64"
-base_url = "https://downloadcontent.opensuse.org/repositories/Cloud:/Images:/Leap_15.4/images/"
-image_file = "openSUSE-Leap-15.4.x86_64-NoCloud.qcow2"
-checksum_file = "openSUSE-Leap-15.4.x86_64-NoCloud.qcow2.sha256"
-hash_alg = "Sha256"
-size = 716898304
-
-[[images]]
-distro = "opensuse"
-version = "15.4"
-arch = "ARM64"
-base_url = "https://downloadcontent.opensuse.org/repositories/Cloud:/Images:/Leap_15.4/images/"
-image_file = "openSUSE-Leap-15.4.aarch64-NoCloud.qcow2"
-checksum_file = "openSUSE-Leap-15.4.aarch64-NoCloud.qcow2.sha256"
-hash_alg = "Sha256"
-size = 697565184
-
-[[images]]
-distro = "opensuse"
-version = "15.5"
-arch = "AMD64"
-base_url = "https://downloadcontent.opensuse.org/repositories/Cloud:/Images:/Leap_15.5/images/"
-image_file = "openSUSE-Leap-15.5.x86_64-NoCloud.qcow2"
-checksum_file = "openSUSE-Leap-15.5.x86_64-NoCloud.qcow2.sha256"
-hash_alg = "Sha256"
-size = 674365440
-
-[[images]]
-distro = "opensuse"
-version = "15.5"
-arch = "ARM64"
-base_url = "https://downloadcontent.opensuse.org/repositories/Cloud:/Images:/Leap_15.5/images/"
-image_file = "openSUSE-Leap-15.5.aarch64-NoCloud.qcow2"
-checksum_file = "openSUSE-Leap-15.5.aarch64-NoCloud.qcow2.sha256"
-hash_alg = "Sha256"
-size = 647561216
-
-[[images]]
-distro = "opensuse"
+distro = "opensuse-leap"
 version = "15.6"
+arch = "AMD64"
+base_url = "https://downloadcontent.opensuse.org/distribution/leap/15.6/appliances/"
+image_file = "openSUSE-Leap-15.6-Minimal-VM.x86_64-Cloud.qcow2"
+checksum_file = "openSUSE-Leap-15.6-Minimal-VM.x86_64-Cloud.qcow2.sha256"
+hash_alg = "Sha256"
+size = 276980736
+
+[[images]]
+distro = "opensuse-leap"
+version = "15.6"
+arch = "ARM64"
+base_url = "https://downloadcontent.opensuse.org/distribution/leap/15.6/appliances/"
+image_file = "openSUSE-Leap-15.6-Minimal-VM.aarch64-Cloud.qcow2"
+checksum_file = "openSUSE-Leap-15.6-Minimal-VM.aarch64-Cloud.qcow2.sha256"
+hash_alg = "Sha256"
+size = 265008640
+
+[[images]]
+distro = "opensuse-leap"
+version = "16.0"
 tags = ["stable", "latest"]
 arch = "AMD64"
-base_url = "https://downloadcontent.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/"
-image_file = "openSUSE-Leap-15.6.x86_64-NoCloud.qcow2"
-checksum_file = "openSUSE-Leap-15.6.x86_64-NoCloud.qcow2.sha256"
+base_url = "https://downloadcontent.opensuse.org/distribution/leap/16.0/appliances/"
+image_file = "Leap-16.0-Minimal-VM.x86_64-Cloud.qcow2"
+checksum_file = "Leap-16.0-Minimal-VM.x86_64-Cloud.qcow2.sha256"
 hash_alg = "Sha256"
-size = 728367104
+size = 337845760
 
 [[images]]
-distro = "opensuse"
-version = "15.6"
+distro = "opensuse-leap"
+version = "16.0"
 tags = ["stable", "latest"]
 arch = "ARM64"
-base_url = "https://downloadcontent.opensuse.org/repositories/Cloud:/Images:/Leap_15.6/images/"
-image_file = "openSUSE-Leap-15.6.aarch64-NoCloud.qcow2"
-checksum_file = "openSUSE-Leap-15.6.aarch64-NoCloud.qcow2.sha256"
+base_url = "https://downloadcontent.opensuse.org/distribution/leap/16.0/appliances/"
+image_file = "Leap-16.0-Minimal-VM.aarch64-Cloud.qcow2"
+checksum_file = "Leap-16.0-Minimal-VM.aarch64-Cloud.qcow2.sha256"
 hash_alg = "Sha256"
-size = 699203584
+size = 318721536
 
 [[images]]
 distro = "rockylinux"

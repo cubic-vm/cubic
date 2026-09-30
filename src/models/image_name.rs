@@ -5,7 +5,7 @@ use std::str::FromStr;
 use std::sync::LazyLock;
 
 static IMAGE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new("^(?<distro>\\w+)(:(?<name>[\\w\\.]+))?(:(?<arch>amd64|arm64))?$").unwrap()
+    Regex::new("^(?<distro>[\\w-]+)(:(?<name>[\\w\\.]+))?(:(?<arch>amd64|arm64))?$").unwrap()
 });
 
 #[derive(Clone, Debug)]
@@ -73,6 +73,14 @@ mod tests {
 
         let image = ImageName::from_str("debian:bookworm:arm64").unwrap();
         assert_eq!(image.get_name(), "bookworm");
+        assert_eq!(image.get_arch(), Arch::ARM64);
+    }
+
+    #[test]
+    fn test_parse_distro_with_hyphen() {
+        let image = ImageName::from_str("opensuse-leap:16.0:arm64").unwrap();
+        assert_eq!(image.get_distro(), "opensuse-leap");
+        assert_eq!(image.get_name(), "16.0");
         assert_eq!(image.get_arch(), Arch::ARM64);
     }
 
