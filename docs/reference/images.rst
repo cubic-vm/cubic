@@ -103,6 +103,10 @@ Distributions
      - rolling
      - ``geo.mirror.pkgbuild.com``
      - SHA256
+   * - ``centos``
+     - versions
+     - ``cloud.centos.org``
+     - SHA256
    * - ``debian``
      - versions and codenames
      - ``cloud.debian.org``

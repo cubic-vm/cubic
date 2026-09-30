@@ -1,6 +1,7 @@
 mod almalinux_image_provider;
 mod alpine_image_provider;
 mod archlinux_image_provider;
+mod centos_image_provider;
 mod debian_image_provider;
 mod fedora_image_provider;
 mod gentoo_image_provider;
@@ -16,6 +17,7 @@ mod ubuntu_image_provider;
 pub use almalinux_image_provider::*;
 pub use alpine_image_provider::*;
 pub use archlinux_image_provider::*;
+pub use centos_image_provider::*;
 pub use debian_image_provider::*;
 pub use fedora_image_provider::*;
 pub use gentoo_image_provider::*;
