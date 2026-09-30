@@ -24,6 +24,7 @@ impl fmt::Display for HashAlg {
 #[serde(deny_unknown_fields)]
 pub struct Image {
     pub distro: String,
+    pub display_name: String,
     pub version: String,
     pub codename: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -123,6 +124,7 @@ mod tests {
     fn build_image(distro: &str, version: &str, codename: Option<&str>) -> Image {
         Image {
             distro: distro.to_string(),
+            display_name: distro.to_string(),
             version: version.to_string(),
             codename: codename.map(str::to_string),
             tags: Vec::new(),

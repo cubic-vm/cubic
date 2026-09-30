@@ -5,11 +5,8 @@ use crate::models::Image;
 use crate::util;
 use crate::view::{Spinner, TransferView};
 use crate::web::WebClient;
-use regex::Regex;
 use std::path::Path;
-use std::sync::{Arc, LazyLock};
-
-static HEX_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new("^[0-9A-Fa-f]+$").unwrap());
+use std::sync::Arc;
 
 #[derive(Default)]
 pub struct ImageFetcher;
@@ -44,7 +41,7 @@ impl ImageFetcher {
                 .collect::<Vec<_>>();
             let hashsums = tokens
                 .iter()
-                .filter(|i| HEX_REGEX.is_match(i))
+                .filter(|i| util::is_hex(i))
                 .collect::<Vec<_>>();
 
             if let (&[_], &[hashsum]) = (file_names.as_slice(), hashsums.as_slice()) {
@@ -53,7 +50,19 @@ impl ImageFetcher {
         }
 
         let content = content.trim();
-        HEX_REGEX.is_match(content).then(|| content.to_string())
+        util::is_hex(content).then(|| content.to_string())
+    }
+
+    fn find_image_file(listing: &str, glob: &str) -> Option<String> {
+        let (prefix, suffix) = glob.split_once('*')?;
+        listing
+            .split(|c: char| matches!(c, '"' | '\'' | '<' | '>' | '/') || c.is_whitespace())
+            .filter(|word| {
+                word.strip_prefix(prefix)
+                    .is_some_and(|rest| rest.ends_with(suffix))
+            })
+            .max_by(|a, b| util::compare_natural(a, b))
+            .map(str::to_string)
     }
 
     async fn resolve_image(&self, client: &mut WebClient, image: &Image) -> Result<Image> {
@@ -62,8 +71,7 @@ impl ImageFetcher {
         }
 
         let listing = client.download_content(&image.base_url).await?;
-        let pattern = util::convert_glob_to_regex(&image.image_file);
-        let image_file = util::find_newest_file(&pattern, &listing)
+        let image_file = Self::find_image_file(&listing, &image.image_file)
             .ok_or_else(|| Error::NoImageFound(image.base_url.clone()))?;
 
         Ok(Image {
@@ -145,6 +153,7 @@ mod tests {
         );
         let image = Image {
             distro: "debian".to_string(),
+            display_name: "Debian".to_string(),
             version: "12".to_string(),
             codename: Some("bookworm".to_string()),
             tags: Vec::new(),
@@ -164,6 +173,24 @@ mod tests {
         assert_eq!(
             ImageFetcher::find_checksum("def456\n", "image.qcow2"),
             Some("def456".to_string())
+        );
+    }
+
+    #[test]
+    fn test_find_image_file_picks_the_newest_match() {
+        let listing = r#"
+<a href="image-20260630.2.qcow2">
+<a href="./image-20260630.10.qcow2">
+<a href="image-20260630.10.qcow2.sha256">
+<a href="image-20260629.12.qcow2">"#;
+
+        assert_eq!(
+            ImageFetcher::find_image_file(listing, "image-*.qcow2"),
+            Some("image-20260630.10.qcow2".to_string())
+        );
+        assert_eq!(
+            ImageFetcher::find_image_file(listing, "debian-*.qcow2"),
+            None
         );
     }
 }

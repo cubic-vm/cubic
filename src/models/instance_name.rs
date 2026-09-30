@@ -1,9 +1,6 @@
-use regex::Regex;
+use crate::util;
 use std::fmt;
 use std::str::FromStr;
-use std::sync::LazyLock;
-
-static INSTANCE_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new("^[\\w_-]+$").unwrap());
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct InstanceName {
@@ -20,7 +17,7 @@ impl FromStr for InstanceName {
     type Err = String;
 
     fn from_str(name: &str) -> Result<Self, Self::Err> {
-        if INSTANCE_NAME_REGEX.is_match(name) {
+        if util::is_name(name) {
             Ok(Self {
                 name: name.to_string(),
             })

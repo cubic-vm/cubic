@@ -1,5 +1,6 @@
 [[images]]
 distro = "almalinux"
+display_name = "AlmaLinux"
 version = "8"
 arch = "AMD64"
 base_url = "https://raw.repo.almalinux.org/almalinux/8/cloud/x86_64/images/"
@@ -9,6 +10,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "almalinux"
+display_name = "AlmaLinux"
 version = "8"
 arch = "ARM64"
 base_url = "https://raw.repo.almalinux.org/almalinux/8/cloud/aarch64/images/"
@@ -18,6 +20,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "almalinux"
+display_name = "AlmaLinux"
 version = "9"
 arch = "AMD64"
 base_url = "https://raw.repo.almalinux.org/almalinux/9/cloud/x86_64/images/"
@@ -27,6 +30,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "almalinux"
+display_name = "AlmaLinux"
 version = "9"
 arch = "ARM64"
 base_url = "https://raw.repo.almalinux.org/almalinux/9/cloud/aarch64/images/"
@@ -36,6 +40,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "almalinux"
+display_name = "AlmaLinux"
 version = "10"
 tags = ["stable", "latest"]
 arch = "AMD64"
@@ -46,6 +51,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "almalinux"
+display_name = "AlmaLinux"
 version = "10"
 tags = ["stable", "latest"]
 arch = "ARM64"
@@ -56,6 +62,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "alpine"
+display_name = "Alpine Linux"
 version = "3.21"
 arch = "AMD64"
 base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/"
@@ -65,6 +72,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "alpine"
+display_name = "Alpine Linux"
 version = "3.21"
 arch = "ARM64"
 base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/"
@@ -74,6 +82,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "alpine"
+display_name = "Alpine Linux"
 version = "3.22"
 arch = "AMD64"
 base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/"
@@ -83,6 +92,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "alpine"
+display_name = "Alpine Linux"
 version = "3.22"
 arch = "ARM64"
 base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/"
@@ -92,6 +102,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "alpine"
+display_name = "Alpine Linux"
 version = "3.23"
 arch = "AMD64"
 base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/"
@@ -101,6 +112,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "alpine"
+display_name = "Alpine Linux"
 version = "3.23"
 arch = "ARM64"
 base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/"
@@ -110,6 +122,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "alpine"
+display_name = "Alpine Linux"
 version = "3.24"
 tags = ["stable", "latest"]
 arch = "AMD64"
@@ -120,6 +133,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "alpine"
+display_name = "Alpine Linux"
 version = "3.24"
 tags = ["stable", "latest"]
 arch = "ARM64"
@@ -130,6 +144,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "archlinux"
+display_name = "Arch Linux"
 version = "rolling"
 tags = ["stable", "latest"]
 arch = "AMD64"
@@ -140,6 +155,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "centos"
+display_name = "CentOS Stream"
 version = "10"
 tags = ["stable", "latest"]
 arch = "AMD64"
@@ -150,6 +166,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "centos"
+display_name = "CentOS Stream"
 version = "10"
 tags = ["stable", "latest"]
 arch = "ARM64"
@@ -160,6 +177,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "debian"
+display_name = "Debian"
 version = "10"
 codename = "buster"
 arch = "AMD64"
@@ -171,6 +189,7 @@ eol = true
 
 [[images]]
 distro = "debian"
+display_name = "Debian"
 version = "11"
 codename = "bullseye"
 arch = "AMD64"
@@ -181,6 +200,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "debian"
+display_name = "Debian"
 version = "11"
 codename = "bullseye"
 arch = "ARM64"
@@ -191,6 +211,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "debian"
+display_name = "Debian"
 version = "12"
 codename = "bookworm"
 arch = "AMD64"
@@ -201,6 +222,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "debian"
+display_name = "Debian"
 version = "12"
 codename = "bookworm"
 arch = "ARM64"
@@ -211,6 +233,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "debian"
+display_name = "Debian"
 version = "13"
 codename = "trixie"
 tags = ["stable", "latest"]
@@ -222,6 +245,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "debian"
+display_name = "Debian"
 version = "13"
 codename = "trixie"
 tags = ["stable", "latest"]
@@ -233,6 +257,7 @@ hash_alg = "Sha512"
 
 [[images]]
 distro = "fedora"
+display_name = "Fedora"
 version = "43"
 arch = "AMD64"
 base_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/x86_64/images/"
@@ -242,6 +267,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "fedora"
+display_name = "Fedora"
 version = "43"
 arch = "ARM64"
 base_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/aarch64/images/"
@@ -251,6 +277,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "fedora"
+display_name = "Fedora"
 version = "44"
 tags = ["stable", "latest"]
 arch = "AMD64"
@@ -261,6 +288,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "fedora"
+display_name = "Fedora"
 version = "44"
 tags = ["stable", "latest"]
 arch = "ARM64"
@@ -271,6 +299,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "gentoo"
+display_name = "Gentoo"
 version = "rolling"
 tags = ["stable", "latest"]
 arch = "AMD64"
@@ -281,6 +310,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "gentoo"
+display_name = "Gentoo"
 version = "rolling"
 tags = ["stable", "latest"]
 arch = "ARM64"
@@ -291,6 +321,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "opensuse-leap"
+display_name = "openSUSE Leap"
 version = "15.6"
 arch = "AMD64"
 base_url = "https://downloadcontent.opensuse.org/distribution/leap/15.6/appliances/"
@@ -300,6 +331,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "opensuse-leap"
+display_name = "openSUSE Leap"
 version = "15.6"
 arch = "ARM64"
 base_url = "https://downloadcontent.opensuse.org/distribution/leap/15.6/appliances/"
@@ -309,6 +341,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "opensuse-leap"
+display_name = "openSUSE Leap"
 version = "16.0"
 tags = ["stable", "latest"]
 arch = "AMD64"
@@ -319,6 +352,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "opensuse-leap"
+display_name = "openSUSE Leap"
 version = "16.0"
 tags = ["stable", "latest"]
 arch = "ARM64"
@@ -329,6 +363,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "rockylinux"
+display_name = "Rocky Linux"
 version = "8"
 arch = "AMD64"
 base_url = "https://dl.rockylinux.org/pub/rocky/8/images/x86_64/"
@@ -338,6 +373,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "rockylinux"
+display_name = "Rocky Linux"
 version = "8"
 arch = "ARM64"
 base_url = "https://dl.rockylinux.org/pub/rocky/8/images/aarch64/"
@@ -347,6 +383,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "rockylinux"
+display_name = "Rocky Linux"
 version = "9"
 arch = "AMD64"
 base_url = "https://dl.rockylinux.org/pub/rocky/9/images/x86_64/"
@@ -356,6 +393,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "rockylinux"
+display_name = "Rocky Linux"
 version = "9"
 arch = "ARM64"
 base_url = "https://dl.rockylinux.org/pub/rocky/9/images/aarch64/"
@@ -365,6 +403,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "rockylinux"
+display_name = "Rocky Linux"
 version = "10"
 tags = ["stable", "latest"]
 arch = "AMD64"
@@ -375,6 +414,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "rockylinux"
+display_name = "Rocky Linux"
 version = "10"
 tags = ["stable", "latest"]
 arch = "ARM64"
@@ -385,6 +425,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "18.04"
 codename = "bionic"
 arch = "AMD64"
@@ -396,6 +437,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "18.10"
 codename = "cosmic"
 arch = "AMD64"
@@ -407,6 +449,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "19.04"
 codename = "disco"
 arch = "AMD64"
@@ -418,6 +461,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "19.10"
 codename = "eoan"
 arch = "AMD64"
@@ -429,6 +473,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "20.04"
 codename = "focal"
 arch = "AMD64"
@@ -440,6 +485,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "20.10"
 codename = "groovy"
 arch = "AMD64"
@@ -451,6 +497,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "21.04"
 codename = "hirsute"
 arch = "AMD64"
@@ -462,6 +509,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "21.10"
 codename = "impish"
 arch = "AMD64"
@@ -473,6 +521,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "22.04"
 codename = "jammy"
 arch = "AMD64"
@@ -483,6 +532,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "22.10"
 codename = "kinetic"
 arch = "AMD64"
@@ -494,6 +544,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "23.04"
 codename = "lunar"
 arch = "AMD64"
@@ -505,6 +556,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "23.10"
 codename = "mantic"
 arch = "AMD64"
@@ -516,6 +568,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "23.10"
 codename = "mantic"
 arch = "ARM64"
@@ -527,6 +580,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "24.04"
 codename = "noble"
 arch = "AMD64"
@@ -537,6 +591,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "24.04"
 codename = "noble"
 arch = "ARM64"
@@ -547,6 +602,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "24.10"
 codename = "oracular"
 arch = "AMD64"
@@ -558,6 +614,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "24.10"
 codename = "oracular"
 arch = "ARM64"
@@ -569,6 +626,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "25.04"
 codename = "plucky"
 arch = "AMD64"
@@ -580,6 +638,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "25.04"
 codename = "plucky"
 arch = "ARM64"
@@ -591,6 +650,7 @@ eol = true
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "25.10"
 codename = "questing"
 arch = "AMD64"
@@ -601,6 +661,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "25.10"
 codename = "questing"
 arch = "ARM64"
@@ -611,6 +672,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "26.04"
 codename = "resolute"
 tags = ["stable", "latest"]
@@ -622,6 +684,7 @@ hash_alg = "Sha256"
 
 [[images]]
 distro = "ubuntu"
+display_name = "Ubuntu"
 version = "26.04"
 codename = "resolute"
 tags = ["stable", "latest"]

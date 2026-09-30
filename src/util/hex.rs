@@ -6,6 +6,10 @@ pub fn hex_encode(bytes: &[u8]) -> String {
         .join("")
 }
 
+pub fn is_hex(text: &str) -> bool {
+    !text.is_empty() && text.chars().all(|c| c.is_ascii_hexdigit())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

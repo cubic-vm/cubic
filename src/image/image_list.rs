@@ -33,6 +33,7 @@ mod tests {
         assert!(!images.is_empty());
         assert!(images.iter().all(|image| {
             !image.distro.is_empty()
+                && !image.display_name.is_empty()
                 && !image.base_url.is_empty()
                 && !image.image_file.is_empty()
                 && !image.checksum_file.is_empty()

@@ -136,7 +136,8 @@ impl CreateCommand {
                 .user
                 .clone()
                 .or_else(|| template.and_then(|t| t.user.clone()))
-                .unwrap_or_else(|| env.get_username().clone()),
+                .unwrap_or_else(|| env.get_username().clone())
+                .to_ascii_lowercase(),
             cpus: self
                 .cpus
                 .or_else(|| template.and_then(|t| t.cpus))
@@ -333,6 +334,7 @@ mod tests {
     fn build_image() -> Image {
         Image {
             distro: "debian".to_string(),
+            display_name: "Debian".to_string(),
             version: "12".to_string(),
             codename: Some("bookworm".to_string()),
             tags: Vec::new(),

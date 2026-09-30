@@ -1,10 +1,7 @@
 use crate::models::InstanceName;
-use regex::Regex;
+use crate::util;
 use std::fmt;
 use std::str::FromStr;
-use std::sync::LazyLock;
-
-static SNAPSHOT_NAME_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new("^[\\w_-]+$").unwrap());
 
 /// A fully qualified snapshot reference, written as `<instance>/<snapshot>`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -30,7 +27,7 @@ impl FromStr for SnapshotName {
         let (instance, name) = value
             .split_once('/')
             .ok_or("Snapshot must be written as <instance>/<snapshot>")?;
-        if !SNAPSHOT_NAME_REGEX.is_match(name) {
+        if !util::is_name(name) {
             return Err(
                 "Snapshot name must only contain letters, numbers, underlines and dashes"
                     .to_string(),

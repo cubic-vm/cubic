@@ -1,8 +1,5 @@
 use regex::Regex;
 use std::cmp::Ordering;
-use std::sync::LazyLock;
-
-static CHUNK_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new("[0-9]+|[^0-9]+").unwrap());
 
 pub fn find_and_extract(regex: &str, input: &str) -> Vec<String> {
     Regex::new(regex)
@@ -27,16 +24,24 @@ pub fn find_newest_file(pattern: &str, listing: &str) -> Option<String> {
 
 /// Compares digit runs as numbers, so 3.9 sorts before 3.22
 pub fn compare_natural(a: &str, b: &str) -> Ordering {
-    let chunks_a = CHUNK_REGEX.find_iter(a).map(|chunk| chunk.as_str());
-    let chunks_b = CHUNK_REGEX.find_iter(b).map(|chunk| chunk.as_str());
-    chunks_a
-        .zip(chunks_b)
-        .map(|(a, b)| match (a.parse::<u64>(), b.parse::<u64>()) {
-            (Ok(a), Ok(b)) => a.cmp(&b),
+    let is_same_kind = |a: &u8, b: &u8| a.is_ascii_digit() == b.is_ascii_digit();
+    let parse = |chunk: &[u8]| str::from_utf8(chunk).ok()?.parse::<u64>().ok();
+    a.as_bytes()
+        .chunk_by(is_same_kind)
+        .zip(b.as_bytes().chunk_by(is_same_kind))
+        .map(|(a, b)| match (parse(a), parse(b)) {
+            (Some(a), Some(b)) => a.cmp(&b),
             _ => a.cmp(b),
         })
         .find(|ordering| ordering.is_ne())
         .unwrap_or_else(|| a.cmp(b))
+}
+
+pub fn is_name(name: &str) -> bool {
+    !name.is_empty()
+        && name
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
 }
 
 pub fn to_yes_no(condition: bool) -> &'static str {
