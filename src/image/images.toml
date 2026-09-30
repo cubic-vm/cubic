@@ -6,7 +6,6 @@ base_url = "https://raw.repo.almalinux.org/almalinux/8/cloud/x86_64/images/"
 image_file = "AlmaLinux-8-GenericCloud-latest.x86_64.qcow2"
 checksum_file = "CHECKSUM"
 hash_alg = "Sha256"
-size = 1622540288
 
 [[images]]
 distro = "almalinux"
@@ -16,7 +15,6 @@ base_url = "https://raw.repo.almalinux.org/almalinux/8/cloud/aarch64/images/"
 image_file = "AlmaLinux-8-GenericCloud-latest.aarch64.qcow2"
 checksum_file = "CHECKSUM"
 hash_alg = "Sha256"
-size = 1487208448
 
 [[images]]
 distro = "almalinux"
@@ -26,7 +24,6 @@ base_url = "https://raw.repo.almalinux.org/almalinux/9/cloud/x86_64/images/"
 image_file = "AlmaLinux-9-GenericCloud-latest.x86_64.qcow2"
 checksum_file = "CHECKSUM"
 hash_alg = "Sha256"
-size = 589299712
 
 [[images]]
 distro = "almalinux"
@@ -36,7 +33,6 @@ base_url = "https://raw.repo.almalinux.org/almalinux/9/cloud/aarch64/images/"
 image_file = "AlmaLinux-9-GenericCloud-latest.aarch64.qcow2"
 checksum_file = "CHECKSUM"
 hash_alg = "Sha256"
-size = 451543040
 
 [[images]]
 distro = "almalinux"
@@ -47,7 +43,6 @@ base_url = "https://raw.repo.almalinux.org/almalinux/10/cloud/x86_64/images/"
 image_file = "AlmaLinux-10-GenericCloud-latest.x86_64.qcow2"
 checksum_file = "CHECKSUM"
 hash_alg = "Sha256"
-size = 496631808
 
 [[images]]
 distro = "almalinux"
@@ -58,7 +53,6 @@ base_url = "https://raw.repo.almalinux.org/almalinux/10/cloud/aarch64/images/"
 image_file = "AlmaLinux-10-GenericCloud-latest.aarch64.qcow2"
 checksum_file = "CHECKSUM"
 hash_alg = "Sha256"
-size = 442433536
 
 [[images]]
 distro = "alpine"
@@ -68,7 +62,6 @@ base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/"
 image_file = "alpine-3.21.8-x86_64-uefi-cloudinit-r0.qcow2"
 checksum_file = "alpine-3.21.8-x86_64-uefi-cloudinit-r0.qcow2.sha512"
 hash_alg = "Sha512"
-size = 179961856
 
 [[images]]
 distro = "alpine"
@@ -78,7 +71,6 @@ base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.21/releases/cloud/"
 image_file = "alpine-3.21.8-aarch64-uefi-cloudinit-r0.qcow2"
 checksum_file = "alpine-3.21.8-aarch64-uefi-cloudinit-r0.qcow2.sha512"
 hash_alg = "Sha512"
-size = 208601088
 
 [[images]]
 distro = "alpine"
@@ -88,7 +80,6 @@ base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/"
 image_file = "alpine-3.22.6-x86_64-uefi-cloudinit-r0.qcow2"
 checksum_file = "alpine-3.22.6-x86_64-uefi-cloudinit-r0.qcow2.sha512"
 hash_alg = "Sha512"
-size = 188547072
 
 [[images]]
 distro = "alpine"
@@ -98,7 +89,6 @@ base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.22/releases/cloud/"
 image_file = "alpine-3.22.6-aarch64-uefi-cloudinit-r0.qcow2"
 checksum_file = "alpine-3.22.6-aarch64-uefi-cloudinit-r0.qcow2.sha512"
 hash_alg = "Sha512"
-size = 209387520
 
 [[images]]
 distro = "alpine"
@@ -108,7 +98,6 @@ base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/"
 image_file = "alpine-3.23.6-x86_64-uefi-cloudinit-r0.qcow2"
 checksum_file = "alpine-3.23.6-x86_64-uefi-cloudinit-r0.qcow2.sha512"
 hash_alg = "Sha512"
-size = 199426048
 
 [[images]]
 distro = "alpine"
@@ -118,7 +107,6 @@ base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/cloud/"
 image_file = "alpine-3.23.6-aarch64-uefi-cloudinit-r0.qcow2"
 checksum_file = "alpine-3.23.6-aarch64-uefi-cloudinit-r0.qcow2.sha512"
 hash_alg = "Sha512"
-size = 248119296
 
 [[images]]
 distro = "alpine"
@@ -129,7 +117,6 @@ base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/"
 image_file = "alpine-3.24.2-x86_64-cloudinit-r0.qcow2"
 checksum_file = "alpine-3.24.2-x86_64-cloudinit-r0.qcow2.sha512"
 hash_alg = "Sha512"
-size = 175636480
 
 [[images]]
 distro = "alpine"
@@ -140,7 +127,6 @@ base_url = "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/cloud/"
 image_file = "alpine-3.24.2-aarch64-cloudinit-r0.qcow2"
 checksum_file = "alpine-3.24.2-aarch64-cloudinit-r0.qcow2.sha512"
 hash_alg = "Sha512"
-size = 203161600
 
 [[images]]
 distro = "archlinux"
@@ -151,7 +137,6 @@ base_url = "https://geo.mirror.pkgbuild.com/images/latest/"
 image_file = "Arch-Linux-x86_64-cloudimg.qcow2"
 checksum_file = "Arch-Linux-x86_64-cloudimg.qcow2.SHA256"
 hash_alg = "Sha256"
-size = 559367680
 
 [[images]]
 distro = "centos"
@@ -162,7 +147,6 @@ base_url = "https://cloud.centos.org/centos/10-stream/x86_64/images/"
 image_file = "CentOS-Stream-GenericCloud-10-*.x86_64.qcow2"
 checksum_file = "{image_file}.SHA256SUM"
 hash_alg = "Sha256"
-size = 1045037056
 
 [[images]]
 distro = "centos"
@@ -173,7 +157,6 @@ base_url = "https://cloud.centos.org/centos/10-stream/aarch64/images/"
 image_file = "CentOS-Stream-GenericCloud-10-*.aarch64.qcow2"
 checksum_file = "{image_file}.SHA256SUM"
 hash_alg = "Sha256"
-size = 884277248
 
 [[images]]
 distro = "debian"
@@ -184,7 +167,6 @@ base_url = "https://cloud.debian.org/images/cloud/buster/latest/"
 image_file = "debian-10-generic-amd64.qcow2"
 checksum_file = "SHA512SUMS"
 hash_alg = "Sha512"
-size = 316402176
 eol = true
 
 [[images]]
@@ -196,7 +178,6 @@ base_url = "https://cloud.debian.org/images/cloud/buster/latest/"
 image_file = "debian-10-generic-arm64.qcow2"
 checksum_file = "SHA512SUMS"
 hash_alg = "Sha512"
-size = 303853568
 eol = true
 
 [[images]]
@@ -208,7 +189,6 @@ base_url = "https://cloud.debian.org/images/cloud/bullseye/latest/"
 image_file = "debian-11-generic-amd64.qcow2"
 checksum_file = "SHA512SUMS"
 hash_alg = "Sha512"
-size = 365428736
 
 [[images]]
 distro = "debian"
@@ -219,7 +199,6 @@ base_url = "https://cloud.debian.org/images/cloud/bullseye/latest/"
 image_file = "debian-11-generic-arm64.qcow2"
 checksum_file = "SHA512SUMS"
 hash_alg = "Sha512"
-size = 331546624
 
 [[images]]
 distro = "debian"
@@ -230,7 +209,6 @@ base_url = "https://cloud.debian.org/images/cloud/bookworm/latest/"
 image_file = "debian-12-generic-amd64.qcow2"
 checksum_file = "SHA512SUMS"
 hash_alg = "Sha512"
-size = 449314816
 
 [[images]]
 distro = "debian"
@@ -241,7 +219,6 @@ base_url = "https://cloud.debian.org/images/cloud/bookworm/latest/"
 image_file = "debian-12-generic-arm64.qcow2"
 checksum_file = "SHA512SUMS"
 hash_alg = "Sha512"
-size = 435683328
 
 [[images]]
 distro = "debian"
@@ -253,7 +230,6 @@ base_url = "https://cloud.debian.org/images/cloud/trixie/latest/"
 image_file = "debian-13-generic-amd64.qcow2"
 checksum_file = "SHA512SUMS"
 hash_alg = "Sha512"
-size = 433651712
 
 [[images]]
 distro = "debian"
@@ -265,7 +241,6 @@ base_url = "https://cloud.debian.org/images/cloud/trixie/latest/"
 image_file = "debian-13-generic-arm64.qcow2"
 checksum_file = "SHA512SUMS"
 hash_alg = "Sha512"
-size = 431685632
 
 [[images]]
 distro = "fedora"
@@ -275,7 +250,6 @@ base_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/x86_
 image_file = "Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2"
 checksum_file = "Fedora-Cloud-43-1.6-x86_64-CHECKSUM"
 hash_alg = "Sha256"
-size = 583335936
 
 [[images]]
 distro = "fedora"
@@ -285,7 +259,6 @@ base_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/aarc
 image_file = "Fedora-Cloud-Base-Generic-43-1.6.aarch64.qcow2"
 checksum_file = "Fedora-Cloud-43-1.6-aarch64-CHECKSUM"
 hash_alg = "Sha256"
-size = 544997376
 
 [[images]]
 distro = "fedora"
@@ -296,7 +269,6 @@ base_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_
 image_file = "Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2"
 checksum_file = "Fedora-Cloud-44-1.7-x86_64-CHECKSUM"
 hash_alg = "Sha256"
-size = 583729152
 
 [[images]]
 distro = "fedora"
@@ -307,7 +279,6 @@ base_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/aarc
 image_file = "Fedora-Cloud-Base-Generic-44-1.7.aarch64.qcow2"
 checksum_file = "Fedora-Cloud-44-1.7-aarch64-CHECKSUM"
 hash_alg = "Sha256"
-size = 528154624
 
 [[images]]
 distro = "gentoo"
@@ -318,7 +289,6 @@ base_url = "https://distfiles.gentoo.org/releases/amd64/autobuilds/current-di-am
 image_file = "di-amd64-cloudinit-*.qcow2"
 checksum_file = "{image_file}.sha256"
 hash_alg = "Sha256"
-size = 1200160768
 
 [[images]]
 distro = "gentoo"
@@ -329,7 +299,6 @@ base_url = "https://distfiles.gentoo.org/releases/arm64/autobuilds/current-di-ar
 image_file = "di-arm64-cloudinit-*.qcow2"
 checksum_file = "{image_file}.sha256"
 hash_alg = "Sha256"
-size = 1187643392
 
 [[images]]
 distro = "opensuse-leap"
@@ -339,7 +308,6 @@ base_url = "https://downloadcontent.opensuse.org/distribution/leap/15.6/applianc
 image_file = "openSUSE-Leap-15.6-Minimal-VM.x86_64-Cloud.qcow2"
 checksum_file = "openSUSE-Leap-15.6-Minimal-VM.x86_64-Cloud.qcow2.sha256"
 hash_alg = "Sha256"
-size = 276980736
 
 [[images]]
 distro = "opensuse-leap"
@@ -349,7 +317,6 @@ base_url = "https://downloadcontent.opensuse.org/distribution/leap/15.6/applianc
 image_file = "openSUSE-Leap-15.6-Minimal-VM.aarch64-Cloud.qcow2"
 checksum_file = "openSUSE-Leap-15.6-Minimal-VM.aarch64-Cloud.qcow2.sha256"
 hash_alg = "Sha256"
-size = 265008640
 
 [[images]]
 distro = "opensuse-leap"
@@ -360,7 +327,6 @@ base_url = "https://downloadcontent.opensuse.org/distribution/leap/16.0/applianc
 image_file = "Leap-16.0-Minimal-VM.x86_64-Cloud.qcow2"
 checksum_file = "Leap-16.0-Minimal-VM.x86_64-Cloud.qcow2.sha256"
 hash_alg = "Sha256"
-size = 337845760
 
 [[images]]
 distro = "opensuse-leap"
@@ -371,7 +337,6 @@ base_url = "https://downloadcontent.opensuse.org/distribution/leap/16.0/applianc
 image_file = "Leap-16.0-Minimal-VM.aarch64-Cloud.qcow2"
 checksum_file = "Leap-16.0-Minimal-VM.aarch64-Cloud.qcow2.sha256"
 hash_alg = "Sha256"
-size = 318721536
 
 [[images]]
 distro = "rockylinux"
@@ -381,7 +346,6 @@ base_url = "https://dl.rockylinux.org/pub/rocky/8/images/x86_64/"
 image_file = "Rocky-8-GenericCloud-Base.latest.x86_64.qcow2"
 checksum_file = "Rocky-8-GenericCloud-Base.latest.x86_64.qcow2.CHECKSUM"
 hash_alg = "Sha256"
-size = 2065760256
 
 [[images]]
 distro = "rockylinux"
@@ -391,7 +355,6 @@ base_url = "https://dl.rockylinux.org/pub/rocky/8/images/aarch64/"
 image_file = "Rocky-8-GenericCloud-Base.latest.aarch64.qcow2"
 checksum_file = "Rocky-8-GenericCloud-Base.latest.aarch64.qcow2.CHECKSUM"
 hash_alg = "Sha256"
-size = 1925644288
 
 [[images]]
 distro = "rockylinux"
@@ -401,7 +364,6 @@ base_url = "https://dl.rockylinux.org/pub/rocky/9/images/x86_64/"
 image_file = "Rocky-9-GenericCloud-Base.latest.x86_64.qcow2"
 checksum_file = "Rocky-9-GenericCloud-Base.latest.x86_64.qcow2.CHECKSUM"
 hash_alg = "Sha256"
-size = 645988352
 
 [[images]]
 distro = "rockylinux"
@@ -411,7 +373,6 @@ base_url = "https://dl.rockylinux.org/pub/rocky/9/images/aarch64/"
 image_file = "Rocky-9-GenericCloud-Base.latest.aarch64.qcow2"
 checksum_file = "Rocky-9-GenericCloud-Base.latest.aarch64.qcow2.CHECKSUM"
 hash_alg = "Sha256"
-size = 519831552
 
 [[images]]
 distro = "rockylinux"
@@ -422,7 +383,6 @@ base_url = "https://dl.rockylinux.org/pub/rocky/10/images/x86_64/"
 image_file = "Rocky-10-GenericCloud-Base.latest.x86_64.qcow2"
 checksum_file = "Rocky-10-GenericCloud-Base.latest.x86_64.qcow2.CHECKSUM"
 hash_alg = "Sha256"
-size = 544997376
 
 [[images]]
 distro = "rockylinux"
@@ -433,7 +393,6 @@ base_url = "https://dl.rockylinux.org/pub/rocky/10/images/aarch64/"
 image_file = "Rocky-10-GenericCloud-Base.latest.aarch64.qcow2"
 checksum_file = "Rocky-10-GenericCloud-Base.latest.aarch64.qcow2.CHECKSUM"
 hash_alg = "Sha256"
-size = 469368832
 
 [[images]]
 distro = "ubuntu"
@@ -444,7 +403,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/bionic/release/"
 image_file = "ubuntu-18.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 216006656
 eol = true
 
 [[images]]
@@ -456,7 +414,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/cosmic/release/"
 image_file = "ubuntu-18.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 303759360
 eol = true
 
 [[images]]
@@ -468,7 +425,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/disco/release/"
 image_file = "ubuntu-19.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 160759808
 eol = true
 
 [[images]]
@@ -480,7 +436,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/eoan/release/"
 image_file = "ubuntu-19.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 202506240
 eol = true
 
 [[images]]
@@ -492,7 +447,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/focal/release/"
 image_file = "ubuntu-20.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 264175616
 eol = true
 
 [[images]]
@@ -504,7 +458,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/groovy/release/"
 image_file = "ubuntu-20.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 262799360
 eol = true
 
 [[images]]
@@ -516,7 +469,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/hirsute/release/"
 image_file = "ubuntu-21.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 270860288
 eol = true
 
 [[images]]
@@ -528,7 +480,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/impish/release/"
 image_file = "ubuntu-21.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 266731520
 eol = true
 
 [[images]]
@@ -540,7 +491,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/jammy/release/"
 image_file = "ubuntu-22.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 310239744
 
 [[images]]
 distro = "ubuntu"
@@ -551,7 +501,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/kinetic/release/"
 image_file = "ubuntu-22.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 308805632
 eol = true
 
 [[images]]
@@ -563,7 +512,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/lunar/release/"
 image_file = "ubuntu-23.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 352190464
 eol = true
 
 [[images]]
@@ -575,7 +523,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/mantic/release/"
 image_file = "ubuntu-23.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 239140864
 eol = true
 
 [[images]]
@@ -587,7 +534,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/mantic/release/"
 image_file = "ubuntu-23.10-minimal-cloudimg-arm64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 216268800
 eol = true
 
 [[images]]
@@ -599,7 +545,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/noble/release/"
 image_file = "ubuntu-24.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 264372224
 
 [[images]]
 distro = "ubuntu"
@@ -610,7 +555,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/noble/release/"
 image_file = "ubuntu-24.04-minimal-cloudimg-arm64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 229113856
 
 [[images]]
 distro = "ubuntu"
@@ -621,7 +565,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/oracular/release/"
 image_file = "ubuntu-24.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 261685248
 eol = true
 
 [[images]]
@@ -633,7 +576,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/oracular/release/"
 image_file = "ubuntu-24.10-minimal-cloudimg-arm64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 230752256
 eol = true
 
 [[images]]
@@ -645,7 +587,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/plucky/release/"
 image_file = "ubuntu-25.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 273809408
 eol = true
 
 [[images]]
@@ -657,7 +598,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/plucky/release/"
 image_file = "ubuntu-25.04-minimal-cloudimg-arm64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 242352128
 eol = true
 
 [[images]]
@@ -669,7 +609,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/questing/release/"
 image_file = "ubuntu-25.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 413325312
 
 [[images]]
 distro = "ubuntu"
@@ -680,7 +619,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/questing/release/"
 image_file = "ubuntu-25.10-minimal-cloudimg-arm64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 390922240
 
 [[images]]
 distro = "ubuntu"
@@ -692,7 +630,6 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/resolute/release/"
 image_file = "ubuntu-26.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 427574784
 
 [[images]]
 distro = "ubuntu"
@@ -704,4 +641,3 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/resolute/release/"
 image_file = "ubuntu-26.04-minimal-cloudimg-arm64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
-size = 408606720

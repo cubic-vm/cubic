@@ -64,11 +64,10 @@ impl ImageFactory {
                     image_provider.get_checksum_file(image_file, name, arch),
                 ),
             };
-            web.get_file_size(&format!("{content_dir_url}{image_file}"))
+            web.check_file_exists(&format!("{content_dir_url}{image_file}"))
                 .await
-                .ok()
-                .and_then(|size| size)
-                .map(|size| Image {
+                .unwrap_or(false)
+                .then(|| Image {
                     distro: image_provider.get_distro().to_string(),
                     version: image_provider.get_version(image_file, name),
                     codename: image_provider.get_codename(name),
@@ -78,7 +77,6 @@ impl ImageFactory {
                     image_file: stored_file,
                     checksum_file,
                     hash_alg: image_provider.get_checksum_alg(),
-                    size: Some(size),
                     eol: false,
                 })
         } else {
@@ -211,7 +209,6 @@ mod tests {
             image_file: "image_file".to_string(),
             checksum_file: "checksum_file".to_string(),
             hash_alg: HashAlg::Sha256,
-            size: None,
             eol: false,
         }
     }

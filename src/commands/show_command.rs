@@ -42,7 +42,6 @@ use clap::Parser;
 ///   Name:   ubuntu:26.04
 ///   Tags:   resolute, stable, latest
 ///   Arch:   amd64
-///   Size:   408 M
 ///   Cached: yes
 ///
 ///   Show all image information, adding checksum, file path and URLs

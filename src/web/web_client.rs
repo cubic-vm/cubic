@@ -81,7 +81,7 @@ impl WebClient {
         }
     }
 
-    pub async fn get_file_size(&mut self, url: &str) -> Result<Option<u64>> {
+    pub async fn check_file_exists(&mut self, url: &str) -> Result<bool> {
         Ok(self
             .client
             .head(url)
@@ -89,10 +89,8 @@ impl WebClient {
             .send()
             .await
             .map_err(Self::map_error)?
-            .headers()
-            .get("Content-Length")
-            .and_then(|value| value.to_str().ok())
-            .and_then(|value| value.parse().ok()))
+            .status()
+            .is_success())
     }
 
     pub async fn download_file(
