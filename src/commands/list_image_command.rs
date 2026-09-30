@@ -17,7 +17,7 @@ use clap::Parser;
 ///   fedora:43                                      amd64   556 M       no
 ///   fedora:44           stable, latest             amd64   557 M       no
 ///   [...]
-///   ubuntu:25.10        questing                   amd64   394 M       no
+///   ubuntu:24.04        noble                      amd64   252 M       no
 ///   ubuntu:26.04        resolute, stable, latest   amd64   408 M      yes
 ///   [...]
 ///
@@ -28,6 +28,8 @@ use clap::Parser;
 ///   last LTS for Ubuntu and the current stable for Debian. A rolling release
 ///   such as archlinux:rolling has no version and uses the same image for both.
 ///
+///   Releases without security updates are hidden. Use --all to show them
+///   together with the images of other architectures.
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
@@ -49,7 +51,7 @@ impl Command for ListImageCommand {
             .add("Cached", Alignment::Right);
 
         for image in images {
-            if !self.all.value && image.arch != Arch::get_host() {
+            if !self.all.value && (image.arch != Arch::get_host() || image.eol) {
                 continue;
             }
 

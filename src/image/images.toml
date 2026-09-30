@@ -185,6 +185,7 @@ image_file = "debian-10-generic-amd64.qcow2"
 checksum_file = "SHA512SUMS"
 hash_alg = "Sha512"
 size = 316402176
+eol = true
 
 [[images]]
 distro = "debian"
@@ -196,6 +197,7 @@ image_file = "debian-10-generic-arm64.qcow2"
 checksum_file = "SHA512SUMS"
 hash_alg = "Sha512"
 size = 303853568
+eol = true
 
 [[images]]
 distro = "debian"
@@ -443,6 +445,7 @@ image_file = "ubuntu-18.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 216006656
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -454,6 +457,7 @@ image_file = "ubuntu-18.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 303759360
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -465,6 +469,7 @@ image_file = "ubuntu-19.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 160759808
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -476,6 +481,7 @@ image_file = "ubuntu-19.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 202506240
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -487,6 +493,7 @@ image_file = "ubuntu-20.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 264175616
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -498,6 +505,7 @@ image_file = "ubuntu-20.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 262799360
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -509,6 +517,7 @@ image_file = "ubuntu-21.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 270860288
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -520,6 +529,7 @@ image_file = "ubuntu-21.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 266731520
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -542,6 +552,7 @@ image_file = "ubuntu-22.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 308805632
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -553,6 +564,7 @@ image_file = "ubuntu-23.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 352190464
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -564,6 +576,7 @@ image_file = "ubuntu-23.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 239140864
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -575,6 +588,7 @@ image_file = "ubuntu-23.10-minimal-cloudimg-arm64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 216268800
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -608,6 +622,7 @@ image_file = "ubuntu-24.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 261685248
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -619,6 +634,7 @@ image_file = "ubuntu-24.10-minimal-cloudimg-arm64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 230752256
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -630,6 +646,7 @@ image_file = "ubuntu-25.04-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 273809408
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -641,6 +658,7 @@ image_file = "ubuntu-25.04-minimal-cloudimg-arm64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
 size = 242352128
+eol = true
 
 [[images]]
 distro = "ubuntu"

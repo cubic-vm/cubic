@@ -53,6 +53,11 @@ impl ImageProvider for OpenSuseLeapImageProvider {
     fn get_checksum_alg(&self) -> HashAlg {
         HashAlg::Sha256
     }
+
+    /// 2 years of support, a release every year
+    fn find_end_of_life_versions(&self, versions: &[String]) -> Vec<String> {
+        versions[..versions.len().saturating_sub(2)].to_vec()
+    }
 }
 
 #[cfg(test)]

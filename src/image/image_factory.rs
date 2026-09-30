@@ -79,6 +79,7 @@ impl ImageFactory {
                     checksum_file,
                     hash_alg: image_provider.get_checksum_alg(),
                     size: Some(size),
+                    eol: false,
                 })
         } else {
             None
@@ -100,6 +101,7 @@ impl ImageFactory {
                     .collect::<Vec<_>>();
                 let latest = versions.last().cloned();
                 let stable = image_provider.find_stable_version(&versions);
+                let end_of_life = image_provider.find_end_of_life_versions(&versions);
 
                 for image in images.iter_mut().filter(|image| is_in_group(image)) {
                     if stable.as_deref() == Some(image.get_version()) {
@@ -108,6 +110,7 @@ impl ImageFactory {
                     if latest.as_deref() == Some(image.get_version()) {
                         image.tags.push(Image::LATEST_TAG.into());
                     }
+                    image.eol = end_of_life.iter().any(|v| v == image.get_version());
                 }
             }
         }
@@ -209,6 +212,7 @@ mod tests {
             checksum_file: "checksum_file".to_string(),
             hash_alg: HashAlg::Sha256,
             size: None,
+            eol: false,
         }
     }
 
@@ -247,6 +251,23 @@ mod tests {
         assert_eq!(find_tags("24.04", Arch::AMD64), "noble");
         assert_eq!(find_tags("26.04", Arch::AMD64), "resolute, stable, latest");
         assert_eq!(find_tags("24.04", Arch::ARM64), "noble, stable, latest");
+    }
+
+    #[test]
+    fn test_tag_images_marks_old_releases_as_end_of_life() {
+        let images = vec![
+            build_image("debian", "10", Some("buster"), Arch::AMD64),
+            build_image("debian", "11", Some("bullseye"), Arch::AMD64),
+            build_image("debian", "12", Some("bookworm"), Arch::AMD64),
+            build_image("debian", "13", Some("trixie"), Arch::AMD64),
+        ];
+
+        let images = ImageFactory::tag_images(images);
+
+        assert_eq!(
+            images.iter().map(|image| image.eol).collect::<Vec<_>>(),
+            [true, false, false, false]
+        );
     }
 
     #[test]

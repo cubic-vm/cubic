@@ -62,6 +62,20 @@ impl ImageProvider for UbuntuImageProvider {
             .cloned()
             .or_else(|| versions.last().cloned())
     }
+
+    /// 5 years for an LTS, 9 months for an interim, a release every 6 months
+    fn find_end_of_life_versions(&self, versions: &[String]) -> Vec<String> {
+        let (long_term, interim): (Vec<_>, Vec<_>) = versions
+            .iter()
+            .partition(|version| self.is_long_term_version(version));
+        let newest = &versions[versions.len().saturating_sub(2)..];
+
+        long_term[..long_term.len().saturating_sub(3)]
+            .iter()
+            .chain(interim.iter().filter(|version| !newest.contains(version)))
+            .map(|version| version.to_string())
+            .collect()
+    }
 }
 
 #[cfg(test)]
@@ -104,6 +118,19 @@ mod tests {
         assert_eq!(
             provider.find_stable_version(&["25.04", "25.10"].map(String::from)),
             Some("25.10".to_string())
+        );
+    }
+
+    #[test]
+    fn test_find_end_of_life_versions_keeps_three_lts_and_the_newest_interim() {
+        let versions = [
+            "20.04", "22.04", "22.10", "24.04", "25.04", "25.10", "26.04",
+        ]
+        .map(String::from);
+
+        assert_eq!(
+            UbuntuImageProvider {}.find_end_of_life_versions(&versions),
+            ["20.04", "22.10", "25.04"]
         );
     }
 
