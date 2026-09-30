@@ -15,6 +15,10 @@ impl ImageProvider for CentOsImageProvider {
         "centos"
     }
 
+    fn get_display_name(&self) -> &str {
+        "CentOS Stream"
+    }
+
     fn get_base_url(&self) -> &str {
         "https://cloud.centos.org/centos/"
     }

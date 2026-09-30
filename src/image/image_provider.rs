@@ -4,6 +4,8 @@ use crate::util;
 pub trait ImageProvider {
     fn get_distro(&self) -> &str;
 
+    fn get_display_name(&self) -> &str;
+
     fn get_base_url(&self) -> &str;
 
     /// Host that serves the image when the base URL redirects to mirrors

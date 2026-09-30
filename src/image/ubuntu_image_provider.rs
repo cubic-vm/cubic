@@ -18,6 +18,10 @@ impl ImageProvider for UbuntuImageProvider {
         "ubuntu"
     }
 
+    fn get_display_name(&self) -> &str {
+        "Ubuntu"
+    }
+
     fn get_base_url(&self) -> &str {
         "https://cloud-images.ubuntu.com/minimal/releases/"
     }

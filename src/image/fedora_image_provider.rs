@@ -9,6 +9,10 @@ impl ImageProvider for FedoraImageProvider {
         "fedora"
     }
 
+    fn get_display_name(&self) -> &str {
+        "Fedora"
+    }
+
     fn get_base_url(&self) -> &str {
         "https://dl.fedoraproject.org/pub/fedora/linux/releases/"
     }

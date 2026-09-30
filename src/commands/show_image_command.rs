@@ -22,7 +22,8 @@ impl Command for ShowImageCommand {
         let image = ImageFactory::find_image(&self.name)?;
 
         let mut view = MapView::new();
-        view.add("Name", &image.get_image_name());
+        view.add("Name", &ImageFactory::get_display_name(&image));
+        view.add("OS", &image.distro);
         view.add("Tags", &image.get_tags());
         view.add("Arch", &image.arch.to_string());
         view.add(

@@ -8,6 +8,10 @@ impl ImageProvider for GentooImageProvider {
         "gentoo"
     }
 
+    fn get_display_name(&self) -> &str {
+        "Gentoo"
+    }
+
     fn get_base_url(&self) -> &str {
         "https://distfiles.gentoo.org/releases/"
     }
