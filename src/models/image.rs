@@ -36,6 +36,8 @@ pub struct Image {
     pub checksum_file: String,
     pub hash_alg: HashAlg,
     pub size: Option<u64>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub eol: bool,
 }
 
 impl Image {
@@ -131,6 +133,7 @@ mod tests {
             checksum_file: String::new(),
             hash_alg: HashAlg::Sha512,
             size: None,
+            eol: false,
         }
     }
 

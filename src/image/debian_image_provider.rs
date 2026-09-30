@@ -44,6 +44,11 @@ impl ImageProvider for DebianImageProvider {
     fn get_checksum_alg(&self) -> HashAlg {
         HashAlg::Sha512
     }
+
+    /// 5 years of support, a release every 2 years
+    fn find_end_of_life_versions(&self, versions: &[String]) -> Vec<String> {
+        versions[..versions.len().saturating_sub(3)].to_vec()
+    }
 }
 
 #[cfg(test)]

@@ -42,6 +42,7 @@ mod tests {
             checksum_file: String::new(),
             hash_alg: HashAlg::Sha512,
             size: None,
+            eol: false,
         }
     }
 

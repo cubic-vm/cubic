@@ -39,6 +39,11 @@ pub trait ImageProvider {
         None
     }
 
+    /// Releases without security updates, from versions sorted oldest first
+    fn find_end_of_life_versions(&self, _versions: &[String]) -> Vec<String> {
+        Vec::new()
+    }
+
     /// Newest long term release, picked from versions sorted oldest first.
     /// Distributions without long term releases keep the newest version.
     fn find_stable_version(&self, versions: &[String]) -> Option<String> {

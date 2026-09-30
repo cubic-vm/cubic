@@ -46,6 +46,11 @@ impl ImageProvider for AlpineImageProvider {
     fn get_checksum_alg(&self) -> HashAlg {
         HashAlg::Sha512
     }
+
+    /// 2 years of support, a release every 6 months
+    fn find_end_of_life_versions(&self, versions: &[String]) -> Vec<String> {
+        versions[..versions.len().saturating_sub(4)].to_vec()
+    }
 }
 
 #[cfg(test)]
