@@ -28,19 +28,24 @@ use clap::Parser;
 ///   last LTS for Ubuntu and the current stable for Debian. A rolling release
 ///   such as archlinux:rolling has no version and uses the same image for both.
 ///
-///   Releases without security updates are hidden. Use --all to show them
-///   together with the images of other architectures.
+///   Releases without security updates are hidden. Use --all to show them.
+///   Use --arch to list the images of another architecture.
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
 pub struct ListImageCommand {
     #[clap(flatten)]
     all: AllImagesArg,
+
+    /// Show images of this architecture, defaults to the host architecture
+    #[clap(long = "arch", value_name = "amd64|arm64")]
+    arch: Option<Arch>,
 }
 
 impl Command for ListImageCommand {
     async fn run(&self, context: &Context) -> Result<u8> {
         let images = ImageFactory::get_all_images();
+        let arch = self.arch.unwrap_or_else(Arch::get_host);
 
         let mut view = TableView::new();
         view.add_row()
@@ -50,11 +55,10 @@ impl Command for ListImageCommand {
             .add("Size", Alignment::Right)
             .add("Cached", Alignment::Right);
 
-        for image in images {
-            if !self.all.value && (image.arch != Arch::get_host() || image.eol) {
-                continue;
-            }
-
+        for image in images
+            .into_iter()
+            .filter(|image| image.arch == arch && (self.all.value || !image.eol))
+        {
             let size = image
                 .size
                 .map(|size| DataSize::new(size as usize).to_size())
