@@ -47,7 +47,7 @@ Cubic fits a lot of everyday workflows:
 **Runs anywhere**
 
 - Runs on **Linux**, **macOS** and **Windows** hosts
-- Ships **Alma Linux**, **Alpine Linux**, **Arch Linux**, **CentOS Stream**, **Debian**, **Fedora**, **Gentoo**, **OpenSUSE**, **Rocky Linux** and **Ubuntu**
+- Ships **Alma Linux**, **Alpine Linux**, **Arch Linux**, **CentOS Stream**, **Debian**, **Fedora**, **Gentoo**, **openSUSE Leap**, **Rocky Linux** and **Ubuntu**
 - Runs **amd64** and **arm64** guests
 - Accelerates every VM with **KVM** (Linux), **Hypervisor** (macOS) and **WHPX** (Windows)
 

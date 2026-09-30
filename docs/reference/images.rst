@@ -119,7 +119,7 @@ Distributions
      - rolling
      - ``distfiles.gentoo.org``
      - SHA256
-   * - ``opensuse``
+   * - ``opensuse-leap``
      - versions
      - ``download.opensuse.org``
      - SHA256
