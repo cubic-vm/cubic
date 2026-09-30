@@ -10,19 +10,19 @@ use clap::Parser;
 /// Examples:
 ///
 ///   $ cubic images
-///   Name                Tags                       Arch    Cached
-///   archlinux:rolling   stable, latest             amd64       no
-///   debian:12           bookworm                   amd64       no
-///   debian:13           trixie, stable, latest     amd64      yes
-///   fedora:43                                      amd64       no
-///   fedora:44           stable, latest             amd64       no
+///   Name                 OS              Tags                              Arch    Cached
+///   Arch Linux           archlinux       rolling, stable, latest           amd64       no
+///   Debian 12            debian          12, bookworm                      amd64       no
+///   Debian 13            debian          13, trixie, stable, latest        amd64      yes
+///   Fedora 43            fedora          43                                amd64       no
+///   Fedora 44            fedora          44, stable, latest                amd64       no
 ///   [...]
-///   ubuntu:24.04        noble                      amd64       no
-///   ubuntu:26.04        resolute, stable, latest   amd64      yes
+///   Ubuntu 24.04         ubuntu          24.04, noble                      amd64       no
+///   Ubuntu 26.04         ubuntu          26.04, resolute, stable, latest   amd64      yes
 ///   [...]
 ///
-///   Use the name of a row or swap its version for one of its tags, so
-///   ubuntu:26.04, ubuntu:resolute and ubuntu:latest are the same image.
+///   Use the OS to get the stable release, or add a tag to pick another one,
+///   so ubuntu:26.04, ubuntu:resolute and ubuntu:latest are the same image.
 ///   Every distribution carries two extra tags. The tag latest is the newest
 ///   release and the tag stable is the newest long term release, which is the
 ///   last LTS for Ubuntu and the current stable for Debian. A rolling release
@@ -50,6 +50,7 @@ impl Command for ListImageCommand {
         let mut view = TableView::new();
         view.add_row()
             .add("Name", Alignment::Left)
+            .add("OS", Alignment::Left)
             .add("Tags", Alignment::Left)
             .add("Arch", Alignment::Left)
             .add("Cached", Alignment::Right);
@@ -59,7 +60,8 @@ impl Command for ListImageCommand {
             .filter(|image| image.arch == arch && (self.all.value || !image.eol))
         {
             view.add_row()
-                .add(&image.get_image_name(), Alignment::Left)
+                .add(&ImageFactory::get_display_name(&image), Alignment::Left)
+                .add(&image.distro, Alignment::Left)
                 .add(&image.get_tags(), Alignment::Left)
                 .add(&image.arch.to_string(), Alignment::Left)
                 .add(

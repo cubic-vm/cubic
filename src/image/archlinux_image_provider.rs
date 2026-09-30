@@ -8,6 +8,10 @@ impl ImageProvider for ArchLinuxImageProvider {
         "archlinux"
     }
 
+    fn get_display_name(&self) -> &str {
+        "Arch Linux"
+    }
+
     fn get_base_url(&self) -> &str {
         "https://geo.mirror.pkgbuild.com/images/"
     }

@@ -9,6 +9,10 @@ impl ImageProvider for DebianImageProvider {
         "debian"
     }
 
+    fn get_display_name(&self) -> &str {
+        "Debian"
+    }
+
     fn get_base_url(&self) -> &str {
         "https://cloud.debian.org/images/cloud/"
     }

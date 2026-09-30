@@ -68,10 +68,10 @@ impl Image {
         format!("{}:{}", self.distro, self.version)
     }
 
-    /// Other names of this image, ordered codename, stable, latest
+    /// Names of this image, ordered version, codename, stable, latest
     pub fn get_tags(&self) -> String {
-        self.codename
-            .iter()
+        std::iter::once(&self.version)
+            .chain(self.codename.iter())
             .chain(self.tags.iter())
             .cloned()
             .collect::<Vec<_>>()
@@ -148,12 +148,12 @@ mod tests {
     }
 
     #[test]
-    fn test_get_tags_joins_the_codename_and_the_derived_tags() {
+    fn test_get_tags_joins_the_version_codename_and_derived_tags() {
         let mut ubuntu = build_image("ubuntu", "26.04", Some("resolute"));
         ubuntu.tags = vec!["stable".to_string(), "latest".to_string()];
 
-        assert_eq!(ubuntu.get_tags(), "resolute, stable, latest");
-        assert_eq!(build_image("fedora", "43", None).get_tags(), "");
+        assert_eq!(ubuntu.get_tags(), "26.04, resolute, stable, latest");
+        assert_eq!(build_image("fedora", "43", None).get_tags(), "43");
     }
 
     #[test]

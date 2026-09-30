@@ -17,6 +17,10 @@ impl ImageProvider for OpenSuseLeapImageProvider {
         "opensuse-leap"
     }
 
+    fn get_display_name(&self) -> &str {
+        "openSUSE Leap"
+    }
+
     fn get_base_url(&self) -> &str {
         "https://download.opensuse.org/distribution/leap/"
     }

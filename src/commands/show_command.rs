@@ -39,8 +39,9 @@ use clap::Parser;
 ///   Show information of a VM image
 ///   A plain name is an instance, so an image needs a name or a tag
 ///   $ cubic show ubuntu:latest
-///   Name:   ubuntu:26.04
-///   Tags:   resolute, stable, latest
+///   Name:   Ubuntu 26.04
+///   OS:     ubuntu
+///   Tags:   26.04, resolute, stable, latest
 ///   Arch:   amd64
 ///   Cached: yes
 ///

@@ -190,6 +190,21 @@ impl ImageFactory {
         Self::find_matching_image(ImageList::read(), name)
             .ok_or_else(|| Error::UnknownImage(name.to_string()))
     }
+
+    pub fn get_display_name(image: &Image) -> String {
+        let name = IMAGE_PROVIDERS
+            .iter()
+            .find(|provider| provider.get_distro() == image.distro)
+            .map_or(image.distro.as_str(), |provider| {
+                provider.get_display_name()
+            });
+
+        if image.version == Image::ROLLING {
+            name.to_string()
+        } else {
+            format!("{name} {}", image.version)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -223,9 +238,9 @@ mod tests {
 
         let images = ImageFactory::tag_images(images);
 
-        assert_eq!(images[0].get_tags(), "noble, stable");
-        assert_eq!(images[1].get_tags(), "plucky");
-        assert_eq!(images[2].get_tags(), "questing, latest");
+        assert_eq!(images[0].get_tags(), "24.04, noble, stable");
+        assert_eq!(images[1].get_tags(), "25.04, plucky");
+        assert_eq!(images[2].get_tags(), "25.10, questing, latest");
     }
 
     #[test]
@@ -245,9 +260,15 @@ mod tests {
                 .unwrap()
         };
 
-        assert_eq!(find_tags("24.04", Arch::AMD64), "noble");
-        assert_eq!(find_tags("26.04", Arch::AMD64), "resolute, stable, latest");
-        assert_eq!(find_tags("24.04", Arch::ARM64), "noble, stable, latest");
+        assert_eq!(find_tags("24.04", Arch::AMD64), "24.04, noble");
+        assert_eq!(
+            find_tags("26.04", Arch::AMD64),
+            "26.04, resolute, stable, latest"
+        );
+        assert_eq!(
+            find_tags("24.04", Arch::ARM64),
+            "24.04, noble, stable, latest"
+        );
     }
 
     #[test]
@@ -274,7 +295,16 @@ mod tests {
         let images = ImageFactory::tag_images(images);
 
         assert_eq!(images[0].get_image_name(), "archlinux:rolling");
-        assert_eq!(images[0].get_tags(), "stable, latest");
+        assert_eq!(images[0].get_tags(), "rolling, stable, latest");
+    }
+
+    #[test]
+    fn test_get_display_name_adds_the_version_except_for_a_rolling_release() {
+        let debian = build_image("debian", "13", Some("trixie"), Arch::AMD64);
+        let archlinux = build_image("archlinux", Image::ROLLING, None, Arch::AMD64);
+
+        assert_eq!(ImageFactory::get_display_name(&debian), "Debian 13");
+        assert_eq!(ImageFactory::get_display_name(&archlinux), "Arch Linux");
     }
 
     #[test]

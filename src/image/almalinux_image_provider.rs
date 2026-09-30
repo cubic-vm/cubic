@@ -9,6 +9,10 @@ impl ImageProvider for AlmaLinuxImageProvider {
         "almalinux"
     }
 
+    fn get_display_name(&self) -> &str {
+        "AlmaLinux"
+    }
+
     fn get_base_url(&self) -> &str {
         "https://raw.repo.almalinux.org/almalinux/"
     }

@@ -9,6 +9,10 @@ impl ImageProvider for RockyLinuxImageProvider {
         "rockylinux"
     }
 
+    fn get_display_name(&self) -> &str {
+        "Rocky Linux"
+    }
+
     fn get_base_url(&self) -> &str {
         "https://dl.rockylinux.org/pub/rocky/"
     }

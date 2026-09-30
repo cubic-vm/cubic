@@ -15,6 +15,10 @@ impl ImageProvider for AlpineImageProvider {
         "alpine"
     }
 
+    fn get_display_name(&self) -> &str {
+        "Alpine Linux"
+    }
+
     fn get_base_url(&self) -> &str {
         "https://dl-cdn.alpinelinux.org/alpine/"
     }
