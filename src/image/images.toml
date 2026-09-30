@@ -154,6 +154,28 @@ hash_alg = "Sha256"
 size = 559367680
 
 [[images]]
+distro = "centos"
+version = "10"
+tags = ["stable", "latest"]
+arch = "AMD64"
+base_url = "https://cloud.centos.org/centos/10-stream/x86_64/images/"
+image_file = "CentOS-Stream-GenericCloud-10-*.x86_64.qcow2"
+checksum_file = "{image_file}.SHA256SUM"
+hash_alg = "Sha256"
+size = 1045037056
+
+[[images]]
+distro = "centos"
+version = "10"
+tags = ["stable", "latest"]
+arch = "ARM64"
+base_url = "https://cloud.centos.org/centos/10-stream/aarch64/images/"
+image_file = "CentOS-Stream-GenericCloud-10-*.aarch64.qcow2"
+checksum_file = "{image_file}.SHA256SUM"
+hash_alg = "Sha256"
+size = 884277248
+
+[[images]]
 distro = "debian"
 version = "10"
 codename = "buster"
