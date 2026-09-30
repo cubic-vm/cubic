@@ -1,7 +1,7 @@
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::image::{ImageFactory, ImageStore};
-use crate::models::{DataSize, ImageName};
+use crate::models::ImageName;
 use crate::util;
 use crate::view::MapView;
 use clap::Parser;
@@ -25,9 +25,6 @@ impl Command for ShowImageCommand {
         view.add("Name", &image.get_image_name());
         view.add("Tags", &image.get_tags());
         view.add("Arch", &image.arch.to_string());
-        if let Some(size) = image.size {
-            view.add("Size", &DataSize::new(size as usize).to_size());
-        }
         view.add(
             "Cached",
             util::to_yes_no(ImageStore::new().exists(context.get_system(), env, &image)),
