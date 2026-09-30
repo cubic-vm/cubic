@@ -18,6 +18,13 @@ pub fn convert_glob_to_regex(glob: &str) -> String {
     regex::escape(glob).replace("\\*", "[^\"/]*")
 }
 
+/// Finds the newest file that a directory listing links to
+pub fn find_newest_file(pattern: &str, listing: &str) -> Option<String> {
+    find_and_extract(&format!("href=\"\\.?/?({pattern})\""), listing)
+        .into_iter()
+        .max_by(|a, b| compare_natural(a, b))
+}
+
 /// Compares digit runs as numbers, so 3.9 sorts before 3.22
 pub fn compare_natural(a: &str, b: &str) -> Ordering {
     let chunks_a = CHUNK_REGEX.find_iter(a).map(|chunk| chunk.as_str());
@@ -65,6 +72,24 @@ mod tests {
         assert!(!regex.is_match("di-amd64-20260920T170055Z.qcow2.asc"));
         assert!(!regex.is_match("di-amd64-20260920T170055Z_qcow2"));
         assert!(!regex.is_match("di-amd64-dir/image.qcow2"));
+    }
+
+    #[test]
+    fn test_find_newest_file_picks_the_newest_match() {
+        let listing = r#"
+<a href="image-20260630.2.qcow2">
+<a href="image-20260630.10.qcow2">
+<a href="image-20260630.10.qcow2.sha256">
+<a href="image-20260629.12.qcow2">"#;
+
+        assert_eq!(
+            find_newest_file(&convert_glob_to_regex("image-*.qcow2"), listing),
+            Some("image-20260630.10.qcow2".to_string())
+        );
+        assert_eq!(
+            find_newest_file(&convert_glob_to_regex("debian-*.qcow2"), listing),
+            None
+        );
     }
 
     #[test]
