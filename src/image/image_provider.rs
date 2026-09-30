@@ -1,4 +1,5 @@
 use crate::models::{Arch, HashAlg};
+use crate::util;
 
 pub trait ImageProvider {
     fn get_distro(&self) -> &str;
@@ -13,7 +14,12 @@ pub trait ImageProvider {
     fn find_image_names(&self, content: &str) -> Vec<String>;
 
     fn get_image_dir_path(&self, name: &str, arch: Arch) -> String;
-    fn get_image_file_pattern(&self, name: &str, arch: Arch) -> String;
+    /// Regex of the image file name, by default built from the glob
+    fn get_image_file_pattern(&self, name: &str, arch: Arch) -> String {
+        self.get_image_file_glob(name, arch)
+            .map(|glob| util::convert_glob_to_regex(&glob))
+            .unwrap_or_default()
+    }
 
     fn get_checksum_file(&self, image_file: &str, name: &str, arch: Arch) -> String;
     fn get_checksum_alg(&self) -> HashAlg;
@@ -29,7 +35,7 @@ pub trait ImageProvider {
     }
 
     /// Image file name with a `*` for a timestamped name
-    fn get_image_file_glob(&self, _arch: Arch) -> Option<String> {
+    fn get_image_file_glob(&self, _name: &str, _arch: Arch) -> Option<String> {
         None
     }
 

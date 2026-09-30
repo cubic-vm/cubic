@@ -45,19 +45,15 @@ impl ImageFactory {
             }
         };
 
-        let image_file = util::find_and_extract(
-            &format!(
-                "href=\"\\.?/?({})\"",
-                image_provider.get_image_file_pattern(name, arch)
-            ),
+        let image_file = util::find_newest_file(
+            &image_provider.get_image_file_pattern(name, arch),
             &image_content,
         );
-        // A release directory can hold several patch releases
-        let image_file = image_file.iter().max_by(|a, b| util::compare_natural(a, b));
 
-        if let Some(image_file) = image_file {
+        if let Some(image_file) = &image_file {
             // A timestamped file name is stored as a glob
-            let (stored_file, checksum_file) = match image_provider.get_image_file_glob(arch) {
+            let (stored_file, checksum_file) = match image_provider.get_image_file_glob(name, arch)
+            {
                 Some(glob) => (
                     glob,
                     image_provider.get_checksum_file(Image::IMAGE_FILE, name, arch),
