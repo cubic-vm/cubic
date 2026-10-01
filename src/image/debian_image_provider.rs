@@ -26,7 +26,7 @@ impl ImageProvider for DebianImageProvider {
     }
 
     fn get_version(&self, image_file: &str, name: &str) -> String {
-        util::find_and_extract(r"debian-([^-]+)-generic-[^.]+.qcow2", image_file)
+        util::find_and_extract(r"debian-([^-]+)-genericcloud-[^.]+\.qcow2", image_file)
             .into_iter()
             .next()
             .unwrap_or_else(|| name.to_string())
@@ -38,7 +38,7 @@ impl ImageProvider for DebianImageProvider {
 
     fn get_image_file_pattern(&self, _name: &str, arch: Arch) -> String {
         let arch_name = arch.as_vendor_str();
-        format!("debian-[0-9]+-generic-{arch_name}.qcow2")
+        format!(r"debian-[0-9]+-genericcloud-{arch_name}\.qcow2")
     }
 
     fn get_checksum_file(&self, _image_file: &str, _name: &str, _arch: Arch) -> String {
@@ -77,7 +77,7 @@ mod tests {
         let provider = DebianImageProvider {};
 
         assert_eq!(
-            provider.get_version("debian-12-generic-amd64.qcow2", "bookworm"),
+            provider.get_version("debian-12-genericcloud-amd64.qcow2", "bookworm"),
             "12"
         );
         assert_eq!(
@@ -89,11 +89,9 @@ mod tests {
     #[test]
     fn test_image_file_pattern_matches_image_file() {
         let pattern = DebianImageProvider {}.get_image_file_pattern("bookworm", Arch::AMD64);
+        let regex = Regex::new(&format!("^{pattern}$")).unwrap();
 
-        assert!(
-            Regex::new(&pattern)
-                .unwrap()
-                .is_match("debian-12-generic-amd64.qcow2")
-        );
+        assert!(regex.is_match("debian-12-genericcloud-amd64.qcow2"));
+        assert!(!regex.is_match("debian-12-generic-amd64.qcow2"));
     }
 }
