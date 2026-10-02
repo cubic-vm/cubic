@@ -123,34 +123,24 @@ points out that this may be a malicious attempt to take over the connection, and
 asks whether to trust the new key. Answering yes stores it, which is how you
 carry on after you recreated the guest yourself.
 
-.. _encrypted control channels:
+.. _private control channels:
 
-Encrypted QEMU Control Channels
--------------------------------
+Private QEMU Control Channels
+-----------------------------
 
-The QEMU monitor and the serial console talk to Cubic over loopback connections
-that are protected with mutual TLS. Both ends have to present a valid
-certificate before any data flows, and the traffic itself is encrypted.
-
-The first time a virtual machine starts, Cubic creates a small certificate
-authority just for that machine and uses it to issue a server certificate for
-QEMU and a client certificate for Cubic. These are stored with the machine and
-reused on later starts. Cubic uses rustls to load its own certificate and to
-check the one that QEMU presents.
-
-This is what stops another user on the same computer from driving your virtual
-machine's monitor or console. Even though they can reach the loopback port, they
-cannot complete the secure handshake without the client certificate that belongs
-to your machine.
+The QEMU monitor and the serial console talk to Cubic over Unix domain sockets
+inside the directory of the virtual machine. They stay off the network, and
+only your user can enter that directory, so another user on the same computer
+cannot drive your virtual machine.
 
 Keeping Instances Apart
 -----------------------
 
 Everything that belongs to a virtual machine, including its SSH private key, its
-TLS certificates, its disk images and its cloud-init seed image, is stored under
+control sockets, its disk images and its cloud-init seed image, is stored under
 your own data directory, which :ref:`file locations` names for each platform.
-Reaching a running machine means holding the SSH key or the TLS client
-certificate that is kept inside it.
+Reaching a running machine means holding the SSH key or having access to the
+sockets that are kept inside it.
 
 What Cubic Does Not Protect Against
 -----------------------------------
@@ -159,16 +149,16 @@ The goals above draw a line around what Cubic defends. These things sit outside
 it, and knowing that is part of using it safely.
 
 **Anything running as you.** The protection is between user accounts, not inside
-one. Any process of your own user can read the SSH private key, the TLS client
-certificate and the disk image of every virtual machine you own, and can
+one. Any process of your own user can read the SSH private key, open the control
+sockets and read the disk image of every virtual machine you own, and can
 therefore reach every guest you can reach.
 
 **A port you publish yourself.** A forward bound to ``0.0.0.0`` or to a public
 address of the host puts the service inside the guest on the network, with
 whatever authentication that service brings and no more.
 
-**Data at rest.** Disk images, snapshots, SSH keys and certificates are stored
-as plain files. Anyone who can read your data directory, including a backup that
+**Data at rest.** Disk images, snapshots and SSH keys are stored as plain
+files. Anyone who can read your data directory, including a backup that
 leaves the machine, gets the contents of every VM instance. Use encryption on
 the host if that matters.
 

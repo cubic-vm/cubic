@@ -48,8 +48,6 @@ The name ``demo/clean`` is the snapshot ``clean`` of the VM instance ``demo``.
     User:         alice
     Isolated:     no
     SSH Port:     40881
-    Monitor Port: 42661
-    Console Port: 37913
     Snapshots:    clean
 
 Change the Guest

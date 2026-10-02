@@ -36,7 +36,7 @@ already carries the drivers.
    * - ``virtio-balloon-pci``
      - Returns unused guest memory to the host. See below.
    * - Serial console
-     - Character device on a loopback TLS socket, which ``cubic console``
+     - Character device on a Unix domain socket, which ``cubic console``
        attaches to.
 
 The UEFI firmware is attached read only and there is no display at all, since a

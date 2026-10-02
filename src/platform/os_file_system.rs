@@ -42,8 +42,20 @@ impl FileSystem for OsSystem {
             .map(|disk| disk.available_space())
     }
 
+    // Creates a directory only the owner may enter. Windows inherits the ACL.
     fn create_dir(&self, path: &Path) -> Result<()> {
-        fs::create_dir_all(path).map_err(|e| Error::from_fs(FsOperation::CreateDir, path, e))
+        let mut builder = fs::DirBuilder::new();
+        builder.recursive(true);
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::DirBuilderExt;
+            builder.mode(0o700);
+        }
+
+        builder
+            .create(path)
+            .map_err(|e| Error::from_fs(FsOperation::CreateDir, path, e))
     }
 
     fn create_writable_dir(&self, path: &Path) -> Result<()> {

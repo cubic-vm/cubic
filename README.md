@@ -67,7 +67,7 @@ Cubic fits a lot of everyday workflows:
 - Runs every VM as a normal user process without a privileged system service
 - Verifies every image against the checksum of the distribution
 - Protects every VM with its own SSH key and a disabled password
-- Encrypts the QEMU control channels with mutual TLS
+- Keeps the QEMU control channels on private Unix sockets
 
 # 🚀 Quick Start
 
@@ -247,18 +247,17 @@ drives to run every VM.
 | crossterm | Terminal control for the interactive console and views |
 | getrandom | Secure randomness for SSH key generation |
 | regex | Parse image and instance names and scrape image version listings |
-| rcgen | Generate the per-instance self-signed certificates for QEMU mTLS |
 | reqwest | Download official Linux distribution images over HTTPS |
 | russh | Pure-Rust SSH client to connect into VMs |
 | russh-sftp | SFTP file transfer over the SSH connection |
-| rustls | TLS for the QEMU mTLS control channel |
+| rustls | Crypto provider for the HTTPS image downloads |
 | serde | Derive serialization for config and QMP messages |
 | serde_json | QMP protocol and firmware descriptor parsing |
 | sha2 | Verify downloaded image checksums |
+| socket2 | Unix domain sockets to the QEMU monitor and console on every platform |
 | sysinfo | Read the host username and detect running QEMU processes |
 | thiserror | Derive the crate's error types |
 | tokio | Async runtime for SSH and SFTP transfers |
-| tokio-rustls | Async TLS for the QEMU console connection |
 | tokio-util | Detects the console/ssh detach shortcut on stdin |
 | toml | Read and write the `instance.toml` config |
 

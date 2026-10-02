@@ -26,8 +26,6 @@ together:
     User:         alice
     Isolated:     no
     SSH Port:     40881
-    Monitor Port: 40882
-    Console Port: 40883
     PID:          12345
     Disk Image:   ~/.local/share/cubic/machines/demo/machine.img
     Config:       ~/.local/share/cubic/machines/demo/instance.toml

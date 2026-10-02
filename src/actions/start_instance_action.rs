@@ -1,7 +1,6 @@
 use crate::cloudinit::CloudInitImageFactory;
 use crate::commands::{Accel, Context};
 use crate::error::{Error, Result};
-use crate::instance::InstanceCertGenerator;
 use crate::models::{Arch, Instance};
 use crate::platform::System;
 use crate::qemu::{
@@ -9,7 +8,6 @@ use crate::qemu::{
 };
 use crate::ssh::PortChecker;
 use crate::view::Console;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 pub struct StartInstanceAction {
@@ -40,16 +38,6 @@ impl StartInstanceAction {
         let env = context.get_env();
         let system = context.get_system();
         CloudInitImageFactory.create(system, env, &self.instance)?;
-
-        let instance_dir = PathBuf::from(env.get_instance_dir2(&self.instance.name));
-        let cert_generator = InstanceCertGenerator::new(system, instance_dir.clone());
-        if !cert_generator.exists() {
-            cert_generator.generate()?;
-        }
-
-        self.instance.monitor_port = Some(system.bind_port()?);
-        self.instance.console_port = Some(system.bind_port()?);
-        context.get_instance_store().store(&self.instance)?;
 
         let mut qemu_system = QemuSystem::from(system, self.instance.arch)?;
 
@@ -126,7 +114,7 @@ impl StartInstanceAction {
 
         qemu_system.set_cpus(self.instance.cpus);
         qemu_system.set_memory(self.instance.mem.get_bytes() as u64);
-        qemu_system.set_console(self.instance.console_port.unwrap(), &instance_dir);
+        qemu_system.set_console(&env.get_console_socket(&self.instance.name));
         qemu_system.add_disk(&env.get_instance_image_file(&self.instance.name));
         qemu_system.add_iso(&env.get_cloud_init_file(&self.instance.name));
         qemu_system.set_network(
@@ -139,7 +127,7 @@ impl StartInstanceAction {
         }
         qemu_system.set_pid_file(&env.get_qemu_pid_file(&self.instance.name));
 
-        qemu_system.set_monitor(self.instance.monitor_port.unwrap(), &instance_dir);
+        qemu_system.set_monitor(&env.get_monitor_socket(&self.instance.name));
 
         let command = qemu_system.build_command();
         console.debug(&command.get_command());

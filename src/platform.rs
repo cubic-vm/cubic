@@ -8,7 +8,7 @@ mod os_process;
 mod os_system;
 mod os_terminal;
 mod process;
-mod read_write;
+mod socket;
 mod stream;
 mod system;
 mod terminal;
@@ -31,7 +31,7 @@ pub use host::*;
 pub use network::*;
 pub use os_system::*;
 pub use process::*;
-pub use read_write::*;
+pub use socket::*;
 pub use stream::*;
 pub use system::*;
 #[cfg(test)]

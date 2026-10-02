@@ -53,10 +53,9 @@ Files in an Instance Directory
        :ref:`guest config`.
    * - ``qemu.pid``
      - Process id of QEMU. Present while the VM instance runs.
-   * - ``ca-cert.pem``, ``server-cert.pem``, ``server-key.pem``,
-       ``client-cert.pem``, ``client-key.pem``
-     - Certificates of the mutual TLS connection to the QEMU monitor and the
-       serial console.
+   * - ``monitor.sock``, ``console.sock``
+     - Unix domain sockets of the QEMU monitor and the serial console. Present
+       while the VM instance runs.
 
 Image Cache
 -----------
