@@ -142,7 +142,7 @@ Features
 * :ref:`Runs every VM as a normal user process without a privileged system service <no privileged service>`
 * :ref:`Verifies every image against the checksum of the distribution <verified images>`
 * :ref:`Protects every VM with its own SSH key and a locked password <ssh access>`
-* :ref:`Encrypts the QEMU control channels with mutual TLS <encrypted control channels>`
+* :ref:`Keeps the QEMU control channels on private Unix sockets <private control channels>`
 
 Source Code
 -----------

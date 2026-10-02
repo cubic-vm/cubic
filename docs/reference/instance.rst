@@ -50,13 +50,6 @@ Fields
      - Host port forwarded to port 22 of the guest. Assigned when the VM
        instance is created. Cubic assigns a new one when the port is taken at
        the next start.
-   * - ``monitor_port``
-     - port
-     - Host port of the QEMU monitor. Assigned at every start, so it changes
-       from run to run.
-   * - ``console_port``
-     - port
-     - Host port of the serial console. Assigned at every start as well.
    * - ``hostfwd``
      - list of strings
      - Forwarded ports in QEMU notation, written as
@@ -88,8 +81,6 @@ Example
     mem = 4294967296
     disk_capacity = 107374182400
     ssh_port = 37635
-    monitor_port = 42661
-    console_port = 37913
     hostfwd = ["tcp:127.0.0.1:8080-:80"]
     execute = "sudo apt update && sudo apt install -y nginx"
     isolate = false

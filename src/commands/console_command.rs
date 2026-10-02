@@ -1,18 +1,15 @@
 use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
-use crate::models::InstanceCertPaths;
-use crate::qemu::TlsClient;
 use crate::util;
 use clap::Parser;
-use std::path::PathBuf;
+use std::io::{Read, Write};
+use std::path::Path;
 use std::time::Duration;
-use tokio::io::AsyncWriteExt;
 use tokio_util::codec::FramedRead;
-use tokio_util::io::StreamReader;
+use tokio_util::io::{StreamReader, SyncIoBridge};
 
 const CONSOLE_TIMEOUT: Duration = Duration::from_secs(60);
-const PROBE_IO_TIMEOUT: Duration = Duration::from_secs(1);
 
 /// Open VM instance console
 ///
@@ -55,21 +52,16 @@ impl Command for ConsoleCommand {
         ));
         console.info("Press Enter, ~, . to exit the console.");
 
-        let port = instance
-            .console_port
-            .ok_or_else(|| Error::InstanceNotRunning(self.instance.value.to_string()))?;
-        let instance_dir = PathBuf::from(
-            context
-                .get_env()
-                .get_instance_dir2(self.instance.value.as_str()),
-        );
-        let certs = InstanceCertPaths::load(&instance_dir);
+        let socket_path = context.get_env().get_console_socket(&instance.name);
 
         let system = context.get_system();
         let instance_store = context.get_instance_store();
         let wait = async {
             let mut was_running = false;
-            while system.connect_port(port, PROBE_IO_TIMEOUT).is_err() {
+            loop {
+                if let Ok(socket) = system.connect_socket(Path::new(&socket_path), None) {
+                    return Ok(socket);
+                }
                 // QEMU writes its pid file after the spawn returns, so only a pid
                 // file that vanished again means it exited.
                 let running = instance_store.is_running(&instance);
@@ -80,35 +72,39 @@ impl Command for ConsoleCommand {
 
                 tokio::time::sleep(Duration::from_secs(1)).await;
             }
-            Ok(0)
         };
-        tokio::time::timeout(CONSOLE_TIMEOUT, wait)
+        let mut socket = tokio::time::timeout(CONSOLE_TIMEOUT, wait)
             .await
             .map_err(|_| Error::ConsoleTimeout(instance.name.clone()))??;
 
-        console.raw_mode();
-        let shell = async {
-            let tls = TlsClient::new(&certs)?.connect_async(port).await?;
-            let (mut reader, mut writer) = tokio::io::split(tls);
-            let mut stdin = StreamReader::new(FramedRead::new(
-                tokio::io::stdin(),
-                util::ShortcutDecoder::new(),
-            ));
-            let mut stdout = tokio::io::stdout();
-            tokio::select!(
-                _ = tokio::io::copy(&mut stdin, &mut writer) => {},
-                _ = tokio::io::copy(&mut reader, &mut stdout) => {},
-            );
+        let mut reader = socket.try_clone()?;
 
-            let mut out = tokio::io::stdout();
-            out.write_all(b"\n").await.ok();
-            out.flush().await.ok();
-            Ok::<(), Error>(())
-        }
-        .await;
-        if shell.is_err() {
-            console.error("Cannot open shell");
-        }
+        console.raw_mode();
+        // The socket read blocks, so it runs on its own thread
+        let output = tokio::task::spawn_blocking(move || {
+            let mut stdout = std::io::stdout();
+            let mut buffer = [0; 4096];
+            while let Ok(count @ 1..) = reader.read(&mut buffer) {
+                if stdout.write_all(&buffer[..count]).is_err() || stdout.flush().is_err() {
+                    break;
+                }
+            }
+        });
+        let stdin = StreamReader::new(FramedRead::new(
+            tokio::io::stdin(),
+            util::ShortcutDecoder::new(),
+        ));
+        let input = tokio::task::spawn_blocking(move || {
+            std::io::copy(&mut SyncIoBridge::new(stdin), &mut socket)
+        });
+        tokio::select!(
+            _ = input => {},
+            _ = output => {},
+        );
+
+        let mut stdout = std::io::stdout();
+        stdout.write_all(b"\n").ok();
+        stdout.flush().ok();
         console.reset();
         Ok(0)
     }

@@ -1,6 +1,8 @@
 use crate::error::{Error, Result};
-use crate::platform::{Network, ReadWrite, SystemMock};
+use crate::platform::{Network, Socket, SystemMock};
 use std::io::{Cursor, Read, Write};
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 // Where a bind starts looking. A bind skips every port the host already knows
@@ -34,9 +36,17 @@ enum PortState {
 pub struct NetworkMock {
     ports: Vec<(u16, PortState)>,
     connected: Vec<u16>,
+    sockets: Vec<(PathBuf, SocketMock)>,
 }
 
 impl NetworkMock {
+    fn find_socket(&self, path: &Path) -> Option<&SocketMock> {
+        self.sockets
+            .iter()
+            .find(|(known, _)| known == path)
+            .map(|(_, socket)| socket)
+    }
+
     fn add(&mut self, port: u16, state: PortState) {
         self.ports.retain(|(known, _)| *known != port);
         self.ports.push((port, state));
@@ -46,12 +56,12 @@ impl NetworkMock {
         self.connected.clone()
     }
 
-    fn connect(&mut self, port: u16) -> Result<Box<dyn ReadWrite>> {
+    fn connect(&mut self, port: u16) -> Result<Box<dyn Read>> {
         self.connected.push(port);
 
         match self.find(port) {
-            Some(PortState::Listening) => Ok(Box::new(StreamMock::new(GREETING))),
-            Some(PortState::Silent) => Ok(Box::new(StreamMock::new(b""))),
+            Some(PortState::Listening) => Ok(Box::new(SocketMock::new(GREETING))),
+            Some(PortState::Silent) => Ok(Box::new(SocketMock::new(b""))),
             _ => Err(Error::ConnectionFailed(
                 port,
                 std::io::ErrorKind::ConnectionRefused.into(),
@@ -77,33 +87,37 @@ impl NetworkMock {
     }
 }
 
-// A connection to a seeded listener. Reading past the greeting reports a
+// A connection to a seeded listener. Reading past the replies reports a
 // timeout rather than end of file, because a real socket held open by a peer
 // that has stopped talking blocks until its read timeout expires. A reader
 // that treats end of file as success would see a silent port as a talking one.
-struct StreamMock {
-    greeting: Cursor<Vec<u8>>,
+#[derive(Clone)]
+struct SocketMock {
+    replies: Cursor<Vec<u8>>,
+    written: Arc<Mutex<Vec<u8>>>,
 }
 
-impl StreamMock {
-    fn new(greeting: &[u8]) -> Self {
+impl SocketMock {
+    fn new(replies: &[u8]) -> Self {
         Self {
-            greeting: Cursor::new(greeting.to_vec()),
+            replies: Cursor::new(replies.to_vec()),
+            written: Arc::default(),
         }
     }
 }
 
-impl Read for StreamMock {
+impl Read for SocketMock {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        match self.greeting.read(buf)? {
+        match self.replies.read(buf)? {
             0 if !buf.is_empty() => Err(std::io::ErrorKind::TimedOut.into()),
             count => Ok(count),
         }
     }
 }
 
-impl Write for StreamMock {
+impl Write for SocketMock {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.written.lock().unwrap().extend_from_slice(buf);
         Ok(buf.len())
     }
 
@@ -112,7 +126,31 @@ impl Write for StreamMock {
     }
 }
 
+impl Socket for SocketMock {
+    fn try_clone(&self) -> Result<Box<dyn Socket>> {
+        Ok(Box::new(self.clone()))
+    }
+}
+
 impl SystemMock {
+    pub fn add_socket(self, path: &str, replies: &[u8]) -> Self {
+        self.network
+            .lock()
+            .unwrap()
+            .sockets
+            .push((PathBuf::from(path), SocketMock::new(replies)));
+        self
+    }
+
+    pub fn get_socket_output(&self, path: &str) -> String {
+        self.network
+            .lock()
+            .unwrap()
+            .find_socket(Path::new(path))
+            .map(|socket| String::from_utf8_lossy(&socket.written.lock().unwrap()).into_owned())
+            .unwrap_or_default()
+    }
+
     // A port that accepts and then greets the caller, the way a ready sshd
     // does.
     pub fn add_open_port(self, port: u16) -> Self {
@@ -139,8 +177,17 @@ impl SystemMock {
 impl Network for SystemMock {
     // The timeout has no meaning here, since a seeded listener answers at once
     // and an unseeded one refuses at once.
-    fn connect_port(&self, port: u16, _timeout: Duration) -> Result<Box<dyn ReadWrite>> {
+    fn connect_port(&self, port: u16, _timeout: Duration) -> Result<Box<dyn Read>> {
         self.network.lock().unwrap().connect(port)
+    }
+
+    fn connect_socket(&self, path: &Path, _timeout: Option<Duration>) -> Result<Box<dyn Socket>> {
+        self.network
+            .lock()
+            .unwrap()
+            .find_socket(path)
+            .map(|socket| Box::new(socket.clone()) as Box<dyn Socket>)
+            .ok_or_else(|| std::io::Error::from(std::io::ErrorKind::ConnectionRefused).into())
     }
 
     fn bind_port(&self) -> Result<u16> {

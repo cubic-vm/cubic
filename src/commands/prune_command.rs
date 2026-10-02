@@ -6,6 +6,13 @@ use clap::Parser;
 use std::path::{Path, PathBuf};
 
 const LEGACY_INSTANCES_DIR: &str = "instances";
+const LEGACY_CERT_FILES: [&str; 5] = [
+    "ca-cert.pem",
+    "server-cert.pem",
+    "server-key.pem",
+    "client-cert.pem",
+    "client-key.pem",
+];
 
 /// Clear caches
 ///
@@ -44,6 +51,16 @@ impl Command for PruneCommand {
             .into_iter()
             .filter(|path| path.extension().is_some_and(|ext| ext == "tmp"));
 
+        let legacy_certs: Vec<PathBuf> = instance_store
+            .get_instances()
+            .into_iter()
+            .flat_map(|name| {
+                let dir = PathBuf::from(env.get_instance_dir2(&name));
+                LEGACY_CERT_FILES.map(|file| dir.join(file))
+            })
+            .filter(|path| system.exists_path(path))
+            .collect();
+
         let dirs: Vec<PathBuf> = [
             PathBuf::from(env.get_image_dir()),
             PathBuf::from(env.get_cache_dir()).join(LEGACY_INSTANCES_DIR),
@@ -57,6 +74,7 @@ impl Command for PruneCommand {
         let total = DataSize::new(
             dirs.iter()
                 .chain(stale_dirs.iter())
+                .chain(legacy_certs.iter())
                 .chain([&cache_file])
                 .fold(0, |total, path| total + system.get_path_size(path)) as usize,
         )
@@ -72,6 +90,9 @@ impl Command for PruneCommand {
             system.remove_file(&cache_file).ok();
             for dir in &dirs {
                 system.remove_dir(dir).ok();
+            }
+            for cert in &legacy_certs {
+                system.remove_file(cert).ok();
             }
             // The store skips an instance that a session started while the
             // dialog above waited for an answer.
@@ -166,6 +187,27 @@ mod tests {
         run_prune(&system, &env).await;
 
         assert!(system.exists_path(Path::new(&instance_file)));
+    }
+
+    #[tokio::test]
+    async fn test_delete_the_legacy_certs_of_a_stopped_instance() {
+        let env = build_env();
+        let dir = env.get_instance_dir2("test");
+        let system = Arc::new(LEGACY_CERT_FILES.iter().fold(
+            SystemMock::new().add_file(&format!("{dir}/machine.img"), b"disk"),
+            |system, file| system.add_file(&format!("{dir}/{file}"), b"pem"),
+        ));
+        let store = InstanceStoreMock::new(vec![Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }]);
+
+        run_prune_with_context(&system, build_context_with_store(&system, &env, store)).await;
+
+        for file in LEGACY_CERT_FILES {
+            assert!(!system.exists_path(Path::new(&format!("{dir}/{file}"))));
+        }
+        assert!(system.exists_path(Path::new(&format!("{dir}/machine.img"))));
     }
 
     #[tokio::test]

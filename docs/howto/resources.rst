@@ -45,8 +45,6 @@ Check the Result
     User:         alice
     Isolated:     no
     SSH Port:     33033
-    Monitor Port: 38283
-    Console Port: 42883
 
 Start the VM instance again:
 

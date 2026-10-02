@@ -85,32 +85,18 @@ impl QemuSystem {
         self.command.arg("-m").arg(format!("{}B", memory));
     }
 
-    pub fn set_monitor(&mut self, port: u16, instance_dir: &Path) {
-        let dir = instance_dir.display();
+    pub fn set_monitor(&mut self, socket: &str) {
         self.command
-            .args([
-                "-object",
-                &format!("tls-creds-x509,id=qmp-tls,dir={dir},endpoint=server,verify-peer=yes"),
-            ])
-            .args([
-                "-chardev",
-                &format!(
-                    "socket,id=qmp,host=127.0.0.1,port={port},server=on,wait=off,tls-creds=qmp-tls"
-                ),
-            ])
+            .arg("-chardev")
+            .arg(format!("socket,id=qmp,path={socket},server=on,wait=off"))
             .args(["-mon", "chardev=qmp,mode=control,pretty=off"]);
     }
 
-    pub fn set_console(&mut self, port: u16, instance_dir: &Path) {
-        let dir = instance_dir.display();
+    pub fn set_console(&mut self, socket: &str) {
         self.command
-            .args([
-                "-object",
-                &format!("tls-creds-x509,id=con-tls,dir={dir},endpoint=server,verify-peer=yes"),
-            ])
             .arg("-chardev")
             .arg(format!(
-                "socket,host=127.0.0.1,port={port},server=on,wait=off,id=console,tls-creds=con-tls"
+                "socket,id=console,path={socket},server=on,wait=off"
             ))
             .arg("-serial")
             .arg("chardev:console");
@@ -228,6 +214,20 @@ mod tests {
             command.contains("-drive if=virtio,format=raw,file=/data/machines/test/cloud-init.iso")
         );
         assert!(!command.contains("discard"));
+    }
+
+    #[test]
+    fn test_monitor_and_console_listen_on_unix_sockets() {
+        let mut qemu = QemuSystem::from(&SystemMock::new(), Arch::AMD64).unwrap();
+        qemu.set_monitor("/data/machines/test/monitor.sock");
+        qemu.set_console("/data/machines/test/console.sock");
+        let command = qemu.command.get_command();
+        assert!(command.contains(
+            "-chardev socket,id=qmp,path=/data/machines/test/monitor.sock,server=on,wait=off"
+        ));
+        assert!(command.contains(
+            "-chardev socket,id=console,path=/data/machines/test/console.sock,server=on,wait=off"
+        ));
     }
 
     #[test]

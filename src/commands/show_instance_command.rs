@@ -62,12 +62,6 @@ impl Command for ShowInstanceCommand {
                 view.add("PID", &pid.to_string());
             }
             view.add("SSH Port", &instance.ssh_port.to_string());
-            if let Some(monitor_port) = instance.monitor_port {
-                view.add("Monitor Port", &monitor_port.to_string());
-            }
-            if let Some(console_port) = instance.console_port {
-                view.add("Console Port", &console_port.to_string());
-            }
             view.add("Disk Image", &env.get_instance_image_file(&instance.name));
             view.add("Config", &env.get_instance_toml_config_file(&instance.name));
             view.add("SSH Key", &ssh_key);
@@ -170,8 +164,6 @@ Forward:    127.0.0.1:4000:40/tcp
             mem: DataSize::new(1),
             disk_capacity: DataSize::new(1),
             ssh_port: 8000,
-            monitor_port: Some(8001),
-            console_port: Some(8002),
             hostfwd: vec![
                 "127.0.0.1:4000:40/tcp".parse().unwrap(),
                 "0.0.0.0:80:8000/udp".parse().unwrap(),
@@ -236,8 +228,6 @@ Forward:      127.0.0.1:4000:40/tcp
 Snapshots:    clean
               before-upgrade
 SSH Port:     8000
-Monitor Port: 8001
-Console Port: 8002
 Disk Image:   {disk_image}
 Config:       {config}
 SSH Key:      {ssh_key}

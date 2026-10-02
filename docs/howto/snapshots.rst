@@ -38,8 +38,6 @@ List the Snapshots
     User:         alice
     Isolated:     no
     SSH Port:     40881
-    Monitor Port: 42661
-    Console Port: 37913
     Snapshots:    clean
                   before-upgrade
 

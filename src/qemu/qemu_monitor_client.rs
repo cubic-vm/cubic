@@ -1,38 +1,32 @@
 use crate::error::{Error, Result};
-use crate::models::{Environment, Instance, InstanceCertPaths, PortForward};
-use crate::platform::ReadWrite;
-use crate::qemu::{NETDEV_ID, QmpMessage, TlsClient};
+use crate::models::{Environment, Instance, PortForward};
+use crate::platform::{Socket, System};
+use crate::qemu::{NETDEV_ID, QmpMessage};
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
-use std::path::PathBuf;
+use std::path::Path;
 use std::time::Duration;
 
 const QMP_TIMEOUT: Duration = Duration::from_millis(100);
 
 pub struct QemuMonitorClient {
     counter: u64,
-    stream: BufReader<Box<dyn ReadWrite>>,
+    stream: BufReader<Box<dyn Socket>>,
 }
 
 impl QemuMonitorClient {
-    pub fn new(env: &Environment, instance: &Instance) -> Result<Self> {
-        let port = instance
-            .monitor_port
-            .ok_or_else(|| Error::InstanceNotRunning(instance.name.clone()))?;
-        let instance_dir = PathBuf::from(env.get_instance_dir2(&instance.name));
-        let certs = InstanceCertPaths::load(&instance_dir);
-        let mut stream = TlsClient::new(&certs)?.connect(port)?;
-        let socket = stream.get_mut();
-        socket
-            .set_read_timeout(Some(QMP_TIMEOUT))
-            .map_err(|e| Error::ConnectionFailed(port, e))?;
-        socket
-            .set_write_timeout(Some(QMP_TIMEOUT))
-            .map_err(|e| Error::ConnectionFailed(port, e))?;
+    pub fn new(system: &dyn System, env: &Environment, instance: &Instance) -> Result<Self> {
+        // A failed connect means the instance is down
+        let socket = system
+            .connect_socket(
+                Path::new(&env.get_monitor_socket(&instance.name)),
+                Some(QMP_TIMEOUT),
+            )
+            .map_err(|_| Error::InstanceNotRunning(instance.name.clone()))?;
 
         let mut client = QemuMonitorClient {
             counter: 0,
-            stream: BufReader::new(Box::new(stream)),
+            stream: BufReader::new(socket),
         };
         client.init()?;
         Ok(client)
@@ -131,5 +125,76 @@ impl QemuMonitorClient {
 
     fn execute(&mut self, cmd: &str) -> Result<()> {
         self.execute_with_args(cmd, Value::Null).map(|_| ())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::UserName;
+    use crate::platform::SystemMock;
+    use std::str::FromStr;
+
+    const HANDSHAKE: &str = r#"{"QMP": {"version": {}, "capabilities": []}}
+{"return": {}, "id": "0"}
+"#;
+
+    fn build_env() -> Environment {
+        Environment::new(
+            UserName::from_str("cubic").unwrap(),
+            "/data".to_string(),
+            "/cache".to_string(),
+        )
+    }
+
+    fn build_instance() -> Instance {
+        Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }
+    }
+
+    fn build_system(env: &Environment, replies: &str) -> SystemMock {
+        SystemMock::new().add_socket(
+            &env.get_monitor_socket("test"),
+            format!("{HANDSHAKE}{replies}").as_bytes(),
+        )
+    }
+
+    #[test]
+    fn test_shutdown_negotiates_capabilities_and_skips_an_event_before_the_reply() {
+        let env = build_env();
+        let system = build_system(
+            &env,
+            r#"{"event": "POWERDOWN", "timestamp": {"seconds": 1, "microseconds": 2}}
+{"return": {}, "id": "1"}
+"#,
+        );
+
+        QemuMonitorClient::new(&system, &env, &build_instance())
+            .unwrap()
+            .shutdown()
+            .unwrap();
+
+        assert_eq!(
+            system.get_socket_output(&env.get_monitor_socket("test")),
+            r#"{"id":"0","execute":"qmp_capabilities"}{"id":"1","execute":"system_powerdown"}"#
+        );
+    }
+
+    #[test]
+    fn test_add_hostfwd_reports_the_text_qemu_prints() {
+        let env = build_env();
+        let system = build_system(
+            &env,
+            "{\"return\": \"Could not set up host forwarding rule\\r\\n\", \"id\": \"1\"}\n",
+        );
+
+        let mut client = QemuMonitorClient::new(&system, &env, &build_instance()).unwrap();
+
+        assert!(matches!(
+            client.add_hostfwd(&"127.0.0.1:4000:40/tcp".parse().unwrap()),
+            Err(Error::HostfwdCommandFailed(output)) if output == "Could not set up host forwarding rule"
+        ));
     }
 }

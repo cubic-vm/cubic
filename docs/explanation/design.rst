@@ -73,8 +73,8 @@ One Directory per VM Instance
 -----------------------------
 
 A VM instance is a directory. It holds the settings, the disk image, the SSH
-key, the TLS certificates, the seed image and, while it runs, the pid file of
-QEMU. Nothing is shared with another VM instance except the image cache, which
+key, the seed image and, while it runs, the pid file and the control sockets
+of QEMU. Nothing is shared with another VM instance except the image cache, which
 holds verified read only downloads.
 
 So the lifecycle needs no bookkeeping. Deleting the directory deletes the VM

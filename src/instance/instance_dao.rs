@@ -217,7 +217,7 @@ impl InstanceStore for InstanceDao {
     }
 
     fn get_monitor(&self, instance: &Instance) -> Result<QemuMonitorClient> {
-        QemuMonitorClient::new(&self.env, instance)
+        QemuMonitorClient::new(self.system.as_ref(), &self.env, instance)
     }
 }
 

@@ -90,6 +90,20 @@ impl Environment {
             .into_owned()
     }
 
+    pub fn get_monitor_socket(&self, instance: &str) -> String {
+        PathBuf::from(self.get_instance_dir2(instance))
+            .join("monitor.sock")
+            .to_string_lossy()
+            .into_owned()
+    }
+
+    pub fn get_console_socket(&self, instance: &str) -> String {
+        PathBuf::from(self.get_instance_dir2(instance))
+            .join("console.sock")
+            .to_string_lossy()
+            .into_owned()
+    }
+
     pub fn get_ssh_private_key_file(&self, instance: &str) -> String {
         PathBuf::from(self.get_instance_dir2(instance))
             .join("ssh_client_key")

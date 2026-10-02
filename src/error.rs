@@ -259,13 +259,6 @@ Troubleshoot:
     #[error("Web Error: the server stopped sending data")]
     WebTimeout,
 
-    // TLS
-    #[error("TLS certificate generation error: {0}")]
-    TlsCertGeneration(#[from] rcgen::Error),
-
-    #[error("TLS connection error: {0}")]
-    TlsConnection(#[source] Box<dyn std::error::Error + Send + Sync>),
-
     // Parsing
     #[error(
         "CPU arch '{0}' is not supported.\n\nChoose a supported architecture: 'amd64' or 'arm64'"
@@ -311,10 +304,6 @@ impl Error {
             name: name.to_string(),
             source: Box::new(source),
         }
-    }
-
-    pub fn from_tls(source: impl std::error::Error + Send + Sync + 'static) -> Self {
-        Error::TlsConnection(Box::new(source))
     }
 
     pub fn from_sftp_session(
