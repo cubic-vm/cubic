@@ -8,6 +8,8 @@ DOCKER_CMD=docker run --rm -v .:/usr/local/app \
 	-v ${BUILD_VOLUME}:/usr/local/app/target \
 	-v ${CARGO_VOLUME}:/usr/local/cargo
 IMAGE=cubic:latest
+VULNLOG_IMAGE=ghcr.io/vulnlog/vulnlog:0.17.0
+VULNLOG_CMD=docker run --rm --user $$(id -u):$$(id -g) -v .:/work ${VULNLOG_IMAGE}
 
 CMDS= run create instances images ports show modify console ssh scp start stop \
 		restart rename clone delete prune completions
@@ -26,14 +28,15 @@ cleanall: build-image
 
 format: build-image
 	${DOCKER_CMD} ${IMAGE} cargo fmt --check
-	${DOCKER_CMD} ${IMAGE} vulnlog fmt --check vulnlog.yml
+	${VULNLOG_CMD} fmt --check vulnlog.yml
 
 fix-format: build-image
 	${DOCKER_CMD} ${IMAGE} cargo fmt
-	${DOCKER_CMD} ${IMAGE} vulnlog fmt vulnlog.yml
+	${VULNLOG_CMD} fmt vulnlog.yml
 
 lint: build-image
 	${DOCKER_CMD} ${IMAGE} cargo clippy --all-targets -- -D warnings
+	${VULNLOG_CMD} validate --strict vulnlog.yml
 
 fix-lint: build-image
 	${DOCKER_CMD} ${IMAGE} cargo clippy --all-targets --fix --allow-dirty --allow-staged
@@ -70,8 +73,8 @@ doc: build-image
 	@${DOCKER_CMD} -it ${IMAGE} ./scripts/generate-page.sh v0.0.0-dev
 	@${DOCKER_CMD} -p 4000:4000 -it ${IMAGE} python3 -m http.server -d target/page 4000
 
-suppress: build-image
-	@${DOCKER_CMD} -it ${IMAGE} vulnlog suppress vulnlog.yml -o .cargo/audit.toml
+suppress:
+	@${VULNLOG_CMD} suppress vulnlog.yml -o .cargo/audit.toml
 
 release: build-image
 	sed "s/^\(version =\).*$$/\1 \"${version}\"/g" -i Cargo.toml
