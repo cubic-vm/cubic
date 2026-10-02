@@ -51,6 +51,17 @@ jobs:
       - name: Lint Shell Scripts
         run: shellcheck .github/scripts/*.sh scripts/*.sh
 
+      - name: Setup Vulnlog
+        uses: vulnlog/setup-vulnlog@v1
+        with:
+          version: 0.17.0
+
+      - name: Validate Vulnlog File
+        run: vulnlog validate --strict vulnlog.yml
+
+      - name: Check Vulnlog Format
+        run: vulnlog fmt --check vulnlog.yml
+
   commits:
     name: Commit Messages
     runs-on: ubuntu-latest

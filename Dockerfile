@@ -6,7 +6,6 @@ COPY . .
 ENV DEBIAN_FRONTEND=noninteractive
 ENV XDG_DATA_HOME=/tmp/data
 ENV XDG_CACHE_HOME=/tmp/cache
-ENV PATH=/root/bin:${PATH}
 RUN apt update && \
     apt install -y \
         qemu-utils \
@@ -17,10 +16,7 @@ RUN apt update && \
         git \
         vim \
         yamllint \
-        shellcheck \
-        unzip \
-        curl &&\
-    curl -fsSL https://github.com/vulnlog/vulnlog/releases/download/v0.16.0/install-vulnlog.sh | sh &&\
+        shellcheck &&\
     git config --global --add safe.directory /usr/local/app
 RUN rustup component add clippy rustfmt && \
     cargo install --locked cargo-audit &&\
