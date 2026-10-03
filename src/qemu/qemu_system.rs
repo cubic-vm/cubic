@@ -7,6 +7,7 @@ use crate::qemu::QemuPathBuilder;
 use crate::util::SystemCommand;
 
 pub const NETDEV_ID: &str = "net0";
+const DISK_ID: &str = "disk0";
 pub const SOFTWARE_ACCEL: &str = "tcg";
 
 pub struct QemuSystem {
@@ -32,8 +33,6 @@ impl QemuSystem {
         // Resolve the QEMU binary by name from the extended PATH.
         command.set_env("PATH", QemuPathBuilder::new(system).build());
 
-        // Only boot disk
-        command.arg("-boot").arg("c");
         // Disable display
         command.arg("-display").arg("none");
         // Do not create emulated default devices (NIC, VGA, serial, parallel,
@@ -119,10 +118,15 @@ impl QemuSystem {
             ));
     }
 
+    // The boot index makes the firmware boot this disk only.
     pub fn add_disk(&mut self, path: &str) {
-        self.command.arg("-drive").arg(format!(
-            "if=virtio,format=qcow2,discard=unmap,detect-zeroes=unmap,file={path}"
-        ));
+        self.command
+            .arg("-drive")
+            .arg(format!(
+                "if=none,id={DISK_ID},format=qcow2,discard=unmap,detect-zeroes=unmap,file={path}"
+            ))
+            .arg("-device")
+            .arg(format!("virtio-blk-pci,drive={DISK_ID},bootindex=0"));
     }
 
     pub fn add_iso(&mut self, path: &str) {
@@ -201,8 +205,17 @@ mod tests {
         let mut qemu = QemuSystem::from(&SystemMock::new(), Arch::AMD64).unwrap();
         qemu.add_disk("/data/machines/test/machine.img");
         assert!(qemu.command.get_command().contains(
-            "-drive if=virtio,format=qcow2,discard=unmap,detect-zeroes=unmap,file=/data/machines/test/machine.img"
+            "-drive if=none,id=disk0,format=qcow2,discard=unmap,detect-zeroes=unmap,file=/data/machines/test/machine.img"
         ));
+    }
+
+    #[test]
+    fn test_add_disk_marks_the_disk_as_the_boot_device() {
+        let mut qemu = QemuSystem::from(&SystemMock::new(), Arch::AMD64).unwrap();
+        qemu.add_disk("/data/machines/test/machine.img");
+        let command = qemu.command.get_command();
+        assert!(command.contains("-device virtio-blk-pci,drive=disk0,bootindex=0"));
+        assert!(!command.contains("-boot"));
     }
 
     #[test]
