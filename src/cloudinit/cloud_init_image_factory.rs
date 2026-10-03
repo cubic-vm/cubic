@@ -33,7 +33,8 @@ impl CloudInitImageFactory {
 
         // Generate Cloud Init files
         let meta_data = MetaDataFactory.create(&instance.name);
-        let user_data = UserDataFactory.create(instance, &pubkey);
+        let timezone = system.get_timezone_name().unwrap_or_default();
+        let user_data = UserDataFactory.create(instance, &pubkey, &timezone);
 
         // Generate ISO file
         let mut iso_writer = IsoWriter::new();
@@ -115,6 +116,29 @@ mod tests {
                 .windows(pubkey.len())
                 .any(|window| window == pubkey.as_bytes())
         );
+    }
+
+    #[test]
+    fn test_create_sets_the_host_timezone_or_utc() {
+        let env = build_env();
+
+        let system = SystemMock::new().set_host_timezone("Region/City");
+        CloudInitImageFactory
+            .create(&system, &env, &build_instance())
+            .unwrap();
+        let image = system
+            .get_written_file(&env.get_cloud_init_file("test"))
+            .unwrap();
+        assert!(String::from_utf8_lossy(&image).contains("timezone: Region/City\n"));
+
+        let system = SystemMock::new();
+        CloudInitImageFactory
+            .create(&system, &env, &build_instance())
+            .unwrap();
+        let image = system
+            .get_written_file(&env.get_cloud_init_file("test"))
+            .unwrap();
+        assert!(String::from_utf8_lossy(&image).contains("timezone: UTC\n"));
     }
 
     #[test]

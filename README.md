@@ -246,6 +246,7 @@ drives to run every VM.
 | clap_complete | Generate shell completion scripts |
 | crossterm | Terminal control for the interactive console and views |
 | getrandom | Secure randomness for SSH key generation |
+| iana-time-zone | Read the time zone name of the host |
 | regex | Parse image and instance names and scrape image version listings |
 | reqwest | Download official Linux distribution images over HTTPS |
 | russh | Pure-Rust SSH client to connect into VMs |

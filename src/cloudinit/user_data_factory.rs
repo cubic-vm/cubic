@@ -1,9 +1,9 @@
-use crate::models::Instance;
+use crate::models::{Instance, TimezoneName};
 
 pub struct UserDataFactory;
 
 impl UserDataFactory {
-    pub fn create(&self, instance: &Instance, pubkey: &str) -> String {
+    pub fn create(&self, instance: &Instance, pubkey: &str, timezone: &TimezoneName) -> String {
         let user = &instance.user;
         let shell = instance.get_shell();
         let privilege_tool = match instance.get_privilege_tool() {
@@ -38,6 +38,7 @@ impl UserDataFactory {
             \u{20}\u{20}\u{20}\u{20}{privilege_tool}\n\
             resize_rootfs: noblock\n\
             ssh_genkeytypes: [ed25519]\n\
+            timezone: {timezone}\n\
             write_files:\n\
             \u{20}\u{20}- path: /etc/ssh/sshd_config.d/10-cubic.conf\n\
             \u{20}\u{20}\u{20}\u{20}content: \"AcceptEnv *\\n\"\n\
@@ -61,10 +62,14 @@ mod tests {
         }
     }
 
+    fn build_timezone() -> TimezoneName {
+        TimezoneName::from_str("Region/City").unwrap()
+    }
+
     #[test]
     fn test_write_user_data_without_execute() {
         let instance = build_instance(None, None);
-        let actual = UserDataFactory.create(&instance, "pubkey");
+        let actual = UserDataFactory.create(&instance, "pubkey", &build_timezone());
         let expected = r#"#cloud-config
 users:
   - name: tux
@@ -75,6 +80,7 @@ users:
     sudo: ALL=(ALL) NOPASSWD:ALL
 resize_rootfs: noblock
 ssh_genkeytypes: [ed25519]
+timezone: Region/City
 write_files:
   - path: /etc/ssh/sshd_config.d/10-cubic.conf
     content: "AcceptEnv *\n"
@@ -88,7 +94,7 @@ write_files:
     #[test]
     fn test_write_user_data_for_alpine_with_execute() {
         let instance = build_instance(Some("alpine:3.22"), Some("\"doas apk add vim\""));
-        let actual = UserDataFactory.create(&instance, "pubkey");
+        let actual = UserDataFactory.create(&instance, "pubkey", &build_timezone());
         let expected = r#"#cloud-config
 users:
   - name: tux
@@ -99,6 +105,7 @@ users:
     doas: [permit nopass tux]
 resize_rootfs: noblock
 ssh_genkeytypes: [ed25519]
+timezone: Region/City
 write_files:
   - path: /etc/ssh/sshd_config.d/10-cubic.conf
     content: "AcceptEnv *\n"
@@ -114,7 +121,7 @@ runcmd:
     #[test]
     fn test_write_user_data_escapes_execute() {
         let instance = build_instance(None, Some("a\\b\t\"c\"\nd\re"));
-        let actual = UserDataFactory.create(&instance, "pubkey");
+        let actual = UserDataFactory.create(&instance, "pubkey", &build_timezone());
 
         let expected_runcmd = r#"runcmd:
   - "a\\b\t\"c\"\nd\re"

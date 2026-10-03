@@ -15,6 +15,7 @@ mod target;
 mod target_instance_path;
 mod target_path;
 mod template;
+mod timezone_name;
 mod user_name;
 
 pub use arch::*;
@@ -34,4 +35,5 @@ pub use target::*;
 pub use target_instance_path::*;
 pub use target_path::*;
 pub use template::*;
+pub use timezone_name::*;
 pub use user_name::*;
