@@ -69,6 +69,9 @@ System Settings
    * - ``ssh_genkeytypes``
      - ``ed25519``. The guest generates one host key type. Cubic pins that key
        on the first connect, see :ref:`instance file`.
+   * - ``timezone``
+     - Time zone of the host at the time the VM instance is created. ``UTC``
+       when the host does not report one.
    * - ``/etc/ssh/sshd_config.d/10-cubic.conf``
      - Written with ``AcceptEnv *``, so the guest accepts every variable that
        ``cubic ssh --env`` and ``cubic exec --env`` send. See

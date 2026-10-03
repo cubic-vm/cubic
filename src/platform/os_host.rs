@@ -1,3 +1,4 @@
+use crate::models::TimezoneName;
 use crate::platform::{Host, OsSystem};
 
 impl Host for OsSystem {
@@ -23,5 +24,9 @@ impl Host for OsSystem {
         let mut system = sysinfo::System::new();
         system.refresh_cpu_all();
         system.cpus().len() as u16
+    }
+
+    fn get_timezone_name(&self) -> Option<TimezoneName> {
+        iana_time_zone::get_timezone().ok()?.parse().ok()
     }
 }

@@ -502,6 +502,7 @@ dependencies = [
  "clap_complete",
  "crossterm",
  "getrandom 0.4.3",
+ "iana-time-zone",
  "regex",
  "reqwest",
  "russh",

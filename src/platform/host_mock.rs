@@ -1,3 +1,4 @@
+use crate::models::TimezoneName;
 use crate::platform::{Host, SystemMock};
 use std::collections::HashMap;
 
@@ -8,6 +9,7 @@ pub struct HostMock {
     total_memory: u64,
     available_memory: u64,
     cpu_count: u16,
+    timezone: Option<TimezoneName>,
 }
 
 impl Default for HostMock {
@@ -19,6 +21,7 @@ impl Default for HostMock {
             total_memory: 16 * 1024 * 1024 * 1024,
             available_memory: 16 * 1024 * 1024 * 1024,
             cpu_count: 8,
+            timezone: None,
         }
     }
 }
@@ -55,6 +58,11 @@ impl SystemMock {
             .set_resources(total_memory, available_memory, cpu_count);
         self
     }
+
+    pub fn set_host_timezone(mut self, timezone: &str) -> Self {
+        self.host.timezone = Some(timezone.parse().unwrap());
+        self
+    }
 }
 
 impl Host for SystemMock {
@@ -72,5 +80,9 @@ impl Host for SystemMock {
 
     fn get_cpu_count(&self) -> u16 {
         self.host.cpu_count
+    }
+
+    fn get_timezone_name(&self) -> Option<TimezoneName> {
+        self.host.timezone.clone()
     }
 }
