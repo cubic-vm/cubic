@@ -16,7 +16,7 @@ use std::sync::Arc;
 ///   [...]
 ///
 #[derive(Parser)]
-#[clap(verbatim_doc_comment)]
+#[clap(alias = "sh", verbatim_doc_comment)]
 pub struct SshCommand {
     /// Target instance (format: [username@]instance, e.g. 'myinstance' or 'cubic@myinstance')
     pub target: Target,
