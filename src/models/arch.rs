@@ -23,6 +23,15 @@ impl Arch {
         Arch::AMD64
     }
 
+    /// Arch part of an image name, empty for the host arch
+    pub fn get_suffix(&self) -> String {
+        if *self == Arch::get_host() {
+            String::new()
+        } else {
+            format!(":{self}")
+        }
+    }
+
     pub fn as_vendor_str(&self) -> &str {
         match self {
             Arch::AMD64 => "amd64",
@@ -87,5 +96,16 @@ mod tests {
         assert_eq!(Arch::ARM64.as_vendor_str(), "arm64");
         assert_eq!(Arch::ARM64.as_canonical_str(), "aarch64");
         assert_eq!(Arch::ARM64.to_string(), "arm64");
+    }
+
+    #[test]
+    fn test_get_suffix_is_empty_for_the_host() {
+        let foreign_arch = match Arch::get_host() {
+            Arch::AMD64 => Arch::ARM64,
+            Arch::ARM64 => Arch::AMD64,
+        };
+
+        assert_eq!(Arch::get_host().get_suffix(), "");
+        assert_eq!(foreign_arch.get_suffix(), format!(":{foreign_arch}"));
     }
 }
