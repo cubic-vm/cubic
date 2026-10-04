@@ -51,8 +51,7 @@ impl AsyncRead for AsyncTransferView {
 
         if !is_done {
             self.view.set_progress(transfered as u64, Some(size as u64));
-            self.console
-                .update_animation(&self.view.render(self.console.width()));
+            self.view.draw(&self.console);
         }
         result
     }

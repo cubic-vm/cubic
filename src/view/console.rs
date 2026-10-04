@@ -50,6 +50,23 @@ impl Console {
         })
     }
 
+    pub fn has_unicode(&self) -> bool {
+        let read = |key: &str| {
+            self.system
+                .read_env_var(key)
+                .filter(|value| !value.is_empty())
+        };
+        if ["linux", "dumb"].contains(&read("TERM").unwrap_or_default().as_str()) {
+            return false;
+        }
+        let locale = ["LC_ALL", "LC_CTYPE", "LANG"]
+            .iter()
+            .find_map(|var| read(var))
+            .unwrap_or_default()
+            .to_uppercase();
+        read("WT_SESSION").is_some() || locale.contains("UTF-8") || locale.contains("UTF8")
+    }
+
     fn get_verbosity(&self) -> Verbosity {
         *self.verbosity.lock().unwrap()
     }
@@ -88,7 +105,12 @@ impl Console {
     pub fn update_animation(&self, frame: &str) {
         let mut current = self.frame.lock().unwrap();
         self.clear_frame(&current);
-        *current = frame.to_string();
+        let width = self.width();
+        *current = frame
+            .split('\n')
+            .map(|line| line.chars().take(width).collect())
+            .collect::<Vec<String>>()
+            .join("\n");
         self.draw_frame(&current);
     }
 
@@ -210,6 +232,24 @@ mod tests {
             system.get_output(),
             format!("{home}first{clear}{home}second{clear}")
         );
+    }
+
+    #[test]
+    fn test_unicode_follows_the_terminal_and_the_locale() {
+        let detect = |vars: &[(&str, &str)]| {
+            let system = vars
+                .iter()
+                .fold(SystemMock::new(), |system, (k, v)| system.add_env_var(k, v));
+            Console::new(Arc::new(system)).has_unicode()
+        };
+
+        assert!(detect(&[("LANG", "en_US.UTF-8")]));
+        assert!(detect(&[("LC_CTYPE", "de_CH.utf8")]));
+        assert!(detect(&[("WT_SESSION", "1")]));
+        assert!(!detect(&[]));
+        assert!(!detect(&[("LC_ALL", "C"), ("LANG", "en_US.UTF-8")]));
+        assert!(!detect(&[("TERM", "linux"), ("LANG", "en_US.UTF-8")]));
+        assert!(!detect(&[("TERM", "dumb"), ("LANG", "en_US.UTF-8")]));
     }
 
     #[test]

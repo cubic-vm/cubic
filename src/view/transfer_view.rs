@@ -1,7 +1,7 @@
 use crate::models::DataSize;
-use crate::view::ProgressBar;
+use crate::view::{Console, ProgressBar};
 
-const TEXT_WIDTH: usize = 30;
+const TEXT_WIDTH: usize = 50;
 const MIN_BAR_WIDTH: usize = 10;
 
 pub struct TransferView {
@@ -24,7 +24,11 @@ impl TransferView {
         self.total_bytes = total_bytes;
     }
 
-    pub fn render(&self, width: usize) -> String {
+    pub fn draw(&self, console: &Console) {
+        console.update_animation(&self.render(console.width(), console.has_unicode()));
+    }
+
+    fn render(&self, width: usize, unicode: bool) -> String {
         let text = format!("{:TEXT_WIDTH$.TEXT_WIDTH$}", self.message);
 
         let Some(total_bytes) = self.total_bytes else {
@@ -45,9 +49,12 @@ impl TransferView {
             total.to_size()
         );
         let bar_width = width
-            .saturating_sub(text.len() + 2 + stats.len())
+            .saturating_sub(TEXT_WIDTH + 2 + stats.len())
             .max(MIN_BAR_WIDTH);
-        format!("{text} {} {stats}", ProgressBar::new(percent, bar_width))
+        format!(
+            "{text} {} {stats}",
+            ProgressBar::new(percent, bar_width, unicode)
+        )
     }
 }
 
@@ -59,7 +66,7 @@ mod tests {
     fn test_text_column_is_fixed_width() {
         let mut view = TransferView::new("Downloading ubuntu");
         view.set_progress(75, Some(100));
-        let line = view.render(80);
+        let line = view.render(80, false);
         assert_eq!(line.len(), 80);
         assert!(line.starts_with("Downloading ubuntu"));
         assert_eq!(&line[TEXT_WIDTH..TEXT_WIDTH + 2], " [");
@@ -70,7 +77,7 @@ mod tests {
     fn test_stats_sit_on_the_right() {
         let mut view = TransferView::new("Downloading ubuntu");
         view.set_progress(50, Some(100));
-        let line = view.render(80);
+        let line = view.render(80, false);
         assert!(line.ends_with("50%  50/100 B"));
     }
 
@@ -78,25 +85,29 @@ mod tests {
     fn test_stats_stay_put_as_the_size_grows() {
         let mut view = TransferView::new("Downloading ubuntu");
         view.set_progress(1, Some(10 * 1024 * 1024 * 1024));
-        let small = view.render(80);
+        let small = view.render(80, false);
         view.set_progress(5 * 1024 * 1024 * 1024, Some(10 * 1024 * 1024 * 1024));
-        let large = view.render(80);
+        let large = view.render(80, false);
         assert_eq!(small.find('/'), large.find('/'));
     }
 
     #[test]
-    fn test_long_message_is_truncated_to_thirty() {
-        let mut view = TransferView::new("Downloading a-very-long-image-name-that-overflows");
+    fn test_long_message_is_truncated() {
+        let mut view =
+            TransferView::new("Downloading a-very-long-image-name-that-overflows-the-column");
         view.set_progress(75, Some(100));
-        let line = view.render(80);
-        assert_eq!(&line[..TEXT_WIDTH], "Downloading a-very-long-image-");
+        let line = view.render(80, false);
+        assert_eq!(
+            &line[..TEXT_WIDTH],
+            "Downloading a-very-long-image-name-that-overflows-"
+        );
     }
 
     #[test]
     fn test_narrow_width_keeps_minimum_bar() {
         let mut view = TransferView::new("Downloading ubuntu");
         view.set_progress(50, Some(100));
-        let line = view.render(4);
+        let line = view.render(4, false);
         assert!(line.contains('='));
     }
 
@@ -104,7 +115,7 @@ mod tests {
     fn test_no_total_omits_bar() {
         let mut view = TransferView::new("Downloading ubuntu");
         view.set_progress(50, None);
-        let line = view.render(80);
+        let line = view.render(80, false);
         assert!(!line.contains('['));
     }
 }

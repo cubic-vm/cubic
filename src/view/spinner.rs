@@ -5,6 +5,7 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
 const SPINNER_CHARS: &[char] = &['-', '\\', '|', '/'];
+const UNICODE_SPINNER_CHARS: &[char] = &['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 const TICK: Duration = Duration::from_millis(100);
 
 // A running spinner. It ticks on its own thread and clears the line when the
@@ -22,8 +23,10 @@ impl Spinner {
             let console = Arc::clone(&console);
             let handle = thread::spawn(move || {
                 let start = Instant::now();
+                let unicode = console.has_unicode();
                 loop {
-                    let frame = Self::render_frame(&text, start.elapsed(), console.width());
+                    let frame =
+                        Self::render_frame(&text, start.elapsed(), console.width(), unicode);
                     console.update_animation(&frame);
                     match rx.recv_timeout(TICK) {
                         Err(RecvTimeoutError::Timeout) => continue,
@@ -43,11 +46,16 @@ impl Spinner {
         }
     }
 
-    fn render_frame(text: &str, duration: Duration, width: usize) -> String {
+    fn render_frame(text: &str, duration: Duration, width: usize, unicode: bool) -> String {
+        let chars = if unicode {
+            UNICODE_SPINNER_CHARS
+        } else {
+            SPINNER_CHARS
+        };
         let minutes = duration.as_secs() / 60;
         let seconds = duration.as_secs() % 60;
         let tenth = duration.as_millis() / 100;
-        let spinner = SPINNER_CHARS[(tenth % SPINNER_CHARS.len() as u128) as usize];
+        let spinner = chars[(tenth % chars.len() as u128) as usize];
         let tenth = tenth % 10;
         let time = if minutes > 0 {
             format!("{minutes}m {seconds:02}.{tenth}s")
@@ -55,25 +63,9 @@ impl Spinner {
             format!("{seconds}.{tenth}s")
         };
 
-        let mut output = String::with_capacity(width);
-        if seconds.is_multiple_of(2) {
-            output.push('*');
-        } else {
-            output.push(' ');
-        }
-        output.push(' ');
-        output.push_str(text);
-        output.push(' ');
-        output.push(spinner);
-        output.push_str(
-            &" ".repeat(
-                width
-                    .saturating_sub(output.chars().count() + time.chars().count())
-                    .max(1),
-            ),
-        );
-        output.push_str(&time);
-        output.chars().take(width).collect()
+        let left = format!("{spinner} {text} ");
+        let time_width = width.saturating_sub(left.chars().count());
+        format!("{left}{time:>time_width$}")
     }
 
     // Also runs on drop, and is safe to call twice.
@@ -101,47 +93,24 @@ mod tests {
         let text = "Cloning foobar";
         let line_length = 25;
 
-        let frame1 = Spinner::render_frame(text, Duration::from_millis(0), line_length);
+        let frame1 = Spinner::render_frame(text, Duration::from_millis(0), line_length, false);
         assert_eq!(frame1.len(), line_length);
-        assert_eq!(frame1, "* Cloning foobar -   0.0s");
+        assert_eq!(frame1, "- Cloning foobar     0.0s");
 
-        let frame2 = Spinner::render_frame(text, Duration::from_millis(100), line_length);
+        let frame2 = Spinner::render_frame(text, Duration::from_millis(100), line_length, false);
         assert_eq!(frame2.len(), line_length);
-        assert_eq!(frame2, "* Cloning foobar \\   0.1s");
+        assert_eq!(frame2, "\\ Cloning foobar     0.1s");
 
-        let frame3 = Spinner::render_frame(text, Duration::from_millis(200), line_length);
+        let frame3 = Spinner::render_frame(text, Duration::from_millis(200), line_length, false);
         assert_eq!(frame3.len(), line_length);
-        assert_eq!(frame3, "* Cloning foobar |   0.2s");
+        assert_eq!(frame3, "| Cloning foobar     0.2s");
 
-        let frame4 = Spinner::render_frame(text, Duration::from_millis(300), line_length);
+        let frame4 = Spinner::render_frame(text, Duration::from_millis(300), line_length, false);
         assert_eq!(frame4.len(), line_length);
-        assert_eq!(frame4, "* Cloning foobar /   0.3s");
-    }
+        assert_eq!(frame4, "/ Cloning foobar     0.3s");
 
-    #[test]
-    fn test_bullet_point() {
-        let text = "Starting myinstance";
-        let line_length = 30;
-
-        let frame1 = Spinner::render_frame(text, Duration::from_millis(0), line_length);
-        assert_eq!(frame1.len(), line_length);
-        assert_eq!(frame1, "* Starting myinstance -   0.0s");
-
-        let frame2 = Spinner::render_frame(text, Duration::from_millis(500), line_length);
-        assert_eq!(frame2.len(), line_length);
-        assert_eq!(frame2, "* Starting myinstance \\   0.5s");
-
-        let frame3 = Spinner::render_frame(text, Duration::from_millis(1000), line_length);
-        assert_eq!(frame3.len(), line_length);
-        assert_eq!(frame3, "  Starting myinstance |   1.0s");
-
-        let frame4 = Spinner::render_frame(text, Duration::from_millis(1500), line_length);
-        assert_eq!(frame4.len(), line_length);
-        assert_eq!(frame4, "  Starting myinstance /   1.5s");
-
-        let frame5 = Spinner::render_frame(text, Duration::from_millis(2000), line_length);
-        assert_eq!(frame5.len(), line_length);
-        assert_eq!(frame5, "* Starting myinstance -   2.0s");
+        let unicode = Spinner::render_frame(text, Duration::from_millis(200), line_length, true);
+        assert_eq!(unicode, "⠹ Cloning foobar     0.2s");
     }
 
     #[test]
@@ -149,40 +118,28 @@ mod tests {
         let text = "Stopping quickstart";
         let line_length = 35;
 
-        let frame1 = Spinner::render_frame(text, Duration::from_millis(1), line_length);
-        assert_eq!(frame1, "* Stopping quickstart -        0.0s");
+        let frame1 = Spinner::render_frame(text, Duration::from_millis(1), line_length, false);
+        assert_eq!(frame1, "- Stopping quickstart          0.0s");
 
-        let frame2 = Spinner::render_frame(text, Duration::from_secs(1), line_length);
-        assert_eq!(frame2, "  Stopping quickstart |        1.0s");
+        let frame2 = Spinner::render_frame(text, Duration::from_secs(1), line_length, false);
+        assert_eq!(frame2, "| Stopping quickstart          1.0s");
 
-        let frame3 = Spinner::render_frame(text, Duration::from_mins(1), line_length);
-        assert_eq!(frame3, "* Stopping quickstart -    1m 00.0s");
+        let frame3 = Spinner::render_frame(text, Duration::from_mins(1), line_length, false);
+        assert_eq!(frame3, "- Stopping quickstart      1m 00.0s");
 
-        let frame4 = Spinner::render_frame(text, Duration::from_millis(135432), line_length);
-        assert_eq!(frame4, "  Stopping quickstart |    2m 15.4s");
+        let frame4 = Spinner::render_frame(text, Duration::from_millis(135432), line_length, false);
+        assert_eq!(frame4, "| Stopping quickstart      2m 15.4s");
     }
 
     #[test]
     fn test_resize() {
         let text = "Cloning foobar";
 
-        let frame1 = Spinner::render_frame(text, Duration::from_millis(1342), 40);
+        let frame1 = Spinner::render_frame(text, Duration::from_millis(1342), 40, false);
         assert_eq!(frame1.len(), 40);
-        assert_eq!(frame1, "  Cloning foobar \\                  1.3s");
+        assert_eq!(frame1, "\\ Cloning foobar                    1.3s");
 
-        let frame2 = Spinner::render_frame(text, Duration::from_millis(1342), 20);
-        assert_eq!(frame2.len(), 20);
-        assert_eq!(frame2, "  Cloning foobar \\ 1");
-
-        let frame3 = Spinner::render_frame(text, Duration::from_millis(1342), 10);
-        assert_eq!(frame3.len(), 10);
-        assert_eq!(frame3, "  Cloning ");
-
-        let frame4 = Spinner::render_frame(text, Duration::from_millis(1342), 5);
-        assert_eq!(frame4.len(), 5);
-        assert_eq!(frame4, "  Clo");
-
-        let frame5 = Spinner::render_frame(text, Duration::from_millis(1342), 0);
-        assert_eq!(frame5.len(), 0);
+        let frame2 = Spinner::render_frame(text, Duration::from_millis(1342), 10, false);
+        assert_eq!(frame2, "\\ Cloning foobar 1.3s");
     }
 }
