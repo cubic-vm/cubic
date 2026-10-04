@@ -53,7 +53,7 @@ impl FromStr for ImageName {
 
 impl fmt::Display for ImageName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "{}:{}:{}", self.distro, self.name, self.arch)
+        write!(f, "{}:{}{}", self.distro, self.name, self.arch.get_suffix())
     }
 }
 
@@ -99,10 +99,8 @@ mod tests {
     #[test]
     fn test_to_string() {
         assert_eq!(
-            ImageName::from_str("debian:bookworm:arm64")
-                .unwrap()
-                .to_string(),
-            "debian:bookworm:arm64"
+            ImageName::from_str("debian:bookworm").unwrap().to_string(),
+            "debian:bookworm"
         );
     }
 }

@@ -94,8 +94,9 @@ impl Image {
         self.image_file.contains('*')
     }
 
+    /// Image name with the arch when it differs from the host
     pub fn to_name(&self) -> String {
-        format!("{}:{}", self.get_image_name(), self.arch)
+        format!("{}{}", self.get_image_name(), self.arch.get_suffix())
     }
 
     pub fn to_file_name(&self) -> String {
