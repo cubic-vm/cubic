@@ -59,7 +59,7 @@ fn check_target_is_running(context: &commands::Context, target: &TargetPath) -> 
 ///   $ cubic scp trixie:~/cubic.tar.gz noble:~/
 ///
 #[derive(Parser)]
-#[clap(verbatim_doc_comment)]
+#[clap(alias = "cp", verbatim_doc_comment)]
 pub struct ScpCommand {
     /// Source of the data to copy
     from: TargetPath,
