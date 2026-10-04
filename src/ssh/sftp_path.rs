@@ -2,7 +2,6 @@ use crate::error::{Error, FsOperation, Result};
 use crate::view::{AsyncFile, AsyncTransferView, Console, Spinner, TransferView};
 use russh::{Channel, client};
 use russh_sftp::{self, client::SftpSession};
-use std::cmp::max;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
@@ -183,7 +182,6 @@ impl SftpPath {
         copied: &mut usize,
         content: Box<dyn AsyncFile>,
     ) -> Result<()> {
-        let name = &format!("{:30}", &name[max(30, name.len()) - 30..name.len()]);
         let view = TransferView::new(name);
         let read = &mut AsyncTransferView::new(Arc::clone(console), view, content, total);
         read.transfered = *copied;

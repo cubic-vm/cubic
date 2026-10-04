@@ -47,8 +47,7 @@ impl io::Write for ProgressWriter {
         self.written += buf.len() as u64;
         self.hasher.update(buf);
         self.view.set_progress(self.written, self.size);
-        self.console
-            .update_animation(&self.view.render(self.console.width()));
+        self.view.draw(&self.console);
         self.file.write(buf)
     }
 
