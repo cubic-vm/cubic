@@ -33,7 +33,6 @@ pub trait InstanceStore {
         }
     }
 
-    fn get_pid(&self, instance: &Instance) -> Option<u64>;
     fn kill(&self, instance: &Instance) -> Result<()>;
 
     fn get_monitor(&self, instance: &Instance) -> Result<QemuMonitorClient>;

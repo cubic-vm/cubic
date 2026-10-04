@@ -25,7 +25,7 @@ impl InstanceDao {
         })
     }
 
-    fn read_running_pid(&self, instance: &Instance) -> Option<u64> {
+    fn get_pid(&self, instance: &Instance) -> Option<u64> {
         let pid = self
             .system
             .read_file_to_string(Path::new(&self.env.get_qemu_pid_file(&instance.name)))
@@ -186,11 +186,7 @@ impl InstanceStore for InstanceDao {
     }
 
     fn is_running(&self, instance: &Instance) -> bool {
-        self.read_running_pid(instance).is_some()
-    }
-
-    fn get_pid(&self, instance: &Instance) -> Option<u64> {
-        self.read_running_pid(instance)
+        self.get_pid(instance).is_some()
     }
 
     fn kill(&self, instance: &Instance) -> Result<()> {
@@ -286,7 +282,6 @@ mod tests {
         let dao = InstanceDao::new(Arc::new(system), &env).unwrap();
 
         assert!(dao.is_running(&build_instance()));
-        assert_eq!(dao.get_pid(&build_instance()), Some(1234));
     }
 
     #[test]

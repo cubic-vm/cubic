@@ -15,16 +15,10 @@ use clap::Parser;
 ///   trixie        debian:13      amd64       6     16 G      100 G       yes
 ///   fedora        fedora:42      amd64       4   4096 M   10/100 G        no
 ///
-///   Show the process id of each running VM instance:
-///   $ cubic instances --all
-///   PID    Name          OS             Arch    vCPUs   Memory       Disk   Running
-///          noble-arm64   ubuntu:24.04   arm64       8   8192 M    4/100 G       yes
-///   1059   trixie        debian:13      amd64       6     16 G      100 G       yes
-///          fedora        fedora:42      amd64       4   4096 M   10/100 G        no
-///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
 pub struct ListInstanceCommand {
+    // Show all information
     #[clap(flatten)]
     pub all: commands::AllInfoArg,
 }
@@ -35,11 +29,7 @@ impl Command for ListInstanceCommand {
         let instance_names = instance_store.get_instances();
 
         let mut view = TableView::new();
-        let header = view.add_row();
-        if self.all.value {
-            header.add("PID", Alignment::Left);
-        }
-        header
+        view.add_row()
             .add("Name", Alignment::Left)
             .add("OS", Alignment::Left)
             .add("Arch", Alignment::Left)
@@ -55,13 +45,6 @@ impl Command for ListInstanceCommand {
             }
 
             let row = view.add_row();
-            if self.all.value {
-                let pid = instance_store
-                    .get_pid(&instance)
-                    .map(|pid| pid.to_string())
-                    .unwrap_or_default();
-                row.add(&pid, Alignment::Left);
-            }
             let disk = match &instance.disk_used {
                 Some(used) => format!(
                     "{}/{}",
@@ -162,50 +145,6 @@ mod tests {
 Name    OS             Arch    vCPUs   Memory         Disk   Running
 test    ubuntu:24.04   amd64       1   1024 B   512/1024 K        no
 test2                  amd64       5      0 B       5000 B        no
-"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_list_instance_command_all_adds_the_pid_column() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context(&system, build_instances());
-
-        ListInstanceCommand { all: true.into() }
-            .run(&context)
-            .await
-            .unwrap();
-
-        assert_eq!(
-            system.get_output(),
-            "\
-PID   Name    OS             Arch    vCPUs   Memory         Disk   Running
-      test    ubuntu:24.04   amd64       1   1024 B   512/1024 K        no
-      test2                  amd64       5      0 B       5000 B        no
-"
-        );
-    }
-
-    #[tokio::test]
-    async fn test_list_instance_command_all_shows_the_pid_of_a_running_instance() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context_with_store(
-            &system,
-            InstanceStoreMock::new_with_running(build_instances(), &["test2"])
-                .set_pid("test2", 1059),
-        );
-
-        ListInstanceCommand { all: true.into() }
-            .run(&context)
-            .await
-            .unwrap();
-
-        assert_eq!(
-            system.get_output(),
-            "\
-PID    Name    OS             Arch    vCPUs   Memory         Disk   Running
-       test    ubuntu:24.04   amd64       1   1024 B   512/1024 K        no
-1059   test2                  amd64       5      0 B       5000 B       yes
 "
         );
     }
