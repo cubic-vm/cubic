@@ -72,7 +72,6 @@ including every port forwarding rule:
     Isolated:     no
     SSH Port:     10022
     Forward:      127.0.0.1:8080:80/tcp
-    PID:          12345
     Disk Image:   ~/.local/share/cubic/machines/webserver/machine.img
     Config:       ~/.local/share/cubic/machines/webserver/instance.toml
     SSH Key:      ~/.local/share/cubic/machines/webserver/ssh_client_key

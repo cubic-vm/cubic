@@ -26,7 +26,6 @@ together:
     User:         alice
     Isolated:     no
     SSH Port:     40881
-    PID:          12345
     Disk Image:   ~/.local/share/cubic/machines/demo/machine.img
     Config:       ~/.local/share/cubic/machines/demo/instance.toml
     SSH Key:      ~/.local/share/cubic/machines/demo/ssh_client_key

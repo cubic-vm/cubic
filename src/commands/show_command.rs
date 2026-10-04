@@ -23,10 +23,9 @@ use clap::Parser;
 ///   Isolated:   no
 ///   Forward:    127.0.0.1:4000:4000/tcp
 ///
-///   Show all information, adding the process id, the SSH port, file locations and the SSH command
+///   Show all information, adding the SSH port, file locations and the SSH command
 ///   $ cubic show --all trixie
 ///   ... (fields above, then)
-///   PID:          12345
 ///   SSH Port:     54315
 ///   Disk Image:   ~/.local/share/cubic/machines/trixie/machine.img
 ///   Config:       ~/.local/share/cubic/machines/trixie/instance.toml

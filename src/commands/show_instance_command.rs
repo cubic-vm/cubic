@@ -58,9 +58,6 @@ impl Command for ShowInstanceCommand {
         }
 
         if self.all.value {
-            if let Some(pid) = instance_store.get_pid(&instance) {
-                view.add("PID", &pid.to_string());
-            }
             view.add("SSH Port", &instance.ssh_port.to_string());
             view.add("Disk Image", &env.get_instance_image_file(&instance.name));
             view.add("Config", &env.get_instance_toml_config_file(&instance.name));

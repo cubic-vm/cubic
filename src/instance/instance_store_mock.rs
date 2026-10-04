@@ -10,7 +10,6 @@ pub mod tests {
     pub struct InstanceStoreMock {
         instances: Vec<Instance>,
         running: Vec<String>,
-        pids: Vec<(String, u64)>,
         // Shared, so a test keeps a handle on what the store recorded after it
         // moved into a Context.
         pub killed: Arc<Mutex<Vec<String>>>,
@@ -29,17 +28,11 @@ pub mod tests {
             Self {
                 instances,
                 running: running.iter().map(|name| name.to_string()).collect(),
-                pids: Vec::new(),
                 killed: Arc::new(Mutex::new(Vec::new())),
                 stored: Arc::new(Mutex::new(Vec::new())),
                 deleted: Arc::new(Mutex::new(Vec::new())),
                 snapshots: Arc::new(Mutex::new(Vec::new())),
             }
-        }
-
-        pub fn set_pid(mut self, name: &str, pid: u64) -> Self {
-            self.pids.push((name.to_string(), pid));
-            self
         }
 
         fn record_snapshot(&self, action: &str, instance: &Instance, name: &str) {
@@ -102,13 +95,6 @@ pub mod tests {
 
         fn is_running(&self, instance: &Instance) -> bool {
             self.running.contains(&instance.name)
-        }
-
-        fn get_pid(&self, instance: &Instance) -> Option<u64> {
-            self.pids
-                .iter()
-                .find(|(name, _)| *name == instance.name)
-                .map(|(_, pid)| *pid)
         }
 
         fn kill(&self, instance: &Instance) -> Result<()> {
