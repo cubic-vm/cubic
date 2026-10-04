@@ -43,8 +43,8 @@ impl FromStr for Arch {
 
     fn from_str(arch: &str) -> Result<Arch> {
         match arch {
-            "amd64" => Ok(Arch::AMD64),
-            "arm64" => Ok(Arch::ARM64),
+            "amd64" | "x86_64" | "x86-64" => Ok(Arch::AMD64),
+            "arm64" | "aarch64" => Ok(Arch::ARM64),
             _ => Err(Error::UnknownArch(arch.to_string())),
         }
     }
@@ -63,7 +63,11 @@ mod tests {
     #[test]
     fn test_parse_an_arch() {
         assert_eq!(Arch::from_str("amd64").unwrap(), Arch::AMD64);
+        assert_eq!(Arch::from_str("x86_64").unwrap(), Arch::AMD64);
+        assert_eq!(Arch::from_str("x86-64").unwrap(), Arch::AMD64);
+
         assert_eq!(Arch::from_str("arm64").unwrap(), Arch::ARM64);
+        assert_eq!(Arch::from_str("aarch64").unwrap(), Arch::ARM64);
     }
 
     #[test]
