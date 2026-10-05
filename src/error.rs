@@ -163,14 +163,6 @@ Troubleshoot:
     #[error("Failed to apply port forwarding rule on the running instance: {0}")]
     HostfwdCommandFailed(String),
 
-    #[error("Process {0} is not running")]
-    ProcessNotFound(u64),
-
-    #[error(
-        "Cannot kill process {0}.\n\nTroubleshoot:\n  - Check that the process belongs to you\n  - Kill it manually and try again\n"
-    )]
-    KillFailed(u64),
-
     #[error("Could not detect shell")]
     CouldNotDetectShell,
 

@@ -190,26 +190,19 @@ impl InstanceStore for InstanceDao {
     }
 
     fn kill(&self, instance: &Instance) -> Result<()> {
-        let pid = self
-            .get_pid(instance)
-            .ok_or_else(|| Error::InstanceNotRunning(instance.name.clone()))?;
-
-        // A process that died between the check above and the signal already
-        // reached the goal of this call, so it counts as success. Only a live
-        // process that refused to die is an error, and it keeps its pid file,
-        // since dropping the file would orphan a QEMU process that no later
-        // command could reach.
-        let result = match self.system.kill_process(pid) {
-            Err(Error::ProcessNotFound(_)) => Ok(()),
+        match self
+            .get_monitor(instance)
+            .and_then(|mut monitor| monitor.quit())
+        {
+            // A refused connect means the VM is gone, so the pid file is stale
+            Err(Error::InstanceNotRunning(_)) => {
+                self.system
+                    .remove_file(Path::new(&self.env.get_qemu_pid_file(&instance.name)))
+                    .ok();
+                Ok(())
+            }
             result => result,
-        };
-
-        if result.is_ok() {
-            self.system
-                .remove_file(Path::new(&self.env.get_qemu_pid_file(&instance.name)))
-                .ok();
         }
-        result
     }
 
     fn get_monitor(&self, instance: &Instance) -> Result<QemuMonitorClient> {
@@ -296,7 +289,7 @@ mod tests {
     }
 
     #[test]
-    fn test_kill_kills_pid_and_removes_pid_file() {
+    fn test_kill_removes_stale_pid_file() {
         let env = build_env();
         let system = Arc::new(
             SystemMock::new()
@@ -307,57 +300,31 @@ mod tests {
 
         dao.kill(&build_instance()).unwrap();
 
-        assert_eq!(system.get_killed_processes(), vec![1234]);
         assert!(!system.exists_path(Path::new(&env.get_qemu_pid_file("test"))));
     }
 
     #[test]
-    fn test_kill_succeeds_when_the_process_died_first() {
+    fn test_kill_quits_over_the_monitor_and_keeps_pid_file() {
         let env = build_env();
         let system = Arc::new(
             SystemMock::new()
                 .add_file(&env.get_qemu_pid_file("test"), b"1234\n")
-                .add_vanishing_process(1234),
+                .add_process(1234)
+                .add_socket(
+                    &env.get_monitor_socket("test"),
+                    b"{\"QMP\": {}}\n{\"return\": {}, \"id\": \"0\"}\n{\"return\": {}, \"id\": \"1\"}\n",
+                ),
         );
         let dao = InstanceDao::new(Arc::clone(&system) as Arc<dyn System>, &env).unwrap();
 
-        // The process is gone, which is what the call asked for, so losing the
-        // race to whoever reaped it is not a failure.
         dao.kill(&build_instance()).unwrap();
 
-        assert!(system.get_killed_processes().is_empty());
-        assert!(!system.exists_path(Path::new(&env.get_qemu_pid_file("test"))));
-    }
-
-    #[test]
-    fn test_kill_keeps_pid_file_when_the_kill_fails() {
-        let env = build_env();
-        let system = Arc::new(
-            SystemMock::new()
-                .add_file(&env.get_qemu_pid_file("test"), b"1234\n")
-                .add_unkillable_process(1234),
+        assert!(
+            system
+                .get_socket_output(&env.get_monitor_socket("test"))
+                .ends_with(r#"{"id":"1","execute":"quit"}"#)
         );
-        let dao = InstanceDao::new(Arc::clone(&system) as Arc<dyn System>, &env).unwrap();
-
-        assert!(matches!(
-            dao.kill(&build_instance()),
-            Err(Error::KillFailed(1234))
-        ));
-        // The pid file has to survive, otherwise the still running QEMU
-        // process would be unreachable for every later command.
         assert!(system.exists_path(Path::new(&env.get_qemu_pid_file("test"))));
-        assert!(dao.is_running(&build_instance()));
-    }
-
-    #[test]
-    fn test_kill_errors_when_not_running() {
-        let system = SystemMock::new();
-        let dao = InstanceDao::new(Arc::new(system), &build_env()).unwrap();
-
-        assert!(matches!(
-            dao.kill(&build_instance()),
-            Err(Error::InstanceNotRunning(name)) if name == "test"
-        ));
     }
 
     fn build_instance_with_snapshot() -> Instance {
