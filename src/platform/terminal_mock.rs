@@ -70,6 +70,10 @@ impl Terminal for SystemMock {
         false
     }
 
+    fn get_size(&self) -> Option<(u32, u32)> {
+        Some((80, 24))
+    }
+
     fn read_input(&self) -> String {
         self.terminal.lock().unwrap().pop_input().trim().to_string()
     }

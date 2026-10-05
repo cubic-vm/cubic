@@ -181,9 +181,7 @@ impl Console {
     }
 
     pub fn get_geometry(&self) -> Option<(u32, u32)> {
-        crossterm::terminal::size()
-            .map(|(w, h)| (w as u32, h as u32))
-            .ok()
+        self.system.get_size()
     }
 
     pub fn width(&self) -> usize {
@@ -218,11 +216,11 @@ mod tests {
     use crate::platform::SystemMock;
 
     #[test]
-    fn test_each_frame_clears_the_one_before_it() {
+    fn test_each_frame_fits_the_width_and_clears_the_one_before_it() {
         let system = Arc::new(SystemMock::new().set_terminal(true));
         let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
 
-        console.update_animation("first");
+        console.update_animation(&"x".repeat(100));
         console.update_animation("second");
         console.clear_animation();
 
@@ -230,7 +228,7 @@ mod tests {
         let clear = format!("{home}{}", Clear(ClearType::CurrentLine));
         assert_eq!(
             system.get_output(),
-            format!("{home}first{clear}{home}second{clear}")
+            format!("{home}{}{clear}{home}second{clear}", "x".repeat(80))
         );
     }
 

@@ -38,6 +38,12 @@ impl Terminal for OsSystem {
         stdin().is_terminal()
     }
 
+    fn get_size(&self) -> Option<(u32, u32)> {
+        crossterm::terminal::size()
+            .map(|(w, h)| (w as u32, h as u32))
+            .ok()
+    }
+
     fn read_input(&self) -> String {
         let mut reply = String::new();
         stdin().read_line(&mut reply).ok();
