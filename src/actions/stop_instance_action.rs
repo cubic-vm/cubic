@@ -28,10 +28,6 @@ impl StopInstanceAction {
 
         Ok(())
     }
-
-    pub fn is_done(&self, instance_dao: &dyn InstanceStore) -> bool {
-        !instance_dao.is_running(&self.instance)
-    }
 }
 
 #[cfg(test)]
@@ -93,21 +89,5 @@ mod tests {
 
         assert!(result.is_err());
         assert!(store.killed.lock().unwrap().is_empty());
-    }
-
-    #[test]
-    fn test_is_done_when_instance_is_stopped() {
-        let instance = build_instance("test");
-        let store = InstanceStoreMock::new(vec![instance.clone()]);
-
-        assert!(StopInstanceAction::new(&instance).is_done(&store));
-    }
-
-    #[test]
-    fn test_is_not_done_while_instance_is_running() {
-        let instance = build_instance("test");
-        let store = InstanceStoreMock::new_with_running(vec![instance.clone()], &["test"]);
-
-        assert!(!StopInstanceAction::new(&instance).is_done(&store));
     }
 }
