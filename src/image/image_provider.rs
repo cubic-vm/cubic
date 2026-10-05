@@ -1,7 +1,7 @@
 use crate::models::{Arch, HashAlg};
 use crate::util;
 
-pub trait ImageProvider {
+pub trait ImageProvider: Sync {
     fn get_distro(&self) -> &str;
 
     fn get_display_name(&self) -> &str;

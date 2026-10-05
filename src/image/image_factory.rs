@@ -24,7 +24,7 @@ pub struct ImageFactory;
 impl ImageFactory {
     async fn get_images_from_provider_name_arch(
         console: &Arc<Console>,
-        web: &mut WebClient,
+        web: &WebClient,
         image_provider: &dyn image::ImageProvider,
         name: &str,
         arch: Arch,
@@ -119,7 +119,7 @@ impl ImageFactory {
 
     async fn get_images_from_provider(
         console: &Arc<Console>,
-        web: &mut WebClient,
+        web: &WebClient,
         image_provider: &dyn image::ImageProvider,
     ) -> Vec<Image> {
         let Ok(content) = web.download_content(image_provider.get_base_url()).await else {
@@ -146,11 +146,23 @@ impl ImageFactory {
     }
 
     pub async fn get_images(console: &Arc<Console>) -> Result<Vec<Image>> {
-        let mut web = WebClient::new()?;
-        let mut images = Vec::new();
+        let web = WebClient::new()?;
 
-        for image_provider in IMAGE_PROVIDERS {
-            let found = Self::get_images_from_provider(console, &mut web, *image_provider).await;
+        // One task per provider, so each mirror is queried side by side
+        let tasks = IMAGE_PROVIDERS
+            .iter()
+            .map(|image_provider| {
+                let (console, web) = (Arc::clone(console), web.clone());
+                tokio::spawn(async move {
+                    Self::get_images_from_provider(&console, &web, *image_provider).await
+                })
+            })
+            .collect::<Vec<_>>();
+
+        let mut images = Vec::new();
+        for (image_provider, task) in IMAGE_PROVIDERS.iter().zip(tasks) {
+            // A failed task counts as an empty provider
+            let found = task.await.unwrap_or_default();
 
             // An empty mirror would drop a whole distribution
             if found.is_empty() {
