@@ -242,9 +242,10 @@ impl<'a> SshClient<'a> {
                 pinned: pinned.clone(),
                 offered: Arc::clone(&offered),
             };
-            let addrs = ("127.0.0.1", port);
             let config = Arc::new(client::Config::default());
-            if let Ok(s) = client::connect(config, addrs, sh).await {
+            if let Ok(stream) = self.context.get_system().connect_stream(port).await
+                && let Ok(s) = client::connect_stream(config, stream, sh).await
+            {
                 session = s;
                 break;
             }

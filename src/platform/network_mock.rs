@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::platform::{Network, Socket, SystemMock};
+use crate::platform::{AsyncSocketFuture, Network, Socket, SystemMock};
 use std::io::{Cursor, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -179,6 +179,14 @@ impl Network for SystemMock {
     // and an unseeded one refuses at once.
     fn connect_port(&self, port: u16, _timeout: Duration) -> Result<Box<dyn Read>> {
         self.network.lock().unwrap().connect(port)
+    }
+
+    fn connect_stream(&self, port: u16) -> AsyncSocketFuture<'_> {
+        self.network.lock().unwrap().connected.push(port);
+        Box::pin(std::future::ready(Err(Error::ConnectionFailed(
+            port,
+            std::io::ErrorKind::ConnectionRefused.into(),
+        ))))
     }
 
     fn connect_socket(&self, path: &Path, _timeout: Option<Duration>) -> Result<Box<dyn Socket>> {
