@@ -36,6 +36,10 @@ impl QemuMonitorClient {
         self.execute("system_powerdown")
     }
 
+    pub fn quit(&mut self) -> Result<()> {
+        self.execute("quit")
+    }
+
     pub fn add_hostfwd(&mut self, fwd: &PortForward) -> Result<()> {
         let output = self.run_hmp_command(&format!("hostfwd_add {NETDEV_ID} {}", fwd.to_qemu()))?;
         if output.is_empty() {

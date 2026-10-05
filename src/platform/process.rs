@@ -17,5 +17,4 @@ pub trait Process {
     fn spawn_command(&self, command: &SystemCommand) -> Result<()>;
 
     fn exists_process(&self, pid: u64) -> bool;
-    fn kill_process(&self, pid: u64) -> Result<()>;
 }

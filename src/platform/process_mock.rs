@@ -1,58 +1,22 @@
 use crate::error::{Error, Result};
 use crate::platform::{Process, SystemMock};
 use crate::util::SystemCommand;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
-// How a seeded pid answers a kill. Every state is visible to a liveness
-// check, they differ only in what killing one does.
-#[derive(Clone, Copy)]
-enum ProcessState {
-    // Dies when killed.
-    Alive,
-    // Stays alive and reports a failure, standing in for a kill the host
-    // rejects, such as one aimed at another user's process.
-    Unkillable,
-    // Already gone once the kill lands, modelling the race between checking a
-    // pid and signalling it.
-    Vanished,
-}
-
-// The pids the host knows about, alongside the record of which ones a kill
-// actually took down.
+// The pids the host knows about.
 #[derive(Default)]
 pub struct ProcessMock {
-    processes: HashMap<u64, ProcessState>,
-    killed: Vec<u64>,
+    processes: HashSet<u64>,
 }
 
 impl ProcessMock {
-    fn add(&mut self, pid: u64, state: ProcessState) {
-        self.processes.insert(pid, state);
+    fn add(&mut self, pid: u64) {
+        self.processes.insert(pid);
     }
 
     fn exists(&self, pid: u64) -> bool {
-        self.processes.contains_key(&pid)
-    }
-
-    fn get_killed(&self) -> Vec<u64> {
-        self.killed.clone()
-    }
-
-    fn kill(&mut self, pid: u64) -> Result<()> {
-        match self.processes.get(&pid).copied() {
-            None => Err(Error::ProcessNotFound(pid)),
-            Some(ProcessState::Unkillable) => Err(Error::KillFailed(pid)),
-            Some(ProcessState::Vanished) => {
-                self.processes.remove(&pid);
-                Err(Error::ProcessNotFound(pid))
-            }
-            Some(ProcessState::Alive) => {
-                self.processes.remove(&pid);
-                self.killed.push(pid);
-                Ok(())
-            }
-        }
+        self.processes.contains(&pid)
     }
 }
 
@@ -100,24 +64,8 @@ impl CommandMock {
 
 impl SystemMock {
     pub fn add_process(self, pid: u64) -> Self {
-        self.add_process_state(pid, ProcessState::Alive)
-    }
-
-    pub fn add_unkillable_process(self, pid: u64) -> Self {
-        self.add_process_state(pid, ProcessState::Unkillable)
-    }
-
-    pub fn add_vanishing_process(self, pid: u64) -> Self {
-        self.add_process_state(pid, ProcessState::Vanished)
-    }
-
-    fn add_process_state(self, pid: u64, state: ProcessState) -> Self {
-        self.processes.lock().unwrap().add(pid, state);
+        self.processes.lock().unwrap().add(pid);
         self
-    }
-
-    pub fn get_killed_processes(&self) -> Vec<u64> {
-        self.processes.lock().unwrap().get_killed()
     }
 
     pub fn add_command_output(self, command: &str, stdout: &[u8]) -> Self {
@@ -167,10 +115,6 @@ impl Process for SystemMock {
     fn exists_process(&self, pid: u64) -> bool {
         self.processes.lock().unwrap().exists(pid)
     }
-
-    fn kill_process(&self, pid: u64) -> Result<()> {
-        self.processes.lock().unwrap().kill(pid)
-    }
 }
 
 #[cfg(test)]
@@ -185,68 +129,6 @@ mod tests {
 
         assert!(system.exists_process(42));
         assert!(!system.exists_process(43));
-    }
-
-    #[test]
-    fn kill_process_records_the_pid_and_ends_the_process() {
-        let system = SystemMock::new().add_process(42);
-
-        system.kill_process(42).unwrap();
-
-        assert_eq!(system.get_killed_processes(), vec![42]);
-        assert!(!system.exists_process(42));
-    }
-
-    #[test]
-    fn kill_process_fails_for_an_unkillable_pid_that_stays_alive() {
-        let system = SystemMock::new().add_unkillable_process(42);
-
-        assert!(matches!(
-            system.kill_process(42),
-            Err(Error::KillFailed(42))
-        ));
-        assert!(system.exists_process(42));
-        assert!(system.get_killed_processes().is_empty());
-    }
-
-    #[test]
-    fn kill_process_reports_a_vanishing_process_as_gone() {
-        let system = SystemMock::new().add_vanishing_process(42);
-
-        assert!(system.exists_process(42));
-        assert!(matches!(
-            system.kill_process(42),
-            Err(Error::ProcessNotFound(42))
-        ));
-        // Once the kill has reported it gone, every later look agrees.
-        assert!(!system.exists_process(42));
-        assert!(system.get_killed_processes().is_empty());
-    }
-
-    #[test]
-    fn seeding_a_pid_twice_keeps_the_last_state() {
-        let system = SystemMock::new().add_process(42).add_vanishing_process(42);
-
-        assert!(matches!(
-            system.kill_process(42),
-            Err(Error::ProcessNotFound(42))
-        ));
-
-        let system = SystemMock::new().add_vanishing_process(7).add_process(7);
-
-        system.kill_process(7).unwrap();
-        assert_eq!(system.get_killed_processes(), vec![7]);
-    }
-
-    #[test]
-    fn kill_process_fails_for_an_unknown_pid() {
-        let system = SystemMock::new();
-
-        assert!(matches!(
-            system.kill_process(42),
-            Err(Error::ProcessNotFound(42))
-        ));
-        assert!(system.get_killed_processes().is_empty());
     }
 
     #[test]

@@ -179,11 +179,4 @@ impl Process for OsSystem {
         let (system, sys_pid) = Self::read_process_table(pid);
         system.process(sys_pid).is_some()
     }
-
-    fn kill_process(&self, pid: u64) -> Result<()> {
-        let (system, sys_pid) = Self::read_process_table(pid);
-        let process = system.process(sys_pid).ok_or(Error::ProcessNotFound(pid))?;
-
-        process.kill().then_some(()).ok_or(Error::KillFailed(pid))
-    }
 }
