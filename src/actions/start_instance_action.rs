@@ -2,11 +2,10 @@ use crate::cloudinit::CloudInitImageFactory;
 use crate::commands::{Accel, Context};
 use crate::error::{Error, Result};
 use crate::models::{Arch, Instance};
-use crate::platform::System;
 use crate::qemu::{
     QemuAcceleratorProbe, QemuFirmware, QemuInstall, QemuPathBuilder, QemuSystem, SOFTWARE_ACCEL,
 };
-use crate::ssh::PortChecker;
+use crate::ssh::SshClient;
 use crate::view::Console;
 use std::sync::Arc;
 
@@ -180,8 +179,10 @@ impl StartInstanceAction {
         }
     }
 
-    pub fn is_done(&self, system: &dyn System) -> bool {
-        PortChecker::new().is_open(system, self.instance.ssh_port)
+    pub async fn is_done(&self, context: &Context) -> bool {
+        SshClient::new(context)
+            .is_ready(self.instance.ssh_port)
+            .await
     }
 }
 

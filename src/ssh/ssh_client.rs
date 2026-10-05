@@ -16,6 +16,7 @@ use tokio_util::codec::FramedRead;
 use tokio_util::io::StreamReader;
 
 const RETRY_DELAY_SECS: u64 = 1;
+const READY_TIMEOUT_SECS: u64 = 5;
 
 #[derive(PartialEq)]
 enum AuthMethod {
@@ -288,6 +289,21 @@ impl<'a> SshClient<'a> {
         }
 
         Ok(session)
+    }
+
+    /// Tries one handshake and stores nothing, so it suits a wait loop.
+    pub async fn is_ready(&self, port: u16) -> bool {
+        let handler = ServerKeyHandler {
+            pinned: None,
+            offered: Arc::default(),
+        };
+        let config = Arc::new(client::Config::default());
+        let handshake = async {
+            let stream = self.context.get_system().connect_stream(port).await.ok()?;
+            client::connect_stream(config, stream, handler).await.ok()
+        };
+        let timeout = Duration::from_secs(READY_TIMEOUT_SECS);
+        matches!(tokio::time::timeout(timeout, handshake).await, Ok(Some(_)))
     }
 
     pub async fn open_channel(
