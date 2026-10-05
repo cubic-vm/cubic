@@ -95,6 +95,7 @@ pub mod tests {
 
         fn is_running(&self, instance: &Instance) -> bool {
             self.running.contains(&instance.name)
+                && !self.killed.lock().unwrap().contains(&instance.name)
         }
 
         fn kill(&self, instance: &Instance) -> Result<()> {
