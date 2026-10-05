@@ -56,6 +56,7 @@ impl io::Write for ProgressWriter {
     }
 }
 
+#[derive(Clone)]
 pub struct WebClient {
     client: Client,
 }
@@ -80,7 +81,7 @@ impl WebClient {
         }
     }
 
-    pub async fn check_file_exists(&mut self, url: &str) -> Result<bool> {
+    pub async fn check_file_exists(&self, url: &str) -> Result<bool> {
         Ok(self
             .client
             .head(url)
@@ -140,7 +141,7 @@ impl WebClient {
         writer.flush().map_err(Error::from)
     }
 
-    pub async fn download_content(&mut self, url: &str) -> Result<String> {
+    pub async fn download_content(&self, url: &str) -> Result<String> {
         self.client
             .get(url)
             .timeout(REQUEST_TIMEOUT)
