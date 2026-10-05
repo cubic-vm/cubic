@@ -59,7 +59,10 @@ impl Command for StartCommand {
         for name in &self.instances.value {
             let instance = &mut LoadInstanceAction::new().run(context, name.as_str())?;
             if !instance_store.is_running(instance) {
-                if port_checker.is_open(context.get_system(), instance.ssh_port) {
+                if port_checker
+                    .is_open(context.get_system(), instance.ssh_port)
+                    .await
+                {
                     let old_port = instance.ssh_port;
                     instance.ssh_port = context.get_system().bind_port()?;
                     instance_store.store(instance)?;

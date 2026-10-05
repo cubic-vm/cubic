@@ -1,21 +1,11 @@
 use crate::error::{Error, Result};
 use crate::platform::{AsyncSocket, AsyncSocketFuture, Network, OsSystem, Socket};
 use socket2::{Domain, SockAddr, Type};
-use std::io::Read;
-use std::net::{TcpListener, TcpStream};
+use std::net::TcpListener;
 use std::path::Path;
 use std::time::Duration;
 
 impl Network for OsSystem {
-    fn connect_port(&self, port: u16, timeout: Duration) -> Result<Box<dyn Read>> {
-        let stream = TcpStream::connect(format!("127.0.0.1:{port}"))
-            .map_err(|e| Error::ConnectionFailed(port, e))?;
-        stream
-            .set_read_timeout(Some(timeout))
-            .map_err(|e| Error::ConnectionFailed(port, e))?;
-        Ok(Box::new(stream))
-    }
-
     fn connect_stream(&self, port: u16) -> AsyncSocketFuture<'_> {
         Box::pin(async move {
             tokio::net::TcpStream::connect(("127.0.0.1", port))
