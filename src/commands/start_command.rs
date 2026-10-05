@@ -85,8 +85,10 @@ impl Command for StartCommand {
             let text = format!("Starting {}", starting.join(", "));
             let _spinner = Spinner::new(Arc::clone(console), text);
             let wait = async {
-                while actions.iter().any(|a| !a.is_done(context.get_system())) {
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+                for action in &actions {
+                    while !action.is_done(context).await {
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                    }
                 }
             };
             if tokio::time::timeout(Duration::from_secs(300), wait)
