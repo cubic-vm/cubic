@@ -483,6 +483,10 @@ impl<'a> SshClient<'a> {
         );
         console.reset();
 
+        if pty && exit_status.is_none() {
+            console.print("");
+        }
+
         // 255 is the OpenSSH convention for a session that ended without an
         // exit status.
         Ok(exit_status.map_or(255, |status| status as u8))
