@@ -99,10 +99,9 @@ done
 
 cat >> docs/index.rst << 'EOF'
 
-Cubic spins up Linux virtual machines on Linux, macOS and Windows with a single command.
+Cubic is a cross-platform tool that spins up Linux virtual machines with a single command. It is made for developers who need a clean Linux system fast.
 
-Every distribution comes as an official image and is ready to use within seconds, so you skip the long installation. Cubic keeps things simple and secure by acting as lightweight glue over proven tools. No privileged system service is required and every VM runs as your normal user.
-Cubic is built on top of ``QEMU``, ``EDK2``, official Linux distribution images and ``cloud-init``.
+Linux distributions come as official images and are ready to use within seconds. Cubic keeps things simple and secure by acting as lightweight glue over proven tools such as QEMU. No privileged system service is required and every VM instance runs as your normal user.
 
 The Tutorial builds your first virtual machine step by step.
 The How-to Guides each solve one task.
