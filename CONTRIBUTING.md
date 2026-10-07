@@ -244,6 +244,32 @@ Alternatively, if running directly with Cargo:
 cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test && cargo audit
 ```
 
+## Dependencies
+
+Cubic keeps its dependency tree small. Add a row when you add a dependency.
+
+| Rust Crate | Usage |
+|------------|-------|
+| clap | Parse CLI commands, arguments, and flags |
+| clap_complete | Generate shell completion scripts |
+| crossterm | Terminal control for the interactive console and views |
+| getrandom | Secure randomness for SSH key generation |
+| iana-time-zone | Read the time zone name of the host |
+| regex | Parse image and instance names and scrape image version listings |
+| reqwest | Download official Linux distribution images over HTTPS |
+| russh | Pure-Rust SSH client to connect into VMs |
+| russh-sftp | SFTP file transfer over the SSH connection |
+| rustls | Crypto provider for the HTTPS image downloads |
+| serde | Derive serialization for config and QMP messages |
+| serde_json | QMP protocol and firmware descriptor parsing |
+| sha2 | Verify downloaded image checksums |
+| socket2 | Unix domain sockets to the QEMU monitor and console on every platform |
+| sysinfo | Read the host username and detect running QEMU processes |
+| thiserror | Derive the crate's error types |
+| tokio | Async runtime for SSH and SFTP transfers |
+| tokio-util | Detects the console/ssh detach shortcut on stdin |
+| toml | Read and write the `instance.toml` config |
+
 ## What license does Cubic use?
 
 Cubic is dual-licensed under the MIT and Apache 2.0 licenses.

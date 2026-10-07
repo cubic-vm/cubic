@@ -1,267 +1,111 @@
-[![Cubic](https://github.com/cubic-vm/cubic/blob/main/cubic.svg)](https://github.com/cubic-vm/cubic)
-⭐ Please star us on [GitHub](https://github.com/cubic-vm/cubic) to promote the project!
+# <img src="docs/logo-mark.svg" alt="Cubic logo" height="64" align="absmiddle"> Cubic | Linux VMs in one command
 
 [![github.com](https://github.com/cubic-vm/cubic/actions/workflows/build.yml/badge.svg)](https://github.com/cubic-vm/cubic/actions/workflows/build.yml)
 [![crates.io](https://img.shields.io/crates/v/cubic.svg)](https://crates.io/crates/cubic)
 [![MSRV](https://img.shields.io/crates/msrv/cubic.svg)](https://crates.io/crates/cubic)
 [![snapcraft.io](https://snapcraft.io/cubic/badge.svg)](https://snapcraft.io/cubic)
 
-Cubic spins up Linux virtual machines on Linux, macOS and Windows with a single
-command.
+![Cubic demo that creates and enters a VM instance](docs/cubic.gif)
 
-Every distribution comes as an official image and is ready to use within
-seconds, so you skip the long installation. Cubic keeps things simple and secure
-by acting as lightweight glue over proven tools. No privileged system service is
-required and every VM runs as your normal user.
-Cubic is built on top of `QEMU`, `EDK2`, official Linux distribution images and
-`cloud-init`.
+Cubic is a cross-platform tool that spins up Linux virtual machines with a
+single command. It is made for developers who need a clean Linux system fast.
 
-![Cubic Demo](docs/cubic.gif)
+Linux distributions come as official images and are ready to use within
+seconds. Cubic keeps things simple and secure by acting as lightweight glue over
+proven tools such as QEMU. No privileged system service is required and every
+VM instance runs as your normal user.
 
-# 🧐 Why use Cubic?
+## Install
 
-One command takes you from nothing to a shell inside a fresh Linux VM. The images
-are official and verified, downloaded straight from each distribution. Every
-machine is a real VM, so you get stronger isolation than containers can offer.
-The same workflow runs on Linux, macOS and Windows across amd64 and arm64.
-No privileged system service is required and every VM runs as your normal user.
+See the [install guide](https://cubic-vm.org/docs/howto/install.html) for the full
+instructions.
 
-Cubic fits a lot of everyday workflows:
-
-- Spin up disposable VMs that are ready in seconds and easy to throw away
-- Compare many Linux distributions side by side on any host
-- Develop and test across distributions and CPU architectures
-- Try or build software without polluting your host
-- Run untrusted or experimental software inside an isolated VM
-- Reproduce CI or production Linux environments locally
-- Run local services such as HTTP servers and databases with port forwarding
-
-# 🔥 Features
-
-**Fast and simple**
-
-- Creates a VM and opens a shell in one command
-- Boots official Linux distribution images in seconds
-- Written in Rust
-
-**Runs anywhere**
-
-- Runs on **Linux**, **macOS** and **Windows** hosts
-- Ships **Alma Linux**, **Alpine Linux**, **Arch Linux**, **CentOS Stream**, **Debian**, **Fedora**, **Gentoo**, **openSUSE Leap**, **openSUSE Tumbleweed**, **Rocky Linux** and **Ubuntu**
-- Runs **amd64** and **arm64** guests
-- Accelerates every VM with **KVM** (Linux), **Hypervisor** (macOS) and **WHPX** (Windows)
-
-**Everyday work**
-
-- Forwards ports from a VM to the host
-- Copies files between host and VM and between two VMs
-- Executes single commands in a VM
-- Creates VM instances from reusable templates
-- Snapshots a VM disk and restores it later
-- Clones and renames VM instances
-- Runs temporary VM instances that are deleted after use
-- Isolates a VM from the network with one flag
-
-**Safe by default**
-
-- Runs every VM as a normal user process without a privileged system service
-- Verifies every image against the checksum of the distribution
-- Protects every VM with its own SSH key and a disabled password
-- Keeps the QEMU control channels on private Unix sockets
-
-# 🚀 Quick Start
-
-A virtual machine instance can be created with a single command. This example
-creates an instance from a Ubuntu image with the name `quickstart`.
+**Ubuntu**
 ```
-$ cubic run quickstart --image ubuntu:noble
-Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-101-generic x86_64)
-
- * Documentation:  https://help.ubuntu.com
- * Management:     https://landscape.canonical.com
- * Support:        https://ubuntu.com/pro
-
-This system has been minimized by removing packages and content that are
-not required on a system that users do not log into.
-
-To restore this content, you can run the 'unminimize' command.
-
-The programs included with the Ubuntu system are free software;
-the exact distribution terms for each program are described in the
-individual files in /usr/share/doc/*/copyright.
-
-Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
-applicable law.
-
-cubic@quickstart:~$
+sudo snap install cubic && sudo snap connect cubic:kvm
 ```
 
-Use `cubic images` to list all supported images.
-
-# 💫 How to install Cubic?
-
-**Ubuntu** (Snap)
-```
-sudo snap install cubic && \
-sudo snap connect cubic:kvm
-```
-
-**macOS** (Homebrew)
+**macOS**
 ```
 brew install cubic-vm/cubic/cubic
 ```
 
-**Windows** (winget)
+**Windows**
 ```
 winget install cubic-vm.cubic
 ```
 
-**Others** (Cargo)
-
-Install the [Rust toolchain](https://rustup.rs) and then build Cubic:
+**Cargo**
 ```
 cargo install cubic
 ```
 
-Cubic needs QEMU and its UEFI firmware on the host. Install them with your
-package manager:
-```
-# Debian/Ubuntu
-sudo apt install qemu-system qemu-utils ovmf qemu-efi-aarch64
-# Fedora/RHEL
-sudo dnf install qemu-system-x86 qemu-img edk2-ovmf edk2-aarch64
-# Arch Linux
-sudo pacman -S qemu-full edk2-ovmf edk2-armvirt
-# openSUSE
-sudo zypper install qemu qemu-tools qemu-ovmf-x86_64 qemu-uefi-aarch64
-# macOS
-brew install qemu
-# Windows
-winget install SoftwareFreedomConservancy.QEMU
-```
+Then create your first VM instance with `cubic run -i ubuntu`.
 
-See the [install](https://cubic-vm.org/install.html) instructions for more information.
+## Common Commands
 
-# 💡 How to use Cubic?
+These are the most common commands, shown for a VM instance named `demo`.
 
-Cubic has a simple CLI:
-```
-$ cubic --help
-Cubic runs Linux virtual machines on Linux, macOS and Windows with a single
-command.
+| Command | What it does |
+|---------|--------------|
+| `cubic run demo -i ubuntu` | Create the VM instance `demo`, start it and open a shell |
+| `cubic run --rm -i ubuntu` | Run a VM instance that is deleted on exit |
+| `cubic images` | List the available images |
+| `cubic instances` | List your VM instances |
+| `cubic ssh demo` | Open a shell in a VM instance |
+| `cubic exec demo -- uname -a` | Run one command in a VM instance |
+| `cubic scp notes.txt demo:~/` | Copy files between host and VM instance |
+| `cubic modify demo -c 4 -m 8G` | Change the vCPUs and memory of a VM instance |
+| `cubic snapshot demo/clean` | Save the disk of a VM instance |
+| `cubic restore demo/clean` | Roll a VM instance back to a snapshot |
+| `cubic clone demo demo2` | Copy a VM instance under a new name |
+| `cubic stop demo` | Stop a VM instance |
+| `cubic delete demo` | Delete a VM instance |
 
-Every distribution comes as an official image and is ready to use within
-seconds, so you skip the long installation. Cubic keeps things simple and secure
-by acting as lightweight glue over proven tools. No privileged system service is
-required and every VM runs as your normal user. Cubic is built on top of QEMU,
-EDK2, official Linux distribution images and cloud-init.
+Run `cubic --help` for the full list or read the
+[command reference](https://cubic-vm.org/docs/reference/commands/cubic.html).
 
-Examples:
+## Features
 
-  Create a new VM instance with:
-  $ cubic create example --image ubuntu:noble
-  Open a shell in the VM instance:
-  $ cubic ssh example
+- [Creates a VM instance and opens a shell](https://cubic-vm.org/docs/tutorial/getting_started.html) in one command
+- [Runs on Linux, macOS and Windows hosts](https://cubic-vm.org/docs/howto/install.html) with [hardware acceleration](https://cubic-vm.org/docs/explanation/machine.html#hardware-acceleration)
+- [Forwards ports](https://cubic-vm.org/docs/howto/ports.html), [copies files](https://cubic-vm.org/docs/howto/copy_files.html) and [executes commands](https://cubic-vm.org/docs/howto/exec.html) in a VM instance
+- Supports [templates](https://cubic-vm.org/docs/howto/templates.html), [snapshots](https://cubic-vm.org/docs/howto/snapshots.html) and [clones](https://cubic-vm.org/docs/reference/commands/clone.html) of VM instances
+- Runs [temporary](https://cubic-vm.org/docs/howto/temporary_vm.html) and [network isolated](https://cubic-vm.org/docs/tutorial/isolate.html) VM instances
+- Runs every VM instance as your normal user [without a privileged system service](https://cubic-vm.org/docs/explanation/security.html#no-privileged-system-service)
+- [Verifies every image](https://cubic-vm.org/docs/explanation/security.html#verified-distribution-images) and protects every VM instance with [its own SSH key](https://cubic-vm.org/docs/explanation/security.html#ssh-access)
 
-  Alternatively, use `run` to execute the above commands in a single command:
-  $ cubic run example --image ubuntu:noble
+## Supported Guest Images
 
-  Show all supported VM images:
-  $ cubic images
+- AlmaLinux
+- Alpine Linux
+- Arch Linux
+- CentOS Stream
+- Debian
+- Fedora
+- Gentoo
+- openSUSE Leap
+- openSUSE Tumbleweed
+- Rocky Linux
+- Ubuntu
 
-  List previously created VM instances:
-  $ cubic instances
+## Documentation
 
-  Show information about a VM instance:
-  $ cubic show <instance>
+The full documentation is at [cubic-vm.org/docs](https://cubic-vm.org/docs/).
+The [Getting Started](https://cubic-vm.org/docs/tutorial/getting_started.html)
+tutorial is the best place to begin.
 
-  Execute a command in a VM instance:
-  $ cubic exec <instance> -- <command>
+## Contribute
 
-  Transfer files and directories between host and VM instance:
-  $ cubic scp <path/to/host/file> <instance>:<path/to/guest/file>
-  See `cubic scp --help` for more examples
+Contributions are very welcome. You can help in many ways:
 
-For more information, visit: https://cubic-vm.org/
-The source code is located at: https://github.com/cubic-vm/cubic
+- Star the project on [GitHub](https://github.com/cubic-vm/cubic)
+- Vote with a thumbs up for the [issues](https://github.com/cubic-vm/cubic/issues) you care about
+- Report a bug or request a feature in a [new issue](https://github.com/cubic-vm/cubic/issues/new/choose)
+- Ask a question or share an idea in the [discussions](https://github.com/cubic-vm/cubic/discussions)
+- Fix or improve the documentation, see [CONTRIBUTING.md](CONTRIBUTING.md)
+- Send a pull request, see [CONTRIBUTING.md](CONTRIBUTING.md)
 
-Usage: cubic [OPTIONS] [COMMAND]
-
-Commands:
-  run          Create and start VM instances
-  create       Create VM instances
-  instances    List VM instances
-  images       List VM images
-  ports        List ports for VM instances
-  show         Show VM images and instances
-  modify       Modify VM instances
-  console      Open VM instance console
-  ssh          Connect to VM instances
-  scp          Copy data between host and VM instances
-  exec         Execute commands on VM instances
-  start        Start VM instances
-  stop         Stop VM instances
-  restart      Restart VM instances
-  rename       Rename VM instances
-  clone        Clone VM instances
-  snapshot     Create a snapshot of a VM instance
-  restore      Restore a VM instance from a snapshot
-  delete       Delete VM instances and snapshots
-  prune        Clear caches
-  completions  Generate shell completion scripts
-
-Options:
-  -v, --verbose  Increase logging output
-  -q, --quiet    Reduce logging output
-  -h, --help     Print help
-  -V, --version  Print version
-```
-
-# 🔨 How to Build Cubic from Source?
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for instructions on setting up a development
-environment and building the project.
-
-# 💬 How to contribute to Cubic?
-
-We are actively looking for help to improve Cubic. You can help in various ways:
-
-- 👧 Increase Cubic's user base by installing and using it!
-- ⭐ Star us on [Github](https://github.com/cubic-vm/cubic) to promote the project!
-- 🪲 If you found a bug or you are interested in a feature, please create an [issue on Github](https://github.com/cubic-vm/cubic/issues)!
-- 👷 If you are a developer and you want to submit a change, please have a look at the [contribution page](CONTRIBUTING.md)!
-- 📝 If you are a technical writer and you want to improve the documentation, please have a look at the [contribution page](CONTRIBUTING.md)!
-
-# 📦 Dependencies
-
-Cubic keeps its dependency tree small and lean, acting as thin glue over proven
-tools rather than reinventing them.
-
-At runtime Cubic has a single dependency: **QEMU**, the virtualization engine it
-drives to run every VM.
-
-| Rust Crate | Usage |
-|------------|-------|
-| clap | Parse CLI commands, arguments, and flags |
-| clap_complete | Generate shell completion scripts |
-| crossterm | Terminal control for the interactive console and views |
-| getrandom | Secure randomness for SSH key generation |
-| iana-time-zone | Read the time zone name of the host |
-| regex | Parse image and instance names and scrape image version listings |
-| reqwest | Download official Linux distribution images over HTTPS |
-| russh | Pure-Rust SSH client to connect into VMs |
-| russh-sftp | SFTP file transfer over the SSH connection |
-| rustls | Crypto provider for the HTTPS image downloads |
-| serde | Derive serialization for config and QMP messages |
-| serde_json | QMP protocol and firmware descriptor parsing |
-| sha2 | Verify downloaded image checksums |
-| socket2 | Unix domain sockets to the QEMU monitor and console on every platform |
-| sysinfo | Read the host username and detect running QEMU processes |
-| thiserror | Derive the crate's error types |
-| tokio | Async runtime for SSH and SFTP transfers |
-| tokio-util | Detects the console/ssh detach shortcut on stdin |
-| toml | Read and write the `instance.toml` config |
-
-# 📃 License
+## License
 
 Cubic is dual-licensed under [Apache](LICENSE-APACHE) and [MIT](LICENSE-MIT).
