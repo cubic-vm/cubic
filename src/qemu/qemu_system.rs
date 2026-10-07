@@ -17,7 +17,7 @@ pub struct QemuSystem {
 impl QemuSystem {
     pub fn get_machine(arch: Arch) -> &'static str {
         match arch {
-            Arch::AMD64 => "q35",
+            Arch::AMD64 => "q35,hpet=off",
             Arch::ARM64 => "virt",
         }
     }
