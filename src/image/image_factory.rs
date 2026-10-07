@@ -15,6 +15,7 @@ const IMAGE_PROVIDERS: &[&dyn image::ImageProvider] = &[
     &image::FedoraImageProvider {},
     &image::GentooImageProvider {},
     &image::OpenSuseLeapImageProvider {},
+    &image::OpenSuseTumbleweedImageProvider {},
     &image::RockyLinuxImageProvider {},
     &image::UbuntuImageProvider {},
 ];
