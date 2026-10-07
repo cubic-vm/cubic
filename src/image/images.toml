@@ -362,6 +362,28 @@ checksum_file = "Leap-16.0-Minimal-VM.aarch64-Cloud.qcow2.sha256"
 hash_alg = "Sha256"
 
 [[images]]
+distro = "opensuse-tumbleweed"
+display_name = "openSUSE Tumbleweed"
+version = "rolling"
+tags = ["stable", "latest"]
+arch = "AMD64"
+base_url = "https://downloadcontent.opensuse.org/tumbleweed/appliances/"
+image_file = "openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2"
+checksum_file = "openSUSE-Tumbleweed-Minimal-VM.x86_64-Cloud.qcow2.sha256"
+hash_alg = "Sha256"
+
+[[images]]
+distro = "opensuse-tumbleweed"
+display_name = "openSUSE Tumbleweed"
+version = "rolling"
+tags = ["stable", "latest"]
+arch = "ARM64"
+base_url = "https://downloadcontent.opensuse.org/ports/aarch64/tumbleweed/appliances/"
+image_file = "openSUSE-Tumbleweed-Minimal-VM.aarch64-Cloud.qcow2"
+checksum_file = "openSUSE-Tumbleweed-Minimal-VM.aarch64-Cloud.qcow2.sha256"
+hash_alg = "Sha256"
+
+[[images]]
 distro = "rockylinux"
 display_name = "Rocky Linux"
 version = "8"

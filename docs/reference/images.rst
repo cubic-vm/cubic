@@ -123,6 +123,10 @@ Distributions
      - versions
      - ``download.opensuse.org``
      - SHA256
+   * - ``opensuse-tumbleweed``
+     - rolling
+     - ``download.opensuse.org``
+     - SHA256
    * - ``rockylinux``
      - versions
      - ``dl.rockylinux.org``
