@@ -43,44 +43,13 @@ pub struct GlobalOptions {
 }
 
 const ABOUT: &str = "\
-Cubic runs Linux virtual machines on Linux, macOS and Windows with a single
-command.
+Cubic is a cross-platform tool that spins up Linux virtual machines with a
+single command.
 
-Every distribution comes as an official image and is ready to use within
-seconds, so you skip the long installation. Cubic keeps things simple and secure
-by acting as lightweight glue over proven tools. No privileged system service is
-required and every VM runs as your normal user. Cubic is built on top of QEMU,
-EDK2, official Linux distribution images and cloud-init.
+Create a VM instance and open a shell in it:
+  $ cubic run -i ubuntu
 
-Examples:
-
-  Create a new VM instance with:
-  $ cubic create example --image ubuntu
-  Open a shell in the VM instance:
-  $ cubic ssh example
-
-  Alternatively, use `run` to execute the above commands in a single command:
-  $ cubic run --image ubuntu
-
-  Cubic generates a name like grumpy-dragon when the name is left out.
-
-  Show all supported VM images:
-  $ cubic images
-
-  List previously created VM instances:
-  $ cubic instances
-
-  Show information about a VM instance:
-  $ cubic show <instance>
-
-  Execute a command in a VM instance:
-  $ cubic exec <instance> -- <command>
-
-  Transfer files and directories between host and VM instance:
-  $ cubic scp <path/to/host/file> <instance>:<path/to/guest/file>
-  See `cubic scp --help` for more examples
-
-  Every command can be shortened while the short form stays unique:
+Every command can be shortened while the short form stays unique:
   $ cubic in
 
 For more information, visit: https://cubic-vm.org/
