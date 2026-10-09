@@ -69,8 +69,16 @@ impl Command for PruneCommand {
         .chain(tmp_dirs)
         .collect();
 
-        // Calculate size
         let cache_file = PathBuf::from(env.get_image_cache_file());
+        let has_targets = system.exists_path(&cache_file)
+            || dirs.iter().any(|path| system.exists_path(path))
+            || !stale_instances.is_empty();
+        if !has_targets {
+            console.print("Nothing to prune.");
+            return Ok(0);
+        }
+
+        // Calculate size
         let total = DataSize::new(
             dirs.iter()
                 .chain(stale_dirs.iter())
@@ -252,5 +260,21 @@ mod tests {
         );
 
         assert!(run_prune(&system, &env).await.contains("frees 2048 B"));
+    }
+
+    #[tokio::test]
+    async fn test_skip_confirmation_when_there_is_nothing_to_prune() {
+        let env = build_env();
+        let system = Arc::new(SystemMock::new());
+        let context = build_context(&system, &env);
+
+        PruneCommand {
+            yes: commands::YesArg { value: false },
+        }
+        .run(&context)
+        .await
+        .unwrap();
+
+        assert_eq!(system.get_output(), "Nothing to prune.\n");
     }
 }
