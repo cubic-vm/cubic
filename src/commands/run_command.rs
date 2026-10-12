@@ -9,11 +9,12 @@ use clap::{self, ArgAction, Parser};
 /// This command is a shortcut for the three subcommands `create`, `start` and `ssh`.
 ///
 /// Cubic generates a name like grumpy-dragon when the name is left out.
+/// The default image is the newest Ubuntu LTS release.
 ///
 /// Examples:
 ///
 ///   Run a VM instance:
-///   $ cubic run -i ubuntu
+///   $ cubic run
 ///
 ///   Run a VM instance with 8 vCPUs, 10G of RAM, 200G of storage:
 ///   $ cubic run --cpus 8 --memory 10G --disk 200G -i debian:trixie

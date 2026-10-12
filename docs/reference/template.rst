@@ -24,7 +24,7 @@ the template.
    * - ``image``
      - name and tag, ``"ubuntu:26.04"``
      - Distribution image of the VM instance. A plain name means the ``stable``
-       tag. See :ref:`image names`.
+       tag. Defaults to ``ubuntu``. See :ref:`image names`.
    * - ``user``
      - user name, ``"john"``
      - User account inside the guest. Defaults to your user name on the host.

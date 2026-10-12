@@ -1,6 +1,6 @@
 use crate::actions::CreateInstanceAction;
 use crate::commands::{Command, Context};
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::image::{ImageFactory, ImageFetcher};
 use crate::models::{
     DataSize, Environment, Image, ImageName, Instance, InstanceName, InstanceNameGenerator,
@@ -15,17 +15,21 @@ use std::sync::Arc;
 /// The disk size of a new VM instance, 100 GiB.
 pub const DEFAULT_DISK_SIZE: DataSize = DataSize::new(100 * 1024_usize.pow(3));
 
+/// The image of a new VM instance, the newest Ubuntu LTS.
+pub const DEFAULT_IMAGE: &str = "ubuntu";
+
 /// Create a VM instance
 ///
 /// This command only creates the VM instance. Use cubic start <instance> to power
 /// it on and cubic ssh <instance> to connect to it.
 ///
 /// Cubic generates a name like grumpy-dragon when the name is left out.
+/// The default image is the newest Ubuntu LTS release.
 ///
 /// Examples:
 ///
 ///   Create a VM instance:
-///   $ cubic create -i ubuntu
+///   $ cubic create
 ///
 ///   Create a VM instance with 8 vCPUs, 10G of RAM, 200G of storage:
 ///   $ cubic create --cpus 8 --memory 10G --disk 200G -i debian:trixie
@@ -67,7 +71,7 @@ pub struct CreateCommand {
     /// Template file with default values (e.g. --template ./my-template.toml)
     #[clap(short, long)]
     template: Option<String>,
-    /// VM image name (e.g. 'debian:trixie', 'debian:latest' or 'debian')
+    /// VM image name (e.g. 'debian:trixie', 'debian:latest' or 'debian', default: ubuntu)
     #[clap(short, long)]
     image: Option<ImageName>,
     /// Username of the guest account (default: your user name on the host)
@@ -106,11 +110,10 @@ impl CreateCommand {
             .transpose()
     }
 
-    fn resolve_image(&self, template: Option<&Template>) -> Result<ImageName> {
+    fn resolve_image(&self, template: Option<&Template>) -> Option<ImageName> {
         self.image
             .clone()
             .or_else(|| template.and_then(|t| t.image.clone()))
-            .ok_or(Error::MissingImage)
     }
 
     fn build_instance(
@@ -196,7 +199,10 @@ impl CreateCommand {
         }
 
         let template = self.read_template(context.get_system())?;
-        let image_name = self.resolve_image(template.as_ref())?;
+        let image_name = self.resolve_image(template.as_ref()).unwrap_or_else(|| {
+            console.info(&format!("Using default image {DEFAULT_IMAGE}"));
+            DEFAULT_IMAGE.parse().unwrap()
+        });
 
         // Fetch image
         let image = &ImageFactory::find_image(&image_name)?;
@@ -255,6 +261,7 @@ impl Command for CreateCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::Error;
     use crate::instance::InstanceStoreMock;
     use crate::models::{Arch, HashAlg};
     use crate::platform::SystemMock;
@@ -430,7 +437,7 @@ run = ["sudo apt update", "sudo apt install vim"]
     }
 
     #[test]
-    fn test_resolve_image_prefers_the_command_line_and_needs_a_source() {
+    fn test_resolve_image_prefers_the_command_line_over_the_template() {
         let template = build_template();
         let resolve = |args: &[&str], template: Option<&Template>| {
             CreateCommand::try_parse_from(args)
@@ -444,9 +451,6 @@ run = ["sudo apt update", "sudo apt install vim"]
         let image = resolve(&["create", "web"], Some(&template)).unwrap();
         assert_eq!(image.get_name(), "trixie");
 
-        assert!(matches!(
-            resolve(&["create", "web"], None),
-            Err(Error::MissingImage)
-        ));
+        assert!(resolve(&["create", "web"], None).is_none());
     }
 }
