@@ -214,6 +214,8 @@ High quality pull requests are easier to review and thus take less of your and o
 General guideline:
 - Each pull request must have exactly one intent (fix a bug, update doc, etc.).
 - Each pull request should have one Git commit (not mandatory, but recommended).
+- Each pull request must be read and understood by a human before it is opened.
+  Pull requests without the ticked human review box may be closed without review.
 - Each Git commit must have a descriptive message that explains the changes.
 - Each Git commit must have a sign-off (`git commit --signoff`), which
   indicates that you agree with the [Developer Certificate of Origin](https://developercertificate.org/).
