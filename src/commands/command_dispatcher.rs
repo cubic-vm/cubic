@@ -47,7 +47,7 @@ Cubic is a cross-platform tool that spins up Linux virtual machines with a
 single command.
 
 Create a VM instance and open a shell in it:
-  $ cubic run -i ubuntu
+  $ cubic run
 
 Every command can be shortened while the short form stays unique:
   $ cubic in

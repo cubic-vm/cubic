@@ -71,11 +71,6 @@ pub enum Error {
     UnsupportedTemplateVersion(u32),
 
     #[error(
-        "No image was specified.\n\nProvide an image with --image or set 'image' in the template."
-    )]
-    MissingImage,
-
-    #[error(
         "Instance name '{0}' is already taken.\n\nOptions:\n  - Choose a different name\n  - Connect to existing instance: `cubic ssh {0}`"
     )]
     InstanceAlreadyExists(String),
