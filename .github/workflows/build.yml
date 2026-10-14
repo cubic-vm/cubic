@@ -213,9 +213,9 @@ jobs:
         with:
           snap: ${{ env.SNAP_FILE }}
           release: >-
-            ${{ (startsWith(github.ref, 'refs/tags/') ||
-            startsWith(github.ref, 'refs/heads/release/')) &&
-            'candidate' || 'edge' }}
+            ${{ startsWith(github.ref, 'refs/tags/') && 'stable' ||
+            startsWith(github.ref, 'refs/heads/release/') && 'candidate' ||
+            'edge' }}
 
   publish-release:
     if: startsWith(github.ref, 'refs/tags/v')
