@@ -65,6 +65,7 @@ Example
     isolate = false          # optional
 
     ports = [                # optional
+      "3000",                # forward guest port 3000 to host TCP port 3000
       "8000:80",             # forward guest HTTP port to host TCP port 8000
       "5353:53/udp"          # forward guest DNS port to host UDP port 5353
     ]

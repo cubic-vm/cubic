@@ -4,7 +4,7 @@ use std::net::IpAddr;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 
-const FORMAT_ERROR: &str = "Must comply with format: [host_ip:]host_port:guest_port[/(udp|tcp)] (e.g. -p 8000:80 or -p 127.0.0.1:9000:90/tcp)";
+const FORMAT_ERROR: &str = "Must comply with format: [host_ip:][host_port:]guest_port[/(udp|tcp)] (e.g. -p 8000, -p 8000:80 or -p 127.0.0.1:5353:53/udp)";
 const QEMU_FORMAT_ERROR: &str = "Must comply with format: [tcp|udp]:[hostaddr]:hostport-[guestaddr]:guestport (e.g. ::8000-:80 or -p tcp:127.0.0.1:9000-:90)";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -134,10 +134,15 @@ impl FromStr for PortForward {
             Some((address, protocol)) => (address, Some(protocol)),
             None => (value, None),
         };
-        let (host, guest_port) = address.rsplit_once(':').ok_or(FORMAT_ERROR)?;
-        let (host_ip, host_port) = match host.rsplit_once(':') {
-            Some((host_ip, host_port)) => (Some(host_ip), host_port),
-            None => (None, host),
+        let mut parts = address.rsplitn(3, ':');
+        let guest_port = parts.next().ok_or(FORMAT_ERROR)?;
+        let (host_ip, host_port) = match (parts.next(), parts.next()) {
+            (None, _) => (None, guest_port),
+            (Some(host_port), Some(host_ip)) => (Some(host_ip), host_port),
+            (Some(host_ip), None) if host_ip.parse::<IpAddr>().is_ok() => {
+                (Some(host_ip), guest_port)
+            }
+            (Some(host_port), None) => (None, host_port),
         };
 
         Self::from_value(protocol, host_ip, host_port, guest_port)
@@ -210,6 +215,10 @@ mod tests {
         assert_eq!(parse("0.0.0.0:5000:50/udp"), "0.0.0.0:5000:50/udp");
         assert_eq!(parse("192.168.0.1:6000:60/tcp"), "192.168.0.1:6000:60/tcp");
         assert_eq!(parse("::1:7000:70"), "::1:7000:70/tcp");
+        assert_eq!(parse("8000"), "127.0.0.1:8000:8000/tcp");
+        assert_eq!(parse("5353/udp"), "127.0.0.1:5353:5353/udp");
+        assert_eq!(parse("0.0.0.0:8000"), "0.0.0.0:8000:8000/tcp");
+        assert_eq!(parse("127.0.0.1:9000/tcp"), "127.0.0.1:9000:9000/tcp");
     }
 
     #[test]
@@ -230,6 +239,10 @@ mod tests {
         assert!("abc".parse::<PortForward>().is_err());
         assert!("99999:80".parse::<PortForward>().is_err());
         assert!("999.0.0.1:8000:80".parse::<PortForward>().is_err());
+        assert!("99999".parse::<PortForward>().is_err());
+        assert!("".parse::<PortForward>().is_err());
+        assert!("/udp".parse::<PortForward>().is_err());
+        assert!("999.0.0.1:80".parse::<PortForward>().is_err());
         assert!(PortForward::from_qemu("garbage").is_err());
         assert!(PortForward::from_qemu("tcp:127.0.0.1:8000-:99999").is_err());
         assert!(Protocol::from_str("sctp").is_err());

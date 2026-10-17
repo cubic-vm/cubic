@@ -37,11 +37,14 @@ pub const DEFAULT_IMAGE: &str = "ubuntu";
 ///   Create a VM instance and forward the instance's HTTP port to the host port 8000:
 ///   $ cubic create --port 8000:80 -i ubuntu
 ///
+///   Create a VM instance and forward the instance's port 8000 to the same host port:
+///   $ cubic create --port 8000 -i ubuntu
+///
 ///   Create a VM instance and forward the instance's DNS port to the host port 5353:
 ///   $ cubic create --port 5353:53/udp -i ubuntu
 ///
 ///   Create a VM instance with multiple port forwarding rules:
-///   $ cubic create -p 8000:80/tcp -p 5353:53/udp -i ubuntu:latest
+///   $ cubic create -p 8000:80 -p 5353:53/udp -i ubuntu:latest
 ///
 ///   Create a VM instance and install Vim:
 ///   $ cubic create -e "sudo apt install -y vim" -i ubuntu
@@ -86,7 +89,7 @@ pub struct CreateCommand {
     /// Disk size of the VM instance (default: 100G)
     #[clap(short, long)]
     disk: Option<DataSize>,
-    /// Forward ports from guest to host (e.g. -p 8000:80 or -p 9000:90/tcp)
+    /// Forward ports from guest to host (e.g. -p 8000, -p 8000:80 or -p 5353:53/udp)
     #[clap(short, long)]
     port: Vec<PortForward>,
     /// Execute a command once on the first boot (repeatable, e.g. -e "sudo apt install ...")

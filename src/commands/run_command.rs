@@ -22,11 +22,14 @@ use clap::{self, ArgAction, Parser};
 ///   Run a VM instance and forward the instance's HTTP port to the host port 8000:
 ///   $ cubic run --port 8000:80 -i ubuntu
 ///
+///   Run a VM instance and forward the instance's port 8000 to the same host port:
+///   $ cubic run --port 8000 -i ubuntu
+///
 ///   Run a VM instance and forward the instance's DNS port to the host port 5353:
 ///   $ cubic run --port 5353:53/udp -i ubuntu
 ///
 ///   Run a VM instance with multiple port forwarding rules:
-///   $ cubic run -p 8000:80/tcp -p 5353:53/udp -i ubuntu:latest
+///   $ cubic run -p 8000:80 -p 5353:53/udp -i ubuntu:latest
 ///
 ///   Run a VM instance and install Vim:
 ///   $ cubic run -e "sudo apt install -y vim" -i ubuntu
