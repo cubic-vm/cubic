@@ -77,8 +77,9 @@ Port Forwarding
 
 Cubic can forward a port from the guest to the host so that a service
 running inside the guest becomes reachable from the host. You describe a forward
-as ``host_port:guest_port``, for example ``8000:80``, and you can put a host
-address in front of it to choose where the port listens.
+as ``host_port:guest_port``, for example ``8000:80``, or as a single port such as
+``8000`` when the host and guest ports are the same. You can put a host address
+in front of it to choose where the port listens, for example ``0.0.0.0:8000``.
 
 This choice matters. When you leave the address out, Cubic binds the forwarded
 port to ``127.0.0.1``, so the service stays on loopback and keeps the protection

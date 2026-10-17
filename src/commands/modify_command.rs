@@ -51,10 +51,10 @@ pub struct ModifyCommand {
     /// Disk size of the virtual machine instance  (e.g. 10G for 10 gigabytes)
     #[clap(short, long)]
     disk: Option<DataSize>,
-    /// Add port forwarding rule (format: [host_ip:]host_port:guest_port[/(udp|tcp)], e.g. -p 8000:80/tcp)
+    /// Add port forwarding rule (format: [host_ip:][host_port:]guest_port[/(udp|tcp)], e.g. -p 8000 or -p 5353:53/udp)
     #[clap(short, long)]
     port: Vec<PortForward>,
-    /// Remove port forwarding rule (e.g. -P 8000:80)
+    /// Remove port forwarding rule (e.g. -P 8000 or -P 8000:80)
     #[clap(short = 'P', long)]
     rm_port: Vec<PortForward>,
     /// Isolate VM instance from network
