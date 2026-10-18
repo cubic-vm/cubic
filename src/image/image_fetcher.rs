@@ -103,12 +103,12 @@ impl ImageFetcher {
             .await?
             .ok_or(Error::InvalidChecksum)?;
 
+        let file = system.create_file(temp_file)?;
         let view = TransferView::new(&format!("Downloading {}", &image.to_name()));
         let result = client
             .download_file(
-                system,
                 &image.get_image_url(),
-                temp_file,
+                file,
                 view,
                 Arc::clone(console),
                 image.hash_alg,

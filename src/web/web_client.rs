@@ -1,11 +1,9 @@
 use crate::error::{Error, Result};
 use crate::models::HashAlg;
-use crate::platform::System;
 use crate::view::{Console, TransferView};
 use crate::web::Hasher;
 use reqwest::{Client, Response};
 use std::io::{self, BufWriter, Write};
-use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -95,9 +93,8 @@ impl WebClient {
 
     pub async fn download_file(
         &self,
-        system: &dyn System,
         url: &str,
-        file_path: &Path,
+        file: Box<dyn Write>,
         view: TransferView,
         console: Arc<Console>,
         hash_alg: HashAlg,
@@ -110,13 +107,7 @@ impl WebClient {
             .and_then(Response::error_for_status)
             .map_err(Self::map_error)?;
 
-        let mut writer = ProgressWriter::new(
-            system.create_file(file_path)?,
-            resp.content_length(),
-            view,
-            console,
-            hash_alg,
-        );
+        let mut writer = ProgressWriter::new(file, resp.content_length(), view, console, hash_alg);
         Self::write_body(&mut resp, &mut writer).await?;
 
         Ok(writer.hasher.finalize())
