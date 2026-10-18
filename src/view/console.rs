@@ -30,7 +30,7 @@ fn colorize(label: &str, color: Color, enabled: bool) -> String {
 pub struct Console {
     is_tty: bool,
     verbosity: Mutex<Verbosity>,
-    // Only flipped inside redraw so a pause lands between the clear and the draw.
+    // Only flipped inside set_paused, between building the clear and the draw.
     paused: AtomicBool,
     // Each frame line must fit the terminal width so one line takes one row.
     frame: Mutex<String>,
@@ -75,26 +75,21 @@ impl Console {
         self.is_tty && !self.get_verbosity().is_quiet()
     }
 
-    fn is_visible(&self, frame: &str) -> bool {
-        self.is_enabled() && !self.paused.load(Ordering::Relaxed) && !frame.is_empty()
-    }
-
-    fn clear_frame(&self, frame: &str) {
-        if !self.is_visible(frame) {
-            return;
+    fn redraw(&self, old: &str, new: &str) -> String {
+        if !self.is_enabled() || self.paused.load(Ordering::Relaxed) {
+            return String::new();
         }
-        let mut out = format!("{}{}", MoveToColumn(0), Clear(ClearType::CurrentLine));
-        for _ in 1..frame.split('\n').count() {
-            out.push_str(&format!("{}{}", MoveUp(1), Clear(ClearType::CurrentLine)));
+        let mut out = String::new();
+        let rows = old.lines().count();
+        if rows > 1 {
+            out.push_str(&MoveUp((rows - 1) as u16).to_string());
         }
-        self.write(&out);
-    }
-
-    fn draw_frame(&self, frame: &str) {
-        if !self.is_visible(frame) {
-            return;
-        }
-        self.write(&format!("{}{frame}", MoveToColumn(0)));
+        out.push_str(&format!(
+            "{}{}{new}",
+            MoveToColumn(0),
+            Clear(ClearType::FromCursorDown)
+        ));
+        out
     }
 
     fn write(&self, text: &str) {
@@ -104,14 +99,14 @@ impl Console {
 
     pub fn update_animation(&self, frame: &str) {
         let mut current = self.frame.lock().unwrap();
-        self.clear_frame(&current);
         let width = self.width();
-        *current = frame
+        let frame = frame
             .split('\n')
             .map(|line| line.chars().take(width).collect())
             .collect::<Vec<String>>()
             .join("\n");
-        self.draw_frame(&current);
+        self.write(&self.redraw(&current, &frame));
+        *current = frame;
     }
 
     pub fn clear_animation(&self) {
@@ -120,9 +115,9 @@ impl Console {
 
     fn set_paused(&self, paused: bool) {
         let frame = self.frame.lock().unwrap();
-        self.clear_frame(&frame);
+        let clear = self.redraw(&frame, "");
         self.paused.store(paused, Ordering::Relaxed);
-        self.draw_frame(&frame);
+        self.write(&(clear + &self.redraw("", &frame)));
     }
 
     fn emit(&self, stream: Stream, msg: &str, style: Option<(&str, Color)>) {
@@ -142,9 +137,16 @@ impl Console {
             None => msg.to_string(),
         };
         let frame = self.frame.lock().unwrap();
-        self.clear_frame(&frame);
-        self.system.println(stream, &text);
-        self.draw_frame(&frame);
+        let clear = self.redraw(&frame, "");
+        let draw = self.redraw("", &frame);
+        if matches!(stream, Stream::Stdout) {
+            self.write(&format!("{clear}{text}\n{draw}"));
+        } else {
+            // stderr can't share the stdout write, so the frame is drawn around it.
+            self.write(&clear);
+            self.system.println(stream, &text);
+            self.write(&draw);
+        }
     }
 
     pub fn set_verbosity(&self, verbosity: Verbosity) {
@@ -225,10 +227,30 @@ mod tests {
         console.clear_animation();
 
         let home = MoveToColumn(0).to_string();
-        let clear = format!("{home}{}", Clear(ClearType::CurrentLine));
+        let clear = Clear(ClearType::FromCursorDown).to_string();
         assert_eq!(
             system.get_output(),
-            format!("{home}{}{clear}{home}second{clear}", "x".repeat(80))
+            format!(
+                "{home}{clear}{}{home}{clear}second{home}{clear}",
+                "x".repeat(80)
+            )
+        );
+    }
+
+    #[test]
+    fn test_shorter_frame_clears_the_lines_left_over() {
+        let system = Arc::new(SystemMock::new().set_terminal(true));
+        let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
+
+        console.update_animation("a\nb\nc");
+        console.update_animation("d");
+
+        let home = MoveToColumn(0).to_string();
+        let clear = Clear(ClearType::FromCursorDown).to_string();
+        let up = MoveUp(2).to_string();
+        assert_eq!(
+            system.get_output(),
+            format!("{home}{clear}a\nb\nc{up}{home}{clear}d")
         );
     }
 
