@@ -4,7 +4,7 @@ use crate::image::ImageStore;
 use crate::models::Image;
 use crate::util;
 use crate::view::TransferView;
-use crate::web::{Hasher, ProgressWriter, WebClient};
+use crate::web::{Hasher, WebClient};
 use std::io::BufWriter;
 use std::path::Path;
 use std::sync::Arc;
@@ -110,10 +110,10 @@ impl ImageFetcher {
             .await?
             .ok_or(Error::InvalidChecksum)?;
 
-        let view = TransferView::new(&format!("Downloading {}", &image.to_name()));
         let download = client.download(&image.get_image_url()).await?;
         let mut file = BufWriter::with_capacity(WRITE_BUFFER_SIZE, system.create_file(temp_file)?);
-        let mut progress = ProgressWriter::new(download.size(), view, Arc::clone(console));
+        let message = format!("Downloading {}", &image.to_name());
+        let mut progress = TransferView::new(Arc::clone(console), &message, download.size());
         let mut hasher = Hasher::new(image.hash_alg);
         let result = download
             .write_to(&mut [&mut file, &mut progress, &mut hasher])

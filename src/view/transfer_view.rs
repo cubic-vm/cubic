@@ -1,31 +1,40 @@
 use crate::models::DataSize;
 use crate::view::{Console, ProgressBar};
+use std::io;
+use std::sync::Arc;
 
 const TEXT_WIDTH: usize = 50;
 const MIN_BAR_WIDTH: usize = 10;
 
 pub struct TransferView {
+    console: Arc<Console>,
     message: String,
     transferred_bytes: u64,
     total_bytes: Option<u64>,
 }
 
 impl TransferView {
-    pub fn new(message: &str) -> Self {
+    pub fn new(console: Arc<Console>, message: &str, total_bytes: Option<u64>) -> Self {
         TransferView {
+            console,
             message: message.to_string(),
             transferred_bytes: 0,
-            total_bytes: None,
+            total_bytes,
         }
     }
 
-    pub fn set_progress(&mut self, transferred_bytes: u64, total_bytes: Option<u64>) {
+    pub fn with_transferred(mut self, transferred_bytes: u64) -> Self {
         self.transferred_bytes = transferred_bytes;
-        self.total_bytes = total_bytes;
+        self
     }
 
-    pub fn draw(&self, console: &Console) {
-        console.update_animation(&self.render(console.width(), console.has_unicode()));
+    pub fn transferred(&self) -> u64 {
+        self.transferred_bytes
+    }
+
+    fn draw(&self) {
+        let frame = self.render(self.console.width(), self.console.has_unicode());
+        self.console.update_animation(&frame);
     }
 
     fn render(&self, width: usize, unicode: bool) -> String {
@@ -36,13 +45,12 @@ impl TransferView {
             return format!("{text}{transferred}");
         };
 
-        // Show the transferred size in the unit of the total so the two read
-        // as a fraction. Its value never has more digits than the total, so
-        // the field width stays fixed and nothing shifts during a transfer.
+        // Cap at and use the unit of the total to keep the width fixed.
+        let transferred_bytes = self.transferred_bytes.min(total_bytes);
         let total = DataSize::new(total_bytes as usize);
-        let transferred = DataSize::new(self.transferred_bytes as usize).to_value_in(&total);
+        let transferred = DataSize::new(transferred_bytes as usize).to_value_in(&total);
         let size_width = total.to_value_in(&total).to_string().len();
-        let percent = self.transferred_bytes as f64 / total_bytes as f64;
+        let percent = transferred_bytes as f64 / total_bytes as f64;
         let stats = format!(
             "{:>3.0}% {transferred:>size_width$}/{}",
             percent * 100_f64,
@@ -58,14 +66,35 @@ impl TransferView {
     }
 }
 
+impl io::Write for TransferView {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.transferred_bytes += buf.len() as u64;
+        self.draw();
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::platform::SystemMock;
+
+    fn new_view(message: &str, transferred_bytes: u64, total_bytes: Option<u64>) -> TransferView {
+        TransferView::new(
+            Console::new(Arc::new(SystemMock::new())),
+            message,
+            total_bytes,
+        )
+        .with_transferred(transferred_bytes)
+    }
 
     #[test]
     fn test_text_column_is_fixed_width() {
-        let mut view = TransferView::new("Downloading ubuntu");
-        view.set_progress(75, Some(100));
+        let view = new_view("Downloading ubuntu", 75, Some(100));
         let line = view.render(80, false);
         assert_eq!(line.len(), 80);
         assert!(line.starts_with("Downloading ubuntu"));
@@ -75,27 +104,26 @@ mod tests {
 
     #[test]
     fn test_stats_sit_on_the_right() {
-        let mut view = TransferView::new("Downloading ubuntu");
-        view.set_progress(50, Some(100));
+        let view = new_view("Downloading ubuntu", 50, Some(100));
         let line = view.render(80, false);
         assert!(line.ends_with("50%  50/100 B"));
     }
 
     #[test]
     fn test_stats_stay_put_as_the_size_grows() {
-        let mut view = TransferView::new("Downloading ubuntu");
-        view.set_progress(1, Some(10 * 1024 * 1024 * 1024));
-        let small = view.render(80, false);
-        view.set_progress(5 * 1024 * 1024 * 1024, Some(10 * 1024 * 1024 * 1024));
-        let large = view.render(80, false);
+        let total = Some(10 * 1024 * 1024 * 1024);
+        let small = new_view("Downloading ubuntu", 1, total).render(80, false);
+        let large = new_view("Downloading ubuntu", 5 * 1024 * 1024 * 1024, total).render(80, false);
         assert_eq!(small.find('/'), large.find('/'));
     }
 
     #[test]
     fn test_long_message_is_truncated() {
-        let mut view =
-            TransferView::new("Downloading a-very-long-image-name-that-overflows-the-column");
-        view.set_progress(75, Some(100));
+        let view = new_view(
+            "Downloading a-very-long-image-name-that-overflows-the-column",
+            75,
+            Some(100),
+        );
         let line = view.render(80, false);
         assert_eq!(
             &line[..TEXT_WIDTH],
@@ -105,17 +133,30 @@ mod tests {
 
     #[test]
     fn test_narrow_width_keeps_minimum_bar() {
-        let mut view = TransferView::new("Downloading ubuntu");
-        view.set_progress(50, Some(100));
+        let view = new_view("Downloading ubuntu", 50, Some(100));
         let line = view.render(4, false);
         assert!(line.contains('='));
     }
 
     #[test]
     fn test_no_total_omits_bar() {
-        let mut view = TransferView::new("Downloading ubuntu");
-        view.set_progress(50, None);
+        let view = new_view("Downloading ubuntu", 50, None);
         let line = view.render(80, false);
         assert!(!line.contains('['));
+    }
+
+    #[test]
+    fn test_overshoot_is_capped_at_the_total() {
+        let line = new_view("Downloading ubuntu", 150, Some(100)).render(80, false);
+        assert_eq!(line.len(), 80);
+        assert!(line.ends_with("100% 100/100 B"));
+    }
+
+    #[test]
+    fn test_write_counts_transferred_bytes() {
+        let mut view = new_view("Downloading ubuntu", 0, Some(100));
+        io::Write::write_all(&mut view, &[0; 30]).unwrap();
+        io::Write::write_all(&mut view, &[0; 20]).unwrap();
+        assert!(view.render(80, false).ends_with("50%  50/100 B"));
     }
 }

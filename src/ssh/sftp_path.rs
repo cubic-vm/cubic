@@ -182,12 +182,12 @@ impl SftpPath {
         copied: &mut usize,
         content: Box<dyn AsyncFile>,
     ) -> Result<()> {
-        let view = TransferView::new(name);
-        let read = &mut AsyncTransferView::new(Arc::clone(console), view, content, total);
-        read.transfered = *copied;
+        let view = TransferView::new(Arc::clone(console), name, Some(total as u64))
+            .with_transferred(*copied as u64);
+        let read = &mut AsyncTransferView::new(view, content);
         let file = &mut self.create_file().await?;
         let result = tokio::io::copy(read, file).await;
-        *copied = read.transfered;
+        *copied = read.view.transferred() as usize;
         result
             .and(file.shutdown().await)
             .and(read.read.shutdown().await)
