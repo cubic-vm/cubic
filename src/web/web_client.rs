@@ -5,7 +5,6 @@ use std::io::{self, Write};
 use std::sync::Arc;
 use std::time::Duration;
 
-const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const STALL_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -69,7 +68,6 @@ impl WebClient {
         Ok(self
             .client
             .head(url)
-            .timeout(REQUEST_TIMEOUT)
             .send()
             .await
             .map_err(Self::map_error)?
@@ -88,18 +86,6 @@ impl WebClient {
 
         Ok(Download { resp })
     }
-
-    pub async fn download_content(&self, url: &str) -> Result<String> {
-        self.client
-            .get(url)
-            .timeout(REQUEST_TIMEOUT)
-            .send()
-            .await
-            .map_err(Self::map_error)?
-            .text()
-            .await
-            .map_err(Self::map_error)
-    }
 }
 
 pub struct Download {
@@ -109,6 +95,10 @@ pub struct Download {
 impl Download {
     pub fn size(&self) -> Option<u64> {
         self.resp.content_length()
+    }
+
+    pub async fn text(self) -> Result<String> {
+        self.resp.text().await.map_err(WebClient::map_error)
     }
 
     pub async fn write_to(mut self, writers: &mut [&mut dyn Write]) -> Result<()> {

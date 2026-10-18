@@ -37,7 +37,8 @@ impl ImageFactory {
         console.debug(&format!(
             "Fetching image directory listing '{image_dir_url}'"
         ));
-        let image_content = match web.download_content(&image_dir_url).await {
+        let listing = async { web.download(&image_dir_url).await?.text().await };
+        let image_content = match listing.await {
             Ok(content) => content,
             Err(e) => {
                 console.debug(&format!(
@@ -123,7 +124,10 @@ impl ImageFactory {
         web: &WebClient,
         image_provider: &dyn image::ImageProvider,
     ) -> Vec<Image> {
-        let Ok(content) = web.download_content(image_provider.get_base_url()).await else {
+        let Ok(download) = web.download(image_provider.get_base_url()).await else {
+            return Vec::new();
+        };
+        let Ok(content) = download.text().await else {
             return Vec::new();
         };
 
