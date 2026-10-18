@@ -102,7 +102,13 @@ impl WebClient {
         console: Arc<Console>,
         hash_alg: HashAlg,
     ) -> Result<String> {
-        let mut resp = self.client.get(url).send().await.map_err(Self::map_error)?;
+        let mut resp = self
+            .client
+            .get(url)
+            .send()
+            .await
+            .and_then(Response::error_for_status)
+            .map_err(Self::map_error)?;
 
         let mut writer = ProgressWriter::new(
             system.create_file(file_path)?,
