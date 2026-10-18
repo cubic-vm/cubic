@@ -24,7 +24,11 @@ impl ImageFetcher {
         client: &mut WebClient,
         image: &Image,
     ) -> Result<Option<String>> {
-        let content = client.download_content(&image.get_checksum_url()).await?;
+        let content = client
+            .download(&image.get_checksum_url())
+            .await?
+            .text()
+            .await?;
         Ok(Self::find_checksum(&content, &image.image_file))
     }
 
@@ -73,7 +77,7 @@ impl ImageFetcher {
             return Ok(image.clone());
         }
 
-        let listing = client.download_content(&image.base_url).await?;
+        let listing = client.download(&image.base_url).await?.text().await?;
         let image_file = Self::find_image_file(&listing, &image.image_file)
             .ok_or_else(|| Error::NoImageFound(image.base_url.clone()))?;
 
