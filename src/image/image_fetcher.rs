@@ -3,7 +3,7 @@ use crate::error::{Error, Result};
 use crate::image::ImageStore;
 use crate::models::Image;
 use crate::util;
-use crate::view::{Spinner, TransferView};
+use crate::view::TransferView;
 use crate::web::WebClient;
 use std::path::Path;
 use std::sync::Arc;
@@ -16,7 +16,7 @@ impl ImageFetcher {
         ImageFetcher
     }
 
-    pub async fn fetch_checksum(
+    async fn fetch_checksum(
         &self,
         client: &mut WebClient,
         image: &Image,
@@ -91,40 +91,41 @@ impl ImageFetcher {
         }
 
         system.create_writable_dir(Path::new(&env.get_image_dir()))?;
-        let target_file = &env.get_image_file(&image.to_file_name());
-        let target_file = Path::new(target_file);
+        let target_file = env.get_image_file(&image.to_file_name());
+        let temp_file = format!("{target_file}.tmp");
+        let (target_file, temp_file) = (Path::new(&target_file), Path::new(&temp_file));
 
         let mut client = WebClient::new()?;
         let image = &self.resolve_image(&mut client, image).await?;
 
+        let expected = self
+            .fetch_checksum(&mut client, image)
+            .await?
+            .ok_or(Error::InvalidChecksum)?;
+
         let view = TransferView::new(&format!("Downloading {}", &image.to_name()));
-        let checksum = client
+        let result = client
             .download_file(
                 system,
                 &image.get_image_url(),
-                target_file,
+                temp_file,
                 view,
                 Arc::clone(console),
                 image.hash_alg,
             )
-            .await?;
+            .await
+            .and_then(|actual| {
+                if actual != expected {
+                    return Err(Error::InvalidChecksum);
+                }
+                system.rename_file(temp_file, target_file)
+            });
         console.clear_animation();
 
-        // Verify checksum
-        let mut valid_checksum = false;
-        {
-            let _spinner = Spinner::new(Arc::clone(console), format!("Verify {}", image.to_name()));
-            if let Ok(Some(hashsum)) = self.fetch_checksum(&mut client, image).await {
-                valid_checksum = checksum == hashsum;
-            }
+        if result.is_err() {
+            system.remove_file(temp_file).ok();
         }
-
-        if valid_checksum {
-            Ok(())
-        } else {
-            system.remove_file(target_file).ok();
-            Err(Error::InvalidChecksum)
-        }
+        result
     }
 }
 

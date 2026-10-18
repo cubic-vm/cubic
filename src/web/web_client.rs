@@ -5,7 +5,7 @@ use crate::view::{Console, TransferView};
 use crate::web::Hasher;
 use reqwest::{Client, Response};
 use std::io::{self, BufWriter, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -102,32 +102,16 @@ impl WebClient {
         console: Arc<Console>,
         hash_alg: HashAlg,
     ) -> Result<String> {
-        if system.exists_path(file_path) {
-            return Ok(String::new());
-        }
-
-        // Appends rather than replacing the extension, so an image named
-        // `foo.img` downloads through `foo.img.tmp`.
-        let mut temp_file = file_path.as_os_str().to_owned();
-        temp_file.push(".tmp");
-        let temp_file = PathBuf::from(temp_file);
-        system.remove_file(&temp_file).ok();
-
         let mut resp = self.client.get(url).send().await.map_err(Self::map_error)?;
 
         let mut writer = ProgressWriter::new(
-            system.create_file(&temp_file)?,
+            system.create_file(file_path)?,
             resp.content_length(),
             view,
             console,
             hash_alg,
         );
-        if let Err(error) = Self::write_body(&mut resp, &mut writer).await {
-            system.remove_file(&temp_file).ok();
-            return Err(error);
-        }
-
-        system.rename_file(&temp_file, file_path)?;
+        Self::write_body(&mut resp, &mut writer).await?;
 
         Ok(writer.hasher.finalize())
     }
