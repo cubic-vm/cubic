@@ -1,7 +1,5 @@
 use crate::error::{Error, Result};
-use crate::models::HashAlg;
 use crate::view::{Console, TransferView};
-use crate::web::Hasher;
 use reqwest::{Client, Response};
 use std::io::{self, Write};
 use std::sync::Arc;
@@ -16,34 +14,22 @@ pub struct ProgressWriter {
     written: u64,
     view: TransferView,
     console: Arc<Console>,
-    hasher: Hasher,
 }
 
 impl ProgressWriter {
-    pub fn new(
-        size: Option<u64>,
-        view: TransferView,
-        console: Arc<Console>,
-        hash_alg: HashAlg,
-    ) -> Self {
+    pub fn new(size: Option<u64>, view: TransferView, console: Arc<Console>) -> Self {
         Self {
             size,
             written: 0,
             view,
             console,
-            hasher: Hasher::new(hash_alg),
         }
-    }
-
-    pub fn finalize(self) -> String {
-        self.hasher.finalize()
     }
 }
 
 impl io::Write for ProgressWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.written += buf.len() as u64;
-        self.hasher.update(buf);
         self.view.set_progress(self.written, self.size);
         self.view.draw(&self.console);
         Ok(buf.len())
