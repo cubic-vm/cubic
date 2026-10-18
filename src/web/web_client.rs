@@ -1,43 +1,10 @@
 use crate::error::{Error, Result};
-use crate::view::{Console, TransferView};
 use reqwest::{Client, Response};
-use std::io::{self, Write};
-use std::sync::Arc;
+use std::io::Write;
 use std::time::Duration;
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const STALL_TIMEOUT: Duration = Duration::from_secs(30);
-
-pub struct ProgressWriter {
-    size: Option<u64>,
-    written: u64,
-    view: TransferView,
-    console: Arc<Console>,
-}
-
-impl ProgressWriter {
-    pub fn new(size: Option<u64>, view: TransferView, console: Arc<Console>) -> Self {
-        Self {
-            size,
-            written: 0,
-            view,
-            console,
-        }
-    }
-}
-
-impl io::Write for ProgressWriter {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.written += buf.len() as u64;
-        self.view.set_progress(self.written, self.size);
-        self.view.draw(&self.console);
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
-    }
-}
 
 #[derive(Clone)]
 pub struct WebClient {
