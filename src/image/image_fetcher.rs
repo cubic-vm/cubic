@@ -4,9 +4,12 @@ use crate::image::ImageStore;
 use crate::models::Image;
 use crate::util;
 use crate::view::TransferView;
-use crate::web::WebClient;
+use crate::web::{ProgressWriter, WebClient};
+use std::io::BufWriter;
 use std::path::Path;
 use std::sync::Arc;
+
+const WRITE_BUFFER_SIZE: usize = 1 << 20;
 
 #[derive(Default)]
 pub struct ImageFetcher;
@@ -103,23 +106,20 @@ impl ImageFetcher {
             .await?
             .ok_or(Error::InvalidChecksum)?;
 
-        let file = system.create_file(temp_file)?;
         let view = TransferView::new(&format!("Downloading {}", &image.to_name()));
-        let result = client
-            .download_file(
-                &image.get_image_url(),
-                file,
-                view,
-                Arc::clone(console),
-                image.hash_alg,
-            )
-            .await
-            .and_then(|actual| {
-                if actual != expected {
-                    return Err(Error::InvalidChecksum);
-                }
-                system.rename_file(temp_file, target_file)
-            });
+        let download = client.download(&image.get_image_url()).await?;
+        let mut file = BufWriter::with_capacity(WRITE_BUFFER_SIZE, system.create_file(temp_file)?);
+        let mut progress =
+            ProgressWriter::new(download.size(), view, Arc::clone(console), image.hash_alg);
+        let result = download.write_to(&mut [&mut file, &mut progress]).await;
+        drop(file);
+        let actual = progress.finalize();
+        let result = result.and_then(|()| {
+            if actual != expected {
+                return Err(Error::InvalidChecksum);
+            }
+            system.rename_file(temp_file, target_file)
+        });
         console.clear_animation();
 
         if result.is_err() {

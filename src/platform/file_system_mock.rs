@@ -583,9 +583,6 @@ mod tests {
 
         let mut file = system.create_file(Path::new("/data/old.tmp")).unwrap();
         file.write_all(b"hello").unwrap();
-        // Rename while `file` is still alive (not yet flushed or dropped),
-        // mirroring InstanceDao::store and WebClient::download_file's
-        // create_file -> write -> rename_file shape.
         system
             .rename_file(Path::new("/data/old.tmp"), Path::new("/data/new"))
             .unwrap();
