@@ -241,9 +241,9 @@ Troubleshoot:
     },
 
     #[error("Web Error: {0}")]
-    Web(#[from] reqwest::Error),
+    Web(#[source] reqwest::Error),
 
-    #[error("Web Error: the server stopped sending data")]
+    #[error("Web Error: the server did not respond in time")]
     WebTimeout,
 
     // Parsing
@@ -300,6 +300,16 @@ impl Error {
         Error::SftpSession {
             instance: instance.to_string(),
             source: Box::new(source),
+        }
+    }
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(error: reqwest::Error) -> Self {
+        if error.is_timeout() {
+            Error::WebTimeout
+        } else {
+            Error::Web(error)
         }
     }
 }
