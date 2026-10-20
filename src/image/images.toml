@@ -620,6 +620,7 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/questing/release/"
 image_file = "ubuntu-25.10-minimal-cloudimg-amd64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
+eol = true
 
 [[images]]
 distro = "ubuntu"
@@ -631,13 +632,14 @@ base_url = "https://cloud-images.ubuntu.com/minimal/releases/questing/release/"
 image_file = "ubuntu-25.10-minimal-cloudimg-arm64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
+eol = true
 
 [[images]]
 distro = "ubuntu"
 display_name = "Ubuntu"
 version = "26.04"
 codename = "resolute"
-tags = ["stable", "latest"]
+tags = ["stable"]
 arch = "AMD64"
 base_url = "https://cloud-images.ubuntu.com/minimal/releases/resolute/release/"
 image_file = "ubuntu-26.04-minimal-cloudimg-amd64.img"
@@ -649,9 +651,33 @@ distro = "ubuntu"
 display_name = "Ubuntu"
 version = "26.04"
 codename = "resolute"
-tags = ["stable", "latest"]
+tags = ["stable"]
 arch = "ARM64"
 base_url = "https://cloud-images.ubuntu.com/minimal/releases/resolute/release/"
 image_file = "ubuntu-26.04-minimal-cloudimg-arm64.img"
+checksum_file = "SHA256SUMS"
+hash_alg = "Sha256"
+
+[[images]]
+distro = "ubuntu"
+display_name = "Ubuntu"
+version = "26.10"
+codename = "stonking"
+tags = ["latest"]
+arch = "AMD64"
+base_url = "https://cloud-images.ubuntu.com/minimal/releases/stonking/release/"
+image_file = "ubuntu-26.10-minimal-cloudimg-amd64.img"
+checksum_file = "SHA256SUMS"
+hash_alg = "Sha256"
+
+[[images]]
+distro = "ubuntu"
+display_name = "Ubuntu"
+version = "26.10"
+codename = "stonking"
+tags = ["latest"]
+arch = "ARM64"
+base_url = "https://cloud-images.ubuntu.com/minimal/releases/stonking/release/"
+image_file = "ubuntu-26.10-minimal-cloudimg-arm64.img"
 checksum_file = "SHA256SUMS"
 hash_alg = "Sha256"
