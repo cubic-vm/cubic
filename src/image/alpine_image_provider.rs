@@ -6,8 +6,8 @@ use std::cmp::Ordering;
 pub struct AlpineImageProvider {}
 
 impl AlpineImageProvider {
-    /// Oldest release that ships a cloud-init image
-    const OLDEST_VERSION: &str = "3.21";
+    /// Oldest release with the current image file name
+    const OLDEST_VERSION: &str = "3.24";
 }
 
 impl ImageProvider for AlpineImageProvider {
@@ -36,11 +36,9 @@ impl ImageProvider for AlpineImageProvider {
         format!("v{name}/releases/cloud/")
     }
 
-    /// Newer releases drop the `-uefi` part from the file name
-    fn get_image_file_pattern(&self, name: &str, arch: Arch) -> String {
-        let name = regex::escape(name);
+    fn get_image_file_glob(&self, name: &str, arch: Arch) -> Option<String> {
         let arch_name = arch.as_canonical_str();
-        format!("alpine-{name}\\.[0-9]+-{arch_name}(?:-uefi)?-cloudinit-r[0-9]+\\.qcow2")
+        Some(format!("alpine-{name}.*-{arch_name}-cloudinit-r0.qcow2"))
     }
 
     fn get_checksum_file(&self, image_file: &str, _name: &str, _arch: Arch) -> String {
@@ -68,25 +66,26 @@ mod tests {
 <a href="latest-stable/">latest-stable/</a>
 <a href="v3.9/">v3.9/</a>
 <a href="v3.20/">v3.20/</a>
-<a href="v3.21/">v3.21/</a>
-<a href="v3.24/">v3.24/</a>"#;
+<a href="v3.23/">v3.23/</a>
+<a href="v3.24/">v3.24/</a>
+<a href="v3.25/">v3.25/</a>"#;
 
         assert_eq!(
             AlpineImageProvider {}.find_image_names(listing),
-            ["3.21", "3.24"]
+            ["3.24", "3.25"]
         );
     }
 
     #[test]
     fn test_image_file_pattern_matches_generic_cloud_init_image() {
-        let pattern = AlpineImageProvider {}.get_image_file_pattern("3.23", Arch::AMD64);
+        let pattern = AlpineImageProvider {}.get_image_file_pattern("3.24", Arch::AMD64);
         let regex = Regex::new(&format!("^{pattern}$")).unwrap();
 
-        assert!(regex.is_match("alpine-3.23.6-x86_64-uefi-cloudinit-r0.qcow2"));
-        assert!(regex.is_match("alpine-3.23.10-x86_64-cloudinit-r1.qcow2"));
-        assert!(!regex.is_match("alpine-3.23.6-x86_64-uefi-cloudinit-metal-r0.qcow2"));
-        assert!(!regex.is_match("alpine-3.23.6-x86_64-uefi-tiny-r0.qcow2"));
-        assert!(!regex.is_match("alpine-3.23.6-aarch64-uefi-cloudinit-r0.qcow2"));
-        assert!(!regex.is_match("alpine-3.230.6-x86_64-cloudinit-r0.qcow2"));
+        assert!(regex.is_match("alpine-3.24.2-x86_64-cloudinit-r0.qcow2"));
+        assert!(regex.is_match("alpine-3.24.10-x86_64-cloudinit-r0.qcow2"));
+        assert!(!regex.is_match("alpine-3.24.2-x86_64-cloudinit-metal-r0.qcow2"));
+        assert!(!regex.is_match("alpine-3.24.2-x86_64-tiny-r0.qcow2"));
+        assert!(!regex.is_match("alpine-3.24.2-aarch64-cloudinit-r0.qcow2"));
+        assert!(!regex.is_match("alpine-3.240.2-x86_64-cloudinit-r0.qcow2"));
     }
 }
