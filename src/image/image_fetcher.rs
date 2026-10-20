@@ -19,11 +19,7 @@ impl ImageFetcher {
         ImageFetcher
     }
 
-    async fn fetch_checksum(
-        &self,
-        client: &mut WebClient,
-        image: &Image,
-    ) -> Result<Option<String>> {
+    async fn fetch_checksum(&self, client: &WebClient, image: &Image) -> Result<Option<String>> {
         let content = client
             .download(&image.get_checksum_url())
             .await?
@@ -72,7 +68,7 @@ impl ImageFetcher {
             .map(str::to_string)
     }
 
-    async fn resolve_image(&self, client: &mut WebClient, image: &Image) -> Result<Image> {
+    async fn resolve_image(&self, client: &WebClient, image: &Image) -> Result<Image> {
         if !image.has_image_file_pattern() {
             return Ok(image.clone());
         }
@@ -102,11 +98,11 @@ impl ImageFetcher {
         let temp_file = format!("{target_file}.tmp");
         let (target_file, temp_file) = (Path::new(&target_file), Path::new(&temp_file));
 
-        let mut client = WebClient::new()?;
-        let image = &self.resolve_image(&mut client, image).await?;
+        let client = WebClient::new()?;
+        let image = &self.resolve_image(&client, image).await?;
 
         let expected = self
-            .fetch_checksum(&mut client, image)
+            .fetch_checksum(&client, image)
             .await?
             .ok_or(Error::InvalidChecksum)?;
 

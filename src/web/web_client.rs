@@ -1,6 +1,6 @@
-use crate::error::{Error, Result};
-use reqwest::{Client, Response};
-use std::io::Write;
+use crate::error::Result;
+use crate::web::Download;
+use reqwest::Client;
 use std::time::Duration;
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -18,66 +18,16 @@ impl WebClient {
                 .user_agent("cubic")
                 .connect_timeout(CONNECT_TIMEOUT)
                 .read_timeout(STALL_TIMEOUT)
-                .build()
-                .map_err(Self::map_error)?,
+                .build()?,
         })
     }
 
-    fn map_error(error: reqwest::Error) -> Error {
-        if error.is_timeout() {
-            Error::WebTimeout
-        } else {
-            Error::Web(error)
-        }
-    }
-
-    pub async fn check_file_exists(&self, url: &str) -> Result<bool> {
-        Ok(self
-            .client
-            .head(url)
-            .send()
-            .await
-            .map_err(Self::map_error)?
-            .status()
-            .is_success())
+    pub async fn exists(&self, url: &str) -> Result<bool> {
+        Ok(self.client.head(url).send().await?.status().is_success())
     }
 
     pub async fn download(&self, url: &str) -> Result<Download> {
-        let resp = self
-            .client
-            .get(url)
-            .send()
-            .await
-            .and_then(Response::error_for_status)
-            .map_err(Self::map_error)?;
-
+        let resp = self.client.get(url).send().await?.error_for_status()?;
         Ok(Download { resp })
-    }
-}
-
-pub struct Download {
-    resp: Response,
-}
-
-impl Download {
-    pub fn size(&self) -> Option<u64> {
-        self.resp.content_length()
-    }
-
-    pub async fn text(self) -> Result<String> {
-        self.resp.text().await.map_err(WebClient::map_error)
-    }
-
-    pub async fn write_to(mut self, writers: &mut [&mut dyn Write]) -> Result<()> {
-        while let Some(chunk) = self.resp.chunk().await.map_err(WebClient::map_error)? {
-            for writer in writers.iter_mut() {
-                writer.write_all(&chunk).map_err(Error::from)?;
-            }
-        }
-
-        for writer in writers.iter_mut() {
-            writer.flush().map_err(Error::from)?;
-        }
-        Ok(())
     }
 }

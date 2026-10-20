@@ -66,7 +66,7 @@ impl ImageFactory {
                     image_provider.get_checksum_file(image_file, name, arch),
                 ),
             };
-            web.check_file_exists(&format!("{content_dir_url}{image_file}"))
+            web.exists(&format!("{content_dir_url}{image_file}"))
                 .await
                 .unwrap_or(false)
                 .then(|| Image {
