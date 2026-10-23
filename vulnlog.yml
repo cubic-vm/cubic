@@ -6,7 +6,8 @@ project:
   name: cubic
   author: Cubic VM team
 
-releases: []
+releases:
+  - id: 0.27.1
 
 vulnerabilities:
 
@@ -20,3 +21,38 @@ vulnerabilities:
     verdict: not affected
     justification: vulnerable code not in execute path
     comment: "See https://github.com/Eugeny/russh/issues/637"
+
+  - id: RUSTSEC-2026-0382
+    description: |-
+      Certificate verification may accept chains through distrusted emSign
+      intermediates.
+    releases: []
+    packages: ["pkg:cargo/rustls-webpki@0.103.15"]
+    reports:
+      - reporter: cargo-audit
+    analysis: |-
+      Cubic does not ship its own CA store. It verifies certificates against
+      the OS CA store, which distributions update to remove the distrusted
+      emSign root.
+    verdict: not affected
+    justification: inline mitigations already exist
+    resolution:
+      in: 0.27.1
+      note: Updated rustls-webpki from 0.103.15 to 0.103.16
+
+  - id: RUSTSEC-2026-0383
+    description: |-
+      Bundled root certificates allow trust in distrusted emSign
+      intermediates.
+    releases: []
+    packages: ["pkg:cargo/webpki-root-certs@1.0.9"]
+    reports:
+      - reporter: cargo-audit
+    analysis: |-
+      The crate is only a dependency of rustls-platform-verifier on the wasm32
+      target, which cubic neither supports nor publishes binaries for.
+    verdict: not affected
+    justification: component not present
+    resolution:
+      in: 0.27.1
+      note: Updated webpki-root-certs from 1.0.9 to 1.0.10
