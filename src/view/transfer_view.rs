@@ -32,11 +32,6 @@ impl TransferView {
         self.transferred_bytes
     }
 
-    fn draw(&self) {
-        let frame = self.render(self.console.width(), self.console.has_unicode());
-        self.console.update_animation(&frame);
-    }
-
     fn render(&self, width: usize, unicode: bool) -> String {
         let text = format!("{:TEXT_WIDTH$.TEXT_WIDTH$}", self.message);
 
@@ -69,7 +64,11 @@ impl TransferView {
 impl io::Write for TransferView {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.transferred_bytes += buf.len() as u64;
-        self.draw();
+        if self.console.is_enabled() {
+            let width = self.console.width();
+            let frame = self.render(width, self.console.has_unicode());
+            self.console.update_animation(&frame, width);
+        }
         Ok(buf.len())
     }
 

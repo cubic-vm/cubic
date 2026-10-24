@@ -25,9 +25,9 @@ impl Spinner {
                 let start = Instant::now();
                 let unicode = console.has_unicode();
                 loop {
-                    let frame =
-                        Self::render_frame(&text, start.elapsed(), console.width(), unicode);
-                    console.update_animation(&frame);
+                    let width = console.width();
+                    let frame = Self::render_frame(&text, start.elapsed(), width, unicode);
+                    console.update_animation(&frame, width);
                     match rx.recv_timeout(TICK) {
                         Err(RecvTimeoutError::Timeout) => continue,
                         _ => break,
