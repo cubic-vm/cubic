@@ -56,3 +56,22 @@ vulnerabilities:
     resolution:
       in: 0.27.1
       note: Updated webpki-root-certs from 1.0.9 to 1.0.10
+
+  - id: RUSTSEC-2026-0387
+    description: |-
+      Operations in crypto-bigint intended to be constant-time could take
+      secret-dependent branches and leak secrets through timing side
+      channels.
+    releases: []
+    packages: ["pkg:cargo/crypto-bigint@0.7.5"]
+    reports:
+      - reporter: cargo-audit
+    analysis: |-
+      russh uses crypto-bigint for the RSA and elliptic curve operations of
+      the SSH client, which handle the client's private keys. An attacker
+      able to observe timing on the host could recover secret material.
+    verdict: affected
+    severity: low
+    resolution:
+      in: 0.27.1
+      note: Updated crypto-bigint from 0.7.5 to 0.7.6
