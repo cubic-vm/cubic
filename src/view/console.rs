@@ -29,6 +29,7 @@ fn colorize(label: &str, color: Color, enabled: bool) -> String {
 
 pub struct Console {
     is_tty: bool,
+    unicode: bool,
     verbosity: Mutex<Verbosity>,
     // Only flipped inside set_paused, between building the clear and the draw.
     paused: AtomicBool,
@@ -43,6 +44,7 @@ impl Console {
         let is_tty = system.is_terminal(Stream::Stdout);
         Arc::new(Self {
             is_tty,
+            unicode: Self::detect_unicode(system.as_ref()),
             verbosity: Mutex::new(Verbosity::new(false, false)),
             paused: AtomicBool::new(false),
             frame: Mutex::new(String::new()),
@@ -51,11 +53,11 @@ impl Console {
     }
 
     pub fn has_unicode(&self) -> bool {
-        let read = |key: &str| {
-            self.system
-                .read_env_var(key)
-                .filter(|value| !value.is_empty())
-        };
+        self.unicode
+    }
+
+    fn detect_unicode(system: &dyn System) -> bool {
+        let read = |key: &str| system.read_env_var(key).filter(|value| !value.is_empty());
         if ["linux", "dumb"].contains(&read("TERM").unwrap_or_default().as_str()) {
             return false;
         }
@@ -97,9 +99,8 @@ impl Console {
         self.system.flush(Stream::Stdout);
     }
 
-    pub fn update_animation(&self, frame: &str) {
+    pub fn update_animation(&self, frame: &str, width: usize) {
         let mut current = self.frame.lock().unwrap();
-        let width = self.width();
         let frame = frame
             .split('\n')
             .map(|line| line.chars().take(width).collect())
@@ -110,7 +111,7 @@ impl Console {
     }
 
     pub fn clear_animation(&self) {
-        self.update_animation("");
+        self.update_animation("", 0);
     }
 
     fn set_paused(&self, paused: bool) {
@@ -222,8 +223,8 @@ mod tests {
         let system = Arc::new(SystemMock::new().set_terminal(true));
         let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
 
-        console.update_animation(&"x".repeat(100));
-        console.update_animation("second");
+        console.update_animation(&"x".repeat(100), 80);
+        console.update_animation("second", 80);
         console.clear_animation();
 
         let home = MoveToColumn(0).to_string();
@@ -242,8 +243,8 @@ mod tests {
         let system = Arc::new(SystemMock::new().set_terminal(true));
         let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
 
-        console.update_animation("a\nb\nc");
-        console.update_animation("d");
+        console.update_animation("a\nb\nc", 80);
+        console.update_animation("d", 80);
 
         let home = MoveToColumn(0).to_string();
         let clear = Clear(ClearType::FromCursorDown).to_string();
