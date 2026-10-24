@@ -2,15 +2,18 @@ use crate::models::DataSize;
 use crate::view::{Console, ProgressBar};
 use std::io;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 const TEXT_WIDTH: usize = 50;
 const MIN_BAR_WIDTH: usize = 10;
+const REDRAW_INTERVAL: Duration = Duration::from_millis(100);
 
 pub struct TransferView {
     console: Arc<Console>,
     message: String,
     transferred_bytes: u64,
     total_bytes: Option<u64>,
+    last_draw: Option<Instant>,
 }
 
 impl TransferView {
@@ -20,6 +23,7 @@ impl TransferView {
             message: message.to_string(),
             transferred_bytes: 0,
             total_bytes,
+            last_draw: None,
         }
     }
 
@@ -64,7 +68,11 @@ impl TransferView {
 impl io::Write for TransferView {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.transferred_bytes += buf.len() as u64;
-        if self.console.is_enabled() {
+        let due = self
+            .last_draw
+            .is_none_or(|last| last.elapsed() >= REDRAW_INTERVAL);
+        if self.console.is_enabled() && due {
+            self.last_draw = Some(Instant::now());
             let width = self.console.width();
             let frame = self.render(width, self.console.has_unicode());
             self.console.update_animation(&frame, width);
@@ -81,6 +89,17 @@ impl io::Write for TransferView {
 mod tests {
     use super::*;
     use crate::platform::SystemMock;
+
+    #[test]
+    fn test_redraws_at_most_once_per_interval() {
+        let system = Arc::new(SystemMock::new().set_terminal(true));
+        let mut view = TransferView::new(Console::new(system.clone()), "", Some(100));
+        io::Write::write_all(&mut view, &[0; 30]).unwrap();
+        io::Write::write_all(&mut view, &[0; 20]).unwrap();
+
+        let output = system.get_output();
+        assert!(output.contains(" 30%") && !output.contains(" 50%"));
+    }
 
     fn new_view(message: &str, transferred_bytes: u64, total_bytes: Option<u64>) -> TransferView {
         TransferView::new(
