@@ -13,10 +13,12 @@ const FIRST_FREE_PORT: u16 = 60000;
 
 // What a port does when it is dialled. A port the host has never heard of is
 // one nothing listens on and nothing has claimed, so it is free.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 enum PortState {
     // Accepts the caller, the way a running service does.
     Listening,
+    // Sends these bytes, then hangs up.
+    Replying(Vec<u8>),
     // Handed out by a bind. Nothing listens on it, since a bind only reserves
     // the number and leaves the listening to whoever asked.
     Bound,
@@ -54,6 +56,7 @@ impl NetworkMock {
 
         match self.find(port) {
             Some(PortState::Listening) => Ok(Box::new(tokio::io::duplex(1).0)),
+            Some(PortState::Replying(replies)) => Ok(Box::new(Cursor::new(replies.clone()))),
             _ => Err(Error::ConnectionFailed(
                 port,
                 std::io::ErrorKind::ConnectionRefused.into(),
@@ -71,11 +74,11 @@ impl NetworkMock {
         Ok(port)
     }
 
-    fn find(&self, port: u16) -> Option<PortState> {
+    fn find(&self, port: u16) -> Option<&PortState> {
         self.ports
             .iter()
             .find(|(known, _)| *known == port)
-            .map(|(_, state)| *state)
+            .map(|(_, state)| state)
     }
 }
 
@@ -145,6 +148,15 @@ impl SystemMock {
     // A port that accepts the caller, the way a running service does.
     pub fn add_open_port(self, port: u16) -> Self {
         self.network.lock().unwrap().add(port, PortState::Listening);
+        self
+    }
+
+    // A port that sends `replies` on every connection.
+    pub fn add_replying_port(self, port: u16, replies: &[u8]) -> Self {
+        self.network
+            .lock()
+            .unwrap()
+            .add(port, PortState::Replying(replies.to_vec()));
         self
     }
 
