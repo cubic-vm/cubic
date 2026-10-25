@@ -1,22 +1,19 @@
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::Duration;
 
 use crate::error::{Error, Result};
 use crate::models::Arch;
 use crate::platform::System;
 use crate::qemu::{QemuSystem, SOFTWARE_ACCEL};
-use crate::util::SystemCommand;
 
-// Only reached by a QEMU that hangs, since one that cannot use an accelerator
-// says so within milliseconds and one that can is up just as fast.
+// Only reached by a QEMU that hangs.
 const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 
-// QEMU greets a QMP client once the machine stands, which is after the
-// accelerator is initialised and the firmware is loaded.
-const QMP_GREETING: &str = "\"QMP\"";
+const QMP_QUIT: &str = "{\"execute\":\"qmp_capabilities\"}\n{\"execute\":\"quit\"}\n";
 
 // Asks QEMU whether an accelerator works on this host, by starting it as the
-// instance would and killing it once it is up.
+// instance would and asking it to quit once it is up.
 pub struct QemuAcceleratorProbe<'a> {
     system: &'a dyn System,
     arch: Arch,
@@ -98,7 +95,8 @@ impl<'a> QemuAcceleratorProbe<'a> {
             .build_command(accel)
             .map_err(|error| error.to_string())?;
         self.system
-            .run_command_until_output(&command, QMP_GREETING, PROBE_TIMEOUT)
+            .run_and_wait(command, Some(QMP_QUIT), Some(PROBE_TIMEOUT))
+            .map(|_| ())
             .map_err(|error| match error {
                 Error::SystemCommandFailed(_, stderr) if stderr.trim().is_empty() => {
                     "QEMU did not come up".to_string()
@@ -110,7 +108,7 @@ impl<'a> QemuAcceleratorProbe<'a> {
 
     // The machine of the probe is the machine of the start, firmware included,
     // or the answer belongs to a different machine than the one that follows.
-    fn build_command(&self, accel: &str) -> Result<SystemCommand> {
+    fn build_command(&self, accel: &str) -> Result<Command> {
         let mut qemu = QemuSystem::from(self.system, self.arch)?;
         qemu.set_firmware(&self.firmware);
         if let Some(module_dir) = &self.module_dir {
@@ -122,7 +120,7 @@ impl<'a> QemuAcceleratorProbe<'a> {
         qemu.set_accelerator(accel);
 
         let mut command = qemu.build_command();
-        command.arg("-qmp").arg("stdio");
+        command.arg("-S").arg("-qmp").arg("stdio");
         Ok(command)
     }
 }
@@ -131,6 +129,7 @@ impl<'a> QemuAcceleratorProbe<'a> {
 mod tests {
     use super::*;
     use crate::platform::SystemMock;
+    use crate::util::CommandLine;
 
     const FIRMWARE: &str = "/usr/share/qemu/OVMF.fd";
 
@@ -219,12 +218,14 @@ mod tests {
     }
 
     #[test]
-    fn test_detect_asks_qemu_to_report_that_the_machine_is_up() {
+    fn test_build_command_starts_qemu_paused_with_qmp_on_stdio() {
         let system = SystemMock::new();
 
-        build_probe(&system, Arch::AMD64).detect("kvm").ok();
+        let command = build_probe(&system, Arch::AMD64)
+            .build_command("kvm")
+            .unwrap();
 
-        assert!(system.get_executed_commands()[0].ends_with("-qmp stdio"));
+        assert!(command.get_command().ends_with("-S -qmp stdio"));
     }
 
     #[test]

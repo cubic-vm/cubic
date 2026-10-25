@@ -2,8 +2,8 @@ use crate::error::{Error, Result};
 use crate::models::{DataSize, Environment, Instance, Snapshot};
 use crate::platform::System;
 use crate::qemu::QemuPathBuilder;
-use crate::util::SystemCommand;
 use serde::Deserialize;
+use std::process::Command;
 
 #[derive(Debug, Deserialize)]
 pub struct ImageInfo {
@@ -25,9 +25,9 @@ impl<'a> QemuImg<'a> {
         Self { system }
     }
 
-    fn command(&self) -> SystemCommand {
-        let mut cmd = SystemCommand::new("qemu-img");
-        cmd.set_env("PATH", QemuPathBuilder::new(self.system).build());
+    fn command(&self) -> Command {
+        let mut cmd = Command::new("qemu-img");
+        cmd.env("PATH", QemuPathBuilder::new(self.system).build());
         cmd
     }
 
@@ -51,7 +51,7 @@ impl<'a> QemuImg<'a> {
             .arg(env.get_instance_image_file(&instance.name));
 
         self.system
-            .run_command(&command)
+            .run_and_wait(command, None, None)
             .ok()
             .and_then(|stdout| String::from_utf8(stdout).ok())
             .and_then(|stdout| serde_json::from_str(&stdout).ok())
@@ -80,7 +80,7 @@ impl<'a> QemuImg<'a> {
             .arg(image);
 
         self.system
-            .run_command(&command)
+            .run_and_wait(command, None, None)
             .map(|_| ())
             .map_err(Self::map_error)
     }
@@ -90,7 +90,7 @@ impl<'a> QemuImg<'a> {
         command.arg("resize").arg(image).arg(size.to_string());
 
         self.system
-            .run_command(&command)
+            .run_and_wait(command, None, None)
             .map(|_| ())
             .map_err(Self::map_error)
     }
@@ -112,7 +112,7 @@ impl<'a> QemuImg<'a> {
         command.arg("snapshot").arg(action).arg(name).arg(image);
 
         self.system
-            .run_command(&command)
+            .run_and_wait(command, None, None)
             .map(|_| ())
             .map_err(Self::map_error)
     }

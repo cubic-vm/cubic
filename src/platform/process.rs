@@ -1,20 +1,15 @@
 use crate::error::Result;
-use crate::util::SystemCommand;
+use std::process::Command;
 use std::time::Duration;
 
 pub trait Process {
-    fn run_command(&self, command: &SystemCommand) -> Result<Vec<u8>>;
-    // Runs a command that is not expected to end by itself and waits for a
-    // marker on its stdout. The marker means the command came up, so it is
-    // killed right away. A command that ends first, or one that never prints
-    // the marker before the deadline, reports a failure carrying its stderr.
-    fn run_command_until_output(
+    fn run_and_wait(
         &self,
-        command: &SystemCommand,
-        marker: &str,
-        timeout: Duration,
-    ) -> Result<()>;
-    fn spawn_command(&self, command: &SystemCommand) -> Result<()>;
+        command: Command,
+        stdin: Option<&str>,
+        timeout: Option<Duration>,
+    ) -> Result<Vec<u8>>;
+    fn run_detached(&self, command: Command) -> Result<()>;
 
     fn exists_process(&self, pid: u64) -> bool;
 }
