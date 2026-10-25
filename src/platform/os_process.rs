@@ -15,7 +15,11 @@ impl OsSystem {
     fn read_process_table(pid: u64) -> (sysinfo::System, sysinfo::Pid) {
         let sys_pid = sysinfo::Pid::from_u32(pid as u32);
         let mut system = sysinfo::System::new();
-        system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[sys_pid]), true);
+        system.refresh_processes_specifics(
+            sysinfo::ProcessesToUpdate::Some(&[sys_pid]),
+            true,
+            sysinfo::ProcessRefreshKind::nothing(),
+        );
         (system, sys_pid)
     }
 

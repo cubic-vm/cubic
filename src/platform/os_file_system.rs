@@ -3,6 +3,7 @@ use crate::platform::{FileSystem, OsSystem};
 use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use sysinfo::{DiskRefreshKind, Disks};
 
 impl FileSystem for OsSystem {
     fn exists_path(&self, path: &Path) -> bool {
@@ -34,7 +35,7 @@ impl FileSystem for OsSystem {
     fn get_available_space(&self, path: &Path) -> Option<u64> {
         let path = path.canonicalize().ok()?;
 
-        sysinfo::Disks::new_with_refreshed_list()
+        Disks::new_with_refreshed_list_specifics(DiskRefreshKind::nothing().with_storage())
             .list()
             .iter()
             .filter(|disk| path.starts_with(disk.mount_point()))

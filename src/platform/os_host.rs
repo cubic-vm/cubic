@@ -1,5 +1,6 @@
 use crate::models::TimezoneName;
 use crate::platform::{Host, OsSystem};
+use sysinfo::{CpuRefreshKind, MemoryRefreshKind};
 
 impl Host for OsSystem {
     fn read_env_var(&self, key: &str) -> Option<String> {
@@ -8,13 +9,13 @@ impl Host for OsSystem {
 
     fn get_total_memory(&self) -> u64 {
         let mut system = sysinfo::System::new();
-        system.refresh_memory();
+        system.refresh_memory_specifics(MemoryRefreshKind::nothing().with_ram());
         system.total_memory()
     }
 
     fn get_available_memory(&self) -> u64 {
         let mut system = sysinfo::System::new();
-        system.refresh_memory();
+        system.refresh_memory_specifics(MemoryRefreshKind::nothing().with_ram());
         system.available_memory()
     }
 
@@ -22,7 +23,7 @@ impl Host for OsSystem {
     // reports its thread count rather than its physical cores.
     fn get_cpu_count(&self) -> u16 {
         let mut system = sysinfo::System::new();
-        system.refresh_cpu_all();
+        system.refresh_cpu_list(CpuRefreshKind::nothing());
         system.cpus().len() as u16
     }
 
