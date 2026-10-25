@@ -1,12 +1,9 @@
 use crate::error::{Error, Result};
 use crate::platform::{OsSystem, Process};
-use crate::util::SystemCommand;
-use std::io::{BufRead, BufReader, ErrorKind, Read};
+use crate::util::CommandLine;
+use std::io::{ErrorKind, Write};
 use std::process::{Command, Stdio};
-use std::str::from_utf8;
-use std::sync::mpsc;
-use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 impl OsSystem {
     // Refreshes a single process so a lookup sees the current state of the
@@ -23,20 +20,13 @@ impl OsSystem {
         (system, sys_pid)
     }
 
-    fn build_process(command: &SystemCommand) -> Command {
-        let mut process = Command::new(command.get_program());
-        process.args(command.get_args());
-        for (key, value) in command.get_envs() {
-            process.env(key, value);
-        }
-        process
-    }
-
     // A missing binary is worth telling apart from a binary that refused to
     // start, since only the first one means the host lacks the tool.
-    fn map_spawn_error(command: &SystemCommand, error: std::io::Error) -> Error {
+    fn map_spawn_error(command: &Command, error: std::io::Error) -> Error {
         if error.kind() == ErrorKind::NotFound {
-            return Error::SystemCommandNotFound(command.get_program().to_string());
+            return Error::SystemCommandNotFound(
+                command.get_program().to_string_lossy().into_owned(),
+            );
         }
 
         Error::SystemCommandFailed(command.get_command(), error.to_string())
@@ -57,124 +47,96 @@ fn detach_from_session() -> std::io::Result<()> {
 }
 
 impl Process for OsSystem {
-    fn run_command(&self, command: &SystemCommand) -> Result<Vec<u8>> {
-        Self::build_process(command)
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()
-            .map_err(|e| Self::map_spawn_error(command, e))
-            .and_then(|out| {
-                if out.status.success() {
-                    Ok(out.stdout)
-                } else {
-                    Err(Error::SystemCommandFailed(
-                        command.get_command(),
-                        from_utf8(&out.stderr).unwrap_or_default().to_string(),
-                    ))
-                }
-            })
-    }
-
-    // Reads rather than polls, so the command is only kept alive until it says
-    // it is up. Stdin stays open, or a command that reads it sees an early end
-    // of file and stops on its own.
-    fn run_command_until_output(
+    fn run_and_wait(
         &self,
-        command: &SystemCommand,
-        marker: &str,
-        timeout: Duration,
-    ) -> Result<()> {
-        let mut child = Self::build_process(command)
+        mut command: Command,
+        stdin: Option<&str>,
+        timeout: Option<Duration>,
+    ) -> Result<Vec<u8>> {
+        let mut child = command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| Self::map_spawn_error(command, e))?;
+            .map_err(|e| Self::map_spawn_error(&command, e))?;
 
-        let (Some(stdout), Some(stderr)) = (child.stdout.take(), child.stderr.take()) else {
-            let _ = child.kill();
-            return Err(Error::SystemCommandFailed(
-                command.get_command(),
-                "The command offered no output to read.".to_string(),
-            ));
-        };
-
-        // Both pipes are drained on their own thread. A pipe that nobody reads
-        // fills up and stops the command it belongs to.
-        let (sender, receiver) = mpsc::channel();
-        let needle = marker.to_string();
-        thread::spawn(move || {
-            let mut lines = BufReader::new(stdout).lines();
-            while let Some(Ok(line)) = lines.next() {
-                if line.contains(&needle) {
-                    return sender.send(()).unwrap_or_default();
-                }
-            }
-        });
-        let collector = thread::spawn(move || {
-            let mut text = String::new();
-            BufReader::new(stderr).read_to_string(&mut text).ok();
-            text
-        });
-
-        // The sender is dropped as soon as stdout ends, so a command that stops
-        // early is seen without waiting for the deadline.
-        let found = receiver.recv_timeout(timeout).is_ok();
-        let _ = child.kill();
-        let _ = child.wait();
-
-        if found {
-            return Ok(());
+        // Dropping the pipe sends EOF.
+        if let (Some(mut pipe), Some(input)) = (child.stdin.take(), stdin) {
+            let _ = pipe.write_all(input.as_bytes());
         }
-        Err(Error::SystemCommandFailed(
-            command.get_command(),
-            collector.join().unwrap_or_default(),
-        ))
+        // Output is not drained while polling, so only for commands that print little.
+        if let Some(timeout) = timeout {
+            let deadline = Instant::now() + timeout;
+            while let Ok(None) = child.try_wait() {
+                if Instant::now() >= deadline {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Err(Error::SystemCommandFailed(
+                        command.get_command(),
+                        "The command timed out.".to_string(),
+                    ));
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+        let out = child
+            .wait_with_output()
+            .map_err(|e| Error::SystemCommandFailed(command.get_command(), e.to_string()))?;
+
+        if out.status.success() {
+            Ok(out.stdout)
+        } else {
+            Err(Error::SystemCommandFailed(
+                command.get_command(),
+                String::from_utf8_lossy(&out.stderr).into_owned(),
+            ))
+        }
     }
 
-    fn spawn_command(&self, command: &SystemCommand) -> Result<()> {
-        let mut process = Self::build_process(command);
-
+    fn run_detached(&self, mut command: Command) -> Result<()> {
         #[cfg(unix)]
         unsafe {
             use std::os::unix::process::CommandExt;
-            process.pre_exec(detach_from_session);
+            command.pre_exec(detach_from_session);
         }
 
         #[cfg(target_os = "windows")]
         {
             use std::os::windows::process::CommandExt;
             const DETACHED_PROCESS: u32 = 0x0000_0008;
-            process.creation_flags(DETACHED_PROCESS);
+            command.creation_flags(DETACHED_PROCESS);
         }
 
-        let mut child = process
+        let mut child = command
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| Self::map_spawn_error(command, e))?;
+            .map_err(|e| Self::map_spawn_error(&command, e))?;
 
         // Check immediately for instant failures, then again after a brief window
         // to catch startup errors (KVM permission denied, bad firmware, port conflicts).
         for ms in [0, 100] {
-            std::thread::sleep(std::time::Duration::from_millis(ms));
+            std::thread::sleep(Duration::from_millis(ms));
             if let Ok(Some(_)) = child.try_wait() {
                 let stderr = child
-                    .stderr
-                    .take()
-                    .map(|mut s| {
-                        let mut buf = Vec::new();
-                        s.read_to_end(&mut buf).unwrap_or(0);
-                        from_utf8(&buf).unwrap_or_default().to_owned()
-                    })
+                    .wait_with_output()
+                    .map(|o| o.stderr)
                     .unwrap_or_default();
-                return Err(Error::SystemCommandFailed(command.get_command(), stderr));
+                return Err(Error::SystemCommandFailed(
+                    command.get_command(),
+                    String::from_utf8_lossy(&stderr).into_owned(),
+                ));
             }
         }
 
-        self.keep_child(child);
+        // Drains stderr and reaps the child.
+        std::thread::spawn(move || {
+            if let Some(mut stderr) = child.stderr.take() {
+                let _ = std::io::copy(&mut stderr, &mut std::io::sink());
+            }
+            let _ = child.wait();
+        });
 
         Ok(())
     }

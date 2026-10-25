@@ -6,6 +6,7 @@ use crate::qemu::{
     QemuAcceleratorProbe, QemuFirmware, QemuInstall, QemuPathBuilder, QemuSystem, SOFTWARE_ACCEL,
 };
 use crate::ssh::PortChecker;
+use crate::util::CommandLine;
 use crate::view::Console;
 use std::sync::Arc;
 
@@ -130,9 +131,7 @@ impl StartInstanceAction {
 
         let command = qemu_system.build_command();
         console.debug(&command.get_command());
-        system
-            .spawn_command(&command)
-            .map_err(QemuSystem::map_error)
+        system.run_detached(command).map_err(QemuSystem::map_error)
     }
 
     // An accelerator runs guest code on the host CPU, so it needs both archs to

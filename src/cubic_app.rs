@@ -8,8 +8,7 @@ pub struct CubicApp;
 
 impl CubicApp {
     pub async fn run() -> i32 {
-        let os_system = Arc::new(OsSystem::new());
-        let system: Arc<dyn System> = os_system.clone();
+        let system: Arc<dyn System> = Arc::new(OsSystem::new());
         let console = &Console::new(Arc::clone(&system));
         let result = CommandDispatcher::parse()
             .dispatch(Arc::clone(&system), console)
@@ -20,7 +19,6 @@ impl CubicApp {
         let code = result.map_or(1, i32::from);
 
         console.flush();
-        os_system.reap_children();
         code
     }
 }

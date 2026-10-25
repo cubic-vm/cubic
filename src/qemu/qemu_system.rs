@@ -1,17 +1,17 @@
 use std::path::Path;
+use std::process::Command;
 
 use crate::error::{Error, Result};
 use crate::models::{Arch, PortForward};
 use crate::platform::System;
 use crate::qemu::QemuPathBuilder;
-use crate::util::SystemCommand;
 
 pub const NETDEV_ID: &str = "net0";
 const DISK_ID: &str = "disk0";
 pub const SOFTWARE_ACCEL: &str = "tcg";
 
 pub struct QemuSystem {
-    command: SystemCommand,
+    command: Command,
 }
 
 impl QemuSystem {
@@ -24,14 +24,14 @@ impl QemuSystem {
 
     pub fn from(system: &dyn System, arch: Arch) -> Result<QemuSystem> {
         let binary = format!("qemu-system-{}", arch.as_canonical_str());
-        let mut command = SystemCommand::new(&binary);
+        let mut command = Command::new(&binary);
         command.arg("-machine").arg(Self::get_machine(arch));
         if arch == Arch::AMD64 {
             command.arg("-smbios").arg("type=0,uefi=on");
         }
 
         // Resolve the QEMU binary by name from the extended PATH.
-        command.set_env("PATH", QemuPathBuilder::new(system).build());
+        command.env("PATH", QemuPathBuilder::new(system).build());
 
         // Disable display
         command.arg("-display").arg("none");
@@ -148,7 +148,7 @@ impl QemuSystem {
     }
 
     pub fn set_module_dir(&mut self, dir: &Path) {
-        self.command.set_env("QEMU_MODULE_DIR", dir);
+        self.command.env("QEMU_MODULE_DIR", dir);
     }
 
     pub fn add_datadir(&mut self, dir: &Path) {
@@ -169,7 +169,7 @@ impl QemuSystem {
         }
     }
 
-    pub fn build_command(self) -> SystemCommand {
+    pub fn build_command(self) -> Command {
         self.command
     }
 }
@@ -178,6 +178,7 @@ impl QemuSystem {
 mod tests {
     use super::*;
     use crate::platform::SystemMock;
+    use crate::util::CommandLine;
 
     #[test]
     fn test_map_error_translates_not_found() {
