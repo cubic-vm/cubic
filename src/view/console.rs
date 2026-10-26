@@ -224,7 +224,7 @@ mod tests {
     #[test]
     fn test_each_frame_fits_the_width_and_clears_the_one_before_it() {
         let system = Arc::new(SystemMock::new().set_terminal(true));
-        let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
+        let console = Console::new(system.clone());
 
         console.update_animation(&"x".repeat(100), 80);
         console.update_animation("second", 80);
@@ -244,7 +244,7 @@ mod tests {
     #[test]
     fn test_shorter_frame_clears_the_lines_left_over() {
         let system = Arc::new(SystemMock::new().set_terminal(true));
-        let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
+        let console = Console::new(system.clone());
 
         console.update_animation("a\nb\nc", 80);
         console.update_animation("d", 80);
@@ -279,7 +279,7 @@ mod tests {
     #[test]
     fn test_multiline_message_aligns_with_label() {
         let system = Arc::new(SystemMock::new());
-        let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
+        let console = Console::new(system.clone());
 
         console.warn("foo\n\nbar");
         console.error("foo\nbar");

@@ -113,7 +113,7 @@ mod tests {
     use super::*;
     use crate::instance::InstanceStoreMock;
     use crate::models::{Environment, UserName};
-    use crate::platform::{FileSystem, System, SystemMock};
+    use crate::platform::{FileSystem, SystemMock};
     use crate::view::Console;
     use std::path::Path;
     use std::str::FromStr;
@@ -137,8 +137,8 @@ mod tests {
         store: InstanceStoreMock,
     ) -> commands::Context {
         commands::Context::new(
-            Arc::clone(system) as Arc<dyn System>,
-            Console::new(Arc::clone(system) as Arc<dyn System>),
+            system.clone(),
+            Console::new(system.clone()),
             env.clone(),
             Box::new(store),
         )
