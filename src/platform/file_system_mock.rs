@@ -195,10 +195,6 @@ impl FileSystem for SystemMock {
         self.file_system.lock().unwrap().exists_path(path)
     }
 
-    fn exists_dir(&self, path: &Path) -> bool {
-        self.file_system.lock().unwrap().exists_dir(path)
-    }
-
     fn get_path_size(&self, path: &Path) -> u64 {
         self.file_system.lock().unwrap().get_path_size(path)
     }
@@ -325,22 +321,11 @@ mod tests {
     }
 
     #[test]
-    fn exists_dir_holds_only_for_directories() {
-        let system = SystemMock::new()
-            .add_file("/data/foo.txt", b"hello")
-            .add_dir("/data/bar");
-
-        assert!(system.exists_dir(Path::new("/data/bar")));
-        assert!(!system.exists_dir(Path::new("/data/foo.txt")));
-        assert!(!system.exists_dir(Path::new("/data/missing")));
-    }
-
-    #[test]
     fn add_file_registers_its_parent_dirs() {
         let system = SystemMock::new().add_file("/data/sub/foo.txt", b"hello");
 
-        assert!(system.exists_dir(Path::new("/data/sub")));
-        assert!(system.exists_dir(Path::new("/data")));
+        assert!(system.read_dir(Path::new("/data/sub")).is_ok());
+        assert!(system.read_dir(Path::new("/data")).is_ok());
     }
 
     #[test]
@@ -349,9 +334,9 @@ mod tests {
 
         system.create_dir(Path::new("/data/sub/deep")).unwrap();
 
-        assert!(system.exists_dir(Path::new("/data/sub/deep")));
-        assert!(system.exists_dir(Path::new("/data/sub")));
-        assert!(system.exists_dir(Path::new("/data")));
+        assert!(system.read_dir(Path::new("/data/sub/deep")).is_ok());
+        assert!(system.read_dir(Path::new("/data/sub")).is_ok());
+        assert!(system.read_dir(Path::new("/data")).is_ok());
     }
 
     #[test]

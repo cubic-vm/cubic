@@ -10,10 +10,6 @@ impl FileSystem for OsSystem {
         path.exists()
     }
 
-    fn exists_dir(&self, path: &Path) -> bool {
-        path.is_dir()
-    }
-
     fn get_path_size(&self, path: &Path) -> u64 {
         fs::metadata(path)
             .map(|metadata| {
