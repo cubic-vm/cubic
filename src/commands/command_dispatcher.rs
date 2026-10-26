@@ -3,8 +3,8 @@ use crate::env::EnvironmentFactory;
 use crate::error::Result;
 use crate::instance::InstanceDao;
 use crate::platform::System;
-use crate::view::{Console, Verbosity};
-use clap::{CommandFactory, Parser, Subcommand};
+use crate::view::Console;
+use clap::{ArgAction, CommandFactory, Parser, Subcommand};
 use std::sync::Arc;
 
 #[derive(Subcommand)]
@@ -34,12 +34,12 @@ pub enum Commands {
 
 #[derive(Parser, Default)]
 pub struct GlobalOptions {
-    /// Increase logging output
-    #[clap(short, long, action, global = true)]
-    verbose: bool,
-    /// Reduce logging output
-    #[clap(short, long, action, global = true)]
-    quiet: bool,
+    /// Increase logging output, repeat for more
+    #[clap(short, long, action = ArgAction::Count, global = true)]
+    verbose: u8,
+    /// Reduce logging output, repeat for less
+    #[clap(short, long, action = ArgAction::Count, global = true)]
+    quiet: u8,
 }
 
 const ABOUT: &str = "\
@@ -73,12 +73,14 @@ pub struct CommandDispatcher {
 
 impl CommandDispatcher {
     pub async fn dispatch(self, system: Arc<dyn System>, console: &Arc<Console>) -> Result<u8> {
+        let GlobalOptions { verbose, quiet } = self.global;
+        let verbosity = 0i8.saturating_add_unsigned(verbose);
+        console.set_verbosity(verbosity.saturating_sub_unsigned(quiet));
         let Some(command) = self.command else {
             console.print(&CommandDispatcher::command().render_long_help().to_string());
             return Ok(0);
         };
 
-        console.set_verbosity(Verbosity::new(self.global.verbose, self.global.quiet));
         let env = EnvironmentFactory::create_env(system.as_ref())?;
         let context = &commands::Context::new(
             Arc::clone(&system),
