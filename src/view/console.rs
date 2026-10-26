@@ -1,7 +1,7 @@
 use crate::platform::{Stream, System};
-use crate::view::Verbosity;
+use crate::view::{Styler, Verbosity};
 use crossterm::cursor::{MoveToColumn, MoveUp};
-use crossterm::style::{Attribute, Color, SetAttribute, SetForegroundColor};
+use crossterm::style::Color;
 use crossterm::terminal::{Clear, ClearType};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -14,22 +14,11 @@ fn enable_ansi_support() {
 #[cfg(not(windows))]
 fn enable_ansi_support() {}
 
-fn colorize(label: &str, color: Color, enabled: bool) -> String {
-    if enabled {
-        format!(
-            "{}{}{label}{}",
-            SetForegroundColor(color),
-            SetAttribute(Attribute::Bold),
-            SetAttribute(Attribute::Reset)
-        )
-    } else {
-        label.to_string()
-    }
-}
-
 pub struct Console {
     is_tty: bool,
     unicode: bool,
+    stdout_styler: Styler,
+    stderr_styler: Styler,
     verbosity: Mutex<Verbosity>,
     // Only flipped inside set_paused, between building the clear and the draw.
     paused: AtomicBool,
@@ -41,10 +30,14 @@ pub struct Console {
 impl Console {
     pub fn new(system: Arc<dyn System>) -> Arc<Self> {
         enable_ansi_support();
-        let is_tty = system.is_terminal(Stream::Stdout);
+        let stdout_tty = system.is_terminal(Stream::Stdout);
+        let stderr_tty = system.is_terminal(Stream::Stderr);
+        let color = system.read_env_var("NO_COLOR").is_none();
         Arc::new(Self {
-            is_tty,
+            is_tty: stdout_tty,
             unicode: Self::detect_unicode(system.as_ref()),
+            stdout_styler: Styler::new(color && stdout_tty),
+            stderr_styler: Styler::new(color && stderr_tty),
             verbosity: Mutex::new(Verbosity::new(false, false)),
             paused: AtomicBool::new(false),
             frame: Mutex::new(String::new()),
@@ -122,16 +115,13 @@ impl Console {
     }
 
     fn emit(&self, stream: Stream, msg: &str, style: Option<(&str, Color)>) {
-        let color = style.is_some()
-            && self.system.is_terminal(stream)
-            && self.system.read_env_var("NO_COLOR").is_none();
         let text = match style {
             Some((label, c)) => {
                 // Align follow-up lines with the text after the label.
                 let indent = format!("\n{}", " ".repeat(label.len() + 1));
                 format!(
                     "{} {}",
-                    colorize(label, c, color),
+                    self.get_styler(stream).bold_color(label, c),
                     msg.replace('\n', &indent)
                 )
             }
@@ -147,6 +137,13 @@ impl Console {
             self.write(&clear);
             self.system.println(stream, &text);
             self.write(&draw);
+        }
+    }
+
+    pub fn get_styler(&self, stream: Stream) -> Styler {
+        match stream {
+            Stream::Stdout => self.stdout_styler,
+            Stream::Stderr => self.stderr_styler,
         }
     }
 
@@ -288,15 +285,18 @@ mod tests {
     }
 
     #[test]
-    fn test_colorize_wraps_label_when_enabled() {
-        let text = colorize("error:", Color::Red, true);
-        assert!(text.starts_with("\u{1b}["));
-        assert!(text.contains("error:"));
-        assert!(text.ends_with("\u{1b}[0m"));
-    }
+    fn test_styling_on_a_terminal_unless_no_color_is_set() {
+        let styled = |system: SystemMock| {
+            let console = Console::new(Arc::new(system));
+            console.get_styler(Stream::Stdout).bold("x") != "x"
+        };
 
-    #[test]
-    fn test_colorize_leaves_label_unchanged_when_disabled() {
-        assert_eq!(colorize("error:", Color::Red, false), "error:");
+        assert!(styled(SystemMock::new().set_terminal(true)));
+        assert!(!styled(SystemMock::new()));
+        assert!(!styled(
+            SystemMock::new()
+                .set_terminal(true)
+                .add_env_var("NO_COLOR", "1")
+        ));
     }
 }

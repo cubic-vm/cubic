@@ -1,3 +1,4 @@
+use crate::platform::Stream;
 use crate::view::Console;
 use std::sync::Arc;
 use std::thread;
@@ -48,7 +49,8 @@ impl TableView {
             }
         }
 
-        for row in &self.rows {
+        let styler = console.get_styler(Stream::Stdout);
+        for (row_index, row) in self.rows.iter().enumerate() {
             let line = row
                 .entries
                 .iter()
@@ -59,7 +61,12 @@ impl TableView {
                 })
                 .collect::<Vec<_>>()
                 .join("   ");
-            console.print(line.trim_end());
+            let line = line.trim_end();
+            if row_index == 0 {
+                console.print(&styler.bold(line));
+            } else {
+                console.print(line);
+            }
             thread::sleep(Duration::from_millis(10));
         }
     }
