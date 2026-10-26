@@ -252,24 +252,6 @@ impl FileSystem for SystemMock {
             })
     }
 
-    fn read_file_to_string(&self, path: &Path) -> Result<String> {
-        let content = self
-            .file_system
-            .lock()
-            .unwrap()
-            .get_file(path)
-            .ok_or_else(|| {
-                Error::from_fs(FsOperation::ReadFile, path, io::ErrorKind::NotFound.into())
-            })?;
-        String::from_utf8(content).map_err(|e| {
-            Error::from_fs(
-                FsOperation::ReadFile,
-                path,
-                io::Error::new(io::ErrorKind::InvalidData, e),
-            )
-        })
-    }
-
     fn write_file(&self, path: &Path, contents: &[u8]) -> Result<()> {
         self.file_system.lock().unwrap().set_file(path, contents);
         Ok(())
@@ -390,29 +372,6 @@ mod tests {
     }
 
     #[test]
-    fn read_file_to_string_returns_seeded_content() {
-        let system = SystemMock::new().add_file("/data/foo.txt", b"hello");
-
-        assert_eq!(
-            system
-                .read_file_to_string(Path::new("/data/foo.txt"))
-                .unwrap(),
-            "hello"
-        );
-    }
-
-    #[test]
-    fn read_file_to_string_fails_when_missing() {
-        let system = SystemMock::new();
-
-        assert!(
-            system
-                .read_file_to_string(Path::new("/data/missing"))
-                .is_err()
-        );
-    }
-
-    #[test]
     fn create_file_then_get_written_file_returns_written_bytes() {
         let system = SystemMock::new();
 
@@ -451,10 +410,8 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            system
-                .read_file_to_string(Path::new("/data/foo.txt"))
-                .unwrap(),
-            "hello"
+            system.get_written_file("/data/foo.txt"),
+            Some(b"hello".to_vec())
         );
     }
 
@@ -502,10 +459,8 @@ mod tests {
 
         assert!(!system.exists_path(Path::new("/data/old.txt")));
         assert_eq!(
-            system
-                .read_file_to_string(Path::new("/data/new.txt"))
-                .unwrap(),
-            "hello"
+            system.get_written_file("/data/new.txt"),
+            Some(b"hello".to_vec())
         );
     }
 
@@ -519,10 +474,8 @@ mod tests {
 
         assert!(system.exists_path(Path::new("/data/old.txt")));
         assert_eq!(
-            system
-                .read_file_to_string(Path::new("/data/new.txt"))
-                .unwrap(),
-            "hello"
+            system.get_written_file("/data/new.txt"),
+            Some(b"hello".to_vec())
         );
     }
 
@@ -563,17 +516,13 @@ mod tests {
         assert!(!system.exists_path(Path::new("/data/old")));
         assert!(system.exists_path(Path::new("/data/new")));
         assert_eq!(
-            system
-                .read_file_to_string(Path::new("/data/new/a.txt"))
-                .unwrap(),
-            "1"
+            system.get_written_file("/data/new/a.txt"),
+            Some(b"1".to_vec())
         );
         assert!(system.exists_path(Path::new("/data/new/sub")));
         assert_eq!(
-            system
-                .read_file_to_string(Path::new("/data/new/sub/b.txt"))
-                .unwrap(),
-            "2"
+            system.get_written_file("/data/new/sub/b.txt"),
+            Some(b"2".to_vec())
         );
     }
 
@@ -588,8 +537,8 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            system.read_file_to_string(Path::new("/data/new")).unwrap(),
-            "hello"
+            system.get_written_file("/data/new"),
+            Some(b"hello".to_vec())
         );
     }
 

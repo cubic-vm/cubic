@@ -54,9 +54,8 @@ mod tests {
     use super::*;
     use crate::instance::{InstanceDao, InstanceStore};
     use crate::models::{Environment, UserName};
-    use crate::platform::{FileSystem, SystemMock};
+    use crate::platform::SystemMock;
     use crate::view::Console;
-    use std::path::Path;
     use std::str::FromStr;
     use std::sync::Arc;
 
@@ -136,12 +135,8 @@ ssh_port = 14357
         assert_eq!(instance.cpus, 3);
         assert_eq!(instance.ssh_port, 14357);
         assert_eq!(
-            system
-                .read_file_to_string(Path::new(
-                    &build_env().get_instance_toml_config_file("test")
-                ))
-                .unwrap(),
-            config
+            system.get_written_file(&build_env().get_instance_toml_config_file("test")),
+            Some(config.as_bytes().to_vec())
         );
     }
 

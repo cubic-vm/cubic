@@ -27,9 +27,7 @@ impl SshKeyGenerator {
         system: &dyn FileSystem,
         private_key_path: &Path,
     ) -> Result<String> {
-        let key = system.read_file_to_string(private_key_path)?;
-
-        PrivateKey::from_openssh(&key)
+        PrivateKey::read_openssh(&mut system.open_file(private_key_path)?)
             .map_err(Error::from)?
             .public_key()
             .to_openssh()
