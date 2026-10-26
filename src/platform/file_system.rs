@@ -13,7 +13,6 @@ pub trait FileSystem {
     fn get_path_size(&self, path: &Path) -> u64;
     fn get_available_space(&self, path: &Path) -> Option<u64>;
     fn create_dir(&self, path: &Path) -> Result<()>;
-    fn create_writable_dir(&self, path: &Path) -> Result<()>;
     fn remove_dir(&self, path: &Path) -> Result<()>;
     fn read_dir(&self, path: &Path) -> Result<Vec<PathBuf>>;
     fn create_file(&self, path: &Path, access: Access) -> Result<Box<dyn Write>>;

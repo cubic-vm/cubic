@@ -208,10 +208,6 @@ impl FileSystem for SystemMock {
         Ok(())
     }
 
-    fn create_writable_dir(&self, path: &Path) -> Result<()> {
-        self.create_dir(path)
-    }
-
     fn remove_dir(&self, path: &Path) -> Result<()> {
         self.file_system.lock().unwrap().remove_tree(path);
         Ok(())

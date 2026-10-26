@@ -191,9 +191,6 @@ Troubleshoot:
         source: io::Error,
     },
 
-    #[error("Cannot write directory '{}'", .0.display())]
-    ReadOnlyDir(PathBuf),
-
     #[error("Invalid path: {0}")]
     InvalidPath(String),
 

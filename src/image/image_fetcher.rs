@@ -94,7 +94,7 @@ impl ImageFetcher {
             return Ok(());
         }
 
-        system.create_writable_dir(Path::new(&env.get_image_dir()))?;
+        system.create_dir(Path::new(&env.get_image_dir()))?;
         let target_file = env.get_image_file(&image.to_file_name());
         let temp_file = format!("{target_file}.tmp");
         let (target_file, temp_file) = (Path::new(&target_file), Path::new(&temp_file));
