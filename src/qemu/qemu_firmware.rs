@@ -51,7 +51,7 @@ impl<'a> QemuInstall<'a> {
 
     pub fn find_datadir(&self) -> Option<PathBuf> {
         let dir = self.prefix.join("share/qemu");
-        self.system.exists_dir(&dir).then_some(dir)
+        self.system.read_dir(&dir).is_ok().then_some(dir)
     }
 
     fn build_module_dir_candidates(&self) -> Vec<PathBuf> {
@@ -68,7 +68,7 @@ impl<'a> QemuInstall<'a> {
         let entries = self.system.read_dir(&self.prefix.join("lib")).ok()?;
         entries
             .into_iter()
-            .filter(|path| self.system.exists_dir(&path.join("qemu")))
+            .filter(|path| self.system.read_dir(&path.join("qemu")).is_ok())
             .find_map(|path| path.file_name().map(PathBuf::from))
     }
 
