@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::platform::FileSystem;
+use crate::platform::{Access, FileSystem};
 use getrandom::SysRng;
 use getrandom::rand_core::UnwrapErr;
 use russh::keys::ssh_key::{Algorithm, LineEnding, PrivateKey};
@@ -19,7 +19,7 @@ impl SshKeyGenerator {
             .to_openssh(LineEnding::LF)
             .map_err(Error::from)?;
 
-        system.write_secret_file(private_key_path, key.as_bytes())
+        system.write_file(private_key_path, key.as_bytes(), Access::Private)
     }
 
     pub fn generate_public_key(

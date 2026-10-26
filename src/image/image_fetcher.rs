@@ -2,6 +2,7 @@ use crate::commands::Context;
 use crate::error::{Error, Result};
 use crate::image::ImageStore;
 use crate::models::Image;
+use crate::platform::Access;
 use crate::util;
 use crate::view::TransferView;
 use crate::web::{Hasher, WebClient};
@@ -107,7 +108,10 @@ impl ImageFetcher {
             .ok_or(Error::InvalidChecksum)?;
 
         let download = client.download(&image.get_image_url()).await?;
-        let mut file = BufWriter::with_capacity(WRITE_BUFFER_SIZE, system.create_file(temp_file)?);
+        let mut file = BufWriter::with_capacity(
+            WRITE_BUFFER_SIZE,
+            system.create_file(temp_file, Access::Normal)?,
+        );
         let message = format!("Downloading {}", &image.to_name());
         let mut progress = TransferView::new(Arc::clone(console), &message, download.size());
         let mut hasher = Hasher::new(image.hash_alg);

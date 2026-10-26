@@ -1,5 +1,5 @@
 use crate::error::{Error, FsOperation, Result};
-use crate::platform::{FileSystem, OsSystem};
+use crate::platform::{Access, FileSystem, OsSystem};
 use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -79,11 +79,19 @@ impl FileSystem for OsSystem {
             .map_err(|e| Error::from_fs(FsOperation::ReadDir, path, e))
     }
 
-    fn create_file(&self, path: &Path) -> Result<Box<dyn Write>> {
-        std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
+    fn create_file(&self, path: &Path, access: Access) -> Result<Box<dyn Write>> {
+        let mut options = fs::OpenOptions::new();
+        options.write(true).create(true).truncate(true);
+
+        #[cfg(unix)]
+        if access == Access::Private {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        #[cfg(not(unix))]
+        let _ = access;
+
+        options
             .open(path)
             .map(|f| Box::new(f) as Box<dyn Write>)
             .map_err(|e| Error::from_fs(FsOperation::CreateFile, path, e))
@@ -93,28 +101,6 @@ impl FileSystem for OsSystem {
         fs::File::open(path)
             .map(|f| Box::new(f) as Box<dyn Read>)
             .map_err(|e| Error::from_fs(FsOperation::OpenFile, path, e))
-    }
-
-    fn write_file(&self, path: &Path, contents: &[u8]) -> Result<()> {
-        fs::write(path, contents).map_err(|e| Error::from_fs(FsOperation::WriteFile, path, e))
-    }
-
-    // Writes a file only the owner may read, for private keys and other
-    // secrets. On Windows the file inherits the directory ACL instead.
-    fn write_secret_file(&self, path: &Path, contents: &[u8]) -> Result<()> {
-        let mut options = std::fs::OpenOptions::new();
-        options.write(true).create(true).truncate(true);
-
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::OpenOptionsExt;
-            options.mode(0o600);
-        }
-
-        options
-            .open(path)
-            .and_then(|mut file| file.write_all(contents))
-            .map_err(|e| Error::from_fs(FsOperation::WriteFile, path, e))
     }
 
     fn rename_file(&self, from: &Path, to: &Path) -> Result<()> {

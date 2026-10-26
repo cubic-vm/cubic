@@ -1,5 +1,5 @@
 use crate::error::{Error, FsOperation, Result};
-use crate::platform::{FileSystem, SystemMock};
+use crate::platform::{Access, FileSystem, SystemMock};
 use std::collections::{HashMap, HashSet};
 use std::io;
 use std::io::{Cursor, Read, Write};
@@ -229,7 +229,7 @@ impl FileSystem for SystemMock {
         Ok(file_system.list_children(path))
     }
 
-    fn create_file(&self, path: &Path) -> Result<Box<dyn Write>> {
+    fn create_file(&self, path: &Path, _access: Access) -> Result<Box<dyn Write>> {
         self.file_system.lock().unwrap().set_file(path, &[]);
         Ok(Box::new(FileWriterMock {
             path: path.to_path_buf(),
@@ -246,15 +246,6 @@ impl FileSystem for SystemMock {
             .ok_or_else(|| {
                 Error::from_fs(FsOperation::OpenFile, path, io::ErrorKind::NotFound.into())
             })
-    }
-
-    fn write_file(&self, path: &Path, contents: &[u8]) -> Result<()> {
-        self.file_system.lock().unwrap().set_file(path, contents);
-        Ok(())
-    }
-
-    fn write_secret_file(&self, path: &Path, contents: &[u8]) -> Result<()> {
-        self.write_file(path, contents)
     }
 
     fn rename_file(&self, from: &Path, to: &Path) -> Result<()> {
@@ -298,7 +289,7 @@ impl FileSystem for SystemMock {
 
 #[cfg(test)]
 mod tests {
-    use crate::platform::{FileSystem, SystemMock};
+    use crate::platform::{Access, FileSystem, SystemMock};
     use std::io::{Read, Write};
     use std::path::Path;
 
@@ -361,7 +352,9 @@ mod tests {
         let system = SystemMock::new();
 
         {
-            let mut file = system.create_file(Path::new("/data/out.txt")).unwrap();
+            let mut file = system
+                .create_file(Path::new("/data/out.txt"), Access::Normal)
+                .unwrap();
             file.write_all(b"hello ").unwrap();
             file.write_all(b"world").unwrap();
         }
@@ -384,20 +377,6 @@ mod tests {
             .unwrap();
 
         assert_eq!(buf, "hello");
-    }
-
-    #[test]
-    fn write_file_seeds_readable_content() {
-        let system = SystemMock::new();
-
-        system
-            .write_file(Path::new("/data/foo.txt"), b"hello")
-            .unwrap();
-
-        assert_eq!(
-            system.get_written_file("/data/foo.txt"),
-            Some(b"hello".to_vec())
-        );
     }
 
     #[test]
@@ -515,7 +494,9 @@ mod tests {
     fn create_file_then_rename_file_sees_the_written_content() {
         let system = SystemMock::new();
 
-        let mut file = system.create_file(Path::new("/data/old.tmp")).unwrap();
+        let mut file = system
+            .create_file(Path::new("/data/old.tmp"), Access::Normal)
+            .unwrap();
         file.write_all(b"hello").unwrap();
         system
             .rename_file(Path::new("/data/old.tmp"), Path::new("/data/new"))
