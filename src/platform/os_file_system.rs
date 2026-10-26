@@ -99,10 +99,6 @@ impl FileSystem for OsSystem {
             .map_err(|e| Error::from_fs(FsOperation::OpenFile, path, e))
     }
 
-    fn read_file_to_string(&self, path: &Path) -> Result<String> {
-        fs::read_to_string(path).map_err(|e| Error::from_fs(FsOperation::ReadFile, path, e))
-    }
-
     fn write_file(&self, path: &Path, contents: &[u8]) -> Result<()> {
         fs::write(path, contents).map_err(|e| Error::from_fs(FsOperation::WriteFile, path, e))
     }
