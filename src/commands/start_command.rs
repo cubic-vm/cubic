@@ -201,7 +201,7 @@ mod tests {
     // A real dao over a mocked host, so an assertion reads back the port that
     // survived a write rather than one the store was handed.
     fn build_dao(system: &Arc<SystemMock>) -> InstanceDao {
-        InstanceDao::new(Arc::clone(system) as Arc<dyn System>, &build_env()).unwrap()
+        InstanceDao::new(system.clone(), &build_env()).unwrap()
     }
 
     // Seeds a stopped instance on the given ssh port and hands back a context
@@ -216,7 +216,7 @@ mod tests {
         build_dao(system).store(&instance).unwrap();
 
         Context::new(
-            Arc::clone(system) as Arc<dyn System>,
+            system.clone(),
             Console::new(Arc::new(SystemMock::new())),
             build_env(),
             Box::new(build_dao(system)),
@@ -318,7 +318,7 @@ mod tests {
         let system =
             Arc::new(SystemMock::new().set_host_resources((16 * GIB) as u64, (5 * GIB) as u64, 8));
         system.push_input("y");
-        let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
+        let console = Console::new(system.clone());
         let store = InstanceStoreMock::new(vec![build_instance()]);
         let command = StartCommand::try_parse_from(["start", "test"]).unwrap();
         let mut instance = build_instance();
@@ -335,7 +335,7 @@ mod tests {
         let system =
             Arc::new(SystemMock::new().set_host_resources((16 * GIB) as u64, (5 * GIB) as u64, 8));
         system.push_input("n");
-        let console = Console::new(Arc::clone(&system) as Arc<dyn System>);
+        let console = Console::new(system.clone());
         let store = InstanceStoreMock::new(vec![build_instance()]);
         let command = StartCommand::try_parse_from(["start", "test"]).unwrap();
         let mut instance = build_instance();

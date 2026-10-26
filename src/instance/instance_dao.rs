@@ -282,7 +282,7 @@ mod tests {
         let env = build_env();
         let system =
             Arc::new(SystemMock::new().add_file(&env.get_qemu_pid_file("test"), b"1234\n"));
-        let dao = InstanceDao::new(Arc::clone(&system) as Arc<dyn System>, &env).unwrap();
+        let dao = InstanceDao::new(system.clone(), &env).unwrap();
 
         assert!(!dao.is_running(&build_instance()));
         assert!(!system.exists_path(Path::new(&env.get_qemu_pid_file("test"))));
@@ -296,7 +296,7 @@ mod tests {
                 .add_file(&env.get_qemu_pid_file("test"), b"1234\n")
                 .add_process(1234),
         );
-        let dao = InstanceDao::new(Arc::clone(&system) as Arc<dyn System>, &env).unwrap();
+        let dao = InstanceDao::new(system.clone(), &env).unwrap();
 
         dao.kill(&build_instance()).unwrap();
 
@@ -315,7 +315,7 @@ mod tests {
                     b"{\"QMP\": {}}\n{\"return\": {}, \"id\": \"0\"}\n{\"return\": {}, \"id\": \"1\"}\n",
                 ),
         );
-        let dao = InstanceDao::new(Arc::clone(&system) as Arc<dyn System>, &env).unwrap();
+        let dao = InstanceDao::new(system.clone(), &env).unwrap();
 
         dao.kill(&build_instance()).unwrap();
 
@@ -345,7 +345,7 @@ mod tests {
             env.get_instance_image_file("test")
         );
         let system = Arc::new(SystemMock::new().add_command_output(&command, b""));
-        let dao = InstanceDao::new(Arc::clone(&system) as Arc<dyn System>, &env).unwrap();
+        let dao = InstanceDao::new(system.clone(), &env).unwrap();
 
         dao.create_snapshot(&build_instance(), "clean").unwrap();
 

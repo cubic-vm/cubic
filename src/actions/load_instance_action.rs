@@ -54,7 +54,7 @@ mod tests {
     use super::*;
     use crate::instance::{InstanceDao, InstanceStore};
     use crate::models::{Environment, UserName};
-    use crate::platform::{FileSystem, System, SystemMock};
+    use crate::platform::{FileSystem, SystemMock};
     use crate::view::Console;
     use std::path::Path;
     use std::str::FromStr;
@@ -71,13 +71,13 @@ mod tests {
     }
 
     fn build_dao(system: &Arc<SystemMock>) -> InstanceDao {
-        InstanceDao::new(Arc::clone(system) as Arc<dyn System>, &build_env()).unwrap()
+        InstanceDao::new(system.clone(), &build_env()).unwrap()
     }
 
     fn build_context(system: &Arc<SystemMock>) -> Context {
         Context::new(
-            Arc::clone(system) as Arc<dyn System>,
-            Console::new(Arc::clone(system) as Arc<dyn System>),
+            system.clone(),
+            Console::new(system.clone()),
             build_env(),
             Box::new(build_dao(system)),
         )

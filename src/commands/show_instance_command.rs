@@ -88,7 +88,7 @@ mod tests {
     use super::*;
     use crate::instance::InstanceStoreMock;
     use crate::models::{Arch, DataSize, Environment, Instance, InstanceName, Snapshot, UserName};
-    use crate::platform::{System, SystemMock};
+    use crate::platform::SystemMock;
     use crate::view::Console;
     use std::path::PathBuf;
     use std::str::FromStr;
@@ -116,7 +116,7 @@ mod tests {
         }]);
         let context = commands::Context::new(
             Arc::new(SystemMock::new()),
-            Console::new(Arc::clone(&system) as Arc<dyn System>),
+            Console::new(system.clone()),
             env,
             Box::new(instance_store),
         );
@@ -182,7 +182,7 @@ Forward:    127.0.0.1:4000:40/tcp
         }]);
         let context = commands::Context::new(
             Arc::new(SystemMock::new()),
-            Console::new(Arc::clone(&system) as Arc<dyn System>),
+            Console::new(system.clone()),
             env,
             Box::new(instance_store),
         );
@@ -246,7 +246,7 @@ SSH:          ssh -i {ssh_key} -p 8000 john@localhost
         let instance_store = InstanceStoreMock::new(Vec::new());
         let context = commands::Context::new(
             Arc::new(SystemMock::new()),
-            Console::new(Arc::clone(&system) as Arc<dyn System>),
+            Console::new(system.clone()),
             env,
             Box::new(instance_store),
         );
