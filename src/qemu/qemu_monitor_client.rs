@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
 use crate::models::{Environment, Instance, PortForward};
-use crate::platform::{Socket, System};
+use crate::platform::{Network, Socket};
 use crate::qemu::{NETDEV_ID, QmpMessage};
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
@@ -15,7 +15,7 @@ pub struct QemuMonitorClient {
 }
 
 impl QemuMonitorClient {
-    pub fn new(system: &dyn System, env: &Environment, instance: &Instance) -> Result<Self> {
+    pub fn new(system: &dyn Network, env: &Environment, instance: &Instance) -> Result<Self> {
         // A failed connect means the instance is down
         let socket = system
             .connect_socket(

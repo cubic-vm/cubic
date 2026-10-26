@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
 use crate::models::{DEFAULT_USERNAME, Environment, UserName};
-use crate::platform::System;
+use crate::platform::Host;
 use std::str::FromStr;
 
 const ROOT_USERNAME: &str = "root";
@@ -9,19 +9,19 @@ const USERNAME_ENV_VARS: [&str; 3] = ["USER", "LOGNAME", "USERNAME"];
 pub struct EnvironmentFactory;
 
 impl EnvironmentFactory {
-    fn read_env(system: &dyn System, var: &str) -> Result<String> {
+    fn read_env(system: &dyn Host, var: &str) -> Result<String> {
         system
             .read_env_var(var)
             .ok_or_else(|| Error::UnsetEnvVar(var.to_string()))
     }
 
-    fn read_current_username(system: &dyn System) -> Option<String> {
+    fn read_current_username(system: &dyn Host) -> Option<String> {
         USERNAME_ENV_VARS
             .iter()
             .find_map(|var| system.read_env_var(var))
     }
 
-    pub fn get_username(system: &dyn System) -> UserName {
+    pub fn get_username(system: &dyn Host) -> UserName {
         let username =
             Self::read_current_username(system).unwrap_or_else(|| DEFAULT_USERNAME.to_string());
         if username.eq_ignore_ascii_case(ROOT_USERNAME) {
@@ -31,7 +31,7 @@ impl EnvironmentFactory {
     }
 
     #[cfg(target_os = "linux")]
-    pub fn create_env(system: &dyn System) -> Result<Environment> {
+    pub fn create_env(system: &dyn Host) -> Result<Environment> {
         let data_dir = Self::read_env(system, "SNAP_USER_COMMON")
             .or_else(|_| Self::read_env(system, "XDG_DATA_HOME"))
             .or_else(|_| {
@@ -48,7 +48,7 @@ impl EnvironmentFactory {
     }
 
     #[cfg(target_os = "macos")]
-    pub fn create_env(system: &dyn System) -> Result<Environment> {
+    pub fn create_env(system: &dyn Host) -> Result<Environment> {
         let home_dir = Self::read_env(system, "HOME")?;
 
         Ok(Environment::new(
@@ -59,7 +59,7 @@ impl EnvironmentFactory {
     }
 
     #[cfg(target_os = "windows")]
-    pub fn create_env(system: &dyn System) -> Result<Environment> {
+    pub fn create_env(system: &dyn Host) -> Result<Environment> {
         let local_app_data_dir = Self::read_env(system, "LOCALAPPDATA")?;
         let temp_dir = Self::read_env(system, "TEMP")?;
 

@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::platform::System;
+use crate::platform::FileSystem;
 use getrandom::SysRng;
 use getrandom::rand_core::UnwrapErr;
 use russh::keys::ssh_key::{Algorithm, LineEnding, PrivateKey};
@@ -13,7 +13,7 @@ impl SshKeyGenerator {
         Self
     }
 
-    pub fn generate_key(&self, system: &dyn System, private_key_path: &Path) -> Result<()> {
+    pub fn generate_key(&self, system: &dyn FileSystem, private_key_path: &Path) -> Result<()> {
         let key = PrivateKey::random(&mut UnwrapErr(SysRng), Algorithm::Ed25519)
             .map_err(Error::from)?
             .to_openssh(LineEnding::LF)
@@ -24,7 +24,7 @@ impl SshKeyGenerator {
 
     pub fn generate_public_key(
         &self,
-        system: &dyn System,
+        system: &dyn FileSystem,
         private_key_path: &Path,
     ) -> Result<String> {
         let key = system.read_file_to_string(private_key_path)?;
