@@ -1,4 +1,4 @@
-use crate::platform::System;
+use crate::platform::Network;
 use std::time::Duration;
 use tokio::io::AsyncReadExt;
 
@@ -13,12 +13,12 @@ impl PortChecker {
     }
 
     // Whether something listens on a port.
-    pub async fn is_open(&self, system: &dyn System, port: u16) -> bool {
+    pub async fn is_open(&self, system: &dyn Network, port: u16) -> bool {
         system.connect_stream(port).await.is_ok()
     }
 
     // Every SSH server opens with an `SSH-` line, so no key exchange is needed.
-    pub async fn is_ssh_ready(&self, system: &dyn System, port: u16) -> bool {
+    pub async fn is_ssh_ready(&self, system: &dyn Network, port: u16) -> bool {
         let banner = async {
             let Ok(mut stream) = system.connect_stream(port).await else {
                 return false;

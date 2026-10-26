@@ -1,5 +1,5 @@
 use crate::models::{DataSize, Environment};
-use crate::platform::System;
+use crate::platform::{FileSystem, Host};
 use std::path::Path;
 
 const MIB: usize = 1024 * 1024;
@@ -57,7 +57,7 @@ impl ResourceAllocator {
     /// simultaneous multithreading reports its thread count rather than its
     /// physical cores. This matches the vCPU count handed to a machine, which
     /// also maps to threads.
-    pub fn read_from_host(system: &dyn System) -> Self {
+    pub fn read_from_host(system: &dyn Host) -> Self {
         Self::new(system.get_total_memory() as usize, system.get_cpu_count())
     }
 
@@ -83,7 +83,7 @@ impl ResourceAllocator {
         (budget >= 512 * MIB).then(|| Self::resources_for_level(budget / GIB))
     }
 
-    pub fn is_disk_space_low(system: &dyn System, env: &Environment) -> bool {
+    pub fn is_disk_space_low(system: &dyn FileSystem, env: &Environment) -> bool {
         system
             .get_available_space(Path::new(&env.get_instance_dir()))
             .is_some_and(|free| free < LOW_DISK_SPACE)
