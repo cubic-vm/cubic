@@ -16,8 +16,8 @@ pub struct InstanceDao {
 
 impl InstanceDao {
     pub fn new(system: Arc<dyn System>, env: &Environment) -> Result<Self> {
-        system.create_writable_dir(Path::new(&env.get_instance_dir()))?;
-        system.create_writable_dir(Path::new(env.get_cache_dir()))?;
+        system.create_dir(Path::new(&env.get_instance_dir()))?;
+        system.create_dir(Path::new(env.get_cache_dir()))?;
 
         Ok(InstanceDao {
             env: env.clone(),

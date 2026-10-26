@@ -55,20 +55,6 @@ impl FileSystem for OsSystem {
             .map_err(|e| Error::from_fs(FsOperation::CreateDir, path, e))
     }
 
-    fn create_writable_dir(&self, path: &Path) -> Result<()> {
-        self.create_dir(path)?;
-
-        let permission = fs::metadata(path)
-            .map_err(|e| Error::from_fs(FsOperation::ReadMetadata, path, e))?
-            .permissions();
-
-        if permission.readonly() {
-            return Err(Error::ReadOnlyDir(path.to_path_buf()));
-        }
-
-        Ok(())
-    }
-
     fn remove_dir(&self, path: &Path) -> Result<()> {
         fs::remove_dir_all(path).map_err(|e| Error::from_fs(FsOperation::RemoveDir, path, e))
     }
