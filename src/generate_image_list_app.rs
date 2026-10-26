@@ -1,5 +1,5 @@
 use crate::image::ImageFactory;
-use crate::platform::{OsSystem, System};
+use crate::platform::{Access, OsSystem, System};
 use crate::view::Console;
 use std::path::Path;
 use std::sync::Arc;
@@ -13,7 +13,7 @@ impl GenerateImageListApp {
         let result = ImageFactory::get_images(console)
             .await
             .and_then(|images| ImageFactory::serialize(&images))
-            .and_then(|list| system.write_file(output, list.as_bytes()));
+            .and_then(|list| system.write_file(output, list.as_bytes(), Access::Normal));
         if let Err(error) = &result {
             console.error(&error.to_string());
         }

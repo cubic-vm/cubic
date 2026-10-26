@@ -2,7 +2,7 @@ use crate::cloudinit::{MetaDataFactory, UserDataFactory};
 use crate::error::Result;
 use crate::iso9660::IsoWriter;
 use crate::models::{Environment, Instance};
-use crate::platform::System;
+use crate::platform::{Access, System};
 use crate::ssh::SshKeyGenerator;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
@@ -50,7 +50,7 @@ impl CloudInitImageFactory {
 
         let mut buffer = Cursor::new(Vec::new());
         iso_writer.create_iso(&mut buffer)?;
-        system.write_file(&cloud_init_path, buffer.get_ref())?;
+        system.write_file(&cloud_init_path, buffer.get_ref(), Access::Normal)?;
         Ok(())
     }
 }

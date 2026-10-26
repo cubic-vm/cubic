@@ -1,7 +1,7 @@
 use crate::error::{Error, Result};
 use crate::instance::{InstanceSerializer, InstanceStore, TomlInstanceDeserializer};
 use crate::models::{DataSize, Environment, Instance, InstanceName, MIN_DISK};
-use crate::platform::System;
+use crate::platform::{Access, System};
 use crate::qemu::QemuImg;
 use crate::qemu::QemuMonitorClient;
 use std::path::Path;
@@ -92,8 +92,12 @@ impl InstanceStore for InstanceDao {
         let file_name = self.env.get_instance_toml_config_file(&instance.name);
         let temp_file_name = format!("{file_name}.tmp");
 
-        let mut file = self.system.create_file(Path::new(&temp_file_name))?;
-        InstanceSerializer::new().serialize(instance, &mut file)?;
+        let content = InstanceSerializer::new().serialize(instance)?;
+        self.system.write_file(
+            Path::new(&temp_file_name),
+            content.as_bytes(),
+            Access::Normal,
+        )?;
         self.system
             .rename_file(Path::new(&temp_file_name), Path::new(&file_name))?;
 

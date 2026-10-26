@@ -1,6 +1,5 @@
 use crate::error::{Error, Result};
 use crate::models::Instance;
-use std::io::Write;
 
 #[derive(Default)]
 pub struct InstanceSerializer;
@@ -10,11 +9,8 @@ impl InstanceSerializer {
         Self
     }
 
-    pub fn serialize(&self, instance: &Instance, writer: &mut dyn Write) -> Result<()> {
-        toml::to_string(instance)
-            .map(|content| writer.write_all(&content.into_bytes()))
-            .map(|_| ())
-            .map_err(Error::from)
+    pub fn serialize(&self, instance: &Instance) -> Result<String> {
+        toml::to_string(instance).map_err(Error::from)
     }
 }
 
@@ -26,26 +22,20 @@ mod tests {
 
     #[test]
     fn test_serialize_minimal_config() {
-        let mut writer = Vec::new();
-
-        InstanceSerializer::new()
-            .serialize(
-                &Instance {
-                    name: "test".to_string(),
-                    arch: Arch::AMD64,
-                    user: UserName::from_str("tux").unwrap(),
-                    cpus: 1,
-                    mem: DataSize::new(1000),
-                    disk_capacity: DataSize::new(1000),
-                    ssh_port: 10000,
-                    hostfwd: Vec::new(),
-                    execute: None,
-                    ..Instance::default()
-                },
-                &mut writer,
-            )
+        let config = InstanceSerializer::new()
+            .serialize(&Instance {
+                name: "test".to_string(),
+                arch: Arch::AMD64,
+                user: UserName::from_str("tux").unwrap(),
+                cpus: 1,
+                mem: DataSize::new(1000),
+                disk_capacity: DataSize::new(1000),
+                ssh_port: 10000,
+                hostfwd: Vec::new(),
+                execute: None,
+                ..Instance::default()
+            })
             .expect("Cannot parser config");
-        let config = String::from_utf8(writer).unwrap();
 
         assert_eq!(
             config,
@@ -65,30 +55,24 @@ first_boot = false
 
     #[test]
     fn test_serialize_full_config() {
-        let mut writer = Vec::new();
-
-        InstanceSerializer::new()
-            .serialize(
-                &Instance {
-                    name: "test".to_string(),
-                    arch: Arch::AMD64,
-                    user: UserName::from_str("tux").unwrap(),
-                    os: Some("debian:12".to_string()),
-                    cpus: 1,
-                    mem: DataSize::new(1000),
-                    disk_capacity: DataSize::new(1000),
-                    ssh_port: 10000,
-                    hostfwd: Vec::new(),
-                    execute: Some("echo hello world".to_string()),
-                    isolate: true,
-                    ssh_host_key: Some("ssh-ed25519 AAAA".to_string()),
-                    first_boot: true,
-                    ..Instance::default()
-                },
-                &mut writer,
-            )
+        let config = InstanceSerializer::new()
+            .serialize(&Instance {
+                name: "test".to_string(),
+                arch: Arch::AMD64,
+                user: UserName::from_str("tux").unwrap(),
+                os: Some("debian:12".to_string()),
+                cpus: 1,
+                mem: DataSize::new(1000),
+                disk_capacity: DataSize::new(1000),
+                ssh_port: 10000,
+                hostfwd: Vec::new(),
+                execute: Some("echo hello world".to_string()),
+                isolate: true,
+                ssh_host_key: Some("ssh-ed25519 AAAA".to_string()),
+                first_boot: true,
+                ..Instance::default()
+            })
             .expect("Cannot parser config");
-        let config = String::from_utf8(writer).unwrap();
 
         assert_eq!(
             config,
