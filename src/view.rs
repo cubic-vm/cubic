@@ -7,7 +7,6 @@ mod spinner;
 mod styler;
 mod table_view;
 mod transfer_view;
-mod verbosity;
 
 pub use async_transfer_view::*;
 pub use confirm_dialog::*;
@@ -18,4 +17,3 @@ pub use spinner::*;
 pub use styler::*;
 pub use table_view::*;
 pub use transfer_view::*;
-pub use verbosity::*;

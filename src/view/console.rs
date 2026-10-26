@@ -1,9 +1,9 @@
 use crate::platform::{Stream, System};
-use crate::view::{Styler, Verbosity};
+use crate::view::Styler;
 use crossterm::cursor::{MoveToColumn, MoveUp};
 use crossterm::style::Color;
 use crossterm::terminal::{Clear, ClearType};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI8, Ordering};
 use std::sync::{Arc, Mutex};
 
 #[cfg(windows)]
@@ -19,7 +19,7 @@ pub struct Console {
     unicode: bool,
     stdout_styler: Styler,
     stderr_styler: Styler,
-    verbosity: Mutex<Verbosity>,
+    verbosity: AtomicI8,
     // Only flipped inside set_paused, between building the clear and the draw.
     paused: AtomicBool,
     // Each frame line must fit the terminal width so one line takes one row.
@@ -28,6 +28,10 @@ pub struct Console {
 }
 
 impl Console {
+    const DEBUG_VERBOSITY: i8 = 1;
+    const INFO_VERBOSITY: i8 = 0;
+    const WARN_VERBOSITY: i8 = -1;
+
     pub fn new(system: Arc<dyn System>) -> Arc<Self> {
         enable_ansi_support();
         let stdout_tty = system.is_terminal(Stream::Stdout);
@@ -38,7 +42,7 @@ impl Console {
             unicode: Self::detect_unicode(system.as_ref()),
             stdout_styler: Styler::new(color && stdout_tty),
             stderr_styler: Styler::new(color && stderr_tty),
-            verbosity: Mutex::new(Verbosity::new(false, false)),
+            verbosity: AtomicI8::new(0),
             paused: AtomicBool::new(false),
             frame: Mutex::new(String::new()),
             system,
@@ -62,12 +66,12 @@ impl Console {
         read("WT_SESSION").is_some() || locale.contains("UTF-8") || locale.contains("UTF8")
     }
 
-    fn get_verbosity(&self) -> Verbosity {
-        *self.verbosity.lock().unwrap()
+    fn get_verbosity(&self) -> i8 {
+        self.verbosity.load(Ordering::Relaxed)
     }
 
     pub fn is_enabled(&self) -> bool {
-        self.is_tty && !self.get_verbosity().is_quiet()
+        self.is_tty && self.get_verbosity() >= Self::INFO_VERBOSITY
     }
 
     fn redraw(&self, old: &str, new: &str) -> String {
@@ -147,8 +151,8 @@ impl Console {
         }
     }
 
-    pub fn set_verbosity(&self, verbosity: Verbosity) {
-        *self.verbosity.lock().unwrap() = verbosity;
+    pub fn set_verbosity(&self, verbosity: i8) {
+        self.verbosity.store(verbosity, Ordering::Relaxed);
     }
 
     pub fn print(&self, msg: &str) {
@@ -156,19 +160,21 @@ impl Console {
     }
 
     pub fn debug(&self, msg: &str) {
-        if self.get_verbosity().is_verbose() {
+        if self.get_verbosity() >= Self::DEBUG_VERBOSITY {
             self.emit(Stream::Stdout, msg, Some(("debug:", Color::Green)));
         }
     }
 
     pub fn info(&self, msg: &str) {
-        if !self.get_verbosity().is_quiet() {
+        if self.get_verbosity() >= Self::INFO_VERBOSITY {
             self.emit(Stream::Stdout, msg, Some(("info:", Color::Blue)));
         }
     }
 
     pub fn warn(&self, msg: &str) {
-        self.emit(Stream::Stderr, msg, Some(("warn:", Color::Yellow)));
+        if self.get_verbosity() >= Self::WARN_VERBOSITY {
+            self.emit(Stream::Stderr, msg, Some(("warn:", Color::Yellow)));
+        }
     }
 
     pub fn error(&self, msg: &str) {
