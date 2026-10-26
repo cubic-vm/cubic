@@ -1,3 +1,4 @@
+use crate::platform::Stream;
 use crate::view::Console;
 use std::sync::Arc;
 
@@ -23,12 +24,14 @@ impl MapView {
             .max()
             .unwrap_or(0);
 
+        let styler = console.get_styler(Stream::Stdout);
         self.items.iter().for_each(|(key, value)| {
             let mut key = key.clone();
             if !key.is_empty() {
                 key += ":";
             }
-            console.print(&format!("{key:max_key_length$} {value}"));
+            let key = styler.bold(&format!("{key:max_key_length$}"));
+            console.print(&format!("{key} {value}"));
         });
     }
 }
