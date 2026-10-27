@@ -264,32 +264,22 @@ impl Command for CreateCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::commands::ContextBuilder;
     use crate::error::Error;
-    use crate::instance::InstanceStoreMock;
     use crate::models::{Arch, HashAlg};
     use crate::platform::SystemMock;
-    use crate::view::Console;
     use std::str::FromStr;
-    use std::sync::Arc;
 
     const GIB: usize = 1024_usize.pow(3);
 
     #[tokio::test]
     async fn test_create_rejects_existing_instance_name() {
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        let context = Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(Arc::new(SystemMock::new())),
-            env,
-            Box::new(InstanceStoreMock::new(vec![Instance {
-                name: "test".to_string(),
-                ..Instance::default()
-            }])),
-        );
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }]);
+        let context = builder.build();
 
         let result = CreateCommand::try_parse_from(["create", "test", "-i", "debian:bookworm"])
             .unwrap()
@@ -304,12 +294,7 @@ mod tests {
 
     #[test]
     fn test_resolve_name_keeps_a_given_name_and_generates_a_missing_one() {
-        let context = Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(Arc::new(SystemMock::new())),
-            Environment::default(),
-            Box::new(InstanceStoreMock::new(Vec::new())),
-        );
+        let context = ContextBuilder::new(SystemMock::new()).build();
 
         let given = CreateCommand::try_parse_from(["create", "web"])
             .unwrap()

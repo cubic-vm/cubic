@@ -102,30 +102,23 @@ impl Command for RunCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Environment, Instance};
+    use crate::commands::ContextBuilder;
+    use crate::models::Instance;
     use crate::platform::SystemMock;
-    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::Arc;
 
     #[test]
     fn test_rm_stops_and_deletes_the_instance() {
-        let store = InstanceStoreMock::new_with_running(
-            vec![Instance {
-                name: "web".to_string(),
-                ..Instance::default()
-            }],
-            &["web"],
-        );
-        let killed = Arc::clone(&store.killed);
-        let deleted = Arc::clone(&store.deleted);
-        let context = commands::Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(Arc::new(SystemMock::new())),
-            Environment::default(),
-            Box::new(store),
-        );
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
+            name: "web".to_string(),
+            ..Instance::default()
+        }]);
+        builder.get_store().set_running(&["web"]);
+        let killed = Arc::clone(&builder.get_store().killed);
+        let deleted = Arc::clone(&builder.get_store().deleted);
+        let context = builder.build();
 
         RunCommand::try_parse_from(["run", "--rm", "web", "-i", "debian:trixie"])
             .unwrap()

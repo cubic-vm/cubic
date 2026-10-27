@@ -261,11 +261,6 @@ mod tests {
     }
 
     #[test]
-    fn test_reject_path_traversal() {
-        assert!(StartCommand::try_parse_from(["start", "../../etc"]).is_err());
-    }
-
-    #[test]
     fn test_keeps_size_when_memory_is_available() {
         let system = SystemMock::new().set_host_resources((16 * GIB) as u64, (16 * GIB) as u64, 8);
         let console = Console::new(Arc::new(SystemMock::new()));

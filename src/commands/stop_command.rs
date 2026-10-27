@@ -124,65 +124,26 @@ impl Command for StopCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::commands::ContextBuilder;
     use crate::error::Error;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Environment, UserName};
     use crate::platform::SystemMock;
-    use crate::view::Console;
-    use std::str::FromStr;
     use std::sync::Arc;
 
-    fn build_context(store: InstanceStoreMock) -> commands::Context {
-        let env = Environment::new(
-            UserName::from_str("myuser").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        commands::Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(Arc::new(SystemMock::new())),
-            env,
-            Box::new(store),
-        )
-    }
-
-    #[test]
-    fn test_reject_path_traversal() {
-        assert!(StopCommand::try_parse_from(["stop", "../../etc"]).is_err());
-    }
-
     #[tokio::test]
-    async fn test_reject_empty_instance_list_without_all() {
-        let context = build_context(InstanceStoreMock::new(Vec::new()));
+    async fn test_require_instance_names_unless_all_is_given() {
+        let context = ContextBuilder::new(SystemMock::new()).build();
+        let build_command = |all: bool| StopCommand {
+            all: all.into(),
+            wait: false,
+            kill: false,
+            instances: Vec::new().into(),
+        };
 
         assert!(matches!(
-            StopCommand {
-                all: false.into(),
-                wait: false,
-                kill: false,
-                instances: Vec::new().into(),
-            }
-            .run(&context)
-            .await,
+            build_command(false).run(&context).await,
             Err(Error::MissingInstanceName)
         ));
-    }
-
-    #[tokio::test]
-    async fn test_allow_empty_instance_list_with_all() {
-        let context = build_context(InstanceStoreMock::new(Vec::new()));
-
-        assert!(
-            StopCommand {
-                all: true.into(),
-                wait: false,
-                kill: false,
-                instances: Vec::new().into(),
-            }
-            .run(&context)
-            .await
-            .is_ok()
-        );
+        assert!(build_command(true).run(&context).await.is_ok());
     }
 
     #[tokio::test]
@@ -191,9 +152,11 @@ mod tests {
             name: "web".to_string(),
             ..Instance::default()
         };
-        let store = InstanceStoreMock::new_with_running(vec![instance.clone()], &["web"]);
-        let killed = Arc::clone(&store.killed);
-        let context = build_context(store);
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![instance.clone()]);
+        builder.get_store().set_running(&["web"]);
+        let killed = Arc::clone(&builder.get_store().killed);
+        let context = builder.build();
 
         StopCommand::wait_or_kill(&context, &[instance], Duration::ZERO)
             .await

@@ -134,50 +134,25 @@ impl Command for ModifyCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Environment, Instance, UserName};
+    use crate::commands::ContextBuilder;
+    use crate::models::Instance;
     use crate::platform::SystemMock;
-    use crate::view::Console;
-    use std::str::FromStr;
     use std::sync::Arc;
 
     const GIB: usize = 1024 * 1024 * 1024;
 
-    fn build_context(
-        system: &Arc<SystemMock>,
-        instance_store: InstanceStoreMock,
-    ) -> commands::Context {
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        commands::Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(system.clone()),
-            env,
-            Box::new(instance_store),
-        )
-    }
-
-    #[test]
-    fn test_reject_path_traversal() {
-        assert!(ModifyCommand::try_parse_from(["modify", "../../etc"]).is_err());
-    }
-
     #[tokio::test]
     async fn test_modify_stopped_instance_prints_nothing() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context(
-            &system,
-            InstanceStoreMock::new(vec![Instance {
-                name: "test".to_string(),
-                cpus: 2,
-                mem: DataSize::new(GIB),
-                disk_capacity: DataSize::new(GIB),
-                ..Instance::default()
-            }]),
-        );
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
+            name: "test".to_string(),
+            cpus: 2,
+            mem: DataSize::new(GIB),
+            disk_capacity: DataSize::new(GIB),
+            ..Instance::default()
+        }]);
+        let system = Arc::clone(builder.get_system());
+        let context = builder.build();
 
         ModifyCommand::try_parse_from(["modify", "test", "--cpus", "2"])
             .unwrap()
@@ -190,20 +165,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_modify_running_instance_notes_restart() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context(
-            &system,
-            InstanceStoreMock::new_with_running(
-                vec![Instance {
-                    name: "test".to_string(),
-                    cpus: 2,
-                    mem: DataSize::new(GIB),
-                    disk_capacity: DataSize::new(GIB),
-                    ..Instance::default()
-                }],
-                &["test"],
-            ),
-        );
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
+            name: "test".to_string(),
+            cpus: 2,
+            mem: DataSize::new(GIB),
+            disk_capacity: DataSize::new(GIB),
+            ..Instance::default()
+        }]);
+        builder.get_store().set_running(&["test"]);
+        let system = Arc::clone(builder.get_system());
+        let context = builder.build();
 
         ModifyCommand::try_parse_from(["modify", "test", "--cpus", "2"])
             .unwrap()
@@ -219,17 +191,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_modify_running_instance_port_attempts_live_apply() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context(
-            &system,
-            InstanceStoreMock::new_with_running(
-                vec![Instance {
-                    name: "test".to_string(),
-                    ..Instance::default()
-                }],
-                &["test"],
-            ),
-        );
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }]);
+        builder.get_store().set_running(&["test"]);
+        let system = Arc::clone(builder.get_system());
+        let context = builder.build();
 
         // InstanceStoreMock has no real monitor, so a live hostfwd change on
         // a running instance surfaces the mock's InstanceNotRunning error

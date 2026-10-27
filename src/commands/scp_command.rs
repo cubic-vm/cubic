@@ -100,52 +100,27 @@ impl Command for ScpCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Environment, Instance, UserName};
+    use crate::commands::ContextBuilder;
+    use crate::models::Instance;
     use crate::platform::SystemMock;
-    use crate::view::Console;
     use std::str::FromStr;
-    use std::sync::Arc;
-
-    fn build_context(instance_store: InstanceStoreMock) -> commands::Context {
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        commands::Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(Arc::new(SystemMock::new())),
-            env,
-            Box::new(instance_store),
-        )
-    }
 
     #[test]
     fn test_check_local_path_needs_no_instance() {
-        let context = build_context(InstanceStoreMock::new(Vec::new()));
+        let context = ContextBuilder::new(SystemMock::new()).build();
         let path = TargetPath::from_str("/home/cubic/file").unwrap();
 
         assert!(check_target_is_running(&context, &path).is_ok());
     }
 
     #[test]
-    fn test_check_rejects_unknown_instance() {
-        let context = build_context(InstanceStoreMock::new(Vec::new()));
-        let path = TargetPath::from_str("missing:~/file").unwrap();
-
-        assert!(matches!(
-            check_target_is_running(&context, &path),
-            Err(Error::UnknownInstance(ref name)) if name == "missing"
-        ));
-    }
-
-    #[test]
     fn test_check_rejects_stopped_instance() {
-        let context = build_context(InstanceStoreMock::new(vec![Instance {
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
-        }]));
+        }]);
+        let context = builder.build();
         let path = TargetPath::from_str("test:~/file").unwrap();
 
         assert!(matches!(

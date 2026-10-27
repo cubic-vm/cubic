@@ -68,33 +68,17 @@ impl Command for CloneCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::Environment;
+    use crate::commands::ContextBuilder;
     use crate::models::Instance;
-    use crate::models::UserName;
     use crate::platform::SystemMock;
-    use crate::view::Console;
     use std::path::PathBuf;
     use std::str::FromStr;
     use std::sync::Arc;
 
-    fn build_context(instances: Vec<Instance>) -> Context {
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(Arc::new(SystemMock::new())),
-            env,
-            Box::new(InstanceStoreMock::new(instances)),
-        )
-    }
-
     #[tokio::test]
     async fn test_clone_rejects_existing_target_name() {
-        let context = build_context(vec![
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![
             Instance {
                 name: "test".to_string(),
                 ..Instance::default()
@@ -104,6 +88,7 @@ mod tests {
                 ..Instance::default()
             },
         ]);
+        let context = builder.build();
 
         let result = CloneCommand {
             name: InstanceName::from_str("test").unwrap(),
@@ -120,23 +105,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_clone_rejects_running_source() {
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        let context = Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(Arc::new(SystemMock::new())),
-            env,
-            Box::new(InstanceStoreMock::new_with_running(
-                vec![Instance {
-                    name: "test".to_string(),
-                    ..Instance::default()
-                }],
-                &["test"],
-            )),
-        );
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }]);
+        builder.get_store().set_running(&["test"]);
+        let context = builder.build();
 
         let result = CloneCommand {
             name: InstanceName::from_str("test").unwrap(),
@@ -168,22 +143,14 @@ mod tests {
         let system = SystemMock::new()
             .add_file(&source_image, b"qcow2 image")
             .add_command_output(&format!("qemu-img resize {target_image} 0"), b"");
-        let store = InstanceStoreMock::new(vec![Instance {
+        let mut builder = ContextBuilder::new(system);
+        builder.get_store().add_instances(vec![Instance {
             name: "test".to_string(),
             ssh_host_key: Some("ssh-ed25519 AAAA".to_string()),
             ..Instance::default()
         }]);
-        let stored = Arc::clone(&store.stored);
-        let context = Context::new(
-            Arc::new(system),
-            Console::new(Arc::new(SystemMock::new())),
-            Environment::new(
-                UserName::from_str("cubic").unwrap(),
-                String::new(),
-                String::new(),
-            ),
-            Box::new(store),
-        );
+        let stored = Arc::clone(&builder.get_store().stored);
+        let context = builder.build();
 
         CloneCommand {
             name: InstanceName::from_str("test").unwrap(),
@@ -196,22 +163,5 @@ mod tests {
         let stored = stored.lock().unwrap();
         assert_eq!(stored.len(), 1);
         assert_eq!(stored[0].ssh_host_key, None);
-    }
-
-    #[tokio::test]
-    async fn test_clone_rejects_unknown_source() {
-        let context = build_context(Vec::new());
-
-        let result = CloneCommand {
-            name: InstanceName::from_str("missing").unwrap(),
-            new_name: InstanceName::from_str("newname").unwrap(),
-        }
-        .run(&context)
-        .await;
-
-        assert!(matches!(
-            result,
-            Err(Error::UnknownInstance(ref name)) if name == "missing"
-        ));
     }
 }

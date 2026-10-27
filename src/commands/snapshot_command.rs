@@ -50,10 +50,9 @@ impl Command for SnapshotCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Environment, Instance, UserName};
+    use crate::commands::ContextBuilder;
+    use crate::models::Instance;
     use crate::platform::SystemMock;
-    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::{Arc, Mutex};
 
@@ -63,38 +62,20 @@ mod tests {
         }
     }
 
-    fn build_context(
-        instances: Vec<Instance>,
-        running: &[&str],
-    ) -> (commands::Context, Arc<Mutex<Vec<String>>>) {
-        let store = InstanceStoreMock::new_with_running(instances, running);
-        let snapshots = Arc::clone(&store.snapshots);
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        (
-            commands::Context::new(
-                Arc::new(SystemMock::new()),
-                Console::new(Arc::new(SystemMock::new())),
-                env,
-                Box::new(store),
-            ),
-            snapshots,
-        )
-    }
-
-    fn build_instance() -> Instance {
-        Instance {
+    fn build_context(running: &[&str]) -> (commands::Context, Arc<Mutex<Vec<String>>>) {
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
-        }
+        }]);
+        builder.get_store().set_running(running);
+        let snapshots = Arc::clone(&builder.get_store().snapshots);
+        (builder.build(), snapshots)
     }
 
     #[tokio::test]
     async fn test_create_snapshot() {
-        let (context, snapshots) = build_context(vec![build_instance()], &[]);
+        let (context, snapshots) = build_context(&[]);
 
         build_command("test/clean").run(&context).await.unwrap();
 
@@ -103,7 +84,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_reject_a_running_instance() {
-        let (context, _) = build_context(vec![build_instance()], &["test"]);
+        let (context, _) = build_context(&["test"]);
 
         assert!(matches!(
             build_command("test/clean").run(&context).await,

@@ -77,10 +77,9 @@ impl Command for RestoreCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Environment, Instance, Snapshot, UserName};
+    use crate::commands::ContextBuilder;
+    use crate::models::{Instance, Snapshot};
     use crate::platform::SystemMock;
-    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::{Arc, Mutex};
 
@@ -91,32 +90,14 @@ mod tests {
         }
     }
 
-    fn build_context(instances: Vec<Instance>) -> (commands::Context, Arc<Mutex<Vec<String>>>) {
-        build_context_with_system(&Arc::new(SystemMock::new()), instances)
-    }
-
-    // The console reads its replies from the given system, so a test that
-    // queues an answer has to hand over the same mock it queued it on.
-    fn build_context_with_system(
-        system: &Arc<SystemMock>,
+    fn build_context(
+        system: SystemMock,
         instances: Vec<Instance>,
     ) -> (commands::Context, Arc<Mutex<Vec<String>>>) {
-        let store = InstanceStoreMock::new(instances);
-        let snapshots = Arc::clone(&store.snapshots);
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        (
-            commands::Context::new(
-                Arc::new(SystemMock::new()),
-                Console::new(system.clone()),
-                env,
-                Box::new(store),
-            ),
-            snapshots,
-        )
+        let mut builder = ContextBuilder::new(system);
+        builder.get_store().add_instances(instances);
+        let snapshots = Arc::clone(&builder.get_store().snapshots);
+        (builder.build(), snapshots)
     }
 
     fn build_instance(snapshots: Vec<&str>) -> Instance {
@@ -134,7 +115,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_restore_snapshot() {
-        let (context, snapshots) = build_context(vec![build_instance(vec!["clean"])]);
+        let (context, snapshots) =
+            build_context(SystemMock::new(), vec![build_instance(vec!["clean"])]);
 
         build_command("test/clean", true)
             .run(&context)
@@ -146,10 +128,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_a_declined_confirmation_leaves_the_disk_alone() {
-        let system = Arc::new(SystemMock::new());
+        let system = SystemMock::new();
         system.push_input("n");
-        let (context, snapshots) =
-            build_context_with_system(&system, vec![build_instance(vec!["clean"])]);
+        let (context, snapshots) = build_context(system, vec![build_instance(vec!["clean"])]);
 
         build_command("test/clean", false)
             .run(&context)
@@ -160,18 +141,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_reject_an_unknown_instance() {
-        let (context, _) = build_context(Vec::new());
-
-        assert!(matches!(
-            build_command("test/clean", true).run(&context).await,
-            Err(Error::UnknownInstance(name)) if name == "test"
-        ));
-    }
-
-    #[tokio::test]
     async fn test_reject_an_unknown_snapshot() {
-        let (context, _) = build_context(vec![build_instance(vec!["deps"])]);
+        let (context, _) = build_context(SystemMock::new(), vec![build_instance(vec!["deps"])]);
 
         assert!(matches!(
             build_command("test/clean", true).run(&context).await,

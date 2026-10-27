@@ -139,11 +139,9 @@ impl Command for DeleteCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Environment, Instance, Snapshot, UserName};
+    use crate::commands::ContextBuilder;
+    use crate::models::{Instance, Snapshot};
     use crate::platform::SystemMock;
-    use crate::view::Console;
-    use std::str::FromStr;
     use std::sync::{Arc, Mutex};
 
     struct Recorders {
@@ -152,25 +150,13 @@ mod tests {
     }
 
     fn build_context(instances: Vec<Instance>) -> (commands::Context, Recorders) {
-        let store = InstanceStoreMock::new(instances);
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(instances);
         let recorders = Recorders {
-            deleted: Arc::clone(&store.deleted),
-            snapshots: Arc::clone(&store.snapshots),
+            deleted: Arc::clone(&builder.get_store().deleted),
+            snapshots: Arc::clone(&builder.get_store().snapshots),
         };
-        let env = Environment::new(
-            UserName::from_str("myuser").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        (
-            commands::Context::new(
-                Arc::new(SystemMock::new()),
-                Console::new(Arc::new(SystemMock::new())),
-                env,
-                Box::new(store),
-            ),
-            recorders,
-        )
+        (builder.build(), recorders)
     }
 
     fn build_instance(name: &str, snapshots: Vec<&str>) -> Instance {

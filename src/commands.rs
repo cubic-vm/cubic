@@ -7,6 +7,8 @@ mod command_dispatcher;
 mod completions_command;
 mod console_command;
 mod context;
+#[cfg(test)]
+mod context_builder;
 mod create_command;
 mod delete_command;
 mod env_args;
@@ -40,6 +42,8 @@ pub use command_dispatcher::*;
 pub use completions_command::*;
 pub use console_command::*;
 pub use context::*;
+#[cfg(test)]
+pub use context_builder::ContextBuilder;
 pub use create_command::*;
 pub use delete_command::*;
 pub use env_args::*;

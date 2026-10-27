@@ -111,10 +111,9 @@ impl Command for PruneCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
+    use crate::commands::ContextBuilder;
     use crate::models::{Environment, UserName};
     use crate::platform::{FileSystem, SystemMock};
-    use crate::view::Console;
     use std::path::Path;
     use std::str::FromStr;
     use std::sync::Arc;
@@ -127,35 +126,18 @@ mod tests {
         )
     }
 
-    fn build_context(system: &Arc<SystemMock>, env: &Environment) -> commands::Context {
-        build_context_with_store(system, env, InstanceStoreMock::new(Vec::new()))
+    fn build_context(system: SystemMock) -> ContextBuilder {
+        let mut builder = ContextBuilder::new(system);
+        *builder.get_env() = build_env();
+        builder
     }
 
-    fn build_context_with_store(
-        system: &Arc<SystemMock>,
-        env: &Environment,
-        store: InstanceStoreMock,
-    ) -> commands::Context {
-        commands::Context::new(
-            system.clone(),
-            Console::new(system.clone()),
-            env.clone(),
-            Box::new(store),
-        )
-    }
-
-    async fn run_prune(system: &Arc<SystemMock>, env: &Environment) -> String {
-        run_prune_with_context(system, build_context(system, env)).await
-    }
-
-    async fn run_prune_with_context(
-        system: &Arc<SystemMock>,
-        context: commands::Context,
-    ) -> String {
+    async fn run_prune(builder: ContextBuilder) -> String {
+        let system = Arc::clone(builder.get_system());
         PruneCommand {
             yes: commands::YesArg { value: true },
         }
-        .run(&context)
+        .run(&builder.build())
         .await
         .unwrap();
         system.get_output()
@@ -164,14 +146,15 @@ mod tests {
     #[tokio::test]
     async fn test_delete_the_image_cache_and_the_legacy_cache_instance_dir() {
         let env = build_env();
-        let system = Arc::new(
+        let builder = build_context(
             SystemMock::new()
                 .add_file(&env.get_image_cache_file(), b"cache")
                 .add_file(&format!("{}/debian", env.get_image_dir()), b"image")
                 .add_file("/cache/instances/test/user-data.img", b"seed"),
         );
+        let system = Arc::clone(builder.get_system());
 
-        run_prune(&system, &env).await;
+        run_prune(builder).await;
 
         assert!(!system.exists_path(Path::new(&env.get_image_cache_file())));
         assert!(!system.exists_path(Path::new(&env.get_image_dir())));
@@ -182,9 +165,10 @@ mod tests {
     async fn test_keep_the_instance_data_dir() {
         let env = build_env();
         let instance_file = format!("{}/cloud-init.iso", env.get_instance_dir2("test"));
-        let system = Arc::new(SystemMock::new().add_file(&instance_file, b"seed"));
+        let builder = build_context(SystemMock::new().add_file(&instance_file, b"seed"));
+        let system = Arc::clone(builder.get_system());
 
-        run_prune(&system, &env).await;
+        run_prune(builder).await;
 
         assert!(system.exists_path(Path::new(&instance_file)));
     }
@@ -193,16 +177,17 @@ mod tests {
     async fn test_delete_the_legacy_certs_of_a_stopped_instance() {
         let env = build_env();
         let dir = env.get_instance_dir2("test");
-        let system = Arc::new(LEGACY_CERT_FILES.iter().fold(
+        let mut builder = build_context(LEGACY_CERT_FILES.iter().fold(
             SystemMock::new().add_file(&format!("{dir}/machine.img"), b"disk"),
             |system, file| system.add_file(&format!("{dir}/{file}"), b"pem"),
         ));
-        let store = InstanceStoreMock::new(vec![Instance {
+        builder.get_store().add_instances(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
         }]);
+        let system = Arc::clone(builder.get_system());
 
-        run_prune_with_context(&system, build_context_with_store(&system, &env, store)).await;
+        run_prune(builder).await;
 
         for file in LEGACY_CERT_FILES {
             assert!(!system.exists_path(Path::new(&format!("{dir}/{file}"))));
@@ -214,29 +199,28 @@ mod tests {
     async fn test_delete_stale_instances_and_interrupted_creates() {
         let env = build_env();
         let tmp = format!("{}/plain.tmp", env.get_instance_dir());
-        let system = Arc::new(SystemMock::new().add_dir(&tmp));
-        let store = InstanceStoreMock::new_with_running(
-            vec![
-                Instance {
-                    name: "stale".to_string(),
-                    auto_remove: true,
-                    ..Instance::default()
-                },
-                Instance {
-                    name: "running".to_string(),
-                    auto_remove: true,
-                    ..Instance::default()
-                },
-                Instance {
-                    name: "plain".to_string(),
-                    ..Instance::default()
-                },
-            ],
-            &["running"],
-        );
-        let deleted = Arc::clone(&store.deleted);
+        let mut builder = build_context(SystemMock::new().add_dir(&tmp));
+        builder.get_store().add_instances(vec![
+            Instance {
+                name: "stale".to_string(),
+                auto_remove: true,
+                ..Instance::default()
+            },
+            Instance {
+                name: "running".to_string(),
+                auto_remove: true,
+                ..Instance::default()
+            },
+            Instance {
+                name: "plain".to_string(),
+                ..Instance::default()
+            },
+        ]);
+        builder.get_store().set_running(&["running"]);
+        let deleted = Arc::clone(&builder.get_store().deleted);
+        let system = Arc::clone(builder.get_system());
 
-        run_prune_with_context(&system, build_context_with_store(&system, &env, store)).await;
+        run_prune(builder).await;
 
         assert_eq!(*deleted.lock().unwrap(), ["stale"]);
         assert!(!system.exists_path(Path::new(&tmp)));
@@ -245,12 +229,12 @@ mod tests {
     #[tokio::test]
     async fn test_report_the_size_of_everything_it_deletes() {
         let env = build_env();
-        let system = Arc::new(
+        let builder = build_context(
             SystemMock::new()
                 .add_file(&format!("{}/debian", env.get_image_dir()), &[0; 1024])
                 .add_file("/cache/instances/test/user-data.img", &[0; 1024]),
         );
 
-        assert!(run_prune(&system, &env).await.contains("frees 2048 B"));
+        assert!(run_prune(builder).await.contains("frees 2048 B"));
     }
 }

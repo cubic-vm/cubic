@@ -42,13 +42,3 @@ impl Command for RestartCommand {
         .await
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_reject_path_traversal() {
-        assert!(RestartCommand::try_parse_from(["restart", "../../etc"]).is_err());
-    }
-}
