@@ -57,7 +57,8 @@ mod tests {
     #[test]
     fn test_stop_kills_running_instance() {
         let instance = build_instance("test");
-        let store = InstanceStoreMock::new_with_running(vec![instance.clone()], &["test"]);
+        let mut store = InstanceStoreMock::new(vec![instance.clone()]);
+        store.set_running(&["test"]);
 
         StopInstanceAction::new(&instance)
             .run(&store, true)
@@ -81,7 +82,8 @@ mod tests {
     #[test]
     fn test_stop_without_kill_requests_monitor_shutdown() {
         let instance = build_instance("test");
-        let store = InstanceStoreMock::new_with_running(vec![instance.clone()], &["test"]);
+        let mut store = InstanceStoreMock::new(vec![instance.clone()]);
+        store.set_running(&["test"]);
 
         // The mock has no monitor, so reaching the monitor path surfaces
         // its InstanceNotRunning error instead of a kill.

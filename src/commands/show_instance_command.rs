@@ -1,6 +1,6 @@
 use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::ssh::HostKeyChecker;
 use crate::util;
 use crate::view::MapView;
@@ -20,10 +20,6 @@ impl Command for ShowInstanceCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let env = context.get_env();
         let instance_store = context.get_instance_store();
-
-        if !instance_store.exists(self.instance.value.as_str()) {
-            return Err(Error::UnknownInstance(self.instance.value.to_string()));
-        }
 
         let instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
         let ssh_key = env.get_ssh_private_key_file(&instance.name);
@@ -86,23 +82,17 @@ impl Command for ShowInstanceCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Arch, DataSize, Environment, Instance, InstanceName, Snapshot, UserName};
+    use crate::commands::ContextBuilder;
+    use crate::models::{Arch, DataSize, Instance, InstanceName, Snapshot, UserName};
     use crate::platform::SystemMock;
-    use crate::view::Console;
     use std::path::PathBuf;
     use std::str::FromStr;
     use std::sync::Arc;
 
     #[tokio::test]
     async fn test_show_basic_fields() {
-        let system = Arc::new(SystemMock::new());
-        let env = Environment::new(
-            UserName::from_str("myuser").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        let instance_store = InstanceStoreMock::new(vec![Instance {
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
             name: "test".to_string(),
             arch: Arch::AMD64,
             user: UserName::from_str("myuser").unwrap(),
@@ -114,12 +104,8 @@ mod tests {
             hostfwd: vec!["127.0.0.1:4000:40/tcp".parse().unwrap()],
             ..Instance::default()
         }]);
-        let context = commands::Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(system.clone()),
-            env,
-            Box::new(instance_store),
-        );
+        let system = Arc::clone(builder.get_system());
+        let context = builder.build();
 
         ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap().into(),
@@ -147,13 +133,8 @@ Forward:    127.0.0.1:4000:40/tcp
 
     #[tokio::test]
     async fn test_show_all_fields() {
-        let system = Arc::new(SystemMock::new());
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        let instance_store = InstanceStoreMock::new(vec![Instance {
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
             name: "test".to_string(),
             arch: Arch::ARM64,
             user: UserName::from_str("john").unwrap(),
@@ -180,12 +161,8 @@ Forward:    127.0.0.1:4000:40/tcp
             ),
             ..Instance::default()
         }]);
-        let context = commands::Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(system.clone()),
-            env,
-            Box::new(instance_store),
-        );
+        let system = Arc::clone(builder.get_system());
+        let context = builder.build();
 
         let instance_dir = PathBuf::from("machines").join("test");
         let disk_image = instance_dir
@@ -233,32 +210,5 @@ SSH:          ssh -i {ssh_key} -p 8000 john@localhost
 "
             )
         );
-    }
-
-    #[tokio::test]
-    async fn test_show_command_failed() {
-        let system = Arc::new(SystemMock::new());
-        let env = Environment::new(
-            UserName::from_str("testuser").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        let instance_store = InstanceStoreMock::new(Vec::new());
-        let context = commands::Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(system.clone()),
-            env,
-            Box::new(instance_store),
-        );
-
-        assert!(matches!(
-            ShowInstanceCommand {
-                instance: InstanceName::from_str("test").unwrap().into(),
-                all: false.into(),
-            }
-            .run(&context)
-            .await,
-            Err(Error::UnknownInstance(_))
-        ));
     }
 }

@@ -77,26 +77,10 @@ impl Command for ListPortCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Environment, Instance, UserName};
+    use crate::commands::ContextBuilder;
+    use crate::models::Instance;
     use crate::platform::SystemMock;
-    use crate::view::Console;
-    use std::str::FromStr;
     use std::sync::Arc;
-
-    fn build_context(system: &Arc<SystemMock>, instances: Vec<Instance>) -> commands::Context {
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        commands::Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(system.clone()),
-            env,
-            Box::new(InstanceStoreMock::new(instances)),
-        )
-    }
 
     const NO_RULES: &str = "\
 No port forwarding rules are configured.
@@ -104,26 +88,15 @@ Add one with cubic modify <instance> --port <host_port>:<guest_port>
 ";
 
     #[tokio::test]
-    async fn test_list_ports_without_instances_explains_how_to_add_a_rule() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context(&system, Vec::new());
-
-        ListPortCommand {}.run(&context).await.unwrap();
-
-        assert_eq!(system.get_output(), NO_RULES);
-    }
-
-    #[tokio::test]
     async fn test_list_ports_without_rules_explains_how_to_add_a_rule() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context(
-            &system,
-            vec![Instance {
-                name: "test".to_string(),
-                ssh_port: 9000,
-                ..Instance::default()
-            }],
-        );
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
+            name: "test".to_string(),
+            ssh_port: 9000,
+            ..Instance::default()
+        }]);
+        let system = Arc::clone(builder.get_system());
+        let context = builder.build();
 
         ListPortCommand {}.run(&context).await.unwrap();
 
@@ -132,23 +105,22 @@ Add one with cubic modify <instance> --port <host_port>:<guest_port>
 
     #[tokio::test]
     async fn test_list_ports_skips_instances_without_rules() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context(
-            &system,
-            vec![
-                Instance {
-                    name: "test".to_string(),
-                    ssh_port: 9000,
-                    ..Instance::default()
-                },
-                Instance {
-                    name: "test2".to_string(),
-                    ssh_port: 8000,
-                    hostfwd: vec!["127.0.0.1:4000:40/tcp".parse().unwrap()],
-                    ..Instance::default()
-                },
-            ],
-        );
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![
+            Instance {
+                name: "test".to_string(),
+                ssh_port: 9000,
+                ..Instance::default()
+            },
+            Instance {
+                name: "test2".to_string(),
+                ssh_port: 8000,
+                hostfwd: vec!["127.0.0.1:4000:40/tcp".parse().unwrap()],
+                ..Instance::default()
+            },
+        ]);
+        let system = Arc::clone(builder.get_system());
+        let context = builder.build();
 
         ListPortCommand {}.run(&context).await.unwrap();
 

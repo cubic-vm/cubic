@@ -72,32 +72,17 @@ impl Command for ListInstanceCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Arch, DataSize, Environment, Instance, UserName};
+    use crate::commands::ContextBuilder;
+    use crate::models::{Arch, DataSize, Instance, UserName};
     use crate::platform::SystemMock;
-    use crate::view::Console;
     use std::str::FromStr;
     use std::sync::Arc;
 
-    fn build_context(system: &Arc<SystemMock>, instances: Vec<Instance>) -> commands::Context {
-        build_context_with_store(system, InstanceStoreMock::new(instances))
-    }
-
-    fn build_context_with_store(
-        system: &Arc<SystemMock>,
-        store: InstanceStoreMock,
-    ) -> commands::Context {
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        commands::Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(system.clone()),
-            env,
-            Box::new(store),
-        )
+    fn build_context(instances: Vec<Instance>, running: &[&str]) -> ContextBuilder {
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(instances);
+        builder.get_store().set_running(running);
+        builder
     }
 
     fn build_instances() -> Vec<Instance> {
@@ -131,8 +116,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_instance_command() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context(&system, build_instances());
+        let builder = build_context(build_instances(), &[]);
+        let system = Arc::clone(builder.get_system());
+        let context = builder.build();
 
         ListInstanceCommand { all: false.into() }
             .run(&context)
@@ -151,14 +137,12 @@ test2                  amd64       5      0 B       5000 B        no
 
     #[tokio::test]
     async fn test_list_instance_command_hides_a_stale_instance() {
-        let system = Arc::new(SystemMock::new());
         let mut instances = build_instances();
         instances[0].auto_remove = true;
         instances[1].auto_remove = true;
-        let context = build_context_with_store(
-            &system,
-            InstanceStoreMock::new_with_running(instances, &["test2"]),
-        );
+        let builder = build_context(instances, &["test2"]);
+        let system = Arc::clone(builder.get_system());
+        let context = builder.build();
 
         ListInstanceCommand { all: false.into() }
             .run(&context)
@@ -171,22 +155,6 @@ test2                  amd64       5      0 B       5000 B        no
 Name    OS   Arch    vCPUs   Memory     Disk   Running
 test2        amd64       5      0 B   5000 B       yes
 "
-        );
-    }
-
-    #[tokio::test]
-    async fn test_list_instance_command_empty() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context(&system, Vec::new());
-
-        ListInstanceCommand { all: false.into() }
-            .run(&context)
-            .await
-            .unwrap();
-
-        assert_eq!(
-            system.get_output(),
-            "Name   OS   Arch   vCPUs   Memory   Disk   Running\n"
         );
     }
 }

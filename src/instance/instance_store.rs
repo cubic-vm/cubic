@@ -60,14 +60,12 @@ mod tests {
 
     #[test]
     fn test_claim_name_rejects_a_running_auto_remove_instance() {
-        let store = InstanceStoreMock::new_with_running(
-            vec![Instance {
-                name: "test".to_string(),
-                auto_remove: true,
-                ..Instance::default()
-            }],
-            &["test"],
-        );
+        let mut store = InstanceStoreMock::new(vec![Instance {
+            name: "test".to_string(),
+            auto_remove: true,
+            ..Instance::default()
+        }]);
+        store.set_running(&["test"]);
 
         let result = store.claim_name("test");
 

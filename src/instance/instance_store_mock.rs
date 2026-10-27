@@ -21,18 +21,22 @@ pub mod tests {
 
     impl InstanceStoreMock {
         pub fn new(instances: Vec<Instance>) -> Self {
-            Self::new_with_running(instances, &[])
-        }
-
-        pub fn new_with_running(instances: Vec<Instance>, running: &[&str]) -> Self {
             Self {
                 instances,
-                running: running.iter().map(|name| name.to_string()).collect(),
+                running: Vec::new(),
                 killed: Arc::new(Mutex::new(Vec::new())),
                 stored: Arc::new(Mutex::new(Vec::new())),
                 deleted: Arc::new(Mutex::new(Vec::new())),
                 snapshots: Arc::new(Mutex::new(Vec::new())),
             }
+        }
+
+        pub fn add_instances(&mut self, instances: Vec<Instance>) {
+            self.instances.extend(instances);
+        }
+
+        pub fn set_running(&mut self, running: &[&str]) {
+            self.running = running.iter().map(|name| name.to_string()).collect();
         }
 
         fn record_snapshot(&self, action: &str, instance: &Instance, name: &str) {

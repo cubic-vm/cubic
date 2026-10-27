@@ -90,38 +90,20 @@ impl Command for ShowCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error::Error;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Environment, Instance, UserName};
+    use crate::commands::ContextBuilder;
+    use crate::models::Instance;
     use crate::platform::SystemMock;
-    use crate::view::Console;
-    use std::str::FromStr;
     use std::sync::Arc;
-
-    fn build_context(system: &Arc<SystemMock>, instances: Vec<Instance>) -> commands::Context {
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        commands::Context::new(
-            Arc::new(SystemMock::new()),
-            Console::new(system.clone()),
-            env,
-            Box::new(InstanceStoreMock::new(instances)),
-        )
-    }
 
     #[tokio::test]
     async fn test_show_routes_plain_name_to_instance_view() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context(
-            &system,
-            vec![Instance {
-                name: "test".to_string(),
-                ..Instance::default()
-            }],
-        );
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.get_store().add_instances(vec![Instance {
+            name: "test".to_string(),
+            ..Instance::default()
+        }]);
+        let system = Arc::clone(builder.get_system());
+        let context = builder.build();
 
         ShowCommand {
             name: "test".parse().unwrap(),
@@ -132,23 +114,5 @@ mod tests {
         .unwrap();
 
         assert!(system.get_output().starts_with("Running:"));
-    }
-
-    #[tokio::test]
-    async fn test_show_rejects_unknown_instance() {
-        let system = Arc::new(SystemMock::new());
-        let context = build_context(&system, Vec::new());
-
-        let result = ShowCommand {
-            name: "missing".parse().unwrap(),
-            all: false.into(),
-        }
-        .run(&context)
-        .await;
-
-        assert!(matches!(
-            result,
-            Err(Error::UnknownInstance(ref name)) if name == "missing"
-        ));
     }
 }

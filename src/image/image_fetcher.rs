@@ -138,26 +138,15 @@ impl ImageFetcher {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::InstanceStoreMock;
-    use crate::models::{Arch, Environment, HashAlg, UserName};
+    use crate::commands::ContextBuilder;
+    use crate::models::{Arch, HashAlg};
     use crate::platform::SystemMock;
-    use crate::view::Console;
-    use std::str::FromStr;
 
     #[tokio::test]
     async fn test_fetch_image_skips_cached_image() {
-        let system = Arc::new(SystemMock::new().add_file("images/debian_bookworm_amd64", b""));
-        let env = Environment::new(
-            UserName::from_str("cubic").unwrap(),
-            String::new(),
-            String::new(),
-        );
-        let context = Context::new(
-            Arc::clone(&system) as Arc<dyn crate::platform::System>,
-            Console::new(Arc::new(SystemMock::new())),
-            env,
-            Box::new(InstanceStoreMock::new(Vec::new())),
-        );
+        let context =
+            ContextBuilder::new(SystemMock::new().add_file("images/debian_bookworm_amd64", b""))
+                .build();
         let image = Image {
             distro: "debian".to_string(),
             display_name: "Debian".to_string(),
