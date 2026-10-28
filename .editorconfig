@@ -1,0 +1,28 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.rs]
+max_line_length = 100
+
+[{*.yml,*.yaml,*.js,*.html,.yamllint}]
+indent_size = 2
+
+[{*.yml,*.yaml,.yamllint}]
+max_line_length = 120
+
+# Sphinx directive bodies align at 3 spaces
+[*.rst]
+indent_size = 3
+
+[*.md]
+indent_size = 2
+
+[Makefile]
+indent_style = tab

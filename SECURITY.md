@@ -34,7 +34,7 @@ understand and reproduce the issue:
 1. We will acknowledge receipt of your report.
 2. We will investigate and keep you informed of our progress.
 3. Once a fix is ready, we will coordinate a release and public disclosure
-   with you.
+  with you.
 
 We appreciate your effort in responsibly disclosing security issues and
 helping to keep Cubic safe for everyone.
