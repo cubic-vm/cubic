@@ -15,7 +15,7 @@ A clear and concise description of what the bug is.
 Steps to reproduce the behavior:
 1. Run '...'
 2. Enter '...'
-4. See error 
+4. See error
 
 ## Expected Behavior
 
@@ -23,13 +23,13 @@ A clear and concise description of what you expected to happen.
 
 ## Actual Behavior
 
-What actually happened instead. 
+What actually happened instead.
 
 ## Environment
 
 - **Cubic Version**: e.g., 1.2.0
 - **Installation Method**: Cargo, Snap, Homebrew, etc.
-- **Operating System**: e.g., Ubuntu 22.04, macOS 14.0, Windows 11 
+- **Operating System**: e.g., Ubuntu 22.04, macOS 14.0, Windows 11
 - **Architecture**: x86_64, arm64, etc.
 
 ## Additional Context
