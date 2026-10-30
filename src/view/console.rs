@@ -190,11 +190,7 @@ impl Console {
     pub fn prompt(&self, text: &str, masked: bool) -> Result<String, ()> {
         self.set_paused(true);
         self.system.write(Stream::Stdout, text);
-        let reply = if masked {
-            self.system.read_secret()
-        } else {
-            Ok(self.system.read_input())
-        };
+        let reply = self.system.read_input(masked);
         self.set_paused(false);
         reply
     }

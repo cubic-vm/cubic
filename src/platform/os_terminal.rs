@@ -34,15 +34,13 @@ impl Terminal for OsSystem {
             .ok()
     }
 
-    fn read_input(&self) -> String {
-        let mut reply = String::new();
-        stdin().read_line(&mut reply).ok();
-        reply.trim().to_string()
-    }
+    fn read_input(&self, masked: bool) -> std::result::Result<String, ()> {
+        if !masked {
+            let mut reply = String::new();
+            stdin().read_line(&mut reply).ok();
+            return Ok(reply.trim().to_string());
+        }
 
-    // Reads a password character by character in raw mode, without echoing
-    // input back to the terminal (not even as masking characters).
-    fn read_secret(&self) -> std::result::Result<String, ()> {
         self.raw_mode();
         let mut password = String::new();
         let mut pending = Vec::new();
