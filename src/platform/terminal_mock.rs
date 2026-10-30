@@ -11,12 +11,8 @@ pub struct TerminalMock {
 }
 
 impl TerminalMock {
-    fn print(&mut self, msg: &str) {
-        self.output.push_str(msg);
-    }
-
-    fn println(&mut self, msg: &str) {
-        self.output.push_str(&format!("{msg}\n"));
+    fn write(&mut self, text: &str) {
+        self.output.push_str(text);
     }
 
     fn get_output(&self) -> String {
@@ -50,15 +46,9 @@ impl SystemMock {
 }
 
 impl Terminal for SystemMock {
-    fn print(&self, _stream: Stream, msg: &str) {
-        self.terminal.lock().unwrap().print(msg);
+    fn write(&self, _stream: Stream, text: &str) {
+        self.terminal.lock().unwrap().write(text);
     }
-
-    fn println(&self, _stream: Stream, msg: &str) {
-        self.terminal.lock().unwrap().println(msg);
-    }
-
-    fn flush(&self, _stream: Stream) {}
 
     // A mocked host is unattended by default, so colour and animations stay
     // off until a test asks for them.
@@ -89,17 +79,7 @@ impl Terminal for SystemMock {
 
 #[cfg(test)]
 mod tests {
-    use crate::platform::{Stream, SystemMock, Terminal};
-
-    #[test]
-    fn println_appends_message_and_newline_to_output() {
-        let system = SystemMock::new();
-
-        system.println(Stream::Stdout, "hello");
-        system.println(Stream::Stderr, "world");
-
-        assert_eq!(system.get_output(), "hello\nworld\n");
-    }
+    use crate::platform::{SystemMock, Terminal};
 
     #[test]
     fn read_input_returns_queued_input() {

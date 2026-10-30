@@ -18,7 +18,6 @@ impl GenerateImageListApp {
             console.error(&error.to_string());
         }
 
-        console.flush();
         i32::from(result.is_err())
     }
 }

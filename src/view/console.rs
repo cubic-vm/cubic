@@ -91,11 +91,6 @@ impl Console {
         out
     }
 
-    fn write(&self, text: &str) {
-        self.system.print(Stream::Stdout, text);
-        self.system.flush(Stream::Stdout);
-    }
-
     pub fn update_animation(&self, frame: &str, width: usize) {
         let mut current = self.frame.lock().unwrap();
         let frame = frame
@@ -103,7 +98,8 @@ impl Console {
             .map(|line| line.chars().take(width).collect())
             .collect::<Vec<String>>()
             .join("\n");
-        self.write(&self.redraw(&current, &frame));
+        self.system
+            .write(Stream::Stdout, &self.redraw(&current, &frame));
         *current = frame;
     }
 
@@ -115,7 +111,8 @@ impl Console {
         let frame = self.frame.lock().unwrap();
         let clear = self.redraw(&frame, "");
         self.paused.store(paused, Ordering::Relaxed);
-        self.write(&(clear + &self.redraw("", &frame)));
+        self.system
+            .write(Stream::Stdout, &(clear + &self.redraw("", &frame)));
     }
 
     fn emit(&self, stream: Stream, msg: &str, style: Option<(&str, Color)>) {
@@ -135,12 +132,13 @@ impl Console {
         let clear = self.redraw(&frame, "");
         let draw = self.redraw("", &frame);
         if matches!(stream, Stream::Stdout) {
-            self.write(&format!("{clear}{text}\n{draw}"));
+            self.system
+                .write(Stream::Stdout, &format!("{clear}{text}\n{draw}"));
         } else {
             // stderr can't share the stdout write, so the frame is drawn around it.
-            self.write(&clear);
-            self.system.println(stream, &text);
-            self.write(&draw);
+            self.system.write(Stream::Stdout, &clear);
+            self.system.write(stream, &format!("{text}\n"));
+            self.system.write(Stream::Stdout, &draw);
         }
     }
 
@@ -181,11 +179,6 @@ impl Console {
         self.emit(Stream::Stderr, msg, Some(("error:", Color::Red)));
     }
 
-    pub fn flush(&self) {
-        self.system.flush(Stream::Stdout);
-        self.system.flush(Stream::Stderr);
-    }
-
     pub fn get_geometry(&self) -> Option<(u32, u32)> {
         self.system.get_size()
     }
@@ -196,8 +189,7 @@ impl Console {
 
     pub fn prompt(&self, text: &str, masked: bool) -> Result<String, ()> {
         self.set_paused(true);
-        self.system.print(Stream::Stdout, text);
-        self.system.flush(Stream::Stdout);
+        self.system.write(Stream::Stdout, text);
         let reply = if masked {
             self.system.read_secret()
         } else {

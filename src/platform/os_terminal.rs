@@ -5,26 +5,16 @@ impl OsSystem {
     // A closed pipe must not fail the command.
     fn write_stream(mut out: impl Write, text: &str) {
         out.write_all(text.as_bytes()).ok();
+        out.flush().ok();
     }
 }
 
 impl Terminal for OsSystem {
-    fn print(&self, stream: Stream, msg: &str) {
+    fn write(&self, stream: Stream, text: &str) {
         match stream {
-            Stream::Stdout => OsSystem::write_stream(stdout().lock(), msg),
-            Stream::Stderr => OsSystem::write_stream(stderr().lock(), msg),
+            Stream::Stdout => OsSystem::write_stream(stdout().lock(), text),
+            Stream::Stderr => OsSystem::write_stream(stderr().lock(), text),
         }
-    }
-
-    fn println(&self, stream: Stream, msg: &str) {
-        self.print(stream, &format!("{msg}\n"));
-    }
-
-    fn flush(&self, stream: Stream) {
-        match stream {
-            Stream::Stdout => stdout().flush().ok(),
-            Stream::Stderr => stderr().flush().ok(),
-        };
     }
 
     fn is_terminal(&self, stream: Stream) -> bool {
@@ -72,7 +62,7 @@ impl Terminal for OsSystem {
                 // Ctrl+C
                 0x03 => {
                     self.reset();
-                    self.println(Stream::Stdout, "");
+                    self.write(Stream::Stdout, "\n");
                     std::process::exit(1)
                 }
 
@@ -102,8 +92,7 @@ impl Terminal for OsSystem {
             }
         }
         self.reset();
-        self.print(Stream::Stdout, "\r\n");
-        self.flush(Stream::Stdout);
+        self.write(Stream::Stdout, "\r\n");
 
         if failed || !pending.is_empty() {
             return Err(());
