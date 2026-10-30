@@ -16,9 +16,6 @@ impl CubicApp {
         if let Err(error) = &result {
             console.error(&error.to_string());
         }
-        let code = result.map_or(1, i32::from);
-
-        console.flush();
-        code
+        result.map_or(1, i32::from)
     }
 }
