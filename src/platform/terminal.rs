@@ -8,6 +8,5 @@ pub trait Terminal {
 
     fn read_input(&self, masked: bool) -> std::result::Result<String, ()>;
 
-    fn raw_mode(&self);
-    fn reset(&self);
+    fn set_raw_mode(&self, enabled: bool);
 }

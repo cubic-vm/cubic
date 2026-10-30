@@ -41,7 +41,7 @@ impl Terminal for OsSystem {
             return Ok(reply.trim().to_string());
         }
 
-        self.raw_mode();
+        self.set_raw_mode(true);
         let mut password = String::new();
         let mut pending = Vec::new();
         let mut stdin = stdin();
@@ -59,7 +59,7 @@ impl Terminal for OsSystem {
             match byte[0] {
                 // Ctrl+C
                 0x03 => {
-                    self.reset();
+                    self.set_raw_mode(false);
                     self.write(Stream::Stdout, "\n");
                     std::process::exit(1)
                 }
@@ -89,7 +89,7 @@ impl Terminal for OsSystem {
                 }
             }
         }
-        self.reset();
+        self.set_raw_mode(false);
         self.write(Stream::Stdout, "\r\n");
 
         if failed || !pending.is_empty() {
@@ -99,11 +99,11 @@ impl Terminal for OsSystem {
         Ok(password)
     }
 
-    fn raw_mode(&self) {
-        crossterm::terminal::enable_raw_mode().ok();
-    }
-
-    fn reset(&self) {
-        crossterm::terminal::disable_raw_mode().ok();
+    fn set_raw_mode(&self, enabled: bool) {
+        if enabled {
+            crossterm::terminal::enable_raw_mode().ok();
+        } else {
+            crossterm::terminal::disable_raw_mode().ok();
+        }
     }
 }

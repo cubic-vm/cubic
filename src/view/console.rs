@@ -195,12 +195,8 @@ impl Console {
         reply
     }
 
-    pub fn raw_mode(&self) {
-        self.system.raw_mode();
-    }
-
-    pub fn reset(&self) {
-        self.system.reset();
+    pub fn set_raw_mode(&self, enabled: bool) {
+        self.system.set_raw_mode(enabled);
     }
 }
 

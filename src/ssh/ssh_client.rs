@@ -453,7 +453,7 @@ impl<'a> SshClient<'a> {
         let (mut ssh_in, ssh_out) = channel.split();
         let mut ssh_writer = ssh_out.make_writer();
 
-        console.raw_mode();
+        console.set_raw_mode(true);
         let mut stdin = StreamReader::new(FramedRead::new(
             tokio::io::stdin(),
             util::ShortcutDecoder::new(),
@@ -465,7 +465,7 @@ impl<'a> SshClient<'a> {
             status = Self::forward_output(&mut ssh_in, &mut stdout) => exit_status = status,
             _ = send_geometry_updates(console, &ssh_out), if pty => {},
         );
-        console.reset();
+        console.set_raw_mode(false);
 
         if pty && exit_status.is_none() {
             console.print("");

@@ -87,7 +87,7 @@ impl Command for RunCommand {
         let result = tokio::select! {
             result = ssh.run(context) => result,
             _ = tokio::signal::ctrl_c() => {
-                context.get_console().reset();
+                context.get_console().set_raw_mode(false);
                 Ok(130)
             }
         };
