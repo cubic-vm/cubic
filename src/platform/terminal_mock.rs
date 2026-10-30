@@ -68,7 +68,5 @@ impl Terminal for SystemMock {
         Ok(self.terminal.lock().unwrap().pop_input())
     }
 
-    fn raw_mode(&self) {}
-
-    fn reset(&self) {}
+    fn set_raw_mode(&self, _enabled: bool) {}
 }

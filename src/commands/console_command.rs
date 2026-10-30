@@ -79,7 +79,7 @@ impl Command for ConsoleCommand {
 
         let mut reader = socket.try_clone()?;
 
-        console.raw_mode();
+        console.set_raw_mode(true);
         // The socket read blocks, so it runs on its own thread
         let output = tokio::task::spawn_blocking(move || {
             let mut stdout = std::io::stdout();
@@ -105,7 +105,7 @@ impl Command for ConsoleCommand {
         let mut stdout = std::io::stdout();
         stdout.write_all(b"\n").ok();
         stdout.flush().ok();
-        console.reset();
+        console.set_raw_mode(false);
         Ok(0)
     }
 }
