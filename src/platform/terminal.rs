@@ -6,8 +6,7 @@ pub trait Terminal {
     fn is_stdin_terminal(&self) -> bool;
     fn get_size(&self) -> Option<(u32, u32)>;
 
-    fn read_input(&self) -> String;
-    fn read_secret(&self) -> std::result::Result<String, ()>;
+    fn read_input(&self, masked: bool) -> std::result::Result<String, ()>;
 
     fn raw_mode(&self);
     fn reset(&self);

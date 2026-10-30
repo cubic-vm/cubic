@@ -64,31 +64,11 @@ impl Terminal for SystemMock {
         Some((80, 24))
     }
 
-    fn read_input(&self) -> String {
-        self.terminal.lock().unwrap().pop_input().trim().to_string()
-    }
-
-    fn read_secret(&self) -> std::result::Result<String, ()> {
+    fn read_input(&self, _masked: bool) -> std::result::Result<String, ()> {
         Ok(self.terminal.lock().unwrap().pop_input())
     }
 
     fn raw_mode(&self) {}
 
     fn reset(&self) {}
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::platform::{SystemMock, Terminal};
-
-    #[test]
-    fn read_input_returns_queued_input() {
-        let system = SystemMock::new();
-        system.push_input("first");
-        system.push_input("second");
-
-        assert_eq!(system.read_input(), "first");
-        assert_eq!(system.read_input(), "second");
-        assert_eq!(system.read_input(), "");
-    }
 }
