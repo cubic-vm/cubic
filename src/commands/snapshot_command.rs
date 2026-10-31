@@ -34,7 +34,7 @@ impl Command for SnapshotCommand {
 
         let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
 
-        if instance_store.is_running(&instance) {
+        if context.get_monitor(&instance).is_running() {
             return Err(Error::InstanceNotStopped(instance_name.to_string()));
         }
 
@@ -68,7 +68,7 @@ mod tests {
             name: "test".to_string(),
             ..Instance::default()
         }]);
-        builder.get_store().set_running(running);
+        builder.set_running(running);
         let snapshots = Arc::clone(&builder.get_store().snapshots);
         (builder.build(), snapshots)
     }

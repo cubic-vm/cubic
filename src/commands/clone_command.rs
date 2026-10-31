@@ -25,7 +25,6 @@ pub struct CloneCommand {
 impl Command for CloneCommand {
     async fn run(&self, context: &Context) -> Result<u8> {
         let console = context.get_console();
-        let instance_store = context.get_instance_store();
 
         if ResourceAllocator::is_disk_space_low(context.get_system(), context.get_env()) {
             console.warn(LOW_DISK_SPACE_WARNING);
@@ -35,12 +34,12 @@ impl Command for CloneCommand {
         let source = &LoadInstanceAction::new().run(context, self.name.as_str())?;
 
         // Verify that the source instance is stopped
-        if instance_store.is_running(source) {
+        if context.get_monitor(source).is_running() {
             return Err(Error::InstanceNotStopped(source.name.to_string()));
         }
 
         // Verify that the target name is available
-        instance_store.claim_name(self.new_name.as_str())?;
+        context.claim_name(self.new_name.as_str())?;
 
         let text = format!("Cloning {} to {}", self.name, self.new_name);
         let _spinner = Spinner::new(Arc::clone(console), text);
@@ -109,7 +108,7 @@ mod tests {
             name: "test".to_string(),
             ..Instance::default()
         }]);
-        builder.get_store().set_running(&["test"]);
+        builder.set_running(&["test"]);
         let context = builder.build();
 
         let result = CloneCommand {

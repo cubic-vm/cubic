@@ -19,7 +19,6 @@ pub struct ShowInstanceCommand {
 impl Command for ShowInstanceCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let env = context.get_env();
-        let instance_store = context.get_instance_store();
 
         let instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
         let ssh_key = env.get_ssh_private_key_file(&instance.name);
@@ -30,7 +29,7 @@ impl Command for ShowInstanceCommand {
         }
         view.add(
             "Running",
-            util::to_yes_no(instance_store.is_running(&instance)),
+            util::to_yes_no(context.get_monitor(&instance).is_running()),
         );
         view.add("Arch", &instance.arch.to_string());
         view.add("vCPUs", &instance.cpus.to_string());

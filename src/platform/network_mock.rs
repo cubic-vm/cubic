@@ -128,12 +128,16 @@ impl Socket for SocketMock {
 
 impl SystemMock {
     pub fn add_socket(self, path: impl AsRef<Path>, replies: &[u8]) -> Self {
+        self.insert_socket(path, replies);
+        self
+    }
+
+    pub fn insert_socket(&self, path: impl AsRef<Path>, replies: &[u8]) {
         self.network
             .lock()
             .unwrap()
             .sockets
             .push((path.as_ref().to_path_buf(), SocketMock::new(replies)));
-        self
     }
 
     pub fn get_socket_output(&self, path: impl AsRef<Path>) -> String {

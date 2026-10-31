@@ -54,7 +54,6 @@ impl Command for ConsoleCommand {
         let socket_path = context.get_env().get_console_socket(&instance.name);
 
         let system = context.get_system();
-        let instance_store = context.get_instance_store();
         let wait = async {
             let mut was_running = false;
             loop {
@@ -62,7 +61,7 @@ impl Command for ConsoleCommand {
                     return Ok(socket);
                 }
                 // The monitor opens after the spawn, so only a vanished one means exit
-                let running = instance_store.is_running(&instance);
+                let running = context.get_monitor(&instance).is_running();
                 if was_running && !running {
                     return Err(Error::InstanceNotRunning(instance.name.clone()));
                 }

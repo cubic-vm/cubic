@@ -192,10 +192,9 @@ impl CreateCommand {
     pub async fn create(&self, context: &Context, auto_remove: bool) -> Result<InstanceName> {
         let console = context.get_console();
         let env = context.get_env();
-        let instance_store = context.get_instance_store();
 
         let name = self.resolve_name(context);
-        instance_store.claim_name(name.as_str())?;
+        context.claim_name(name.as_str())?;
 
         if ResourceAllocator::is_disk_space_low(context.get_system(), env) {
             console.warn(LOW_DISK_SPACE_WARNING);

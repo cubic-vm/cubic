@@ -3,7 +3,6 @@ use crate::instance::{InstanceSerializer, InstanceStore, TomlInstanceDeserialize
 use crate::models::{DataSize, Environment, Instance, InstanceName, MIN_DISK};
 use crate::platform::{Access, System};
 use crate::qemu::QemuImg;
-use crate::qemu::QemuMonitorClient;
 use std::str;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -80,22 +79,15 @@ impl InstanceStore for InstanceDao {
     }
 
     fn rename(&self, instance: &mut Instance, new_name: &str) -> Result<()> {
-        if self.is_running(instance) {
-            Err(Error::InstanceNotStopped(instance.name.to_string()))
-        } else {
-            self.claim_name(new_name)?;
-            let old_dir = self.env.get_instance_dir2(&instance.name);
-            let new_dir = self.env.get_instance_dir2(new_name);
-            self.system.rename_file(&old_dir, &new_dir)?;
-            instance.name = new_name.to_string();
-            Ok(())
-        }
+        let old_dir = self.env.get_instance_dir2(&instance.name);
+        let new_dir = self.env.get_instance_dir2(new_name);
+        self.system.rename_file(&old_dir, &new_dir)?;
+        instance.name = new_name.to_string();
+        Ok(())
     }
 
     fn resize(&self, instance: &mut Instance, size: u64) -> Result<()> {
-        if self.is_running(instance) {
-            Err(Error::InstanceNotStopped(instance.name.to_string()))
-        } else if (size as usize) < MIN_DISK {
+        if (size as usize) < MIN_DISK {
             Err(Error::DiskBelowMinimum(
                 instance.name.to_string(),
                 DataSize::new(MIN_DISK).to_size(),
@@ -111,20 +103,14 @@ impl InstanceStore for InstanceDao {
     }
 
     fn delete(&self, instance: &Instance) -> Result<()> {
-        if self.is_running(instance) {
-            Err(Error::InstanceNotStopped(instance.name.to_string()))
-        } else {
-            self.system
-                .remove_dir(&self.env.get_instance_dir2(&instance.name))
-                .ok();
-            Ok(())
-        }
+        self.system
+            .remove_dir(&self.env.get_instance_dir2(&instance.name))
+            .ok();
+        Ok(())
     }
 
     fn create_snapshot(&self, instance: &Instance, name: &str) -> Result<()> {
-        if self.is_running(instance) {
-            Err(Error::InstanceNotStopped(instance.name.to_string()))
-        } else if instance.has_snapshot(name) {
+        if instance.has_snapshot(name) {
             Err(Error::SnapshotAlreadyExists(
                 instance.name.to_string(),
                 name.to_string(),
@@ -136,9 +122,7 @@ impl InstanceStore for InstanceDao {
     }
 
     fn restore_snapshot(&self, instance: &Instance, name: &str) -> Result<()> {
-        if self.is_running(instance) {
-            Err(Error::InstanceNotStopped(instance.name.to_string()))
-        } else if !instance.has_snapshot(name) {
+        if !instance.has_snapshot(name) {
             Err(Error::UnknownSnapshot(
                 instance.name.to_string(),
                 name.to_string(),
@@ -150,9 +134,7 @@ impl InstanceStore for InstanceDao {
     }
 
     fn delete_snapshot(&self, instance: &Instance, name: &str) -> Result<()> {
-        if self.is_running(instance) {
-            Err(Error::InstanceNotStopped(instance.name.to_string()))
-        } else if !instance.has_snapshot(name) {
+        if !instance.has_snapshot(name) {
             Err(Error::UnknownSnapshot(
                 instance.name.to_string(),
                 name.to_string(),
@@ -161,25 +143,6 @@ impl InstanceStore for InstanceDao {
             QemuImg::new(self.system.as_ref())
                 .delete_snapshot(&self.env.get_instance_image_file(&instance.name), name)
         }
-    }
-
-    fn is_running(&self, instance: &Instance) -> bool {
-        let socket = self.env.get_monitor_socket(&instance.name);
-        self.system.connect_socket(&socket, None).is_ok()
-    }
-
-    fn kill(&self, instance: &Instance) -> Result<()> {
-        match self
-            .get_monitor(instance)
-            .and_then(|mut monitor| monitor.quit())
-        {
-            Err(Error::InstanceNotRunning(_)) => Ok(()),
-            result => result,
-        }
-    }
-
-    fn get_monitor(&self, instance: &Instance) -> Result<QemuMonitorClient> {
-        QemuMonitorClient::new(self.system.as_ref(), &self.env, instance)
     }
 }
 
@@ -239,42 +202,6 @@ mod tests {
         ));
     }
 
-    #[test]
-    fn test_is_running_follows_the_monitor_socket() {
-        let env = build_env();
-        let stopped = InstanceDao::new(Arc::new(SystemMock::new()), &env).unwrap();
-        let system = SystemMock::new().add_socket(env.get_monitor_socket("test"), b"");
-        let running = InstanceDao::new(Arc::new(system), &env).unwrap();
-
-        assert!(!stopped.is_running(&build_instance()));
-        assert!(running.is_running(&build_instance()));
-    }
-
-    #[test]
-    fn test_kill_is_ok_when_not_running() {
-        let dao = InstanceDao::new(Arc::new(SystemMock::new()), &build_env()).unwrap();
-
-        assert!(dao.kill(&build_instance()).is_ok());
-    }
-
-    #[test]
-    fn test_kill_quits_over_the_monitor() {
-        let env = build_env();
-        let system = Arc::new(SystemMock::new().add_socket(
-            env.get_monitor_socket("test"),
-            b"{\"QMP\": {}}\n{\"return\": {}, \"id\": \"0\"}\n{\"return\": {}, \"id\": \"1\"}\n",
-        ));
-        let dao = InstanceDao::new(system.clone(), &env).unwrap();
-
-        dao.kill(&build_instance()).unwrap();
-
-        assert!(
-            system
-                .get_socket_output(env.get_monitor_socket("test"))
-                .ends_with(r#"{"id":"1","execute":"quit"}"#)
-        );
-    }
-
     fn build_instance_with_snapshot() -> Instance {
         Instance {
             name: "test".to_string(),
@@ -308,18 +235,6 @@ mod tests {
             dao.create_snapshot(&build_instance_with_snapshot(), "clean"),
             Err(Error::SnapshotAlreadyExists(instance, snapshot))
                 if instance == "test" && snapshot == "clean"
-        ));
-    }
-
-    #[test]
-    fn test_create_snapshot_rejects_a_running_instance() {
-        let env = build_env();
-        let system = SystemMock::new().add_socket(env.get_monitor_socket("test"), b"");
-        let dao = InstanceDao::new(Arc::new(system), &env).unwrap();
-
-        assert!(matches!(
-            dao.create_snapshot(&build_instance(), "clean"),
-            Err(Error::InstanceNotStopped(name)) if name == "test"
         ));
     }
 

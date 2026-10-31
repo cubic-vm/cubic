@@ -1,6 +1,6 @@
 use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::models::InstanceName;
 use clap::Parser;
 
@@ -25,6 +25,11 @@ impl Command for RenameCommand {
         let instance_store = context.get_instance_store();
 
         let mut instance = LoadInstanceAction::new().run(context, self.old_name.as_str())?;
+        if context.get_monitor(&instance).is_running() {
+            return Err(Error::InstanceNotStopped(instance.name.to_string()));
+        }
+
+        context.claim_name(self.new_name.as_str())?;
         instance_store.rename(&mut instance, self.new_name.as_str())?;
         Ok(0)
     }

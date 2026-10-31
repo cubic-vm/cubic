@@ -1,6 +1,6 @@
 use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::models::{DataSize, MIN_DISK, PortForward, ResourceAllocator};
 use clap::{ArgAction, Parser};
 
@@ -71,11 +71,11 @@ impl Command for ModifyCommand {
         let instance_store = context.get_instance_store();
         let mut instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
 
-        let is_running = instance_store.is_running(&instance);
+        let mut monitor = context.get_monitor(&instance);
+        let is_running = monitor.is_running();
         let hostfwd_changed = !self.port.is_empty() || !self.rm_port.is_empty();
 
         if is_running && hostfwd_changed {
-            let mut monitor = instance_store.get_monitor(&instance)?;
             for fwd in &self.rm_port {
                 monitor.remove_hostfwd(fwd)?;
             }
@@ -105,6 +105,10 @@ impl Command for ModifyCommand {
         }
 
         if let Some(disk) = &self.disk {
+            if is_running {
+                return Err(Error::InstanceNotStopped(instance.name.to_string()));
+            }
+
             let mut size = disk.get_bytes() as u64;
             if size < MIN_DISK as u64 {
                 console.warn(&format!(
@@ -135,7 +139,7 @@ impl Command for ModifyCommand {
 mod tests {
     use super::*;
     use crate::commands::ContextBuilder;
-    use crate::models::Instance;
+    use crate::models::{Environment, Instance};
     use crate::platform::SystemMock;
     use std::sync::Arc;
 
@@ -173,7 +177,7 @@ mod tests {
             disk_capacity: DataSize::new(GIB),
             ..Instance::default()
         }]);
-        builder.get_store().set_running(&["test"]);
+        builder.set_running(&["test"]);
         let system = Arc::clone(builder.get_system());
         let context = builder.build();
 
@@ -194,20 +198,17 @@ mod tests {
             name: "test".to_string(),
             ..Instance::default()
         }]);
-        builder.get_store().set_running(&["test"]);
+        builder.set_running(&["test"]);
         let system = Arc::clone(builder.get_system());
         let context = builder.build();
 
-        // InstanceStoreMock has no real monitor, so a live hostfwd change on
-        // a running instance surfaces the mock's InstanceNotRunning error
-        // instead of silently deferring to a restart, and the restart note
-        // is never printed.
-        let result = ModifyCommand::try_parse_from(["modify", "test", "--port", "8080:80"])
+        ModifyCommand::try_parse_from(["modify", "test", "--port", "8080:80"])
             .unwrap()
             .run(&context)
-            .await;
+            .await
+            .unwrap();
 
-        assert!(result.is_err());
-        assert_eq!(system.get_output(), "");
+        let monitor = system.get_socket_output(Environment::default().get_monitor_socket("test"));
+        assert!(monitor.contains("hostfwd_add"));
     }
 }
