@@ -84,18 +84,22 @@ impl QemuSystem {
         self.command.arg("-m").arg(format!("{}B", memory));
     }
 
-    pub fn set_monitor(&mut self, socket: &str) {
-        self.command
-            .arg("-chardev")
-            .arg(format!("socket,id=qmp,path={socket},server=on,wait=off"))
-            .args(["-mon", "chardev=qmp,mode=control,pretty=off"]);
-    }
-
-    pub fn set_console(&mut self, socket: &str) {
+    pub fn set_monitor(&mut self, socket: &Path) {
         self.command
             .arg("-chardev")
             .arg(format!(
-                "socket,id=console,path={socket},server=on,wait=off"
+                "socket,id=qmp,path={},server=on,wait=off",
+                socket.display()
+            ))
+            .args(["-mon", "chardev=qmp,mode=control,pretty=off"]);
+    }
+
+    pub fn set_console(&mut self, socket: &Path) {
+        self.command
+            .arg("-chardev")
+            .arg(format!(
+                "socket,id=console,path={},server=on,wait=off",
+                socket.display()
             ))
             .arg("-serial")
             .arg("chardev:console");
@@ -119,20 +123,21 @@ impl QemuSystem {
     }
 
     // The boot index makes the firmware boot this disk only.
-    pub fn add_disk(&mut self, path: &str) {
+    pub fn add_disk(&mut self, path: &Path) {
         self.command
             .arg("-drive")
             .arg(format!(
-                "if=none,id={DISK_ID},format=qcow2,discard=unmap,detect-zeroes=unmap,file={path}"
+                "if=none,id={DISK_ID},format=qcow2,discard=unmap,detect-zeroes=unmap,file={}",
+                path.display()
             ))
             .arg("-device")
             .arg(format!("virtio-blk-pci,drive={DISK_ID},bootindex=0"));
     }
 
-    pub fn add_iso(&mut self, path: &str) {
+    pub fn add_iso(&mut self, path: &Path) {
         self.command
             .arg("-drive")
-            .arg(format!("if=virtio,format=raw,file={path}"));
+            .arg(format!("if=virtio,format=raw,file={}", path.display()));
     }
 
     pub fn set_qemu_args(&mut self, args: &str) {
@@ -155,7 +160,7 @@ impl QemuSystem {
         self.command.arg("-L").arg(dir);
     }
 
-    pub fn set_pid_file(&mut self, path: &str) {
+    pub fn set_pid_file(&mut self, path: &Path) {
         self.command.arg("-pidfile").arg(path);
     }
 
@@ -204,7 +209,7 @@ mod tests {
     #[test]
     fn test_add_disk_lets_guest_trim_free_space_in_the_image() {
         let mut qemu = QemuSystem::from(&SystemMock::new(), Arch::AMD64).unwrap();
-        qemu.add_disk("/data/machines/test/machine.img");
+        qemu.add_disk(Path::new("/data/machines/test/machine.img"));
         assert!(qemu.command.get_command().contains(
             "-drive if=none,id=disk0,format=qcow2,discard=unmap,detect-zeroes=unmap,file=/data/machines/test/machine.img"
         ));
@@ -213,7 +218,7 @@ mod tests {
     #[test]
     fn test_add_disk_marks_the_disk_as_the_boot_device() {
         let mut qemu = QemuSystem::from(&SystemMock::new(), Arch::AMD64).unwrap();
-        qemu.add_disk("/data/machines/test/machine.img");
+        qemu.add_disk(Path::new("/data/machines/test/machine.img"));
         let command = qemu.command.get_command();
         assert!(command.contains("-device virtio-blk-pci,drive=disk0,bootindex=0"));
         assert!(!command.contains("-boot"));
@@ -222,7 +227,7 @@ mod tests {
     #[test]
     fn test_add_iso_attaches_the_seed_without_discard() {
         let mut qemu = QemuSystem::from(&SystemMock::new(), Arch::AMD64).unwrap();
-        qemu.add_iso("/data/machines/test/cloud-init.iso");
+        qemu.add_iso(Path::new("/data/machines/test/cloud-init.iso"));
         let command = qemu.command.get_command();
         assert!(
             command.contains("-drive if=virtio,format=raw,file=/data/machines/test/cloud-init.iso")
@@ -233,8 +238,8 @@ mod tests {
     #[test]
     fn test_monitor_and_console_listen_on_unix_sockets() {
         let mut qemu = QemuSystem::from(&SystemMock::new(), Arch::AMD64).unwrap();
-        qemu.set_monitor("/data/machines/test/monitor.sock");
-        qemu.set_console("/data/machines/test/console.sock");
+        qemu.set_monitor(Path::new("/data/machines/test/monitor.sock"));
+        qemu.set_console(Path::new("/data/machines/test/console.sock"));
         let command = qemu.command.get_command();
         assert!(command.contains(
             "-chardev socket,id=qmp,path=/data/machines/test/monitor.sock,server=on,wait=off"

@@ -33,10 +33,8 @@ impl Command for ShowImageCommand {
 
         if self.all.value {
             view.add("Checksum", &image.hash_alg.to_string());
-            view.add(
-                "Image File",
-                &format!("{}/{}", env.get_image_dir(), image.to_file_name()),
-            );
+            let image_file = env.get_image_file(&image.to_file_name());
+            view.add("Image File", &image_file.display().to_string());
             view.add("Image URL", &image.get_image_url());
             view.add("Checksum URL", &image.get_checksum_url());
         }

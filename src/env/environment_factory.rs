@@ -1,6 +1,7 @@
 use crate::error::{Error, Result};
 use crate::models::{DEFAULT_USERNAME, Environment, UserName};
 use crate::platform::Host;
+use std::path::PathBuf;
 use std::str::FromStr;
 
 const ROOT_USERNAME: &str = "root";
@@ -33,40 +34,44 @@ impl EnvironmentFactory {
     #[cfg(target_os = "linux")]
     pub fn create_env(system: &dyn Host) -> Result<Environment> {
         let data_dir = Self::read_env(system, "SNAP_USER_COMMON")
-            .or_else(|_| Self::read_env(system, "XDG_DATA_HOME"))
+            .map(PathBuf::from)
+            .or_else(|_| Self::read_env(system, "XDG_DATA_HOME").map(PathBuf::from))
             .or_else(|_| {
-                Self::read_env(system, "HOME").map(|home| format!("{home}/.local/share"))
+                Self::read_env(system, "HOME").map(|home| PathBuf::from(home).join(".local/share"))
             })?;
         let cache_dir = Self::read_env(system, "XDG_CACHE_HOME")
-            .or_else(|_| Self::read_env(system, "HOME").map(|home| format!("{home}/.cache")))?;
+            .map(PathBuf::from)
+            .or_else(|_| {
+                Self::read_env(system, "HOME").map(|home| PathBuf::from(home).join(".cache"))
+            })?;
 
         Ok(Environment::new(
             Self::get_username(system),
-            format!("{data_dir}/cubic"),
-            format!("{cache_dir}/cubic"),
+            data_dir.join("cubic"),
+            cache_dir.join("cubic"),
         ))
     }
 
     #[cfg(target_os = "macos")]
     pub fn create_env(system: &dyn Host) -> Result<Environment> {
-        let home_dir = Self::read_env(system, "HOME")?;
+        let home_dir = PathBuf::from(Self::read_env(system, "HOME")?);
 
         Ok(Environment::new(
             Self::get_username(system),
-            format!("{home_dir}/Library/cubic"),
-            format!("{home_dir}/Library/Caches/cubic"),
+            home_dir.join("Library/cubic"),
+            home_dir.join("Library/Caches/cubic"),
         ))
     }
 
     #[cfg(target_os = "windows")]
     pub fn create_env(system: &dyn Host) -> Result<Environment> {
-        let local_app_data_dir = Self::read_env(system, "LOCALAPPDATA")?;
-        let temp_dir = Self::read_env(system, "TEMP")?;
+        let local_app_data_dir = PathBuf::from(Self::read_env(system, "LOCALAPPDATA")?);
+        let temp_dir = PathBuf::from(Self::read_env(system, "TEMP")?);
 
         Ok(Environment::new(
             Self::get_username(system),
-            format!("{local_app_data_dir}\\cubic"),
-            format!("{temp_dir}\\cubic"),
+            local_app_data_dir.join("cubic"),
+            temp_dir.join("cubic"),
         ))
     }
 }
@@ -75,6 +80,7 @@ impl EnvironmentFactory {
 mod tests {
     use super::*;
     use crate::platform::SystemMock;
+    use std::path::Path;
 
     #[test]
     fn test_read_current_username_prefers_user_over_logname_and_username() {
@@ -142,9 +148,9 @@ mod tests {
 
         assert_eq!(
             env.get_instance_dir(),
-            "/home/alice/.local/share/cubic/machines"
+            Path::new("/home/alice/.local/share/cubic/machines")
         );
-        assert_eq!(env.get_cache_dir(), "/home/alice/.cache/cubic");
+        assert_eq!(env.get_cache_dir(), Path::new("/home/alice/.cache/cubic"));
     }
 
     #[cfg(target_os = "linux")]
@@ -158,8 +164,11 @@ mod tests {
 
         let env = EnvironmentFactory::create_env(&system).unwrap();
 
-        assert_eq!(env.get_instance_dir(), "/snap/cubic/common/cubic/machines");
-        assert_eq!(env.get_cache_dir(), "/cache/cubic");
+        assert_eq!(
+            env.get_instance_dir(),
+            Path::new("/snap/cubic/common/cubic/machines")
+        );
+        assert_eq!(env.get_cache_dir(), Path::new("/cache/cubic"));
     }
 
     #[cfg(target_os = "linux")]

@@ -4,7 +4,6 @@ use crate::platform::{Network, Socket};
 use crate::qemu::{NETDEV_ID, QmpMessage};
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
-use std::path::Path;
 use std::time::Duration;
 
 // Leaves room for a running check queued ahead on the single client slot
@@ -19,10 +18,7 @@ impl QemuMonitorClient {
     pub fn new(system: &dyn Network, env: &Environment, instance: &Instance) -> Result<Self> {
         // A failed connect means the instance is down
         let socket = system
-            .connect_socket(
-                Path::new(&env.get_monitor_socket(&instance.name)),
-                Some(QMP_TIMEOUT),
-            )
+            .connect_socket(&env.get_monitor_socket(&instance.name), Some(QMP_TIMEOUT))
             .map_err(|_| Error::InstanceNotRunning(instance.name.clone()))?;
 
         let mut client = QemuMonitorClient {
@@ -147,8 +143,8 @@ mod tests {
     fn build_env() -> Environment {
         Environment::new(
             UserName::from_str("cubic").unwrap(),
-            "/data".to_string(),
-            "/cache".to_string(),
+            "/data".into(),
+            "/cache".into(),
         )
     }
 
@@ -161,7 +157,7 @@ mod tests {
 
     fn build_system(env: &Environment, replies: &str) -> SystemMock {
         SystemMock::new().add_socket(
-            &env.get_monitor_socket("test"),
+            env.get_monitor_socket("test"),
             format!("{HANDSHAKE}{replies}").as_bytes(),
         )
     }
@@ -182,7 +178,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            system.get_socket_output(&env.get_monitor_socket("test")),
+            system.get_socket_output(env.get_monitor_socket("test")),
             r#"{"id":"0","execute":"qmp_capabilities"}{"id":"1","execute":"system_powerdown"}"#
         );
     }

@@ -4,7 +4,6 @@ use crate::error::{Error, Result};
 use crate::util;
 use clap::Parser;
 use std::io::{Read, Write};
-use std::path::Path;
 use std::time::Duration;
 use tokio_util::codec::FramedRead;
 use tokio_util::io::{StreamReader, SyncIoBridge};
@@ -59,7 +58,7 @@ impl Command for ConsoleCommand {
         let wait = async {
             let mut was_running = false;
             loop {
-                if let Ok(socket) = system.connect_socket(Path::new(&socket_path), None) {
+                if let Ok(socket) = system.connect_socket(&socket_path, None) {
                     return Ok(socket);
                 }
                 // The monitor opens after the spawn, so only a vanished one means exit

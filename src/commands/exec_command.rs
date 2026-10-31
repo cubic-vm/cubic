@@ -67,7 +67,8 @@ impl Command for ExecCommand {
         let client_key = env.get_ssh_private_key_file(name.as_str());
         let cmd = self.build_cmd();
         context.get_console().debug(&format!(
-            "Executing on '{name}' as '{user}' on port {ssh_port} using key '{client_key}': {cmd}"
+            "Executing on '{name}' as '{user}' on port {ssh_port} using key '{}': {cmd}",
+            client_key.display()
         ));
         let mut ssh = SshClient::new(context);
         ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system()));

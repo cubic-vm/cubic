@@ -1,6 +1,5 @@
 use crate::models::{DataSize, Environment};
 use crate::platform::{FileSystem, Host};
-use std::path::Path;
 
 const MIB: usize = 1024 * 1024;
 const GIB: usize = 1024 * MIB;
@@ -85,7 +84,7 @@ impl ResourceAllocator {
 
     pub fn is_disk_space_low(system: &dyn FileSystem, env: &Environment) -> bool {
         system
-            .get_available_space(Path::new(&env.get_instance_dir()))
+            .get_available_space(&env.get_instance_dir())
             .is_some_and(|free| free < LOW_DISK_SPACE)
     }
 

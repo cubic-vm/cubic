@@ -16,27 +16,29 @@ impl CreateInstanceAction {
     pub fn run(
         &mut self,
         context: &Context,
-        image_path: &str,
+        image_path: &Path,
         mut instance: Instance,
         auto_remove: bool,
     ) -> Result<()> {
         let system = context.get_system();
+        let env = context.get_env();
         let instance_name = instance.name.clone();
-        let target_dir = &context.get_env().get_instance_dir2(&instance.name);
-        let tmp_dir = &format!("{target_dir}.tmp");
-        let tmp_image = &format!("{tmp_dir}/machine.img");
+        let tmp_name = format!("{instance_name}.tmp");
+        let target_dir = &env.get_instance_dir2(&instance_name);
+        let tmp_dir = &env.get_instance_dir2(&tmp_name);
+        let tmp_image = &env.get_instance_image_file(&tmp_name);
 
         // Create directory
-        system.create_dir(Path::new(tmp_dir))?;
+        system.create_dir(tmp_dir)?;
 
         // Create SSH key
-        SshKeyGenerator::new().generate_key(system, &Path::new(tmp_dir).join("ssh_client_key"))?;
+        SshKeyGenerator::new().generate_key(system, &env.get_ssh_private_key_file(&tmp_name))?;
 
         // Create virtual machine instance image file
         if auto_remove {
             QemuImg::new(system).create_overlay(image_path, tmp_image)?;
         } else {
-            system.copy_file(Path::new(image_path), Path::new(tmp_image))?;
+            system.copy_file(image_path, tmp_image)?;
         }
 
         // Set disk capacity
@@ -45,10 +47,10 @@ impl CreateInstanceAction {
         // Write configuration file
         instance.auto_remove = auto_remove;
         instance.first_boot = true;
-        instance.name = format!("{instance_name}.tmp");
+        instance.name = tmp_name;
         context.get_instance_store().store(&instance)?;
         instance.name = instance_name;
 
-        system.rename_file(Path::new(tmp_dir), Path::new(target_dir))
+        system.rename_file(tmp_dir, target_dir)
     }
 }

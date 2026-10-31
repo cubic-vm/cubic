@@ -127,20 +127,20 @@ impl Socket for SocketMock {
 }
 
 impl SystemMock {
-    pub fn add_socket(self, path: &str, replies: &[u8]) -> Self {
+    pub fn add_socket(self, path: impl AsRef<Path>, replies: &[u8]) -> Self {
         self.network
             .lock()
             .unwrap()
             .sockets
-            .push((PathBuf::from(path), SocketMock::new(replies)));
+            .push((path.as_ref().to_path_buf(), SocketMock::new(replies)));
         self
     }
 
-    pub fn get_socket_output(&self, path: &str) -> String {
+    pub fn get_socket_output(&self, path: impl AsRef<Path>) -> String {
         self.network
             .lock()
             .unwrap()
-            .find_socket(Path::new(path))
+            .find_socket(path.as_ref())
             .map(|socket| String::from_utf8_lossy(&socket.written.lock().unwrap()).into_owned())
             .unwrap_or_default()
     }

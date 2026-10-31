@@ -59,18 +59,18 @@ impl Write for FileWriterMock {
 }
 
 impl SystemMock {
-    pub fn add_file(self, path: &str, content: &[u8]) -> Self {
-        self.lock_file_system().add_file(Path::new(path), content);
+    pub fn add_file(self, path: impl AsRef<Path>, content: &[u8]) -> Self {
+        self.lock_file_system().add_file(path.as_ref(), content);
         self
     }
 
-    pub fn add_dir(self, path: &str) -> Self {
-        self.lock_file_system().add_dir(Path::new(path));
+    pub fn add_dir(self, path: impl AsRef<Path>) -> Self {
+        self.lock_file_system().add_dir(path.as_ref());
         self
     }
 
-    pub fn get_written_file(&self, path: &str) -> Option<Vec<u8>> {
-        self.lock_file_system().get_file(Path::new(path))
+    pub fn get_written_file(&self, path: impl AsRef<Path>) -> Option<Vec<u8>> {
+        self.lock_file_system().get_file(path.as_ref())
     }
 
     fn lock_file_system(&self) -> MutexGuard<'_, FileSystemMock> {
