@@ -1,25 +1,9 @@
 use crate::error::{Error, Result};
 use crate::platform::{Process, SystemMock};
 use crate::util::CommandLine;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
-
-// The pids the host knows about.
-#[derive(Default)]
-pub struct ProcessMock {
-    processes: HashSet<u64>,
-}
-
-impl ProcessMock {
-    fn add(&mut self, pid: u64) {
-        self.processes.insert(pid);
-    }
-
-    fn exists(&self, pid: u64) -> bool {
-        self.processes.contains(&pid)
-    }
-}
 
 // How a seeded command answers a run.
 enum CommandResult {
@@ -64,11 +48,6 @@ impl CommandMock {
 }
 
 impl SystemMock {
-    pub fn add_process(self, pid: u64) -> Self {
-        self.processes.lock().unwrap().add(pid);
-        self
-    }
-
     pub fn add_command_output(self, command: &str, stdout: &[u8]) -> Self {
         self.commands
             .lock()
@@ -106,10 +85,6 @@ impl Process for SystemMock {
     fn run_detached(&self, command: Command) -> Result<()> {
         self.commands.lock().unwrap().run(&command).map(|_| ())
     }
-
-    fn exists_process(&self, pid: u64) -> bool {
-        self.processes.lock().unwrap().exists(pid)
-    }
 }
 
 #[cfg(test)]
@@ -117,14 +92,6 @@ mod tests {
     use crate::error::Error;
     use crate::platform::{Process, SystemMock};
     use std::process::Command;
-
-    #[test]
-    fn exists_process_only_finds_seeded_pids() {
-        let system = SystemMock::new().add_process(42);
-
-        assert!(system.exists_process(42));
-        assert!(!system.exists_process(43));
-    }
 
     #[test]
     fn run_and_wait_returns_the_seeded_output() {

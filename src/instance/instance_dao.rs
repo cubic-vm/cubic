@@ -24,25 +24,6 @@ impl InstanceDao {
             system,
         })
     }
-
-    fn get_pid(&self, instance: &Instance) -> Option<u64> {
-        let pid = self
-            .system
-            .read_file_to_string(Path::new(&self.env.get_qemu_pid_file(&instance.name)))
-            .ok()?
-            .trim()
-            .parse::<u64>()
-            .ok()?;
-
-        if self.system.exists_process(pid) {
-            Some(pid)
-        } else {
-            self.system
-                .remove_file(Path::new(&self.env.get_qemu_pid_file(&instance.name)))
-                .ok();
-            None
-        }
-    }
 }
 
 impl InstanceStore for InstanceDao {
@@ -190,7 +171,8 @@ impl InstanceStore for InstanceDao {
     }
 
     fn is_running(&self, instance: &Instance) -> bool {
-        self.get_pid(instance).is_some()
+        let socket = self.env.get_monitor_socket(&instance.name);
+        self.system.connect_socket(Path::new(&socket), None).is_ok()
     }
 
     fn kill(&self, instance: &Instance) -> Result<()> {
@@ -198,13 +180,7 @@ impl InstanceStore for InstanceDao {
             .get_monitor(instance)
             .and_then(|mut monitor| monitor.quit())
         {
-            // A refused connect means the VM is gone, so the pid file is stale
-            Err(Error::InstanceNotRunning(_)) => {
-                self.system
-                    .remove_file(Path::new(&self.env.get_qemu_pid_file(&instance.name)))
-                    .ok();
-                Ok(())
-            }
+            Err(Error::InstanceNotRunning(_)) => Ok(()),
             result => result,
         }
     }
@@ -218,7 +194,7 @@ impl InstanceStore for InstanceDao {
 mod tests {
     use super::*;
     use crate::models::UserName;
-    use crate::platform::{FileSystem, SystemMock};
+    use crate::platform::SystemMock;
 
     fn build_env() -> Environment {
         Environment::new(
@@ -271,54 +247,30 @@ mod tests {
     }
 
     #[test]
-    fn test_is_running_true_when_pid_alive() {
+    fn test_is_running_follows_the_monitor_socket() {
         let env = build_env();
-        let system = SystemMock::new()
-            .add_file(&env.get_qemu_pid_file("test"), b"1234\n")
-            .add_process(1234);
-        let dao = InstanceDao::new(Arc::new(system), &env).unwrap();
+        let stopped = InstanceDao::new(Arc::new(SystemMock::new()), &env).unwrap();
+        let system = SystemMock::new().add_socket(&env.get_monitor_socket("test"), b"");
+        let running = InstanceDao::new(Arc::new(system), &env).unwrap();
 
-        assert!(dao.is_running(&build_instance()));
+        assert!(!stopped.is_running(&build_instance()));
+        assert!(running.is_running(&build_instance()));
     }
 
     #[test]
-    fn test_is_running_false_and_removes_stale_pid_file() {
-        let env = build_env();
-        let system =
-            Arc::new(SystemMock::new().add_file(&env.get_qemu_pid_file("test"), b"1234\n"));
-        let dao = InstanceDao::new(system.clone(), &env).unwrap();
+    fn test_kill_is_ok_when_not_running() {
+        let dao = InstanceDao::new(Arc::new(SystemMock::new()), &build_env()).unwrap();
 
-        assert!(!dao.is_running(&build_instance()));
-        assert!(!system.exists_path(Path::new(&env.get_qemu_pid_file("test"))));
+        assert!(dao.kill(&build_instance()).is_ok());
     }
 
     #[test]
-    fn test_kill_removes_stale_pid_file() {
+    fn test_kill_quits_over_the_monitor() {
         let env = build_env();
-        let system = Arc::new(
-            SystemMock::new()
-                .add_file(&env.get_qemu_pid_file("test"), b"1234\n")
-                .add_process(1234),
-        );
-        let dao = InstanceDao::new(system.clone(), &env).unwrap();
-
-        dao.kill(&build_instance()).unwrap();
-
-        assert!(!system.exists_path(Path::new(&env.get_qemu_pid_file("test"))));
-    }
-
-    #[test]
-    fn test_kill_quits_over_the_monitor_and_keeps_pid_file() {
-        let env = build_env();
-        let system = Arc::new(
-            SystemMock::new()
-                .add_file(&env.get_qemu_pid_file("test"), b"1234\n")
-                .add_process(1234)
-                .add_socket(
-                    &env.get_monitor_socket("test"),
-                    b"{\"QMP\": {}}\n{\"return\": {}, \"id\": \"0\"}\n{\"return\": {}, \"id\": \"1\"}\n",
-                ),
-        );
+        let system = Arc::new(SystemMock::new().add_socket(
+            &env.get_monitor_socket("test"),
+            b"{\"QMP\": {}}\n{\"return\": {}, \"id\": \"0\"}\n{\"return\": {}, \"id\": \"1\"}\n",
+        ));
         let dao = InstanceDao::new(system.clone(), &env).unwrap();
 
         dao.kill(&build_instance()).unwrap();
@@ -328,7 +280,6 @@ mod tests {
                 .get_socket_output(&env.get_monitor_socket("test"))
                 .ends_with(r#"{"id":"1","execute":"quit"}"#)
         );
-        assert!(system.exists_path(Path::new(&env.get_qemu_pid_file("test"))));
     }
 
     fn build_instance_with_snapshot() -> Instance {
@@ -370,9 +321,7 @@ mod tests {
     #[test]
     fn test_create_snapshot_rejects_a_running_instance() {
         let env = build_env();
-        let system = SystemMock::new()
-            .add_file(&env.get_qemu_pid_file("test"), b"1234\n")
-            .add_process(1234);
+        let system = SystemMock::new().add_socket(&env.get_monitor_socket("test"), b"");
         let dao = InstanceDao::new(Arc::new(system), &env).unwrap();
 
         assert!(matches!(

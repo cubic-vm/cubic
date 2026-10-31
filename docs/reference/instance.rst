@@ -93,7 +93,8 @@ Some state lives elsewhere and is not part of the file:
 
 * Snapshots are read back from the disk image itself.
 * The disk usage is measured on the fly.
-* Whether the VM instance runs follows from ``qemu.pid``.
+* Whether the VM instance runs follows from whether QEMU listens on
+  ``monitor.sock``.
 * Image tags are derived from the image list at every read.
 
 Related

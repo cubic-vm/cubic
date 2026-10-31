@@ -54,8 +54,8 @@ Files in an Instance Directory
    * - ``qemu.pid``
      - Process id of QEMU. Present while the VM instance runs.
    * - ``monitor.sock``, ``console.sock``
-     - Unix domain sockets of the QEMU monitor and the serial console. Present
-       while the VM instance runs.
+     - Unix domain sockets of the QEMU monitor and the serial console. QEMU
+       listens on them while the VM instance runs.
 
 Image Cache
 -----------

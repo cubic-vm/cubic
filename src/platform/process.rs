@@ -10,6 +10,4 @@ pub trait Process {
         timeout: Option<Duration>,
     ) -> Result<Vec<u8>>;
     fn run_detached(&self, command: Command) -> Result<()>;
-
-    fn exists_process(&self, pid: u64) -> bool;
 }
