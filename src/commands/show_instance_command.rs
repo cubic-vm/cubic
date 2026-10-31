@@ -54,10 +54,12 @@ impl Command for ShowInstanceCommand {
         }
 
         if self.all.value {
+            let image_file = env.get_instance_image_file(&instance.name);
+            let config_file = env.get_instance_toml_config_file(&instance.name);
             view.add("SSH Port", &instance.ssh_port.to_string());
-            view.add("Disk Image", &env.get_instance_image_file(&instance.name));
-            view.add("Config", &env.get_instance_toml_config_file(&instance.name));
-            view.add("SSH Key", &ssh_key);
+            view.add("Disk Image", &image_file.display().to_string());
+            view.add("Config", &config_file.display().to_string());
+            view.add("SSH Key", &ssh_key.display().to_string());
             if let Some(host_key) = &instance.ssh_host_key {
                 view.add(
                     "SSH Host Key",
@@ -68,7 +70,9 @@ impl Command for ShowInstanceCommand {
                 "SSH",
                 &format!(
                     "ssh -i {} -p {} {}@localhost",
-                    ssh_key, instance.ssh_port, instance.user
+                    ssh_key.display(),
+                    instance.ssh_port,
+                    instance.user
                 ),
             );
         }
@@ -85,7 +89,6 @@ mod tests {
     use crate::commands::ContextBuilder;
     use crate::models::{Arch, DataSize, Instance, InstanceName, Snapshot, UserName};
     use crate::platform::SystemMock;
-    use std::path::PathBuf;
     use std::str::FromStr;
     use std::sync::Arc;
 
@@ -164,19 +167,10 @@ Forward:    127.0.0.1:4000:40/tcp
         let system = Arc::clone(builder.get_system());
         let context = builder.build();
 
-        let instance_dir = PathBuf::from("machines").join("test");
-        let disk_image = instance_dir
-            .join("machine.img")
-            .to_string_lossy()
-            .into_owned();
-        let config = instance_dir
-            .join("instance.toml")
-            .to_string_lossy()
-            .into_owned();
-        let ssh_key = instance_dir
-            .join("ssh_client_key")
-            .to_string_lossy()
-            .into_owned();
+        let env = context.get_env();
+        let disk_image = env.get_instance_image_file("test");
+        let config = env.get_instance_toml_config_file("test");
+        let ssh_key = env.get_ssh_private_key_file("test");
 
         ShowInstanceCommand {
             instance: InstanceName::from_str("test").unwrap().into(),
@@ -202,12 +196,16 @@ Forward:      127.0.0.1:4000:40/tcp
 Snapshots:    clean
               before-upgrade
 SSH Port:     8000
-Disk Image:   {disk_image}
-Config:       {config}
-SSH Key:      {ssh_key}
+Disk Image:   {}
+Config:       {}
+SSH Key:      {}
 SSH Host Key: SHA256:ZkAslGjFiUHdGf/WUL8rQvkib4PTvQatUV0OUQSncCA
-SSH:          ssh -i {ssh_key} -p 8000 john@localhost
-"
+SSH:          ssh -i {} -p 8000 john@localhost
+",
+                disk_image.display(),
+                config.display(),
+                ssh_key.display(),
+                ssh_key.display()
             )
         );
     }

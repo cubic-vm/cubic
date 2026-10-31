@@ -3,6 +3,7 @@ use crate::models::{DataSize, Environment, Instance, Snapshot};
 use crate::platform::System;
 use crate::qemu::QemuPathBuilder;
 use serde::Deserialize;
+use std::path::Path;
 use std::process::Command;
 
 #[derive(Debug, Deserialize)]
@@ -66,7 +67,7 @@ impl<'a> QemuImg<'a> {
         }
     }
 
-    pub fn create_overlay(&self, base_image: &str, image: &str) -> Result<()> {
+    pub fn create_overlay(&self, base_image: &Path, image: &Path) -> Result<()> {
         let mut command = self.command();
         command
             .arg("create")
@@ -85,7 +86,7 @@ impl<'a> QemuImg<'a> {
             .map_err(Self::map_error)
     }
 
-    pub fn resize(&self, image: &str, size: u64) -> Result<()> {
+    pub fn resize(&self, image: &Path, size: u64) -> Result<()> {
         let mut command = self.command();
         command.arg("resize").arg(image).arg(size.to_string());
 
@@ -95,19 +96,19 @@ impl<'a> QemuImg<'a> {
             .map_err(Self::map_error)
     }
 
-    pub fn create_snapshot(&self, image: &str, name: &str) -> Result<()> {
+    pub fn create_snapshot(&self, image: &Path, name: &str) -> Result<()> {
         self.run_snapshot_command(image, name, "-c")
     }
 
-    pub fn restore_snapshot(&self, image: &str, name: &str) -> Result<()> {
+    pub fn restore_snapshot(&self, image: &Path, name: &str) -> Result<()> {
         self.run_snapshot_command(image, name, "-a")
     }
 
-    pub fn delete_snapshot(&self, image: &str, name: &str) -> Result<()> {
+    pub fn delete_snapshot(&self, image: &Path, name: &str) -> Result<()> {
         self.run_snapshot_command(image, name, "-d")
     }
 
-    fn run_snapshot_command(&self, image: &str, name: &str, action: &str) -> Result<()> {
+    fn run_snapshot_command(&self, image: &Path, name: &str, action: &str) -> Result<()> {
         let mut command = self.command();
         command.arg("snapshot").arg(action).arg(name).arg(image);
 
@@ -128,8 +129,8 @@ mod tests {
     fn build_env() -> Environment {
         Environment::new(
             UserName::from_str("cubic").unwrap(),
-            "/data".to_string(),
-            "/cache".to_string(),
+            "/data".into(),
+            "/cache".into(),
         )
     }
 
@@ -143,7 +144,7 @@ mod tests {
     fn build_info_command(env: &Environment) -> String {
         format!(
             "qemu-img info --force-share --output json {}",
-            env.get_instance_image_file("test")
+            env.get_instance_image_file("test").display()
         )
     }
 
@@ -192,7 +193,7 @@ mod tests {
         let system = SystemMock::new();
 
         assert!(matches!(
-            QemuImg::new(&system).resize("/data/machines/test/image", 2048),
+            QemuImg::new(&system).resize(Path::new("/data/machines/test/image"), 2048),
             Err(Error::QemuNotFound)
         ));
     }
@@ -203,7 +204,10 @@ mod tests {
         let system = SystemMock::new().add_command_output(command, b"");
 
         QemuImg::new(&system)
-            .create_overlay("/cache/images/debian", "/data/machines/test/machine.img")
+            .create_overlay(
+                Path::new("/cache/images/debian"),
+                Path::new("/data/machines/test/machine.img"),
+            )
             .unwrap();
 
         assert_eq!(system.get_executed_commands(), vec![command]);
@@ -215,7 +219,7 @@ mod tests {
             .add_command_output("qemu-img resize /data/machines/test/image 2048", b"");
 
         QemuImg::new(&system)
-            .resize("/data/machines/test/image", 2048)
+            .resize(Path::new("/data/machines/test/image"), 2048)
             .unwrap();
 
         assert_eq!(
@@ -275,9 +279,11 @@ mod tests {
             .add_command_output(&format!("qemu-img snapshot -d clean {image}"), b"");
         let qemu_img = QemuImg::new(&system);
 
-        qemu_img.create_snapshot(image, "clean").unwrap();
-        qemu_img.restore_snapshot(image, "clean").unwrap();
-        qemu_img.delete_snapshot(image, "clean").unwrap();
+        qemu_img.create_snapshot(Path::new(image), "clean").unwrap();
+        qemu_img
+            .restore_snapshot(Path::new(image), "clean")
+            .unwrap();
+        qemu_img.delete_snapshot(Path::new(image), "clean").unwrap();
 
         assert_eq!(
             system.get_executed_commands(),

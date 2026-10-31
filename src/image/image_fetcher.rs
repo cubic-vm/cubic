@@ -7,7 +7,6 @@ use crate::util;
 use crate::view::TransferView;
 use crate::web::{Hasher, WebClient};
 use std::io::BufWriter;
-use std::path::Path;
 use std::sync::Arc;
 
 const WRITE_BUFFER_SIZE: usize = 1 << 20;
@@ -94,10 +93,9 @@ impl ImageFetcher {
             return Ok(());
         }
 
-        system.create_dir(Path::new(&env.get_image_dir()))?;
-        let target_file = env.get_image_file(&image.to_file_name());
-        let temp_file = format!("{target_file}.tmp");
-        let (target_file, temp_file) = (Path::new(&target_file), Path::new(&temp_file));
+        system.create_dir(&env.get_image_dir())?;
+        let target_file = &env.get_image_file(&image.to_file_name());
+        let temp_file = &target_file.with_added_extension("tmp");
 
         let client = WebClient::new()?;
         let image = &self.resolve_image(&client, image).await?;

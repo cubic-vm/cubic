@@ -1,6 +1,5 @@
 use crate::models::{Environment, Image};
 use crate::platform::System;
-use std::path::Path;
 
 #[derive(Default)]
 pub struct ImageStore;
@@ -11,7 +10,7 @@ impl ImageStore {
     }
 
     pub fn exists(&self, system: &dyn System, env: &Environment, image: &Image) -> bool {
-        system.exists_path(Path::new(&env.get_image_file(&image.to_file_name())))
+        system.exists_path(&env.get_image_file(&image.to_file_name()))
     }
 }
 
@@ -20,13 +19,14 @@ mod tests {
     use super::*;
     use crate::models::{Arch, HashAlg, UserName};
     use crate::platform::SystemMock;
+    use std::path::PathBuf;
     use std::str::FromStr;
 
     fn build_env() -> Environment {
         Environment::new(
             UserName::from_str("cubic").unwrap(),
-            String::new(),
-            "/cache".to_string(),
+            PathBuf::new(),
+            "/cache".into(),
         )
     }
 

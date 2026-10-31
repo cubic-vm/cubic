@@ -75,14 +75,6 @@ impl Command for ScpCommand {
         let env = context.get_env();
         let from = resolve_target_path(context, &self.from)?;
         let to = resolve_target_path(context, &self.to)?;
-        let from_key = from
-            .instance
-            .as_ref()
-            .map(|instance| env.get_ssh_private_key_file(&instance.name));
-        let to_key = to
-            .instance
-            .as_ref()
-            .map(|instance| env.get_ssh_private_key_file(&instance.name));
 
         context
             .get_console()
@@ -91,8 +83,7 @@ impl Command for ScpCommand {
         let mut ssh = SshClient::new(context);
         ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system()));
         let source = self.from.to_string();
-        ssh.copy(&from, from_key.as_deref(), &to, to_key.as_deref(), &source)
-            .await?;
+        ssh.copy(&from, &to, &source).await?;
         Ok(0)
     }
 }

@@ -64,8 +64,8 @@ mod tests {
     fn build_env() -> Environment {
         Environment::new(
             UserName::from_str("cubic").unwrap(),
-            "/data".to_string(),
-            "/cache".to_string(),
+            "/data".into(),
+            "/cache".into(),
         )
     }
 
@@ -87,7 +87,7 @@ mod tests {
             SystemMock::new()
                 .set_host_resources((16 * GIB) as u64, (16 * GIB) as u64, 8)
                 .add_dir("/data/machines/test")
-                .add_file(&build_env().get_instance_toml_config_file("test"), config),
+                .add_file(build_env().get_instance_toml_config_file("test"), config),
         )
     }
 
@@ -135,7 +135,7 @@ ssh_port = 14357
         assert_eq!(instance.cpus, 3);
         assert_eq!(instance.ssh_port, 14357);
         assert_eq!(
-            system.get_written_file(&build_env().get_instance_toml_config_file("test")),
+            system.get_written_file(build_env().get_instance_toml_config_file("test")),
             Some(config.as_bytes().to_vec())
         );
     }

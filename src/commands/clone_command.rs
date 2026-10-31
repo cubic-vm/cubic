@@ -69,9 +69,8 @@ impl Command for CloneCommand {
 mod tests {
     use super::*;
     use crate::commands::ContextBuilder;
-    use crate::models::Instance;
+    use crate::models::{Environment, Instance};
     use crate::platform::SystemMock;
-    use std::path::PathBuf;
     use std::str::FromStr;
     use std::sync::Arc;
 
@@ -128,21 +127,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_clone_drops_the_host_key_of_the_source() {
-        let source_image = PathBuf::from("machines")
-            .join("test")
-            .join("machine.img")
-            .to_string_lossy()
-            .into_owned();
-        // The action builds the temporary image path itself, so the expected
-        // command has to be spelled the same way.
-        let target_dir = PathBuf::from("machines")
-            .join("test2")
-            .to_string_lossy()
-            .into_owned();
-        let target_image = format!("{target_dir}.tmp/machine.img");
+        let env = Environment::default();
+        let source_image = env.get_instance_image_file("test");
+        let target_image = env.get_instance_image_file("test2.tmp");
+        let resize = format!("qemu-img resize {} 0", target_image.display());
         let system = SystemMock::new()
-            .add_file(&source_image, b"qcow2 image")
-            .add_command_output(&format!("qemu-img resize {target_image} 0"), b"");
+            .add_file(source_image, b"qcow2 image")
+            .add_command_output(&resize, b"");
         let mut builder = ContextBuilder::new(system);
         builder.get_store().add_instances(vec![Instance {
             name: "test".to_string(),

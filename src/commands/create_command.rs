@@ -268,6 +268,7 @@ mod tests {
     use crate::error::Error;
     use crate::models::{Arch, HashAlg};
     use crate::platform::SystemMock;
+    use std::path::PathBuf;
     use std::str::FromStr;
 
     const GIB: usize = 1024_usize.pow(3);
@@ -310,8 +311,8 @@ mod tests {
     fn build_env() -> Environment {
         Environment::new(
             UserName::from_str("host-user").unwrap(),
-            String::new(),
-            String::new(),
+            PathBuf::new(),
+            PathBuf::new(),
         )
     }
 

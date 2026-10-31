@@ -4,7 +4,6 @@ use crate::models::{DataSize, Environment, Instance, InstanceName, MIN_DISK};
 use crate::platform::{Access, System};
 use crate::qemu::QemuImg;
 use crate::qemu::QemuMonitorClient;
-use std::path::Path;
 use std::str;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -16,8 +15,8 @@ pub struct InstanceDao {
 
 impl InstanceDao {
     pub fn new(system: Arc<dyn System>, env: &Environment) -> Result<Self> {
-        system.create_dir(Path::new(&env.get_instance_dir()))?;
-        system.create_dir(Path::new(env.get_cache_dir()))?;
+        system.create_dir(&env.get_instance_dir())?;
+        system.create_dir(env.get_cache_dir())?;
 
         Ok(InstanceDao {
             env: env.clone(),
@@ -30,7 +29,7 @@ impl InstanceStore for InstanceDao {
     fn get_instances(&self) -> Vec<String> {
         let mut instances: Vec<String> = self
             .system
-            .read_dir(Path::new(&self.env.get_instance_dir()))
+            .read_dir(&self.env.get_instance_dir())
             .ok()
             .map(|entries| {
                 entries
@@ -47,8 +46,7 @@ impl InstanceStore for InstanceDao {
     }
 
     fn exists(&self, name: &str) -> bool {
-        self.system
-            .exists_path(Path::new(&self.env.get_instance_dir2(name)))
+        self.system.exists_path(&self.env.get_instance_dir2(name))
     }
 
     fn load(&self, name: &str) -> Result<Instance> {
@@ -60,7 +58,7 @@ impl InstanceStore for InstanceDao {
 
         let mut file = self
             .system
-            .open_file(Path::new(&path))
+            .open_file(&path)
             .map_err(|error| Error::from_config(name, error))?;
 
         let mut instance = TomlInstanceDeserializer::new().deserialize(name, &mut file)?;
@@ -71,16 +69,12 @@ impl InstanceStore for InstanceDao {
 
     fn store(&self, instance: &Instance) -> Result<()> {
         let file_name = self.env.get_instance_toml_config_file(&instance.name);
-        let temp_file_name = format!("{file_name}.tmp");
+        let temp_file_name = file_name.with_added_extension("tmp");
 
         let content = InstanceSerializer::new().serialize(instance)?;
-        self.system.write_file(
-            Path::new(&temp_file_name),
-            content.as_bytes(),
-            Access::Normal,
-        )?;
         self.system
-            .rename_file(Path::new(&temp_file_name), Path::new(&file_name))?;
+            .write_file(&temp_file_name, content.as_bytes(), Access::Normal)?;
+        self.system.rename_file(&temp_file_name, &file_name)?;
 
         Ok(())
     }
@@ -91,8 +85,8 @@ impl InstanceStore for InstanceDao {
         } else {
             self.claim_name(new_name)?;
             self.system.rename_file(
-                Path::new(&self.env.get_instance_dir2(&instance.name)),
-                Path::new(&self.env.get_instance_dir2(new_name)),
+                &self.env.get_instance_dir2(&instance.name),
+                &self.env.get_instance_dir2(new_name),
             )?;
             instance.name = new_name.to_string();
             Ok(())
@@ -122,7 +116,7 @@ impl InstanceStore for InstanceDao {
             Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
             self.system
-                .remove_dir(Path::new(&self.env.get_instance_dir2(&instance.name)))
+                .remove_dir(&self.env.get_instance_dir2(&instance.name))
                 .ok();
             Ok(())
         }
@@ -172,7 +166,7 @@ impl InstanceStore for InstanceDao {
 
     fn is_running(&self, instance: &Instance) -> bool {
         let socket = self.env.get_monitor_socket(&instance.name);
-        self.system.connect_socket(Path::new(&socket), None).is_ok()
+        self.system.connect_socket(&socket, None).is_ok()
     }
 
     fn kill(&self, instance: &Instance) -> Result<()> {
@@ -199,8 +193,8 @@ mod tests {
     fn build_env() -> Environment {
         Environment::new(
             UserName::from_str("cubic").unwrap(),
-            "/data".to_string(),
-            "/cache".to_string(),
+            "/data".into(),
+            "/cache".into(),
         )
     }
 
@@ -250,7 +244,7 @@ mod tests {
     fn test_is_running_follows_the_monitor_socket() {
         let env = build_env();
         let stopped = InstanceDao::new(Arc::new(SystemMock::new()), &env).unwrap();
-        let system = SystemMock::new().add_socket(&env.get_monitor_socket("test"), b"");
+        let system = SystemMock::new().add_socket(env.get_monitor_socket("test"), b"");
         let running = InstanceDao::new(Arc::new(system), &env).unwrap();
 
         assert!(!stopped.is_running(&build_instance()));
@@ -268,7 +262,7 @@ mod tests {
     fn test_kill_quits_over_the_monitor() {
         let env = build_env();
         let system = Arc::new(SystemMock::new().add_socket(
-            &env.get_monitor_socket("test"),
+            env.get_monitor_socket("test"),
             b"{\"QMP\": {}}\n{\"return\": {}, \"id\": \"0\"}\n{\"return\": {}, \"id\": \"1\"}\n",
         ));
         let dao = InstanceDao::new(system.clone(), &env).unwrap();
@@ -277,7 +271,7 @@ mod tests {
 
         assert!(
             system
-                .get_socket_output(&env.get_monitor_socket("test"))
+                .get_socket_output(env.get_monitor_socket("test"))
                 .ends_with(r#"{"id":"1","execute":"quit"}"#)
         );
     }
@@ -297,7 +291,7 @@ mod tests {
         let env = build_env();
         let command = format!(
             "qemu-img snapshot -c clean {}",
-            env.get_instance_image_file("test")
+            env.get_instance_image_file("test").display()
         );
         let system = Arc::new(SystemMock::new().add_command_output(&command, b""));
         let dao = InstanceDao::new(system.clone(), &env).unwrap();
@@ -321,7 +315,7 @@ mod tests {
     #[test]
     fn test_create_snapshot_rejects_a_running_instance() {
         let env = build_env();
-        let system = SystemMock::new().add_socket(&env.get_monitor_socket("test"), b"");
+        let system = SystemMock::new().add_socket(env.get_monitor_socket("test"), b"");
         let dao = InstanceDao::new(Arc::new(system), &env).unwrap();
 
         assert!(matches!(

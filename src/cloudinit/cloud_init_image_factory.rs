@@ -5,7 +5,6 @@ use crate::models::{Environment, Instance};
 use crate::platform::{Access, System};
 use crate::ssh::SshKeyGenerator;
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
 
 #[derive(Default)]
 pub struct CloudInitImageFactory;
@@ -17,14 +16,14 @@ impl CloudInitImageFactory {
         env: &Environment,
         instance: &Instance,
     ) -> Result<()> {
-        let cloud_init_path = PathBuf::from(env.get_cloud_init_file(&instance.name));
+        let cloud_init_path = env.get_cloud_init_file(&instance.name);
 
         if system.exists_path(&cloud_init_path) {
             return Ok(());
         }
 
         // Generate SSH public key
-        let privatekey = Path::new(&env.get_instance_dir2(&instance.name)).join("ssh_client_key");
+        let privatekey = env.get_ssh_private_key_file(&instance.name);
         let pubkey = system
             .exists_path(&privatekey)
             .then(|| SshKeyGenerator::new().generate_public_key(system, &privatekey))
@@ -65,8 +64,8 @@ mod tests {
     fn build_env() -> Environment {
         Environment::new(
             UserName::from_str("cubic").unwrap(),
-            "/data".to_string(),
-            "/cache".to_string(),
+            "/data".into(),
+            "/cache".into(),
         )
     }
 
@@ -87,7 +86,7 @@ mod tests {
             .unwrap();
 
         let image = system
-            .get_written_file(&env.get_cloud_init_file("test"))
+            .get_written_file(env.get_cloud_init_file("test"))
             .expect("expected the cloud init image to have been written");
         assert!(!image.is_empty());
     }
@@ -96,7 +95,7 @@ mod tests {
     fn test_create_embeds_the_public_key_of_the_instance() {
         let system = SystemMock::new();
         let env = build_env();
-        let key_path = Path::new(&env.get_instance_dir2("test")).join("ssh_client_key");
+        let key_path = env.get_ssh_private_key_file("test");
         SshKeyGenerator::new()
             .generate_key(&system, &key_path)
             .unwrap();
@@ -109,7 +108,7 @@ mod tests {
             .generate_public_key(&system, &key_path)
             .unwrap();
         let image = system
-            .get_written_file(&env.get_cloud_init_file("test"))
+            .get_written_file(env.get_cloud_init_file("test"))
             .unwrap();
         assert!(
             image
@@ -127,7 +126,7 @@ mod tests {
             .create(&system, &env, &build_instance())
             .unwrap();
         let image = system
-            .get_written_file(&env.get_cloud_init_file("test"))
+            .get_written_file(env.get_cloud_init_file("test"))
             .unwrap();
         assert!(String::from_utf8_lossy(&image).contains("timezone: Region/City\n"));
 
@@ -136,7 +135,7 @@ mod tests {
             .create(&system, &env, &build_instance())
             .unwrap();
         let image = system
-            .get_written_file(&env.get_cloud_init_file("test"))
+            .get_written_file(env.get_cloud_init_file("test"))
             .unwrap();
         assert!(String::from_utf8_lossy(&image).contains("timezone: UTC\n"));
     }
@@ -144,14 +143,14 @@ mod tests {
     #[test]
     fn test_create_keeps_an_existing_image() {
         let env = build_env();
-        let system = SystemMock::new().add_file(&env.get_cloud_init_file("test"), b"existing");
+        let system = SystemMock::new().add_file(env.get_cloud_init_file("test"), b"existing");
 
         CloudInitImageFactory
             .create(&system, &env, &build_instance())
             .unwrap();
 
         assert_eq!(
-            system.get_written_file(&env.get_cloud_init_file("test")),
+            system.get_written_file(env.get_cloud_init_file("test")),
             Some(b"existing".to_vec())
         );
     }

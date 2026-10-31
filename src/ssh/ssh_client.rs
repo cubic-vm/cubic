@@ -7,7 +7,7 @@ use crate::view::{ConfirmDialog, Console};
 use russh::keys::*;
 use russh::*;
 use russh_sftp::client::SftpSession;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -47,7 +47,7 @@ async fn send_geometry_updates(
 }
 
 pub struct SshClient<'a> {
-    private_keys: Vec<String>,
+    private_keys: Vec<PathBuf>,
     cmd: Option<String>,
     env_vars: Vec<String>,
     context: &'a Context,
@@ -92,7 +92,7 @@ impl<'a> SshClient<'a> {
         &self,
         session: &mut russh::client::Handle<ServerKeyHandler>,
         user: &str,
-        keys: &[String],
+        keys: &[PathBuf],
     ) -> bool {
         let Ok(hash_alg) = session.best_supported_rsa_hash().await else {
             return false;
@@ -147,16 +147,17 @@ impl<'a> SshClient<'a> {
         session: &mut russh::client::Handle<ServerKeyHandler>,
         user: &str,
         machine: &str,
-        client_key: &str,
+        client_key: &Path,
     ) -> Result<AuthMethod, Error> {
         let console = self.context.get_console();
         // The cubic per-instance ssh_client_key is the only supported method.
         // Everything below is a deprecated fallback.
         console.debug(&format!(
-            "Authenticating '{user}' with client key '{client_key}'"
+            "Authenticating '{user}' with client key '{}'",
+            client_key.display()
         ));
         if self
-            .authenticate_with_keys(session, user, &[client_key.to_string()])
+            .authenticate_with_keys(session, user, &[client_key.to_path_buf()])
             .await
         {
             console.debug("Authenticated with client key");
@@ -181,17 +182,17 @@ impl<'a> SshClient<'a> {
             .map(|_| AuthMethod::Deprecated)
     }
 
-    fn warn_deprecated_auth(&self, machine: &str, client_key: &str) -> Result<(), ()> {
+    fn warn_deprecated_auth(&self, machine: &str, client_key: &Path) -> Result<(), ()> {
         let console = self.context.get_console();
         // create the cubic ssh key if it does not exist yet
-        if !self.context.get_system().exists_path(Path::new(client_key)) {
+        if !self.context.get_system().exists_path(client_key) {
             SshKeyGenerator::new()
-                .generate_key(self.context.get_system(), Path::new(client_key))
+                .generate_key(self.context.get_system(), client_key)
                 .map_err(|_| ())?;
         }
 
         let pubkey = SshKeyGenerator::new()
-            .generate_public_key(self.context.get_system(), Path::new(client_key))
+            .generate_public_key(self.context.get_system(), client_key)
             .map_err(|_| ())?;
 
         console.warn(&format!(
@@ -293,7 +294,7 @@ impl<'a> SshClient<'a> {
     pub async fn open_channel(
         &self,
         machine: &str,
-        client_key: &str,
+        client_key: &Path,
         user: &str,
         port: u16,
     ) -> Result<Channel<client::Msg>, Error> {
@@ -317,7 +318,7 @@ impl<'a> SshClient<'a> {
             }
 
             if self
-                .authenticate_with_keys(&mut session, user, &[client_key.to_string()])
+                .authenticate_with_keys(&mut session, user, &[client_key.to_path_buf()])
                 .await
             {
                 instance.first_boot = false;
@@ -480,26 +481,22 @@ impl<'a> SshClient<'a> {
         &self,
         instance: &Instance,
         user: &Option<String>,
-        client_key: &str,
     ) -> Result<Rc<SftpSession>, Error> {
         let user = user.as_deref().unwrap_or(instance.user.as_str());
+        let client_key = self
+            .context
+            .get_env()
+            .get_ssh_private_key_file(&instance.name);
         let channel = self
-            .open_channel(&instance.name, client_key, user, instance.ssh_port)
+            .open_channel(&instance.name, &client_key, user, instance.ssh_port)
             .await?;
 
         SftpPath::start_session(&instance.name, channel).await
     }
 
-    async fn open_target_fs(
-        &self,
-        path: &TargetInstancePath,
-        client_key: Option<&str>,
-    ) -> Result<SftpPath, Error> {
+    async fn open_target_fs(&self, path: &TargetInstancePath) -> Result<SftpPath, Error> {
         let sftp = if let Some(instance) = &path.instance {
-            Some(
-                self.open_sftp(instance, &path.user, client_key.unwrap_or_default())
-                    .await?,
-            )
+            Some(self.open_sftp(instance, &path.user).await?)
         } else {
             None
         };
@@ -509,18 +506,16 @@ impl<'a> SshClient<'a> {
     pub async fn copy(
         &self,
         from: &TargetInstancePath,
-        from_key: Option<&str>,
         to: &TargetInstancePath,
-        to_key: Option<&str>,
         name: &str,
     ) -> Result<(), Error> {
-        let source = self.open_target_fs(from, from_key).await?;
-        let target = self.open_target_fs(to, to_key).await?;
+        let source = self.open_target_fs(from).await?;
+        let target = self.open_target_fs(to).await?;
 
         source.copy(self.context.get_console(), target, name).await
     }
 
-    pub fn set_private_keys(&mut self, private_keys: Vec<String>) {
+    pub fn set_private_keys(&mut self, private_keys: Vec<PathBuf>) {
         self.private_keys = private_keys;
     }
 

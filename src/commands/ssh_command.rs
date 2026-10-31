@@ -55,7 +55,8 @@ impl Command for SshCommand {
         let ssh_port = instance.ssh_port;
         let client_key = env.get_ssh_private_key_file(name.as_str());
         console.debug(&format!(
-            "Connecting to '{name}' as '{user}' on port {ssh_port} using key '{client_key}'"
+            "Connecting to '{name}' as '{user}' on port {ssh_port} using key '{}'",
+            client_key.display()
         ));
         let mut ssh = SshClient::new(context);
         ssh.set_private_keys(env.get_home_ssh_private_key_paths(context.get_system()));

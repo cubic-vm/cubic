@@ -3,7 +3,7 @@ use crate::error::Result;
 use crate::models::{DataSize, Instance};
 use crate::view::ConfirmDialog;
 use clap::Parser;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 const LEGACY_INSTANCES_DIR: &str = "instances";
 const LEGACY_CERT_FILES: [&str; 5] = [
@@ -42,11 +42,11 @@ impl Command for PruneCommand {
             .collect();
         let stale_dirs: Vec<PathBuf> = stale_instances
             .iter()
-            .map(|instance| PathBuf::from(env.get_instance_dir2(&instance.name)))
+            .map(|instance| env.get_instance_dir2(&instance.name))
             .collect();
         // A create that was interrupted before its final rename leaves a .tmp dir
         let tmp_dirs = system
-            .read_dir(Path::new(&env.get_instance_dir()))
+            .read_dir(&env.get_instance_dir())
             .unwrap_or_default()
             .into_iter()
             .filter(|path| path.extension().is_some_and(|ext| ext == "tmp"));
@@ -55,22 +55,22 @@ impl Command for PruneCommand {
             .get_instances()
             .into_iter()
             .flat_map(|name| {
-                let dir = PathBuf::from(env.get_instance_dir2(&name));
+                let dir = env.get_instance_dir2(&name);
                 LEGACY_CERT_FILES.map(|file| dir.join(file))
             })
             .filter(|path| system.exists_path(path))
             .collect();
 
         let dirs: Vec<PathBuf> = [
-            PathBuf::from(env.get_image_dir()),
-            PathBuf::from(env.get_cache_dir()).join(LEGACY_INSTANCES_DIR),
+            env.get_image_dir(),
+            env.get_cache_dir().join(LEGACY_INSTANCES_DIR),
         ]
         .into_iter()
         .chain(tmp_dirs)
         .collect();
 
         // Calculate size
-        let cache_file = PathBuf::from(env.get_image_cache_file());
+        let cache_file = env.get_image_cache_file();
         let total = DataSize::new(
             dirs.iter()
                 .chain(stale_dirs.iter())
@@ -121,8 +121,8 @@ mod tests {
     fn build_env() -> Environment {
         Environment::new(
             UserName::from_str("cubic").unwrap(),
-            "/data".to_string(),
-            "/cache".to_string(),
+            "/data".into(),
+            "/cache".into(),
         )
     }
 
@@ -148,29 +148,29 @@ mod tests {
         let env = build_env();
         let builder = build_context(
             SystemMock::new()
-                .add_file(&env.get_image_cache_file(), b"cache")
-                .add_file(&format!("{}/debian", env.get_image_dir()), b"image")
+                .add_file(env.get_image_cache_file(), b"cache")
+                .add_file(env.get_image_file("debian"), b"image")
                 .add_file("/cache/instances/test/user-data.img", b"seed"),
         );
         let system = Arc::clone(builder.get_system());
 
         run_prune(builder).await;
 
-        assert!(!system.exists_path(Path::new(&env.get_image_cache_file())));
-        assert!(!system.exists_path(Path::new(&env.get_image_dir())));
+        assert!(!system.exists_path(&env.get_image_cache_file()));
+        assert!(!system.exists_path(&env.get_image_dir()));
         assert!(!system.exists_path(Path::new("/cache/instances")));
     }
 
     #[tokio::test]
     async fn test_keep_the_instance_data_dir() {
         let env = build_env();
-        let instance_file = format!("{}/cloud-init.iso", env.get_instance_dir2("test"));
+        let instance_file = env.get_cloud_init_file("test");
         let builder = build_context(SystemMock::new().add_file(&instance_file, b"seed"));
         let system = Arc::clone(builder.get_system());
 
         run_prune(builder).await;
 
-        assert!(system.exists_path(Path::new(&instance_file)));
+        assert!(system.exists_path(&instance_file));
     }
 
     #[tokio::test]
@@ -178,8 +178,8 @@ mod tests {
         let env = build_env();
         let dir = env.get_instance_dir2("test");
         let mut builder = build_context(LEGACY_CERT_FILES.iter().fold(
-            SystemMock::new().add_file(&format!("{dir}/machine.img"), b"disk"),
-            |system, file| system.add_file(&format!("{dir}/{file}"), b"pem"),
+            SystemMock::new().add_file(dir.join("machine.img"), b"disk"),
+            |system, file| system.add_file(dir.join(file), b"pem"),
         ));
         builder.get_store().add_instances(vec![Instance {
             name: "test".to_string(),
@@ -190,15 +190,15 @@ mod tests {
         run_prune(builder).await;
 
         for file in LEGACY_CERT_FILES {
-            assert!(!system.exists_path(Path::new(&format!("{dir}/{file}"))));
+            assert!(!system.exists_path(&dir.join(file)));
         }
-        assert!(system.exists_path(Path::new(&format!("{dir}/machine.img"))));
+        assert!(system.exists_path(&dir.join("machine.img")));
     }
 
     #[tokio::test]
     async fn test_delete_stale_instances_and_interrupted_creates() {
         let env = build_env();
-        let tmp = format!("{}/plain.tmp", env.get_instance_dir());
+        let tmp = env.get_instance_dir().join("plain.tmp");
         let mut builder = build_context(SystemMock::new().add_dir(&tmp));
         builder.get_store().add_instances(vec![
             Instance {
@@ -223,7 +223,7 @@ mod tests {
         run_prune(builder).await;
 
         assert_eq!(*deleted.lock().unwrap(), ["stale"]);
-        assert!(!system.exists_path(Path::new(&tmp)));
+        assert!(!system.exists_path(&tmp));
     }
 
     #[tokio::test]
@@ -231,7 +231,7 @@ mod tests {
         let env = build_env();
         let builder = build_context(
             SystemMock::new()
-                .add_file(&format!("{}/debian", env.get_image_dir()), &[0; 1024])
+                .add_file(env.get_image_file("debian"), &[0; 1024])
                 .add_file("/cache/instances/test/user-data.img", &[0; 1024]),
         );
 
