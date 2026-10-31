@@ -6,20 +6,6 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
 impl OsSystem {
-    // Refreshes a single process so a lookup sees the current state of the
-    // host. `sysinfo::System` is spelled out because the name collides with
-    // the `System` trait of this crate.
-    fn read_process_table(pid: u64) -> (sysinfo::System, sysinfo::Pid) {
-        let sys_pid = sysinfo::Pid::from_u32(pid as u32);
-        let mut system = sysinfo::System::new();
-        system.refresh_processes_specifics(
-            sysinfo::ProcessesToUpdate::Some(&[sys_pid]),
-            true,
-            sysinfo::ProcessRefreshKind::nothing(),
-        );
-        (system, sys_pid)
-    }
-
     // A missing binary is worth telling apart from a binary that refused to
     // start, since only the first one means the host lacks the tool.
     fn map_spawn_error(command: &Command, error: std::io::Error) -> Error {
@@ -139,10 +125,5 @@ impl Process for OsSystem {
         });
 
         Ok(())
-    }
-
-    fn exists_process(&self, pid: u64) -> bool {
-        let (system, sys_pid) = Self::read_process_table(pid);
-        system.process(sys_pid).is_some()
     }
 }

@@ -62,8 +62,7 @@ impl Command for ConsoleCommand {
                 if let Ok(socket) = system.connect_socket(Path::new(&socket_path), None) {
                     return Ok(socket);
                 }
-                // QEMU writes its pid file after the spawn returns, so only a pid
-                // file that vanished again means it exited.
+                // The monitor opens after the spawn, so only a vanished one means exit
                 let running = instance_store.is_running(&instance);
                 if was_running && !running {
                     return Err(Error::InstanceNotRunning(instance.name.clone()));

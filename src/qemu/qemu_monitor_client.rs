@@ -7,7 +7,8 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::time::Duration;
 
-const QMP_TIMEOUT: Duration = Duration::from_millis(100);
+// Leaves room for a running check queued ahead on the single client slot
+const QMP_TIMEOUT: Duration = Duration::from_secs(1);
 
 pub struct QemuMonitorClient {
     counter: u64,

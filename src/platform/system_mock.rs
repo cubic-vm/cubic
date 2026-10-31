@@ -1,7 +1,7 @@
 use crate::platform::file_system_mock::FileSystemMock;
 use crate::platform::host_mock::HostMock;
 use crate::platform::network_mock::NetworkMock;
-use crate::platform::process_mock::{CommandMock, ProcessMock};
+use crate::platform::process_mock::CommandMock;
 use crate::platform::terminal_mock::TerminalMock;
 use std::sync::{Arc, Mutex};
 
@@ -14,7 +14,6 @@ pub struct SystemMock {
     // Shared, so a writer handed out by `create_file` keeps writing into the
     // same files the mock reads back.
     pub file_system: Arc<Mutex<FileSystemMock>>,
-    pub processes: Mutex<ProcessMock>,
     pub commands: Mutex<CommandMock>,
     pub network: Mutex<NetworkMock>,
 }
