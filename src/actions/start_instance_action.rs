@@ -28,7 +28,7 @@ impl StartInstanceAction {
         accel: Accel,
     ) -> Result<()> {
         let console = context.get_console();
-        if context.get_instance_store().is_running(&self.instance) {
+        if context.get_monitor(&self.instance).is_running() {
             return Ok(());
         }
 

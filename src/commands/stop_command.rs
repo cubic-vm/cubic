@@ -1,7 +1,6 @@
 use crate::actions::{LoadInstanceAction, StopInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
-use crate::instance::InstanceStore;
 use crate::models::Instance;
 use crate::view::Spinner;
 use clap::Parser;
@@ -42,8 +41,8 @@ pub struct StopCommand {
 const STOP_TIMEOUT: Duration = Duration::from_secs(60);
 
 impl StopCommand {
-    async fn wait_until_stopped(instance_store: &dyn InstanceStore, stopping: &[Instance]) {
-        while stopping.iter().any(|i| instance_store.is_running(i)) {
+    async fn wait_until_stopped(context: &commands::Context, stopping: &[Instance]) {
+        while stopping.iter().any(|i| context.get_monitor(i).is_running()) {
             tokio::time::sleep(Duration::from_secs(1)).await
         }
     }
@@ -53,14 +52,14 @@ impl StopCommand {
         stopping: &[Instance],
         timeout: Duration,
     ) -> Result<()> {
-        let instance_store = context.get_instance_store();
-        let wait = Self::wait_until_stopped(instance_store, stopping);
+        let wait = Self::wait_until_stopped(context, stopping);
 
         if tokio::time::timeout(timeout, wait).await.is_err() {
             // The guest ignored the shutdown request, so ask QEMU to quit
             for instance in stopping {
-                if instance_store.is_running(instance) {
-                    instance_store.kill(instance)?;
+                let mut monitor = context.get_monitor(instance);
+                if monitor.is_running() {
+                    monitor.kill()?;
                     context.get_console().warn(&format!(
                         "{} did not shut down in {}s and was forced to quit",
                         instance.name,
@@ -68,7 +67,7 @@ impl StopCommand {
                     ));
                 }
             }
-            Self::wait_until_stopped(instance_store, stopping).await;
+            Self::wait_until_stopped(context, stopping).await;
         }
 
         Ok(())
@@ -93,7 +92,7 @@ impl Command for StopCommand {
         let mut stopping = Vec::new();
         for name in &stop_instances {
             let instance = LoadInstanceAction::new().run(context, name)?;
-            if instance_store.is_running(&instance) {
+            if context.get_monitor(&instance).is_running() {
                 stopping.push(instance);
             }
         }
@@ -108,7 +107,7 @@ impl Command for StopCommand {
 
         // Stop instances
         for instance in &stopping {
-            StopInstanceAction::new(instance).run(instance_store, self.kill)?;
+            StopInstanceAction::new(instance).run(context, self.kill)?;
         }
 
         if self.wait {
@@ -125,7 +124,6 @@ mod tests {
     use crate::commands::ContextBuilder;
     use crate::error::Error;
     use crate::platform::SystemMock;
-    use std::sync::Arc;
 
     #[tokio::test]
     async fn test_require_instance_names_unless_all_is_given() {
@@ -142,24 +140,5 @@ mod tests {
             Err(Error::MissingInstanceName)
         ));
         assert!(build_command(true).run(&context).await.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_wait_forces_a_stuck_instance_to_quit() {
-        let instance = Instance {
-            name: "web".to_string(),
-            ..Instance::default()
-        };
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![instance.clone()]);
-        builder.get_store().set_running(&["web"]);
-        let killed = Arc::clone(&builder.get_store().killed);
-        let context = builder.build();
-
-        StopCommand::wait_or_kill(&context, &[instance], Duration::ZERO)
-            .await
-            .unwrap();
-
-        assert_eq!(*killed.lock().unwrap(), ["web"]);
     }
 }

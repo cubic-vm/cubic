@@ -67,7 +67,7 @@ impl RunCommand {
         let store = context.get_instance_store();
 
         if let Ok(instance) = LoadInstanceAction::new().run(context, name.as_str()) {
-            StopInstanceAction::new(&instance).run(store, true).ok();
+            StopInstanceAction::new(&instance).run(context, true).ok();
             store.delete(&instance).ok();
         }
     }
@@ -103,7 +103,7 @@ impl Command for RunCommand {
 mod tests {
     use super::*;
     use crate::commands::ContextBuilder;
-    use crate::models::Instance;
+    use crate::models::{Environment, Instance};
     use crate::platform::SystemMock;
     use std::str::FromStr;
     use std::sync::Arc;
@@ -115,8 +115,8 @@ mod tests {
             name: "web".to_string(),
             ..Instance::default()
         }]);
-        builder.get_store().set_running(&["web"]);
-        let killed = Arc::clone(&builder.get_store().killed);
+        builder.set_running(&["web"]);
+        let system = Arc::clone(builder.get_system());
         let deleted = Arc::clone(&builder.get_store().deleted);
         let context = builder.build();
 
@@ -124,7 +124,8 @@ mod tests {
             .unwrap()
             .cleanup(&context, &InstanceName::from_str("web").unwrap());
 
-        assert_eq!(*killed.lock().unwrap(), ["web"]);
+        let monitor = system.get_socket_output(Environment::default().get_monitor_socket("web"));
+        assert!(monitor.contains(r#""execute":"quit""#));
         assert_eq!(*deleted.lock().unwrap(), ["web"]);
     }
 }

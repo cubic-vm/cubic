@@ -4,15 +4,12 @@ pub mod tests {
     use crate::error::{Error, Result};
     use crate::instance::InstanceStore;
     use crate::models::Instance;
-    use crate::qemu::QemuMonitorClient;
     use std::sync::{Arc, Mutex};
 
     pub struct InstanceStoreMock {
         instances: Vec<Instance>,
-        running: Vec<String>,
         // Shared, so a test keeps a handle on what the store recorded after it
         // moved into a Context.
-        pub killed: Arc<Mutex<Vec<String>>>,
         pub stored: Arc<Mutex<Vec<Instance>>>,
         pub deleted: Arc<Mutex<Vec<String>>>,
         // Records the snapshot calls as "<action> <instance>/<snapshot>".
@@ -23,8 +20,6 @@ pub mod tests {
         pub fn new(instances: Vec<Instance>) -> Self {
             Self {
                 instances,
-                running: Vec::new(),
-                killed: Arc::new(Mutex::new(Vec::new())),
                 stored: Arc::new(Mutex::new(Vec::new())),
                 deleted: Arc::new(Mutex::new(Vec::new())),
                 snapshots: Arc::new(Mutex::new(Vec::new())),
@@ -33,10 +28,6 @@ pub mod tests {
 
         pub fn add_instances(&mut self, instances: Vec<Instance>) {
             self.instances.extend(instances);
-        }
-
-        pub fn set_running(&mut self, running: &[&str]) {
-            self.running = running.iter().map(|name| name.to_string()).collect();
         }
 
         fn record_snapshot(&self, action: &str, instance: &Instance, name: &str) {
@@ -95,20 +86,6 @@ pub mod tests {
         fn delete_snapshot(&self, instance: &Instance, name: &str) -> Result<()> {
             self.record_snapshot("delete", instance, name);
             Ok(())
-        }
-
-        fn is_running(&self, instance: &Instance) -> bool {
-            self.running.contains(&instance.name)
-                && !self.killed.lock().unwrap().contains(&instance.name)
-        }
-
-        fn kill(&self, instance: &Instance) -> Result<()> {
-            self.killed.lock().unwrap().push(instance.name.clone());
-            Ok(())
-        }
-
-        fn get_monitor(&self, instance: &Instance) -> Result<QemuMonitorClient> {
-            Err(Error::InstanceNotRunning(instance.name.clone()))
         }
     }
 }

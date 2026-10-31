@@ -38,7 +38,7 @@ impl Command for PruneCommand {
             .get_instances()
             .into_iter()
             .filter_map(|name| instance_store.load(&name).ok())
-            .filter(|instance| instance_store.is_stale(instance))
+            .filter(|instance| context.is_stale(instance))
             .collect();
         let stale_dirs: Vec<PathBuf> = stale_instances
             .iter()
@@ -215,7 +215,7 @@ mod tests {
                 ..Instance::default()
             },
         ]);
-        builder.get_store().set_running(&["running"]);
+        builder.set_running(&["running"]);
         let deleted = Arc::clone(&builder.get_store().deleted);
         let system = Arc::clone(builder.get_system());
 

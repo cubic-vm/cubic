@@ -48,7 +48,7 @@ impl Command for ListPortCommand {
                 continue;
             }
 
-            let status = util::to_yes_no(instance_store.is_running(instance));
+            let status = util::to_yes_no(context.get_monitor(instance).is_running());
             for rule in &instance.hostfwd {
                 let host = format!("{}:{}", rule.get_host_ip(), rule.get_host_port());
                 view.add_row()

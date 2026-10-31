@@ -40,7 +40,7 @@ impl Command for ListInstanceCommand {
 
         for instance_name in &instance_names {
             let instance = LoadInstanceAction::new().run(context, instance_name)?;
-            if instance_store.is_stale(&instance) {
+            if context.is_stale(&instance) {
                 continue;
             }
 
@@ -53,7 +53,7 @@ impl Command for ListInstanceCommand {
                 ),
                 None => instance.disk_capacity.to_size(),
             };
-            let running = util::to_yes_no(instance_store.is_running(&instance));
+            let running = util::to_yes_no(context.get_monitor(&instance).is_running());
             row.add(instance_name, Alignment::Left)
                 .add(instance.os.as_deref().unwrap_or_default(), Alignment::Left)
                 .add(&instance.arch.to_string(), Alignment::Left)
@@ -79,7 +79,7 @@ mod tests {
     fn build_context(instances: Vec<Instance>, running: &[&str]) -> ContextBuilder {
         let mut builder = ContextBuilder::new(SystemMock::new());
         builder.get_store().add_instances(instances);
-        builder.get_store().set_running(running);
+        builder.set_running(running);
         builder
     }
 
