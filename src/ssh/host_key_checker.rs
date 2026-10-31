@@ -53,28 +53,22 @@ mod tests {
 
     #[test]
     fn test_check_key_without_pinned_key_is_unknown() {
-        assert_eq!(
-            HostKeyChecker::new().check_key(None, &build_key()),
-            KeyCheck::Unknown
-        );
+        let check = HostKeyChecker::new().check_key(None, &build_key());
+        assert_eq!(check, KeyCheck::Unknown);
     }
 
     #[test]
     fn test_check_key_with_same_key_matches() {
         let key = build_key();
 
-        assert_eq!(
-            HostKeyChecker::new().check_key(Some(&key), &format!("{key}\n")),
-            KeyCheck::Match
-        );
+        let check = HostKeyChecker::new().check_key(Some(&key), &format!("{key}\n"));
+        assert_eq!(check, KeyCheck::Match);
     }
 
     #[test]
     fn test_check_key_with_other_key_has_changed() {
-        assert_eq!(
-            HostKeyChecker::new().check_key(Some(&build_key()), &build_key()),
-            KeyCheck::Changed
-        );
+        let check = HostKeyChecker::new().check_key(Some(&build_key()), &build_key());
+        assert_eq!(check, KeyCheck::Changed);
     }
 
     #[test]

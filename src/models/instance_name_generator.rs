@@ -140,10 +140,9 @@ impl InstanceNameGenerator {
     ];
 
     fn draw_name() -> String {
-        Self::build_name(
-            Self::get_random_number(Self::ADJECTIVES.len()),
-            Self::get_random_number(Self::CREATURES.len()),
-        )
+        let adjective = Self::get_random_number(Self::ADJECTIVES.len());
+        let creature = Self::get_random_number(Self::CREATURES.len());
+        Self::build_name(adjective, creature)
     }
 
     fn get_random_number(limit: usize) -> usize {

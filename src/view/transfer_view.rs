@@ -143,10 +143,8 @@ mod tests {
             Some(100),
         );
         let line = view.render(80, false);
-        assert_eq!(
-            &line[..TEXT_WIDTH],
-            "Downloading a-very-long-image-name-that-overflows-"
-        );
+        let expected = "Downloading a-very-long-image-name-that-overflows-";
+        assert_eq!(&line[..TEXT_WIDTH], expected);
     }
 
     #[test]

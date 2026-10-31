@@ -70,10 +70,8 @@ mod tests {
 <a href="v3.24/">v3.24/</a>
 <a href="v3.25/">v3.25/</a>"#;
 
-        assert_eq!(
-            AlpineImageProvider {}.find_image_names(listing),
-            ["3.24", "3.25"]
-        );
+        let names = AlpineImageProvider {}.find_image_names(listing);
+        assert_eq!(names, ["3.24", "3.25"]);
     }
 
     #[test]

@@ -48,10 +48,8 @@ impl ImageFactory {
             }
         };
 
-        let image_file = util::find_newest_file(
-            &image_provider.get_image_file_pattern(name, arch),
-            &image_content,
-        );
+        let pattern = image_provider.get_image_file_pattern(name, arch);
+        let image_file = util::find_newest_file(&pattern, &image_content);
 
         if let Some(image_file) = &image_file {
             // A timestamped file name is stored as a glob
@@ -171,9 +169,8 @@ impl ImageFactory {
 
             // An empty mirror would drop a whole distribution
             if found.is_empty() {
-                return Err(Error::EmptyImageProvider(
-                    image_provider.get_distro().to_string(),
-                ));
+                let distro = image_provider.get_distro().to_string();
+                return Err(Error::EmptyImageProvider(distro));
             }
 
             images.extend(found);
@@ -275,14 +272,10 @@ mod tests {
         };
 
         assert_eq!(find_tags("24.04", Arch::AMD64), "24.04, noble");
-        assert_eq!(
-            find_tags("26.04", Arch::AMD64),
-            "26.04, resolute, stable, latest"
-        );
-        assert_eq!(
-            find_tags("24.04", Arch::ARM64),
-            "24.04, noble, stable, latest"
-        );
+        let tags = find_tags("26.04", Arch::AMD64);
+        assert_eq!(tags, "26.04, resolute, stable, latest");
+        let tags = find_tags("24.04", Arch::ARM64);
+        assert_eq!(tags, "24.04, noble, stable, latest");
     }
 
     #[test]
@@ -296,10 +289,8 @@ mod tests {
 
         let images = ImageFactory::tag_images(images);
 
-        assert_eq!(
-            images.iter().map(|image| image.eol).collect::<Vec<_>>(),
-            [true, false, false, false]
-        );
+        let eol = images.iter().map(|image| image.eol).collect::<Vec<_>>();
+        assert_eq!(eol, [true, false, false, false]);
     }
 
     #[test]

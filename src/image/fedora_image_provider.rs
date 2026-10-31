@@ -60,18 +60,14 @@ mod tests {
 <a href="42/">42/</a>
 <a href="test/">test/</a>"#;
 
-        assert_eq!(
-            FedoraImageProvider {}.find_image_names(listing),
-            ["41", "42"]
-        );
+        let names = FedoraImageProvider {}.find_image_names(listing);
+        assert_eq!(names, ["41", "42"]);
     }
 
     #[test]
     fn test_get_image_dir_path_uses_canonical_arch() {
-        assert_eq!(
-            FedoraImageProvider {}.get_image_dir_path("42", Arch::ARM64),
-            "42/Cloud/aarch64/images/"
-        );
+        let dir = FedoraImageProvider {}.get_image_dir_path("42", Arch::ARM64);
+        assert_eq!(dir, "42/Cloud/aarch64/images/");
     }
 
     #[test]

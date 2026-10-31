@@ -103,10 +103,8 @@ impl Command for StopCommand {
             .map(|instance| instance.name.to_string())
             .collect::<Vec<_>>()
             .join(", ");
-        let _spinner = Spinner::new(
-            Arc::clone(context.get_console()),
-            format!("Stopping {names}"),
-        );
+        let message = format!("Stopping {names}");
+        let _spinner = Spinner::new(Arc::clone(context.get_console()), message);
 
         // Stop instances
         for instance in &stopping {

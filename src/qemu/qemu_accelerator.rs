@@ -179,10 +179,8 @@ mod tests {
         let system = SystemMock::new()
             .add_failing_command(&build_probe_command(Arch::AMD64, "kvm"), "no kvm");
 
-        assert_eq!(
-            build_probe(&system, Arch::AMD64).detect("kvm"),
-            Err("no kvm".to_string())
-        );
+        let result = build_probe(&system, Arch::AMD64).detect("kvm");
+        assert_eq!(result, Err("no kvm".to_string()));
     }
 
     #[test]
@@ -190,10 +188,8 @@ mod tests {
         let system =
             SystemMock::new().add_failing_command(&build_probe_command(Arch::AMD64, "kvm"), "  ");
 
-        assert_eq!(
-            build_probe(&system, Arch::AMD64).detect("kvm"),
-            Err("QEMU did not come up".to_string())
-        );
+        let result = build_probe(&system, Arch::AMD64).detect("kvm");
+        assert_eq!(result, Err("QEMU did not come up".to_string()));
     }
 
     #[test]

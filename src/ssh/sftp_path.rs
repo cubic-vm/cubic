@@ -302,10 +302,8 @@ mod tests {
 
     #[test]
     fn test_join_path_segment_remote_uses_forward_slash() {
-        assert_eq!(
-            join_path_segment("/home/cubic/dir1", "dir2", true),
-            "/home/cubic/dir1/dir2"
-        );
+        let joined = join_path_segment("/home/cubic/dir1", "dir2", true);
+        assert_eq!(joined, "/home/cubic/dir1/dir2");
     }
 
     #[test]
@@ -318,10 +316,8 @@ mod tests {
 
     #[test]
     fn test_join_path_segment_remote_trailing_slash_base() {
-        assert_eq!(
-            join_path_segment("/home/cubic/", "dir1", true),
-            "/home/cubic/dir1"
-        );
+        let joined = join_path_segment("/home/cubic/", "dir1", true);
+        assert_eq!(joined, "/home/cubic/dir1");
     }
 
     #[test]

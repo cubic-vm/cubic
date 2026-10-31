@@ -89,30 +89,24 @@ mod tests {
             .add_env_var("LOGNAME", "bob")
             .add_env_var("USERNAME", "carol");
 
-        assert_eq!(
-            EnvironmentFactory::read_current_username(&system),
-            Some("alice".to_string())
-        );
+        let username = EnvironmentFactory::read_current_username(&system);
+        assert_eq!(username, Some("alice".to_string()));
     }
 
     #[test]
     fn test_read_current_username_falls_back_to_logname_then_username() {
         let system = SystemMock::new().add_env_var("USERNAME", "carol");
 
-        assert_eq!(
-            EnvironmentFactory::read_current_username(&system),
-            Some("carol".to_string())
-        );
+        let username = EnvironmentFactory::read_current_username(&system);
+        assert_eq!(username, Some("carol".to_string()));
     }
 
     #[test]
     fn test_get_username_falls_back_to_default_when_unset() {
         let system = SystemMock::new();
 
-        assert_eq!(
-            EnvironmentFactory::get_username(&system).as_str(),
-            DEFAULT_USERNAME
-        );
+        let username = EnvironmentFactory::get_username(&system);
+        assert_eq!(username.as_str(), DEFAULT_USERNAME);
     }
 
     #[test]
@@ -120,10 +114,8 @@ mod tests {
         for name in [ROOT_USERNAME, "Root"] {
             let system = SystemMock::new().add_env_var("USER", name);
 
-            assert_eq!(
-                EnvironmentFactory::get_username(&system).as_str(),
-                DEFAULT_USERNAME
-            );
+            let username = EnvironmentFactory::get_username(&system);
+            assert_eq!(username.as_str(), DEFAULT_USERNAME);
         }
     }
 
@@ -131,10 +123,8 @@ mod tests {
     fn test_get_username_falls_back_to_default_when_invalid() {
         let system = SystemMock::new().add_env_var("USER", "Bad Name");
 
-        assert_eq!(
-            EnvironmentFactory::get_username(&system).as_str(),
-            DEFAULT_USERNAME
-        );
+        let username = EnvironmentFactory::get_username(&system);
+        assert_eq!(username.as_str(), DEFAULT_USERNAME);
     }
 
     #[cfg(target_os = "linux")]
@@ -146,10 +136,8 @@ mod tests {
 
         let env = EnvironmentFactory::create_env(&system).unwrap();
 
-        assert_eq!(
-            env.get_instance_dir(),
-            Path::new("/home/alice/.local/share/cubic/machines")
-        );
+        let dir = env.get_instance_dir();
+        assert_eq!(dir, Path::new("/home/alice/.local/share/cubic/machines"));
         assert_eq!(env.get_cache_dir(), Path::new("/home/alice/.cache/cubic"));
     }
 
@@ -164,10 +152,8 @@ mod tests {
 
         let env = EnvironmentFactory::create_env(&system).unwrap();
 
-        assert_eq!(
-            env.get_instance_dir(),
-            Path::new("/snap/cubic/common/cubic/machines")
-        );
+        let dir = env.get_instance_dir();
+        assert_eq!(dir, Path::new("/snap/cubic/common/cubic/machines"));
         assert_eq!(env.get_cache_dir(), Path::new("/cache/cubic"));
     }
 

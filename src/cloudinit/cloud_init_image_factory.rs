@@ -149,9 +149,7 @@ mod tests {
             .create(&system, &env, &build_instance())
             .unwrap();
 
-        assert_eq!(
-            system.get_written_file(env.get_cloud_init_file("test")),
-            Some(b"existing".to_vec())
-        );
+        let written = system.get_written_file(env.get_cloud_init_file("test"));
+        assert_eq!(written, Some(b"existing".to_vec()));
     }
 }

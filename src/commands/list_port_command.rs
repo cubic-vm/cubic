@@ -50,12 +50,10 @@ impl Command for ListPortCommand {
 
             let status = util::to_yes_no(instance_store.is_running(instance));
             for rule in &instance.hostfwd {
+                let host = format!("{}:{}", rule.get_host_ip(), rule.get_host_port());
                 view.add_row()
                     .add(&instance_name, Alignment::Left)
-                    .add(
-                        &format!("{}:{}", rule.get_host_ip(), rule.get_host_port()),
-                        Alignment::Left,
-                    )
+                    .add(&host, Alignment::Left)
                     .add(&format!(":{}", rule.get_guest_port()), Alignment::Left)
                     .add(&format!("/{}", rule.get_protocol()), Alignment::Left)
                     .add(status, Alignment::Left);

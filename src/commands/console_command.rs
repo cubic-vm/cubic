@@ -88,10 +88,8 @@ impl Command for ConsoleCommand {
                 }
             }
         });
-        let stdin = StreamReader::new(FramedRead::new(
-            tokio::io::stdin(),
-            util::ShortcutDecoder::new(),
-        ));
+        let decoder = util::ShortcutDecoder::new();
+        let stdin = StreamReader::new(FramedRead::new(tokio::io::stdin(), decoder));
         let input = tokio::task::spawn_blocking(move || {
             std::io::copy(&mut SyncIoBridge::new(stdin), &mut socket)
         });

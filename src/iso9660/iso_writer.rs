@@ -48,12 +48,9 @@ impl IsoWriter {
             .write(writer)?;
 
         for (index, (name, content)) in self.files.iter().enumerate() {
-            fac.create_file(
-                &format!("{name};1"),
-                19 + index as u32,
-                content.len() as u32,
-            )
-            .write(writer)?;
+            let file_name = format!("{name};1");
+            fac.create_file(&file_name, 19 + index as u32, content.len() as u32)
+                .write(writer)?;
         }
 
         writer.pad_to_sector_end()?;

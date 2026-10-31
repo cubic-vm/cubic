@@ -92,20 +92,16 @@ mod tests {
         let listing = r#"<a href="jammy/">jammy/</a>
 <a href="noble/">noble/</a>"#;
 
-        assert_eq!(
-            UbuntuImageProvider {}.find_image_names(listing),
-            ["jammy", "noble"]
-        );
+        let names = UbuntuImageProvider {}.find_image_names(listing);
+        assert_eq!(names, ["jammy", "noble"]);
     }
 
     #[test]
     fn test_get_version_and_codename() {
         let provider = UbuntuImageProvider {};
 
-        assert_eq!(
-            provider.get_version("ubuntu-24.04-minimal-cloudimg-amd64.img", "noble"),
-            "24.04"
-        );
+        let version = provider.get_version("ubuntu-24.04-minimal-cloudimg-amd64.img", "noble");
+        assert_eq!(version, "24.04");
         assert_eq!(provider.get_codename("noble"), Some("noble".to_string()));
     }
 
@@ -119,10 +115,8 @@ mod tests {
             ),
             Some("26.04".to_string())
         );
-        assert_eq!(
-            provider.find_stable_version(&["25.04", "25.10"].map(String::from)),
-            Some("25.10".to_string())
-        );
+        let version = provider.find_stable_version(&["25.04", "25.10"].map(String::from));
+        assert_eq!(version, Some("25.10".to_string()));
     }
 
     #[test]
@@ -132,10 +126,8 @@ mod tests {
         ]
         .map(String::from);
 
-        assert_eq!(
-            UbuntuImageProvider {}.find_end_of_life_versions(&versions),
-            ["20.04", "22.10", "25.04"]
-        );
+        let eol = UbuntuImageProvider {}.find_end_of_life_versions(&versions);
+        assert_eq!(eol, ["20.04", "22.10", "25.04"]);
     }
 
     #[test]

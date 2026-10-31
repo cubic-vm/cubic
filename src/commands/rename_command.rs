@@ -24,10 +24,8 @@ impl Command for RenameCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let instance_store = context.get_instance_store();
 
-        instance_store.rename(
-            &mut LoadInstanceAction::new().run(context, self.old_name.as_str())?,
-            self.new_name.as_str(),
-        )?;
+        let mut instance = LoadInstanceAction::new().run(context, self.old_name.as_str())?;
+        instance_store.rename(&mut instance, self.new_name.as_str())?;
         Ok(0)
     }
 }

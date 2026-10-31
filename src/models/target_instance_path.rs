@@ -49,10 +49,8 @@ mod tests {
         assert_eq!(build_path(None, None, "~/a/b/c"), "~/a/b/c");
         assert_eq!(build_path(Some("tux"), None, "~"), "/home/tux");
         assert_eq!(build_path(Some("tux"), None, "~/a/b/c"), "/home/tux/a/b/c");
-        assert_eq!(
-            build_path(None, Some("root"), "~/a/b/c"),
-            "/home/root/a/b/c"
-        );
+        let path = build_path(None, Some("root"), "~/a/b/c");
+        assert_eq!(path, "/home/root/a/b/c");
 
         // The name given on the command line wins over the instance one.
         let path = build_path(Some("tux"), Some("root"), "~/a/b/c");

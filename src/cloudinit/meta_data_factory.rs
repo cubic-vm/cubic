@@ -12,9 +12,7 @@ mod tests {
 
     #[test]
     fn test_meta_user_data() {
-        assert_eq!(
-            &MetaDataFactory.create("myinstance"),
-            "instance-id: myinstance\nlocal-hostname: myinstance\n"
-        );
+        let expected = "instance-id: myinstance\nlocal-hostname: myinstance\n";
+        assert_eq!(&MetaDataFactory.create("myinstance"), expected);
     }
 }
