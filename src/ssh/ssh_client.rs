@@ -403,21 +403,11 @@ impl<'a> SshClient<'a> {
 
         if pty {
             let (w, h) = console.get_geometry().unwrap_or((80, 24));
+            let term = self.context.get_system().read_env_var("TERM");
+            let term = term.unwrap_or_else(|| "xterm".into());
 
             channel
-                .request_pty(
-                    false,
-                    &self
-                        .context
-                        .get_system()
-                        .read_env_var("TERM")
-                        .unwrap_or_else(|| "xterm".into()),
-                    w,
-                    h,
-                    0,
-                    0,
-                    &[],
-                )
+                .request_pty(false, &term, w, h, 0, 0, &[])
                 .await
                 .map_err(|_| Error::SshConnectionFailed(instance.to_string()))?;
         }
@@ -455,10 +445,8 @@ impl<'a> SshClient<'a> {
         let mut ssh_writer = ssh_out.make_writer();
 
         console.set_raw_mode(true);
-        let mut stdin = StreamReader::new(FramedRead::new(
-            tokio::io::stdin(),
-            util::ShortcutDecoder::new(),
-        ));
+        let decoder = util::ShortcutDecoder::new();
+        let mut stdin = StreamReader::new(FramedRead::new(tokio::io::stdin(), decoder));
         let mut stdout = tokio::io::stdout();
         let mut exit_status = None;
         tokio::select!(
@@ -577,9 +565,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_check_server_key_rejects_a_changed_key() {
-        assert_eq!(
-            check_key(Some(&build_key()), &build_key()).await,
-            (false, true)
-        );
+        let check = check_key(Some(&build_key()), &build_key()).await;
+        assert_eq!(check, (false, true));
     }
 }

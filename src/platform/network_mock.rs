@@ -168,9 +168,8 @@ impl SystemMock {
 
 impl Network for SystemMock {
     fn connect_stream(&self, port: u16) -> AsyncSocketFuture<'_> {
-        Box::pin(std::future::ready(
-            self.network.lock().unwrap().connect(port),
-        ))
+        let socket = self.network.lock().unwrap().connect(port);
+        Box::pin(std::future::ready(socket))
     }
 
     fn connect_socket(&self, path: &Path, _timeout: Option<Duration>) -> Result<Box<dyn Socket>> {

@@ -199,10 +199,8 @@ mod tests {
 
         build_command(&["test/clean"]).run(&context).await.unwrap();
 
-        assert_eq!(
-            *recorders.snapshots.lock().unwrap(),
-            vec!["delete test/clean"]
-        );
+        let snapshots = recorders.snapshots.lock().unwrap();
+        assert_eq!(*snapshots, vec!["delete test/clean"]);
         assert!(recorders.deleted.lock().unwrap().is_empty());
     }
 
@@ -215,10 +213,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(
-            *recorders.snapshots.lock().unwrap(),
-            vec!["delete test/clean"]
-        );
+        let snapshots = recorders.snapshots.lock().unwrap();
+        assert_eq!(*snapshots, vec!["delete test/clean"]);
     }
 
     #[tokio::test]

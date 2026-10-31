@@ -87,14 +87,10 @@ mod tests {
 <a href="image-20260630.10.qcow2.sha256">
 <a href="image-20260629.12.qcow2">"#;
 
-        assert_eq!(
-            find_newest_file(&convert_glob_to_regex("image-*.qcow2"), listing),
-            Some("image-20260630.10.qcow2".to_string())
-        );
-        assert_eq!(
-            find_newest_file(&convert_glob_to_regex("debian-*.qcow2"), listing),
-            None
-        );
+        let file = find_newest_file(&convert_glob_to_regex("image-*.qcow2"), listing);
+        assert_eq!(file, Some("image-20260630.10.qcow2".to_string()));
+        let file = find_newest_file(&convert_glob_to_regex("debian-*.qcow2"), listing);
+        assert_eq!(file, None);
     }
 
     #[test]

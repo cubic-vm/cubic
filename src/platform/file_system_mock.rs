@@ -112,11 +112,8 @@ impl FileSystem for SystemMock {
     fn read_dir(&self, path: &Path) -> Result<Vec<PathBuf>> {
         let file_system = self.lock_file_system();
         if !matches!(file_system.paths.get(path), Some(None)) {
-            return Err(Error::from_fs(
-                FsOperation::ReadDir,
-                path,
-                io::ErrorKind::NotFound.into(),
-            ));
+            let error = io::ErrorKind::NotFound.into();
+            return Err(Error::from_fs(FsOperation::ReadDir, path, error));
         }
         Ok(file_system
             .paths
@@ -182,11 +179,8 @@ impl FileSystem for SystemMock {
     fn remove_file(&self, path: &Path) -> Result<()> {
         let mut file_system = self.lock_file_system();
         if !matches!(file_system.paths.get(path), Some(Some(_))) {
-            return Err(Error::from_fs(
-                FsOperation::RemoveFile,
-                path,
-                io::ErrorKind::NotFound.into(),
-            ));
+            let error = io::ErrorKind::NotFound.into();
+            return Err(Error::from_fs(FsOperation::RemoveFile, path, error));
         }
         file_system.paths.remove(path);
         Ok(())
@@ -246,10 +240,8 @@ mod tests {
         file.write_all(b"hello ").unwrap();
         file.write_all(b"world").unwrap();
 
-        assert_eq!(
-            system.get_written_file("/data/out.txt"),
-            Some(b"hello world".to_vec())
-        );
+        let written = system.get_written_file("/data/out.txt");
+        assert_eq!(written, Some(b"hello world".to_vec()));
     }
 
     #[test]
@@ -302,14 +294,10 @@ mod tests {
 
         assert!(!system.exists_path(Path::new("/data/old")));
         assert!(system.read_dir(Path::new("/data/new/sub")).is_ok());
-        assert_eq!(
-            system.get_written_file("/data/new/a.txt"),
-            Some(b"1".to_vec())
-        );
-        assert_eq!(
-            system.get_written_file("/data/new/sub/b.txt"),
-            Some(b"2".to_vec())
-        );
+        let written = system.get_written_file("/data/new/a.txt");
+        assert_eq!(written, Some(b"1".to_vec()));
+        let written = system.get_written_file("/data/new/sub/b.txt");
+        assert_eq!(written, Some(b"2".to_vec()));
     }
 
     #[test]
@@ -321,10 +309,8 @@ mod tests {
             .unwrap();
 
         assert!(system.exists_path(Path::new("/data/old.txt")));
-        assert_eq!(
-            system.get_written_file("/data/new.txt"),
-            Some(b"hello".to_vec())
-        );
+        let written = system.get_written_file("/data/new.txt");
+        assert_eq!(written, Some(b"hello".to_vec()));
     }
 
     #[test]

@@ -261,10 +261,8 @@ mod tests {
             prefix: PathBuf::from("/prefix"),
         };
 
-        assert_eq!(
-            install.find_datadir(),
-            Some(PathBuf::from("/prefix/share/qemu"))
-        );
+        let datadir = install.find_datadir();
+        assert_eq!(datadir, Some(PathBuf::from("/prefix/share/qemu")));
 
         let system = SystemMock::new().add_file("/prefix/share/qemu", b"");
         let install = QemuInstall {

@@ -84,10 +84,9 @@ impl InstanceStore for InstanceDao {
             Err(Error::InstanceNotStopped(instance.name.to_string()))
         } else {
             self.claim_name(new_name)?;
-            self.system.rename_file(
-                &self.env.get_instance_dir2(&instance.name),
-                &self.env.get_instance_dir2(new_name),
-            )?;
+            let old_dir = self.env.get_instance_dir2(&instance.name);
+            let new_dir = self.env.get_instance_dir2(new_name);
+            self.system.rename_file(&old_dir, &new_dir)?;
             instance.name = new_name.to_string();
             Ok(())
         }

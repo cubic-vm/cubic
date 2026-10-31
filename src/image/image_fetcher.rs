@@ -106,10 +106,8 @@ impl ImageFetcher {
             .ok_or(Error::InvalidChecksum)?;
 
         let download = client.download(&image.get_image_url()).await?;
-        let mut file = BufWriter::with_capacity(
-            WRITE_BUFFER_SIZE,
-            system.create_file(temp_file, Access::Normal)?,
-        );
+        let file = system.create_file(temp_file, Access::Normal)?;
+        let mut file = BufWriter::with_capacity(WRITE_BUFFER_SIZE, file);
         let message = format!("Downloading {}", &image.to_name());
         let mut progress = TransferView::new(Arc::clone(console), &message, download.size());
         let mut hasher = Hasher::new(image.hash_alg);
@@ -164,10 +162,8 @@ mod tests {
 
     #[test]
     fn test_find_checksum_reads_a_bare_hash() {
-        assert_eq!(
-            ImageFetcher::find_checksum("def456\n", "image.qcow2"),
-            Some("def456".to_string())
-        );
+        let checksum = ImageFetcher::find_checksum("def456\n", "image.qcow2");
+        assert_eq!(checksum, Some("def456".to_string()));
     }
 
     #[test]
@@ -178,13 +174,9 @@ mod tests {
 <a href="image-20260630.10.qcow2.sha256">
 <a href="image-20260629.12.qcow2">"#;
 
-        assert_eq!(
-            ImageFetcher::find_image_file(listing, "image-*.qcow2"),
-            Some("image-20260630.10.qcow2".to_string())
-        );
-        assert_eq!(
-            ImageFetcher::find_image_file(listing, "debian-*.qcow2"),
-            None
-        );
+        let file = ImageFetcher::find_image_file(listing, "image-*.qcow2");
+        assert_eq!(file, Some("image-20260630.10.qcow2".to_string()));
+        let file = ImageFetcher::find_image_file(listing, "debian-*.qcow2");
+        assert_eq!(file, None);
     }
 }

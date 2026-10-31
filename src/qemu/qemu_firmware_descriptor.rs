@@ -185,9 +185,7 @@ mod tests {
     #[test]
     fn test_build_code_path_without_share_segment_is_identity() {
         let prefix = Path::new("/opt/qemu");
-        assert_eq!(
-            build_descriptor_with_code("/custom/OVMF_CODE.fd").build_code_path(prefix),
-            PathBuf::from("/custom/OVMF_CODE.fd")
-        );
+        let path = build_descriptor_with_code("/custom/OVMF_CODE.fd").build_code_path(prefix);
+        assert_eq!(path, PathBuf::from("/custom/OVMF_CODE.fd"));
     }
 }

@@ -10,9 +10,8 @@ impl OsSystem {
     // start, since only the first one means the host lacks the tool.
     fn map_spawn_error(command: &Command, error: std::io::Error) -> Error {
         if error.kind() == ErrorKind::NotFound {
-            return Error::SystemCommandNotFound(
-                command.get_program().to_string_lossy().into_owned(),
-            );
+            let program = command.get_program().to_string_lossy().into_owned();
+            return Error::SystemCommandNotFound(program);
         }
 
         Error::SystemCommandFailed(command.get_command(), error.to_string())
@@ -72,10 +71,8 @@ impl Process for OsSystem {
         if out.status.success() {
             Ok(out.stdout)
         } else {
-            Err(Error::SystemCommandFailed(
-                command.get_command(),
-                String::from_utf8_lossy(&out.stderr).into_owned(),
-            ))
+            let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
+            Err(Error::SystemCommandFailed(command.get_command(), stderr))
         }
     }
 
@@ -107,12 +104,9 @@ impl Process for OsSystem {
             if let Ok(Some(_)) = child.try_wait() {
                 let stderr = child
                     .wait_with_output()
-                    .map(|o| o.stderr)
+                    .map(|o| String::from_utf8_lossy(&o.stderr).into_owned())
                     .unwrap_or_default();
-                return Err(Error::SystemCommandFailed(
-                    command.get_command(),
-                    String::from_utf8_lossy(&stderr).into_owned(),
-                ));
+                return Err(Error::SystemCommandFailed(command.get_command(), stderr));
             }
         }
 

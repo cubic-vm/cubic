@@ -76,18 +76,14 @@ mod tests {
 <a href="./16.0/">16.0/</a>
 <a href="./16.1/">16.1/</a>"#;
 
-        assert_eq!(
-            OpenSuseLeapImageProvider {}.find_image_names(listing),
-            ["15.6", "16.0"]
-        );
+        let names = OpenSuseLeapImageProvider {}.find_image_names(listing);
+        assert_eq!(names, ["15.6", "16.0"]);
     }
 
     #[test]
     fn test_get_image_dir_path_points_to_appliances() {
-        assert_eq!(
-            OpenSuseLeapImageProvider {}.get_image_dir_path("16.0", Arch::AMD64),
-            "16.0/appliances/"
-        );
+        let dir = OpenSuseLeapImageProvider {}.get_image_dir_path("16.0", Arch::AMD64);
+        assert_eq!(dir, "16.0/appliances/");
     }
 
     #[test]

@@ -109,10 +109,8 @@ mod tests {
         assert_eq!(DataSize::new(0).to_size(), "0 B");
         assert_eq!(DataSize::new(1024_usize.pow(2)).to_size(), "1024 K");
         assert_eq!(DataSize::new(10 * 1024_usize.pow(2)).to_size(), "10 M");
-        assert_eq!(
-            DataSize::new(107 * 1024_usize.pow(3) / 10).to_size(),
-            "11 G"
-        );
+        let size = DataSize::new(107 * 1024_usize.pow(3) / 10).to_size();
+        assert_eq!(size, "11 G");
         assert_eq!(DataSize::new(9999).to_size(), "9999 B");
         assert_eq!(DataSize::new(10_000).to_size(), "10 K");
     }
@@ -121,28 +119,20 @@ mod tests {
     fn test_scales_the_value_to_another_unit() {
         let total = DataSize::new(100 * 1024_usize.pow(3));
         assert_eq!(DataSize::new(1024_usize.pow(3)).to_value_in(&total), 1);
-        assert_eq!(
-            DataSize::new(44 * 1024_usize.pow(3)).to_value_in(&total),
-            44
-        );
+        let value = DataSize::new(44 * 1024_usize.pow(3)).to_value_in(&total);
+        assert_eq!(value, 44);
     }
 
     #[test]
     fn test_parse_a_size() {
         assert_eq!(DataSize::from_str("1B").unwrap().get_bytes(), 1);
         assert_eq!(DataSize::from_str("1K").unwrap().get_bytes(), 1024);
-        assert_eq!(
-            DataSize::from_str("1M").unwrap().get_bytes(),
-            1024_usize.pow(2)
-        );
-        assert_eq!(
-            DataSize::from_str("1G").unwrap().get_bytes(),
-            1024_usize.pow(3)
-        );
-        assert_eq!(
-            DataSize::from_str("1T").unwrap().get_bytes(),
-            1024_usize.pow(4)
-        );
+        let bytes = DataSize::from_str("1M").unwrap().get_bytes();
+        assert_eq!(bytes, 1024_usize.pow(2));
+        let bytes = DataSize::from_str("1G").unwrap().get_bytes();
+        assert_eq!(bytes, 1024_usize.pow(3));
+        let bytes = DataSize::from_str("1T").unwrap().get_bytes();
+        assert_eq!(bytes, 1024_usize.pow(4));
     }
 
     #[test]

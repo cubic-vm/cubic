@@ -134,10 +134,8 @@ ssh_port = 14357
 
         assert_eq!(instance.cpus, 3);
         assert_eq!(instance.ssh_port, 14357);
-        assert_eq!(
-            system.get_written_file(build_env().get_instance_toml_config_file("test")),
-            Some(config.as_bytes().to_vec())
-        );
+        let written = system.get_written_file(build_env().get_instance_toml_config_file("test"));
+        assert_eq!(written, Some(config.as_bytes().to_vec()));
     }
 
     #[test]

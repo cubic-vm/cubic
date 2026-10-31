@@ -100,10 +100,8 @@ mod tests {
         let mut command = Command::new("echo");
         command.arg("hello");
 
-        assert_eq!(
-            system.run_and_wait(command, None, None).unwrap(),
-            b"hello\n"
-        );
+        let output = system.run_and_wait(command, None, None).unwrap();
+        assert_eq!(output, b"hello\n");
     }
 
     #[test]

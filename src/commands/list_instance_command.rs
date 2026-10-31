@@ -53,16 +53,14 @@ impl Command for ListInstanceCommand {
                 ),
                 None => instance.disk_capacity.to_size(),
             };
+            let running = util::to_yes_no(instance_store.is_running(&instance));
             row.add(instance_name, Alignment::Left)
                 .add(instance.os.as_deref().unwrap_or_default(), Alignment::Left)
                 .add(&instance.arch.to_string(), Alignment::Left)
                 .add(&instance.cpus.to_string(), Alignment::Right)
                 .add(&instance.mem.to_size(), Alignment::Right)
                 .add(&disk, Alignment::Right)
-                .add(
-                    util::to_yes_no(instance_store.is_running(&instance)),
-                    Alignment::Right,
-                );
+                .add(running, Alignment::Right);
         }
         view.print(context.get_console());
         Ok(0)

@@ -41,10 +41,8 @@ mod tests {
     fn test_sha256_of_abc() {
         let mut hasher = Hasher::new(HashAlg::Sha256);
         hasher.write_all(b"abc").unwrap();
-        assert_eq!(
-            hasher.finalize(),
-            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
-        );
+        let expected = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+        assert_eq!(hasher.finalize(), expected);
     }
 
     #[test]

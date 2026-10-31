@@ -105,14 +105,10 @@ mod tests {
     fn detach_on_tilde_dot_after_newline() {
         let mut decoder = ShortcutDecoder::new();
         let mut src = BytesMut::from(&b"a\n"[..]);
-        assert_eq!(
-            Some(Bytes::from_static(b"a")),
-            decoder.decode(&mut src).unwrap()
-        );
-        assert_eq!(
-            Some(Bytes::from_static(b"\n")),
-            decoder.decode(&mut src).unwrap()
-        );
+        let decoded = decoder.decode(&mut src).unwrap();
+        assert_eq!(Some(Bytes::from_static(b"a")), decoded);
+        let decoded = decoder.decode(&mut src).unwrap();
+        assert_eq!(Some(Bytes::from_static(b"\n")), decoded);
 
         let mut src = BytesMut::from(&b"~."[..]);
         assert!(decoder.decode(&mut src).is_err());
@@ -122,38 +118,28 @@ mod tests {
     fn no_detach_when_tilde_is_mid_line() {
         let mut decoder = ShortcutDecoder::new();
         let mut src = BytesMut::from(&b"a~."[..]);
-        assert_eq!(
-            Some(Bytes::from_static(b"a")),
-            decoder.decode(&mut src).unwrap()
-        );
-        assert_eq!(
-            Some(Bytes::from_static(b"~")),
-            decoder.decode(&mut src).unwrap()
-        );
-        assert_eq!(
-            Some(Bytes::from_static(b".")),
-            decoder.decode(&mut src).unwrap()
-        );
+        let decoded = decoder.decode(&mut src).unwrap();
+        assert_eq!(Some(Bytes::from_static(b"a")), decoded);
+        let decoded = decoder.decode(&mut src).unwrap();
+        assert_eq!(Some(Bytes::from_static(b"~")), decoded);
+        let decoded = decoder.decode(&mut src).unwrap();
+        assert_eq!(Some(Bytes::from_static(b".")), decoded);
     }
 
     #[test]
     fn replay_withheld_tilde_when_next_byte_is_not_a_dot() {
         let mut decoder = ShortcutDecoder::new();
         let mut src = BytesMut::from(&b"~x"[..]);
-        assert_eq!(
-            Some(Bytes::copy_from_slice(b"~x")),
-            decoder.decode(&mut src).unwrap()
-        );
+        let decoded = decoder.decode(&mut src).unwrap();
+        assert_eq!(Some(Bytes::copy_from_slice(b"~x")), decoded);
     }
 
     #[test]
     fn replay_tilde_on_repeated_tilde() {
         let mut decoder = ShortcutDecoder::new();
         let mut src = BytesMut::from(&b"~~"[..]);
-        assert_eq!(
-            Some(Bytes::copy_from_slice(b"~~")),
-            decoder.decode(&mut src).unwrap()
-        );
+        let decoded = decoder.decode(&mut src).unwrap();
+        assert_eq!(Some(Bytes::copy_from_slice(b"~~")), decoded);
     }
 
     #[test]
@@ -168,10 +154,8 @@ mod tests {
         let mut decoder = ShortcutDecoder::new();
         let mut src = BytesMut::from(&b"~"[..]);
         assert_eq!(None, decoder.decode(&mut src).unwrap());
-        assert_eq!(
-            Some(Bytes::from_static(b"~")),
-            decoder.decode_eof(&mut src).unwrap()
-        );
+        let decoded = decoder.decode_eof(&mut src).unwrap();
+        assert_eq!(Some(Bytes::from_static(b"~")), decoded);
         assert_eq!(None, decoder.decode_eof(&mut src).unwrap());
     }
 

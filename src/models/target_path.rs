@@ -68,10 +68,8 @@ mod tests {
     #[test]
     fn test_get_the_target_of_a_path() {
         let path = TargetPath::from_str("mymachine:/home/cubic").unwrap();
-        assert_eq!(
-            path.get_target().unwrap().get_instance().as_str(),
-            "mymachine"
-        );
+        let instance = path.get_target().unwrap().get_instance().as_str();
+        assert_eq!(instance, "mymachine");
 
         let path = TargetPath::from_str("/home/cubic").unwrap();
         assert!(path.get_target().is_none());

@@ -140,14 +140,10 @@ mod tests {
 
     #[test]
     fn test_get_image_name_uses_the_version() {
-        assert_eq!(
-            build_image("debian", "12", Some("bookworm")).get_image_name(),
-            "debian:12"
-        );
-        assert_eq!(
-            build_image("archlinux", Image::ROLLING, None).get_image_name(),
-            "archlinux:rolling"
-        );
+        let name = build_image("debian", "12", Some("bookworm")).get_image_name();
+        assert_eq!(name, "debian:12");
+        let name = build_image("archlinux", Image::ROLLING, None).get_image_name();
+        assert_eq!(name, "archlinux:rolling");
     }
 
     #[test]
@@ -161,14 +157,10 @@ mod tests {
 
     #[test]
     fn test_to_file_name_uses_name_and_arch() {
-        assert_eq!(
-            build_image("debian", "12", Some("bookworm")).to_file_name(),
-            "debian_bookworm_amd64"
-        );
-        assert_eq!(
-            build_image("archlinux", Image::ROLLING, None).to_file_name(),
-            "archlinux_rolling_amd64"
-        );
+        let name = build_image("debian", "12", Some("bookworm")).to_file_name();
+        assert_eq!(name, "debian_bookworm_amd64");
+        let name = build_image("archlinux", Image::ROLLING, None).to_file_name();
+        assert_eq!(name, "archlinux_rolling_amd64");
     }
 
     #[test]

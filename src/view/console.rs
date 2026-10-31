@@ -236,10 +236,8 @@ mod tests {
         let home = MoveToColumn(0).to_string();
         let clear = Clear(ClearType::FromCursorDown).to_string();
         let up = MoveUp(2).to_string();
-        assert_eq!(
-            system.get_output(),
-            format!("{home}{clear}a\nb\nc{up}{home}{clear}d")
-        );
+        let output = system.get_output();
+        assert_eq!(output, format!("{home}{clear}a\nb\nc{up}{home}{clear}d"));
     }
 
     #[test]
@@ -268,10 +266,8 @@ mod tests {
         console.warn("foo\n\nbar");
         console.error("foo\nbar");
 
-        assert_eq!(
-            system.get_output(),
-            "warn: foo\n      \n      bar\nerror: foo\n       bar\n"
-        );
+        let expected = "warn: foo\n      \n      bar\nerror: foo\n       bar\n";
+        assert_eq!(system.get_output(), expected);
     }
 
     #[test]

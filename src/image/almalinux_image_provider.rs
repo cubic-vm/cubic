@@ -51,18 +51,14 @@ mod tests {
 <a href="9/">9/</a>
 <a href="almalinux/">almalinux/</a>"#;
 
-        assert_eq!(
-            AlmaLinuxImageProvider {}.find_image_names(listing),
-            ["8", "9"]
-        );
+        let names = AlmaLinuxImageProvider {}.find_image_names(listing);
+        assert_eq!(names, ["8", "9"]);
     }
 
     #[test]
     fn test_get_image_dir_path_uses_canonical_arch() {
-        assert_eq!(
-            AlmaLinuxImageProvider {}.get_image_dir_path("9", Arch::AMD64),
-            "9/cloud/x86_64/images/"
-        );
+        let dir = AlmaLinuxImageProvider {}.get_image_dir_path("9", Arch::AMD64);
+        assert_eq!(dir, "9/cloud/x86_64/images/");
     }
 
     #[test]

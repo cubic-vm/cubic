@@ -89,10 +89,8 @@ mod tests {
 
         let builder = QemuPathBuilder::new(&system);
 
-        assert_eq!(
-            builder.get_dirs().first(),
-            Some(&PathBuf::from("/override/bin"))
-        );
+        let first_dir = builder.get_dirs().first();
+        assert_eq!(first_dir, Some(&PathBuf::from("/override/bin")));
     }
 
     #[test]

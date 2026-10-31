@@ -99,13 +99,10 @@ impl PortForward {
         let (protocol, host) = host.split_once(':').ok_or(QEMU_FORMAT_ERROR)?;
         let (host_ip, host_port) = host.rsplit_once(':').ok_or(QEMU_FORMAT_ERROR)?;
 
-        Self::from_value(
-            Some(protocol).filter(|protocol| !protocol.is_empty()),
-            Some(host_ip).filter(|host_ip| !host_ip.is_empty()),
-            host_port,
-            guest_port,
-        )
-        .map_err(|_| QEMU_FORMAT_ERROR.to_string())
+        let protocol = Some(protocol).filter(|protocol| !protocol.is_empty());
+        let host_ip = Some(host_ip).filter(|host_ip| !host_ip.is_empty());
+        Self::from_value(protocol, host_ip, host_port, guest_port)
+            .map_err(|_| QEMU_FORMAT_ERROR.to_string())
     }
 
     pub fn to_qemu(&self) -> String {
@@ -228,10 +225,8 @@ mod tests {
         assert_eq!(parse_qemu("udp::3000-:30"), "127.0.0.1:3000:30/udp");
         assert_eq!(parse_qemu("tcp::4000-:40"), "127.0.0.1:4000:40/tcp");
         assert_eq!(parse_qemu("udp:0.0.0.0:5000-:50"), "0.0.0.0:5000:50/udp");
-        assert_eq!(
-            parse_qemu("tcp:192.168.0.1:6000-:60"),
-            "192.168.0.1:6000:60/tcp"
-        );
+        let rule = parse_qemu("tcp:192.168.0.1:6000-:60");
+        assert_eq!(rule, "192.168.0.1:6000:60/tcp");
     }
 
     #[test]

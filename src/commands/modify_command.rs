@@ -183,10 +183,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(
-            system.get_output(),
-            "info: Note: changes may require a restart to take effect.\n"
-        );
+        let expected = "info: Note: changes may require a restart to take effect.\n";
+        assert_eq!(system.get_output(), expected);
     }
 
     #[tokio::test]

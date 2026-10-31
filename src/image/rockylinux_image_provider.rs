@@ -51,18 +51,14 @@ mod tests {
 <a href="9/">9/</a>
 <a href="sig/">sig/</a>"#;
 
-        assert_eq!(
-            RockyLinuxImageProvider {}.find_image_names(listing),
-            ["8", "9"]
-        );
+        let names = RockyLinuxImageProvider {}.find_image_names(listing);
+        assert_eq!(names, ["8", "9"]);
     }
 
     #[test]
     fn test_get_image_dir_path_uses_canonical_arch() {
-        assert_eq!(
-            RockyLinuxImageProvider {}.get_image_dir_path("9", Arch::ARM64),
-            "9/images/aarch64/"
-        );
+        let dir = RockyLinuxImageProvider {}.get_image_dir_path("9", Arch::ARM64);
+        assert_eq!(dir, "9/images/aarch64/");
     }
 
     #[test]

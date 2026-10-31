@@ -66,24 +66,18 @@ mod tests {
 <a href="trixie/">trixie/</a>
 <a href="OpenStack/">OpenStack/</a>"#;
 
-        assert_eq!(
-            DebianImageProvider {}.find_image_names(listing),
-            ["bookworm", "trixie"]
-        );
+        let names = DebianImageProvider {}.find_image_names(listing);
+        assert_eq!(names, ["bookworm", "trixie"]);
     }
 
     #[test]
     fn test_get_version_and_codename() {
         let provider = DebianImageProvider {};
 
-        assert_eq!(
-            provider.get_version("debian-12-genericcloud-amd64.qcow2", "bookworm"),
-            "12"
-        );
-        assert_eq!(
-            provider.get_codename("bookworm"),
-            Some("bookworm".to_string())
-        );
+        let version = provider.get_version("debian-12-genericcloud-amd64.qcow2", "bookworm");
+        assert_eq!(version, "12");
+        let codename = provider.get_codename("bookworm");
+        assert_eq!(codename, Some("bookworm".to_string()));
     }
 
     #[test]

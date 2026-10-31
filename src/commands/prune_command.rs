@@ -71,14 +71,13 @@ impl Command for PruneCommand {
 
         // Calculate size
         let cache_file = env.get_image_cache_file();
-        let total = DataSize::new(
-            dirs.iter()
-                .chain(stale_dirs.iter())
-                .chain(legacy_certs.iter())
-                .chain([&cache_file])
-                .fold(0, |total, path| total + system.get_path_size(path)) as usize,
-        )
-        .to_size();
+        let bytes = dirs
+            .iter()
+            .chain(stale_dirs.iter())
+            .chain(legacy_certs.iter())
+            .chain([&cache_file])
+            .fold(0, |total, path| total + system.get_path_size(path));
+        let total = DataSize::new(bytes as usize).to_size();
 
         // Print size of files to be deleted
         console.print(&format!("Pruning caches frees {total} of disk space.\n"));

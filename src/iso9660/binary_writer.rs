@@ -122,10 +122,8 @@ mod tests {
 
         let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
         assert_eq!(writer.write_u32_le_be(0x12345678).unwrap(), 8);
-        assert_eq!(
-            writer.get_writer().get_ref(),
-            &[0x78, 0x56, 0x34, 0x12, 0x12, 0x34, 0x56, 0x78]
-        );
+        let bytes = writer.get_writer().get_ref();
+        assert_eq!(bytes, &[0x78, 0x56, 0x34, 0x12, 0x12, 0x34, 0x56, 0x78]);
 
         let mut writer = BinaryWriter::new(Cursor::new(Vec::new()));
         assert_eq!(writer.write_u16_le_be(0x1234).unwrap(), 4);
