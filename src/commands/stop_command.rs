@@ -1,4 +1,4 @@
-use crate::actions::{LoadInstanceAction, StopInstanceAction};
+use crate::actions::{ListInstancesAction, LoadInstanceAction, StopInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::Instance;
@@ -76,14 +76,12 @@ impl StopCommand {
 
 impl Command for StopCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
-        let instance_store = context.get_instance_store();
-
         if !self.all.value {
             self.instances.require_names()?;
         }
 
         let stop_instances = if self.all.value {
-            instance_store.get_instances()
+            ListInstancesAction::new().run(context)
         } else {
             self.instances.get_names()
         };

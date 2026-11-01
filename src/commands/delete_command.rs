@@ -1,4 +1,4 @@
-use crate::actions::LoadInstanceAction;
+use crate::actions::{DeleteInstanceAction, LoadInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::{InstanceName, SnapshotName};
@@ -78,7 +78,6 @@ impl DeleteCommand {
 impl Command for DeleteCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let console = context.get_console();
-        let instance_store = context.get_instance_store();
 
         if self.targets.is_empty() {
             return Err(Error::MissingInstanceName);
@@ -86,7 +85,7 @@ impl Command for DeleteCommand {
 
         for target in &self.targets {
             let instance_name = Self::get_instance(target);
-            if !instance_store.exists(instance_name.as_str()) {
+            if !context.has_instance(instance_name.as_str()) {
                 return Err(Error::UnknownInstance(instance_name.to_string()));
             }
 
@@ -131,7 +130,7 @@ impl Command for DeleteCommand {
                     QemuImg::new(context.get_system())
                         .delete_snapshot(&image, snapshot_name.as_str())?
                 }
-                Either::Left(_) => instance_store.delete(&instance)?,
+                Either::Left(_) => DeleteInstanceAction::new().run(context, &instance)?,
             }
             console.debug(&format!("Deleted {target}"));
         }
@@ -145,18 +144,22 @@ impl Command for DeleteCommand {
 mod tests {
     use super::*;
     use crate::commands::ContextBuilder;
-    use crate::models::Instance;
-    use crate::platform::SystemMock;
-    use std::sync::{Arc, Mutex};
+    use crate::models::{Environment, Instance};
+    use crate::platform::{FileSystem, SystemMock};
+    use std::sync::Arc;
 
     struct Recorders {
-        deleted: Arc<Mutex<Vec<String>>>,
         system: Arc<SystemMock>,
         // The qemu-img call that deletes test/clean
         delete_clean: String,
     }
 
     impl Recorders {
+        fn has_instance(&self) -> bool {
+            let dir = Environment::default().get_instance_dir2("test");
+            self.system.exists_path(&dir)
+        }
+
         fn count_snapshot_deletes(&self) -> usize {
             let commands = self.system.get_executed_commands();
             commands.iter().filter(|c| **c == self.delete_clean).count()
@@ -165,14 +168,13 @@ mod tests {
 
     // Builds a context with the instance "test" whose image holds `snapshots`
     fn build_context(snapshots: &[&str]) -> (commands::Context, Recorders) {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
         }]);
         builder.add_image_info("test", 0, 0, snapshots);
         let recorders = Recorders {
-            deleted: Arc::clone(&builder.get_store().deleted),
             system: Arc::clone(builder.get_system()),
             delete_clean: builder.add_snapshot_command("-d", "test", "clean"),
         };
@@ -196,7 +198,7 @@ mod tests {
 
         build_command(&["test"]).run(&context).await.unwrap();
 
-        assert_eq!(*recorders.deleted.lock().unwrap(), vec!["test"]);
+        assert!(!recorders.has_instance());
         assert_eq!(recorders.count_snapshot_deletes(), 0);
     }
 
@@ -207,7 +209,7 @@ mod tests {
         build_command(&["test/clean"]).run(&context).await.unwrap();
 
         assert_eq!(recorders.count_snapshot_deletes(), 1);
-        assert!(recorders.deleted.lock().unwrap().is_empty());
+        assert!(recorders.has_instance());
     }
 
     #[tokio::test]
@@ -231,7 +233,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(*recorders.deleted.lock().unwrap(), vec!["test"]);
+        assert!(!recorders.has_instance());
         assert_eq!(recorders.count_snapshot_deletes(), 0);
     }
 
@@ -254,6 +256,6 @@ mod tests {
             Err(Error::UnknownSnapshot(instance, snapshot))
                 if instance == "test" && snapshot == "clean"
         ));
-        assert!(recorders.deleted.lock().unwrap().is_empty());
+        assert!(recorders.has_instance());
     }
 }

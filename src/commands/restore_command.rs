@@ -97,8 +97,8 @@ mod tests {
         system: SystemMock,
         snapshots: &[&str],
     ) -> (commands::Context, impl Fn() -> bool) {
-        let mut builder = ContextBuilder::new(system);
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(system);
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
         }]);

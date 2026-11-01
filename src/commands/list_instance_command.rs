@@ -1,4 +1,4 @@
-use crate::actions::LoadInstanceAction;
+use crate::actions::{ListInstancesAction, LoadInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::qemu::QemuImg;
@@ -26,8 +26,7 @@ pub struct ListInstanceCommand {
 
 impl Command for ListInstanceCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
-        let instance_store = context.get_instance_store();
-        let instance_names = instance_store.get_instances();
+        let instance_names = ListInstancesAction::new().run(context);
 
         let mut view = TableView::new();
         view.add_row()
@@ -79,8 +78,8 @@ mod tests {
     use std::sync::Arc;
 
     fn build_context(instances: Vec<Instance>, running: &[&str]) -> ContextBuilder {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(instances);
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(instances);
         builder.set_running(running);
         builder.add_image_info("test", 512 * 1024, 1048576, &[]);
         builder

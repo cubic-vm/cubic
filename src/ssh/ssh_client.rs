@@ -1,3 +1,4 @@
+use crate::actions::{LoadInstanceAction, StoreInstanceAction};
 use crate::commands::Context;
 use crate::error::Error;
 use crate::models::{Instance, TargetInstancePath};
@@ -232,7 +233,6 @@ impl<'a> SshClient<'a> {
     ) -> Result<client::Handle<ServerKeyHandler>, Error> {
         let console = self.context.get_console();
         let session;
-        let store = self.context.get_instance_store();
         let mut pinned = instance.ssh_host_key.clone();
         let offered = Arc::new(Mutex::new(None));
 
@@ -262,7 +262,7 @@ impl<'a> SshClient<'a> {
                 }
 
                 instance.ssh_host_key = Some(key.clone());
-                store.store(instance)?;
+                StoreInstanceAction::new().run(self.context, instance)?;
                 pinned = Some(key);
                 continue;
             }
@@ -284,7 +284,7 @@ impl<'a> SshClient<'a> {
                     HostKeyChecker::new().get_fingerprint(&key)
                 ));
                 instance.ssh_host_key = Some(key);
-                store.store(instance)?;
+                StoreInstanceAction::new().run(self.context, instance)?;
             }
         }
 
@@ -298,8 +298,7 @@ impl<'a> SshClient<'a> {
         user: &str,
         port: u16,
     ) -> Result<Channel<client::Msg>, Error> {
-        let store = self.context.get_instance_store();
-        let mut instance = store.load(machine)?;
+        let mut instance = LoadInstanceAction::new().read(self.context, machine)?;
         let first_boot = instance.first_boot && user == instance.user.as_str();
 
         let session = loop {
@@ -322,7 +321,7 @@ impl<'a> SshClient<'a> {
                 .await
             {
                 instance.first_boot = false;
-                store.store(&instance).ok();
+                StoreInstanceAction::new().run(self.context, &instance).ok();
 
                 break session;
             }
@@ -334,12 +333,9 @@ impl<'a> SshClient<'a> {
         };
 
         if let Ok(channel) = session.channel_open_session().await {
-            GuestOsReader::new(
-                self.context.get_console(),
-                self.context.get_instance_store(),
-            )
-            .refresh(channel, &mut instance)
-            .await;
+            GuestOsReader::new(self.context)
+                .refresh(channel, &mut instance)
+                .await;
         }
 
         session

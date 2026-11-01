@@ -1,3 +1,4 @@
+use crate::actions::StoreInstanceAction;
 use crate::commands::Context;
 use crate::error::Result;
 use crate::models::{DataSize, Instance};
@@ -50,7 +51,7 @@ impl CreateInstanceAction {
         instance.auto_remove = auto_remove;
         instance.first_boot = true;
         instance.name = tmp_name;
-        context.get_instance_store().store(&instance)?;
+        StoreInstanceAction::new().run(context, &instance)?;
         instance.name = instance_name;
 
         system.rename_file(tmp_dir, target_dir)

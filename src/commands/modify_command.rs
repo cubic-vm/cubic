@@ -1,4 +1,4 @@
-use crate::actions::LoadInstanceAction;
+use crate::actions::{LoadInstanceAction, StoreInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::{DataSize, PortForward, ResourceAllocator};
@@ -69,7 +69,6 @@ pub struct ModifyCommand {
 impl Command for ModifyCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let console = context.get_console();
-        let instance_store = context.get_instance_store();
         let mut instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
 
         let mut monitor = context.get_monitor(&instance);
@@ -131,7 +130,7 @@ impl Command for ModifyCommand {
         instance.hostfwd.append(&mut self.port.clone());
         instance.hostfwd.retain(|p| !self.rm_port.contains(p));
 
-        instance_store.store(&instance)?;
+        StoreInstanceAction::new().run(context, &instance)?;
         Ok(0)
     }
 }
@@ -148,8 +147,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_modify_stopped_instance_prints_nothing() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             cpus: 2,
             mem: DataSize::new(GIB),
@@ -169,8 +168,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_modify_running_instance_notes_restart() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             cpus: 2,
             mem: DataSize::new(GIB),
@@ -192,8 +191,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_modify_running_instance_port_attempts_live_apply() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
         }]);
@@ -213,8 +212,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_modify_rejects_a_smaller_disk() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
         }]);

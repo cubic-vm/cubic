@@ -96,8 +96,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_show_basic_fields() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             arch: Arch::AMD64,
             user: UserName::from_str("myuser").unwrap(),
@@ -139,8 +139,8 @@ Forward:    127.0.0.1:4000:40/tcp
 
     #[tokio::test]
     async fn test_show_all_fields() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             arch: Arch::ARM64,
             user: UserName::from_str("john").unwrap(),

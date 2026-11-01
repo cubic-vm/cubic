@@ -22,15 +22,16 @@ pub struct RenameCommand {
 
 impl Command for RenameCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
-        let instance_store = context.get_instance_store();
-
-        let mut instance = LoadInstanceAction::new().run(context, self.old_name.as_str())?;
+        let instance = LoadInstanceAction::new().run(context, self.old_name.as_str())?;
         if context.get_monitor(&instance).is_running() {
             return Err(Error::InstanceNotStopped(instance.name.to_string()));
         }
 
         context.claim_name(self.new_name.as_str())?;
-        instance_store.rename(&mut instance, self.new_name.as_str())?;
+        let env = context.get_env();
+        let old_dir = env.get_instance_dir2(&instance.name);
+        let new_dir = env.get_instance_dir2(self.new_name.as_str());
+        context.get_system().rename_file(&old_dir, &new_dir)?;
         Ok(0)
     }
 }

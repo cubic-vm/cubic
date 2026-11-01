@@ -14,7 +14,7 @@ impl StopInstanceAction {
     }
 
     pub fn run(&mut self, context: &Context, kill: bool) -> Result<()> {
-        if !context.get_instance_store().exists(&self.instance.name) {
+        if !context.has_instance(&self.instance.name) {
             return Err(Error::UnknownInstance(self.instance.name.clone()));
         }
 
@@ -49,8 +49,8 @@ mod tests {
     // Runs the action on a running instance and returns what reached its monitor
     fn run_on_running_instance(kill: bool) -> String {
         let instance = build_instance("test");
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![instance.clone()]);
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![instance.clone()]);
         builder.set_running(&["test"]);
         let system = Arc::clone(builder.get_system());
 

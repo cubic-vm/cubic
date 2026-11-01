@@ -1,7 +1,7 @@
 use crate::commands::Context;
-use crate::instance::InstanceStoreMock;
-use crate::models::Environment;
-use crate::platform::SystemMock;
+use crate::instance::InstanceSerializer;
+use crate::models::{Environment, Instance};
+use crate::platform::{Access, FileSystem, SystemMock};
 use crate::view::Console;
 use std::sync::Arc;
 
@@ -11,7 +11,6 @@ const QMP_REPLIES: &[u8] = b"{\"QMP\": {}}\n{\"return\": {}, \"id\": \"0\"}\n{\"
 pub struct ContextBuilder {
     system: Arc<SystemMock>,
     env: Environment,
-    store: InstanceStoreMock,
 }
 
 impl ContextBuilder {
@@ -19,7 +18,6 @@ impl ContextBuilder {
         Self {
             system: Arc::new(system),
             env: Environment::default(),
-            store: InstanceStoreMock::new(Vec::new()),
         }
     }
 
@@ -31,8 +29,18 @@ impl ContextBuilder {
         &mut self.env
     }
 
-    pub fn get_store(&mut self) -> &mut InstanceStoreMock {
-        &mut self.store
+    // Writes the config of each instance, so it loads like a created one
+    pub fn add_instances(&self, instances: Vec<Instance>) {
+        for instance in instances {
+            let config = InstanceSerializer::new().serialize(&instance).unwrap();
+            let dir = self.env.get_instance_dir2(&instance.name);
+            let path = self.env.get_instance_toml_config_file(&instance.name);
+            let content = config.as_bytes();
+            self.system.create_dir(&dir).unwrap();
+            self.system
+                .write_file(&path, content, Access::Normal)
+                .unwrap();
+        }
     }
 
     // Opens a monitor socket for each name, so the instance counts as running
@@ -70,11 +78,6 @@ impl ContextBuilder {
     }
 
     pub fn build(self) -> Context {
-        Context::new(
-            self.system.clone(),
-            Console::new(self.system),
-            self.env,
-            Box::new(self.store),
-        )
+        Context::new(self.system.clone(), Console::new(self.system), self.env)
     }
 }

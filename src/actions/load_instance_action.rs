@@ -1,5 +1,7 @@
+use crate::actions::StoreInstanceAction;
 use crate::commands::Context;
 use crate::error::{Error, Result};
+use crate::instance::TomlInstanceDeserializer;
 use crate::models::{Arch, Instance, ResourceAllocator};
 
 /// Load an instance and replace an unreadable config with a machine of the
@@ -13,18 +15,32 @@ impl LoadInstanceAction {
     }
 
     pub fn run(&self, context: &Context, name: &str) -> Result<Instance> {
-        match context.get_instance_store().load(name) {
+        match self.read(context, name) {
             Err(error @ Error::InvalidInstanceConfig { .. }) => {
                 context.get_console().warn(&format!(
                     "{error}\n\nResetting instance '{name}' to the default settings."
                 ));
 
                 let instance = self.build_default_instance(context, name)?;
-                context.get_instance_store().store(&instance)?;
+                StoreInstanceAction::new().run(context, &instance)?;
                 Ok(instance)
             }
             other => other,
         }
+    }
+
+    /// Reads the config as it is, without replacing a broken one
+    pub fn read(&self, context: &Context, name: &str) -> Result<Instance> {
+        if !context.has_instance(name) {
+            return Err(Error::UnknownInstance(name.to_string()));
+        }
+
+        let path = context.get_env().get_instance_toml_config_file(name);
+        let mut file = context
+            .get_system()
+            .open_file(&path)
+            .map_err(|error| Error::from_config(name, error))?;
+        TomlInstanceDeserializer::new().deserialize(name, &mut file)
     }
 
     fn build_default_instance(&self, context: &Context, name: &str) -> Result<Instance> {
@@ -46,7 +62,6 @@ impl LoadInstanceAction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instance::{InstanceDao, InstanceStore};
     use crate::models::{Environment, UserName};
     use crate::platform::SystemMock;
     use crate::view::Console;
@@ -63,17 +78,8 @@ mod tests {
         )
     }
 
-    fn build_dao(system: &Arc<SystemMock>) -> InstanceDao {
-        InstanceDao::new(system.clone(), &build_env()).unwrap()
-    }
-
     fn build_context(system: &Arc<SystemMock>) -> Context {
-        Context::new(
-            system.clone(),
-            Console::new(system.clone()),
-            build_env(),
-            Box::new(build_dao(system)),
-        )
+        Context::new(system.clone(), Console::new(system.clone()), build_env())
     }
 
     fn build_system(config: &[u8]) -> Arc<SystemMock> {
@@ -105,7 +111,7 @@ mod tests {
         let context = build_context(&system);
 
         let instance = LoadInstanceAction::new().run(&context, "test").unwrap();
-        let reloaded = build_dao(&system).load("test").unwrap();
+        let reloaded = LoadInstanceAction::new().read(&context, "test").unwrap();
 
         assert_eq!(reloaded.cpus, instance.cpus);
         assert_eq!(reloaded.mem, instance.mem);
@@ -139,6 +145,17 @@ ssh_port = 14357
         assert!(matches!(
             LoadInstanceAction::new().run(&context, "missing"),
             Err(Error::UnknownInstance(name)) if name == "missing"
+        ));
+    }
+
+    #[test]
+    fn test_read_reports_a_missing_config() {
+        let system = Arc::new(SystemMock::new().add_dir("/data/machines/test"));
+        let context = build_context(&system);
+
+        assert!(matches!(
+            LoadInstanceAction::new().read(&context, "test"),
+            Err(Error::InvalidInstanceConfig { name, .. }) if name == "test"
         ));
     }
 }

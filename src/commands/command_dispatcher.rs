@@ -1,7 +1,6 @@
 use crate::commands::{self, Command};
 use crate::env::EnvironmentFactory;
 use crate::error::Result;
-use crate::instance::InstanceDao;
 use crate::platform::System;
 use crate::view::Console;
 use clap::{ArgAction, CommandFactory, Parser, Subcommand};
@@ -82,12 +81,9 @@ impl CommandDispatcher {
         };
 
         let env = EnvironmentFactory::create_env(system.as_ref())?;
-        let context = &commands::Context::new(
-            Arc::clone(&system),
-            Arc::clone(console),
-            env.clone(),
-            Box::new(InstanceDao::new(Arc::clone(&system), &env)?),
-        );
+        system.create_dir(&env.get_instance_dir())?;
+        system.create_dir(env.get_cache_dir())?;
+        let context = &commands::Context::new(Arc::clone(&system), Arc::clone(console), env);
 
         let result = match &command {
             Commands::Run(cmd) => cmd.run(context).await,

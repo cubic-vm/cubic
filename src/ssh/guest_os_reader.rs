@@ -1,10 +1,9 @@
-use crate::instance::InstanceStore;
+use crate::actions::StoreInstanceAction;
+use crate::commands::Context;
 use crate::models::{Instance, OsRelease};
 use crate::ssh::SftpPath;
-use crate::view::Console;
 use russh::{Channel, client};
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::AsyncReadExt;
 
@@ -15,24 +14,24 @@ const READ_TIMEOUT_SECS: u64 = 5;
 
 /// Reads the OS of a guest over SFTP and keeps the instance config current.
 pub struct GuestOsReader<'a> {
-    console: &'a Arc<Console>,
-    store: &'a dyn InstanceStore,
+    context: &'a Context,
 }
 
 impl<'a> GuestOsReader<'a> {
-    pub fn new(console: &'a Arc<Console>, store: &'a dyn InstanceStore) -> Self {
-        Self { console, store }
+    pub fn new(context: &'a Context) -> Self {
+        Self { context }
     }
 
     /// Stores the OS of the guest when it differs from the value in the
     /// config. The read is best effort, so a guest that keeps the file to
     /// itself keeps the stored value and connects as usual.
     pub async fn refresh(&self, channel: Channel<client::Msg>, instance: &mut Instance) {
+        let console = self.context.get_console();
         let read = Self::read(channel, &instance.name);
 
         let Ok(Some(os)) = tokio::time::timeout(Duration::from_secs(READ_TIMEOUT_SECS), read).await
         else {
-            self.console.debug(&format!(
+            console.debug(&format!(
                 "Reading the guest OS of '{}' failed, keeping the stored value",
                 instance.name
             ));
@@ -40,15 +39,13 @@ impl<'a> GuestOsReader<'a> {
         };
 
         if instance.os.as_deref() == Some(os.as_str()) {
-            self.console
-                .debug(&format!("Guest OS of '{}' is {os}", instance.name));
+            console.debug(&format!("Guest OS of '{}' is {os}", instance.name));
             return;
         }
 
-        self.console
-            .debug(&format!("Guest OS of '{}' changed to {os}", instance.name));
+        console.debug(&format!("Guest OS of '{}' changed to {os}", instance.name));
         instance.os = Some(os);
-        self.store.store(instance).ok();
+        StoreInstanceAction::new().run(self.context, instance).ok();
     }
 
     /// Returns nothing when the file is missing, unreadable or carries no ID.

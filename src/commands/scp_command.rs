@@ -105,8 +105,8 @@ mod tests {
 
     #[test]
     fn test_check_rejects_stopped_instance() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
         }]);

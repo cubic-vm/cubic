@@ -1,4 +1,4 @@
-use crate::actions::LoadInstanceAction;
+use crate::actions::{ListInstancesAction, LoadInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::util;
@@ -30,8 +30,7 @@ pub struct ListPortCommand;
 impl Command for ListPortCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let console = context.get_console();
-        let instance_store = context.get_instance_store();
-        let instance_names = instance_store.get_instances();
+        let instance_names = ListInstancesAction::new().run(context);
 
         let mut rule_count = 0;
         let mut view = TableView::new();
@@ -87,8 +86,8 @@ Add one with cubic modify <instance> --port <host_port>:<guest_port>
 
     #[tokio::test]
     async fn test_list_ports_without_rules_explains_how_to_add_a_rule() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             ssh_port: 9000,
             ..Instance::default()
@@ -103,8 +102,8 @@ Add one with cubic modify <instance> --port <host_port>:<guest_port>
 
     #[tokio::test]
     async fn test_list_ports_skips_instances_without_rules() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![
             Instance {
                 name: "test".to_string(),
                 ssh_port: 9000,

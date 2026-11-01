@@ -179,7 +179,7 @@ impl CreateCommand {
         self.instance_name.clone().unwrap_or_else(|| {
             // The generator is endless, so there is always a name.
             let name = InstanceNameGenerator::new()
-                .find(|name| !context.get_instance_store().exists(name.as_str()))
+                .find(|name| !context.has_instance(name.as_str()))
                 .unwrap();
 
             context
@@ -277,8 +277,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_rejects_existing_instance_name() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
         }]);

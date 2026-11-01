@@ -72,12 +72,11 @@ mod tests {
     use crate::models::{Environment, Instance};
     use crate::platform::SystemMock;
     use std::str::FromStr;
-    use std::sync::Arc;
 
     #[tokio::test]
     async fn test_clone_rejects_existing_target_name() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![
             Instance {
                 name: "test".to_string(),
                 ..Instance::default()
@@ -104,8 +103,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_clone_rejects_running_source() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
         }]);
@@ -134,13 +133,12 @@ mod tests {
         let system = SystemMock::new()
             .add_file(source_image, b"qcow2 image")
             .add_command_output(&resize, b"");
-        let mut builder = ContextBuilder::new(system);
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(system);
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             ssh_host_key: Some("ssh-ed25519 AAAA".to_string()),
             ..Instance::default()
         }]);
-        let stored = Arc::clone(&builder.get_store().stored);
         let context = builder.build();
 
         CloneCommand {
@@ -151,8 +149,7 @@ mod tests {
         .await
         .unwrap();
 
-        let stored = stored.lock().unwrap();
-        assert_eq!(stored.len(), 1);
-        assert_eq!(stored[0].ssh_host_key, None);
+        let clone = LoadInstanceAction::new().read(&context, "test2").unwrap();
+        assert_eq!(clone.ssh_host_key, None);
     }
 }

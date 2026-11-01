@@ -1,4 +1,4 @@
-use crate::actions::{LoadInstanceAction, StopInstanceAction};
+use crate::actions::{DeleteInstanceAction, LoadInstanceAction, StopInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::{InstanceName, Target};
@@ -64,11 +64,9 @@ pub struct RunCommand {
 impl RunCommand {
     // Best effort, a failure here must not mask the session result.
     fn cleanup(&self, context: &commands::Context, name: &InstanceName) {
-        let store = context.get_instance_store();
-
         if let Ok(instance) = LoadInstanceAction::new().run(context, name.as_str()) {
             StopInstanceAction::new(&instance).run(context, true).ok();
-            store.delete(&instance).ok();
+            DeleteInstanceAction::new().run(context, &instance).ok();
         }
     }
 }
@@ -104,20 +102,19 @@ mod tests {
     use super::*;
     use crate::commands::ContextBuilder;
     use crate::models::{Environment, Instance};
-    use crate::platform::SystemMock;
+    use crate::platform::{FileSystem, SystemMock};
     use std::str::FromStr;
     use std::sync::Arc;
 
     #[test]
     fn test_rm_stops_and_deletes_the_instance() {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "web".to_string(),
             ..Instance::default()
         }]);
         builder.set_running(&["web"]);
         let system = Arc::clone(builder.get_system());
-        let deleted = Arc::clone(&builder.get_store().deleted);
         let context = builder.build();
 
         RunCommand::try_parse_from(["run", "--rm", "web", "-i", "debian:trixie"])
@@ -126,6 +123,7 @@ mod tests {
 
         let monitor = system.get_socket_output(Environment::default().get_monitor_socket("web"));
         assert!(monitor.contains(r#""execute":"quit""#));
-        assert_eq!(*deleted.lock().unwrap(), ["web"]);
+        let dir = Environment::default().get_instance_dir2("web");
+        assert!(!system.exists_path(&dir));
     }
 }

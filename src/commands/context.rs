@@ -1,5 +1,5 @@
+use crate::actions::{DeleteInstanceAction, LoadInstanceAction};
 use crate::error::{Error, Result};
-use crate::instance::InstanceStore;
 use crate::models::{Environment, Instance};
 use crate::platform::System;
 use crate::qemu::QemuMonitorClient;
@@ -10,21 +10,14 @@ pub struct Context {
     system: Arc<dyn System>,
     console: Arc<Console>,
     env: Environment,
-    instance_store: Box<dyn InstanceStore>,
 }
 
 impl Context {
-    pub fn new(
-        system: Arc<dyn System>,
-        console: Arc<Console>,
-        env: Environment,
-        instance_store: Box<dyn InstanceStore>,
-    ) -> Self {
+    pub fn new(system: Arc<dyn System>, console: Arc<Console>, env: Environment) -> Self {
         Self {
             system,
             console,
             env,
-            instance_store,
         }
     }
 
@@ -40,8 +33,8 @@ impl Context {
         &self.env
     }
 
-    pub fn get_instance_store(&self) -> &dyn InstanceStore {
-        self.instance_store.as_ref()
+    pub fn has_instance(&self, name: &str) -> bool {
+        self.system.exists_path(&self.env.get_instance_dir2(name))
     }
 
     pub fn get_monitor(&self, instance: &Instance) -> QemuMonitorClient {
@@ -55,10 +48,11 @@ impl Context {
 
     /// Frees a name that only a stale instance still holds
     pub fn claim_name(&self, name: &str) -> Result<()> {
-        let store = self.get_instance_store();
-        match store.load(name) {
+        match LoadInstanceAction::new().read(self, name) {
             Err(Error::UnknownInstance(_)) => Ok(()),
-            Ok(instance) if self.is_stale(&instance) => store.delete(&instance),
+            Ok(instance) if self.is_stale(&instance) => {
+                DeleteInstanceAction::new().run(self, &instance)
+            }
             _ => Err(Error::InstanceAlreadyExists(name.to_string())),
         }
     }
@@ -68,13 +62,13 @@ impl Context {
 mod tests {
     use crate::commands::ContextBuilder;
     use crate::error::Error;
-    use crate::models::Instance;
-    use crate::platform::SystemMock;
+    use crate::models::{Environment, Instance};
+    use crate::platform::{FileSystem, SystemMock};
     use std::sync::Arc;
 
     fn build_builder() -> ContextBuilder {
-        let mut builder = ContextBuilder::new(SystemMock::new());
-        builder.get_store().add_instances(vec![Instance {
+        let builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             auto_remove: true,
             ..Instance::default()
@@ -84,12 +78,13 @@ mod tests {
 
     #[test]
     fn test_claim_name_deletes_a_stale_instance() {
-        let mut builder = build_builder();
-        let deleted = Arc::clone(&builder.get_store().deleted);
+        let builder = build_builder();
+        let system = Arc::clone(builder.get_system());
 
         builder.build().claim_name("test").unwrap();
 
-        assert_eq!(*deleted.lock().unwrap(), ["test"]);
+        let dir = Environment::default().get_instance_dir2("test");
+        assert!(!system.exists_path(&dir));
     }
 
     #[test]

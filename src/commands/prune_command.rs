@@ -1,3 +1,4 @@
+use crate::actions::{DeleteInstanceAction, ListInstancesAction, LoadInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::{DataSize, Instance};
@@ -32,12 +33,11 @@ impl Command for PruneCommand {
         let console = context.get_console();
         let env = context.get_env();
         let system = context.get_system();
-        let instance_store = context.get_instance_store();
+        let instance_names = ListInstancesAction::new().run(context);
 
-        let stale_instances: Vec<Instance> = instance_store
-            .get_instances()
-            .into_iter()
-            .filter_map(|name| instance_store.load(&name).ok())
+        let stale_instances: Vec<Instance> = instance_names
+            .iter()
+            .filter_map(|name| LoadInstanceAction::new().read(context, name).ok())
             .filter(|instance| context.is_stale(instance))
             .collect();
         let stale_dirs: Vec<PathBuf> = stale_instances
@@ -51,11 +51,10 @@ impl Command for PruneCommand {
             .into_iter()
             .filter(|path| path.extension().is_some_and(|ext| ext == "tmp"));
 
-        let legacy_certs: Vec<PathBuf> = instance_store
-            .get_instances()
-            .into_iter()
+        let legacy_certs: Vec<PathBuf> = instance_names
+            .iter()
             .flat_map(|name| {
-                let dir = env.get_instance_dir2(&name);
+                let dir = env.get_instance_dir2(name);
                 LEGACY_CERT_FILES.map(|file| dir.join(file))
             })
             .filter(|path| system.exists_path(path))
@@ -93,10 +92,12 @@ impl Command for PruneCommand {
             for cert in &legacy_certs {
                 system.remove_file(cert).ok();
             }
-            // The store skips an instance that a session started while the
-            // dialog above waited for an answer.
+            // Skip an instance that a session started while the dialog above
+            // waited for an answer.
             for instance in &stale_instances {
-                instance_store.delete(instance).ok();
+                if context.is_stale(instance) {
+                    DeleteInstanceAction::new().run(context, instance).ok();
+                }
             }
 
             // Print size of deleted files
@@ -176,11 +177,11 @@ mod tests {
     async fn test_delete_the_legacy_certs_of_a_stopped_instance() {
         let env = build_env();
         let dir = env.get_instance_dir2("test");
-        let mut builder = build_context(LEGACY_CERT_FILES.iter().fold(
+        let builder = build_context(LEGACY_CERT_FILES.iter().fold(
             SystemMock::new().add_file(dir.join("machine.img"), b"disk"),
             |system, file| system.add_file(dir.join(file), b"pem"),
         ));
-        builder.get_store().add_instances(vec![Instance {
+        builder.add_instances(vec![Instance {
             name: "test".to_string(),
             ..Instance::default()
         }]);
@@ -198,8 +199,8 @@ mod tests {
     async fn test_delete_stale_instances_and_interrupted_creates() {
         let env = build_env();
         let tmp = env.get_instance_dir().join("plain.tmp");
-        let mut builder = build_context(SystemMock::new().add_dir(&tmp));
-        builder.get_store().add_instances(vec![
+        let builder = build_context(SystemMock::new().add_dir(&tmp));
+        builder.add_instances(vec![
             Instance {
                 name: "stale".to_string(),
                 auto_remove: true,
@@ -216,12 +217,12 @@ mod tests {
             },
         ]);
         builder.set_running(&["running"]);
-        let deleted = Arc::clone(&builder.get_store().deleted);
         let system = Arc::clone(builder.get_system());
 
         run_prune(builder).await;
 
-        assert_eq!(*deleted.lock().unwrap(), ["stale"]);
+        assert!(!system.exists_path(&env.get_instance_dir2("stale")));
+        assert!(system.exists_path(&env.get_instance_dir2("running")));
         assert!(!system.exists_path(&tmp));
     }
 
