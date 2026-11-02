@@ -1,0 +1,35 @@
+---
+name: Nix Flake
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'release/v*'
+    paths:
+      - flake.nix
+      - flake.lock
+      - Cargo.toml
+      - Cargo.lock
+
+jobs:
+  build:
+    name: Build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Build Flake
+        run: nix build -L
+
+      - name: Run Flake
+        run: nix run . -- --help
