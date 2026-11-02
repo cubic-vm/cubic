@@ -1,8 +1,6 @@
 FROM rust:1.92-slim
 WORKDIR /usr/local/app
 
-COPY . .
-
 ENV DEBIAN_FRONTEND=noninteractive
 ENV XDG_DATA_HOME=/tmp/data
 ENV XDG_CACHE_HOME=/tmp/cache
