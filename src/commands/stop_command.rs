@@ -83,13 +83,13 @@ impl Command for StopCommand {
         let stop_instances = if self.all.value {
             ListInstancesAction::new().run(context)
         } else {
-            self.instances.get_names()
+            self.instances.value.clone()
         };
 
         // Only stop instances that are running
         let mut stopping = Vec::new();
         for name in &stop_instances {
-            let instance = LoadInstanceAction::new().run(context, name)?;
+            let instance = LoadInstanceAction::new().run(context, name.as_str())?;
             if context.get_monitor(&instance).is_running() {
                 stopping.push(instance);
             }
