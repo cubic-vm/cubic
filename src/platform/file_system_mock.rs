@@ -1,6 +1,6 @@
 use crate::error::{Error, FsOperation, Result};
-use crate::platform::{Access, FileSystem, SystemMock};
-use std::collections::HashMap;
+use crate::platform::{Access, FileLock, FileSystem, SystemMock};
+use std::collections::{HashMap, HashSet};
 use std::io::{self, Cursor, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 #[derive(Default)]
 pub struct FileSystemMock {
     paths: HashMap<PathBuf, Option<Vec<u8>>>,
+    locks: HashSet<PathBuf>,
 }
 
 impl FileSystemMock {
@@ -32,6 +33,17 @@ impl FileSystemMock {
 
     fn get_file(&self, path: &Path) -> Option<Vec<u8>> {
         self.paths.get(path).cloned().flatten()
+    }
+}
+
+struct LockGuardMock {
+    path: PathBuf,
+    file_system: Arc<Mutex<FileSystemMock>>,
+}
+
+impl Drop for LockGuardMock {
+    fn drop(&mut self) {
+        self.file_system.lock().unwrap().locks.remove(&self.path);
     }
 }
 
@@ -184,6 +196,21 @@ impl FileSystem for SystemMock {
         }
         file_system.paths.remove(path);
         Ok(())
+    }
+
+    fn lock_file(&self, path: &Path, wait: bool) -> Result<Option<FileLock>> {
+        let mut file_system = self.lock_file_system();
+        if !file_system.locks.insert(path.to_path_buf()) {
+            assert!(!wait, "lock '{}' is already held", path.display());
+            return Ok(None);
+        }
+        let guard = LockGuardMock {
+            path: path.to_path_buf(),
+            file_system: Arc::clone(&self.file_system),
+        };
+        Ok(Some(FileLock {
+            _handle: Box::new(guard),
+        }))
     }
 }
 

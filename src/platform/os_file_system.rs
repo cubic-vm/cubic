@@ -1,6 +1,6 @@
 use crate::error::{Error, FsOperation, Result};
-use crate::platform::{Access, FileSystem, OsSystem};
-use std::fs;
+use crate::platform::{Access, FileLock, FileSystem, OsSystem};
+use std::fs::{self, TryLockError};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use sysinfo::{DiskRefreshKind, Disks};
@@ -107,5 +107,29 @@ impl FileSystem for OsSystem {
 
     fn remove_file(&self, path: &Path) -> Result<()> {
         fs::remove_file(path).map_err(|e| Error::from_fs(FsOperation::RemoveFile, path, e))
+    }
+
+    fn lock_file(&self, path: &Path, wait: bool) -> Result<Option<FileLock>> {
+        if let Some(parent) = path.parent() {
+            self.create_dir(parent)?;
+        }
+        let file = fs::OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .write(true)
+            .open(path)
+            .map_err(|e| Error::from_fs(FsOperation::LockFile, path, e))?;
+        let result = if wait {
+            file.lock().map_err(TryLockError::Error)
+        } else {
+            file.try_lock()
+        };
+        match result {
+            Ok(()) => Ok(Some(FileLock {
+                _handle: Box::new(file),
+            })),
+            Err(TryLockError::WouldBlock) => Ok(None),
+            Err(TryLockError::Error(e)) => Err(Error::from_fs(FsOperation::LockFile, path, e)),
+        }
     }
 }

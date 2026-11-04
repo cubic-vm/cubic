@@ -2,6 +2,7 @@ use crate::actions::{CreateInstanceAction, LoadInstanceAction};
 use crate::commands::{Command, Context};
 use crate::error::{Error, Result};
 use crate::models::{InstanceName, LOW_DISK_SPACE_WARNING, ResourceAllocator};
+use crate::util::ResourceLock;
 use crate::view::Spinner;
 use clap::Parser;
 use std::sync::Arc;
@@ -29,6 +30,9 @@ impl Command for CloneCommand {
         if ResourceAllocator::is_disk_space_low(context.get_system(), context.get_env()) {
             console.warn(LOW_DISK_SPACE_WARNING);
         }
+
+        let names = [self.name.as_str(), self.new_name.as_str()];
+        let _locks = ResourceLock::acquire_instances(context, &names)?;
 
         // Load source instance info
         let source = &LoadInstanceAction::new().run(context, self.name.as_str())?;

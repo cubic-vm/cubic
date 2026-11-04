@@ -2,8 +2,10 @@ use crate::actions::{DeleteInstanceAction, ListInstancesAction, LoadInstanceActi
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::{DataSize, Instance};
+use crate::util::ResourceLock;
 use crate::view::ConfirmDialog;
 use clap::Parser;
+use std::ffi::OsStr;
 use std::path::PathBuf;
 
 const LEGACY_INSTANCES_DIR: &str = "instances";
@@ -45,11 +47,19 @@ impl Command for PruneCommand {
             .map(|instance| env.get_instance_dir2(&instance.name))
             .collect();
         // A create that was interrupted before its final rename leaves a .tmp dir
-        let tmp_dirs = system
+        let tmp_dirs: Vec<PathBuf> = system
             .read_dir(&env.get_instance_dir())
             .unwrap_or_default()
             .into_iter()
-            .filter(|path| path.extension().is_some_and(|ext| ext == "tmp"));
+            .filter(|path| path.extension().is_some_and(|ext| ext == "tmp"))
+            .collect();
+
+        let image_files: Vec<PathBuf> = system
+            .read_dir(&env.get_image_dir())
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|path| path.extension().is_none_or(|ext| ext != "lock"))
+            .collect();
 
         let legacy_certs: Vec<PathBuf> = instance_names
             .iter()
@@ -60,21 +70,16 @@ impl Command for PruneCommand {
             .filter(|path| system.exists_path(path))
             .collect();
 
-        let dirs: Vec<PathBuf> = [
-            env.get_image_dir(),
-            env.get_cache_dir().join(LEGACY_INSTANCES_DIR),
-        ]
-        .into_iter()
-        .chain(tmp_dirs)
-        .collect();
+        let legacy_dir = env.get_cache_dir().join(LEGACY_INSTANCES_DIR);
 
         // Calculate size
         let cache_file = env.get_image_cache_file();
-        let bytes = dirs
+        let bytes = tmp_dirs
             .iter()
+            .chain(image_files.iter())
             .chain(stale_dirs.iter())
             .chain(legacy_certs.iter())
-            .chain([&cache_file])
+            .chain([&cache_file, &legacy_dir])
             .fold(0, |total, path| total + system.get_path_size(path));
         let total = DataSize::new(bytes as usize).to_size();
 
@@ -85,23 +90,44 @@ impl Command for PruneCommand {
             || ConfirmDialog::new("Are you sure you want to continue?").confirm(console)
         {
             // Delete files
+            let mut freed = system.get_path_size(&cache_file) + system.get_path_size(&legacy_dir);
             system.remove_file(&cache_file).ok();
-            for dir in &dirs {
-                system.remove_dir(dir).ok();
+            system.remove_dir(&legacy_dir).ok();
+            for dir in &tmp_dirs {
+                if let Some(name) = dir.file_stem().and_then(OsStr::to_str)
+                    && let Ok(Some(_lock)) = ResourceLock::try_acquire_instance(context, name)
+                {
+                    freed += system.get_path_size(dir);
+                    system.remove_dir(dir).ok();
+                }
+            }
+            for file in &image_files {
+                if let Some(name) = file.file_name().and_then(OsStr::to_str)
+                    && let Ok(Some(_lock)) = ResourceLock::try_acquire_image(context, name)
+                {
+                    freed += system.get_path_size(file);
+                    system.remove_file(file).ok();
+                }
             }
             for cert in &legacy_certs {
+                freed += system.get_path_size(cert);
                 system.remove_file(cert).ok();
             }
             // Skip an instance that a session started while the dialog above
             // waited for an answer.
             for instance in &stale_instances {
-                if context.is_stale(instance) {
+                let lock = ResourceLock::try_acquire_instance(context, &instance.name);
+                if let Ok(Some(_lock)) = lock
+                    && context.is_stale(instance)
+                {
+                    freed += system.get_path_size(&env.get_instance_dir2(&instance.name));
                     DeleteInstanceAction::new().run(context, instance).ok();
                 }
             }
 
             // Print size of deleted files
-            console.print(&format!("Successfully freed {total} of disk space."));
+            let freed = DataSize::new(freed as usize).to_size();
+            console.print(&format!("Successfully freed {freed} of disk space."));
         }
 
         Ok(0)
@@ -157,7 +183,7 @@ mod tests {
         run_prune(builder).await;
 
         assert!(!system.exists_path(&env.get_image_cache_file()));
-        assert!(!system.exists_path(&env.get_image_dir()));
+        assert!(!system.exists_path(&env.get_image_file("debian")));
         assert!(!system.exists_path(Path::new("/cache/instances")));
     }
 
@@ -224,6 +250,43 @@ mod tests {
         assert!(!system.exists_path(&env.get_instance_dir2("stale")));
         assert!(system.exists_path(&env.get_instance_dir2("running")));
         assert!(!system.exists_path(&tmp));
+    }
+
+    #[tokio::test]
+    async fn test_keep_a_create_that_another_command_runs() {
+        let env = build_env();
+        let tmp = env.get_instance_dir().join("busy.tmp");
+        let builder = build_context(SystemMock::new().add_dir(&tmp));
+        let system = Arc::clone(builder.get_system());
+        let lock = env.get_instance_dir().join("busy.lock");
+        let _lock = system.lock_file(&lock, false).unwrap();
+
+        run_prune(builder).await;
+
+        assert!(system.exists_path(&tmp));
+    }
+
+    #[tokio::test]
+    async fn test_keep_an_image_that_another_command_uses() {
+        let env = build_env();
+        let busy = env.get_image_file("busy");
+        let download = env.get_image_file("busy.tmp");
+        let idle = env.get_image_file("idle");
+        let builder = build_context(
+            SystemMock::new()
+                .add_file(&busy, b"image")
+                .add_file(&download, b"part")
+                .add_file(&idle, b"image"),
+        );
+        let system = Arc::clone(builder.get_system());
+        let lock = env.get_image_dir().join("busy.lock");
+        let _lock = system.lock_file(&lock, false).unwrap();
+
+        run_prune(builder).await;
+
+        assert!(system.exists_path(&busy));
+        assert!(system.exists_path(&download));
+        assert!(!system.exists_path(&idle));
     }
 
     #[tokio::test]

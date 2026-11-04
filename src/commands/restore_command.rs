@@ -3,6 +3,7 @@ use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::SnapshotName;
 use crate::qemu::QemuImg;
+use crate::util::ResourceLock;
 use crate::view::ConfirmDialog;
 use clap::Parser;
 
@@ -42,6 +43,7 @@ impl Command for RestoreCommand {
         let instance_name = self.snapshot.get_instance();
         let snapshot_name = self.snapshot.as_str();
 
+        let _lock = ResourceLock::acquire_instances(context, &[instance_name.as_str()])?;
         let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
 
         let image = context.get_env().get_instance_image_file(&instance.name);

@@ -3,6 +3,7 @@ use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::{DataSize, HOST_MEMORY_RESERVE, Instance, ResourceAllocator};
 use crate::ssh::PortChecker;
+use crate::util::ResourceLock;
 use crate::view::ConfirmDialog;
 use crate::view::Spinner;
 use clap::Parser;
@@ -53,6 +54,7 @@ impl Command for StartCommand {
         let mut actions = Vec::new();
         let mut starting = Vec::new();
         for name in &self.instances.value {
+            let _lock = ResourceLock::acquire_instances(context, &[name.as_str()])?;
             let instance = &mut LoadInstanceAction::new().run(context, name.as_str())?;
             if !context.get_monitor(instance).is_running() {
                 if port_checker
@@ -72,6 +74,15 @@ impl Command for StartCommand {
 
                 let mut action = StartInstanceAction::new(instance);
                 action.run(context, &self.qemu_args, self.accel.value)?;
+                let monitor = context.get_monitor(instance);
+                let launched = async {
+                    while !monitor.is_running() {
+                        tokio::time::sleep(Duration::from_millis(50)).await;
+                    }
+                };
+                tokio::time::timeout(Duration::from_secs(5), launched)
+                    .await
+                    .ok();
 
                 actions.push(action);
                 // Only the instances that are launched are named

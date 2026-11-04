@@ -2,6 +2,7 @@ use crate::actions::{DeleteInstanceAction, LoadInstanceAction, StopInstanceActio
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::models::{InstanceName, Target};
+use crate::util::ResourceLock;
 use clap::{self, ArgAction, Parser};
 
 /// Create and start a VM instance
@@ -64,6 +65,9 @@ pub struct RunCommand {
 impl RunCommand {
     // Best effort, a failure here must not mask the session result.
     fn cleanup(&self, context: &commands::Context, name: &InstanceName) {
+        let Ok(Some(_lock)) = ResourceLock::try_acquire_instance(context, name.as_str()) else {
+            return;
+        };
         if let Ok(instance) = LoadInstanceAction::new().run(context, name.as_str()) {
             StopInstanceAction::new(&instance).run(context, true).ok();
             DeleteInstanceAction::new().run(context, &instance).ok();

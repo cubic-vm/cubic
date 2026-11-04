@@ -18,6 +18,7 @@ pub enum FsOperation {
     ReadFile,
     WriteFile,
     RemoveFile,
+    LockFile,
 }
 
 impl fmt::Display for FsOperation {
@@ -35,6 +36,7 @@ impl fmt::Display for FsOperation {
                 FsOperation::ReadFile => "read file",
                 FsOperation::WriteFile => "write file",
                 FsOperation::RemoveFile => "delete file",
+                FsOperation::LockFile => "lock file",
             }
         )
     }
