@@ -34,10 +34,6 @@ impl InstancesArg {
             Ok(())
         }
     }
-
-    pub fn get_names(&self) -> Vec<String> {
-        self.value.iter().map(ToString::to_string).collect()
-    }
 }
 
 impl From<InstanceName> for InstancesArg {
@@ -88,15 +84,5 @@ mod tests {
     fn test_require_names_accepts_names() {
         let args: InstancesArg = vec![InstanceName::from_str("foo").unwrap()].into();
         assert!(args.require_names().is_ok());
-    }
-
-    #[test]
-    fn test_get_names() {
-        let args: InstancesArg = vec![
-            InstanceName::from_str("foo").unwrap(),
-            InstanceName::from_str("bar").unwrap(),
-        ]
-        .into();
-        assert_eq!(args.get_names(), vec!["foo", "bar"]);
     }
 }

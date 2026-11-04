@@ -39,13 +39,13 @@ impl Command for ListInstanceCommand {
             .add("Running", Alignment::Right);
 
         for instance_name in &instance_names {
-            let instance = LoadInstanceAction::new().run(context, instance_name)?;
+            let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
             if context.is_stale(&instance) {
                 continue;
             }
 
             let row = view.add_row();
-            let image = context.get_env().get_instance_image_file(instance_name);
+            let image = context.get_env().get_instance_image_file(&instance.name);
             let disk = match QemuImg::new(context.get_system()).get_image_info(&image) {
                 Some(info) => format!(
                     "{}/{}",
@@ -55,7 +55,7 @@ impl Command for ListInstanceCommand {
                 None => String::new(),
             };
             let running = util::to_yes_no(context.get_monitor(&instance).is_running());
-            row.add(instance_name, Alignment::Left)
+            row.add(&instance.name, Alignment::Left)
                 .add(instance.os.as_deref().unwrap_or_default(), Alignment::Left)
                 .add(&instance.arch.to_string(), Alignment::Left)
                 .add(&instance.cpus.to_string(), Alignment::Right)

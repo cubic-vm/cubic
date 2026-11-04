@@ -11,19 +11,18 @@ impl ListInstancesAction {
         Self
     }
 
-    pub fn run(&self, context: &Context) -> Vec<String> {
+    pub fn run(&self, context: &Context) -> Vec<InstanceName> {
         let dir = context.get_env().get_instance_dir();
-        let mut names: Vec<String> = context
+        let mut names: Vec<InstanceName> = context
             .get_system()
             .read_dir(&dir)
             .unwrap_or_default()
             .iter()
             .filter_map(|entry| entry.file_name())
             .filter_map(|name| name.to_str())
-            .filter(|name| InstanceName::from_str(name).is_ok())
-            .map(|name| name.to_string())
+            .filter_map(|name| InstanceName::from_str(name).ok())
             .collect();
-        names.sort_by_key(|name| name.to_lowercase());
+        names.sort_by_key(|name| name.as_str().to_lowercase());
         names
     }
 }
@@ -44,6 +43,9 @@ mod tests {
             .add_dir(env.get_instance_dir2("web.tmp"));
         let context = ContextBuilder::new(system).build();
 
-        assert_eq!(ListInstancesAction::new().run(&context), ["apple", "zebra"]);
+        let names = ListInstancesAction::new().run(&context);
+        let names: Vec<&str> = names.iter().map(InstanceName::as_str).collect();
+
+        assert_eq!(names, ["apple", "zebra"]);
     }
 }

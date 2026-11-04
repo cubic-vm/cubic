@@ -24,11 +24,11 @@ impl CreateInstanceAction {
     ) -> Result<()> {
         let system = context.get_system();
         let env = context.get_env();
-        let instance_name = instance.name.clone();
-        let tmp_name = format!("{instance_name}.tmp");
-        let target_dir = &env.get_instance_dir2(&instance_name);
+        let tmp_name = format!("{}.tmp", instance.name);
+        let target_dir = &env.get_instance_dir2(&instance.name);
         let tmp_dir = &env.get_instance_dir2(&tmp_name);
         let tmp_image = &env.get_instance_image_file(&tmp_name);
+        let tmp_config = &env.get_instance_toml_config_file(&tmp_name);
 
         // Create directory
         system.create_dir(tmp_dir)?;
@@ -50,9 +50,7 @@ impl CreateInstanceAction {
         // Write configuration file
         instance.auto_remove = auto_remove;
         instance.first_boot = true;
-        instance.name = tmp_name;
-        StoreInstanceAction::new().run(context, &instance)?;
-        instance.name = instance_name;
+        StoreInstanceAction::new().write_to(context, &instance, tmp_config)?;
 
         system.rename_file(tmp_dir, target_dir)
     }

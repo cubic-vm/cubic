@@ -37,7 +37,7 @@ impl Command for PruneCommand {
 
         let stale_instances: Vec<Instance> = instance_names
             .iter()
-            .filter_map(|name| LoadInstanceAction::new().read(context, name).ok())
+            .filter_map(|name| LoadInstanceAction::new().read(context, name.as_str()).ok())
             .filter(|instance| context.is_stale(instance))
             .collect();
         let stale_dirs: Vec<PathBuf> = stale_instances
@@ -54,7 +54,7 @@ impl Command for PruneCommand {
         let legacy_certs: Vec<PathBuf> = instance_names
             .iter()
             .flat_map(|name| {
-                let dir = env.get_instance_dir2(name);
+                let dir = env.get_instance_dir2(name.as_str());
                 LEGACY_CERT_FILES.map(|file| dir.join(file))
             })
             .filter(|path| system.exists_path(path))
