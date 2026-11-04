@@ -2,6 +2,7 @@ use crate::actions::LoadInstanceAction;
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::InstanceName;
+use crate::util::ResourceLock;
 use clap::Parser;
 
 /// Rename a VM instance
@@ -22,6 +23,8 @@ pub struct RenameCommand {
 
 impl Command for RenameCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
+        let names = [self.old_name.as_str(), self.new_name.as_str()];
+        let _locks = ResourceLock::acquire_instances(context, &names)?;
         let instance = LoadInstanceAction::new().run(context, self.old_name.as_str())?;
         if context.get_monitor(&instance).is_running() {
             return Err(Error::InstanceNotStopped(instance.name.to_string()));

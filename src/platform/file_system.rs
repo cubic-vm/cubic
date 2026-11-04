@@ -8,6 +8,11 @@ pub enum Access {
     Private,
 }
 
+#[must_use]
+pub struct FileLock {
+    pub _handle: Box<dyn Send>,
+}
+
 pub trait FileSystem {
     fn exists_path(&self, path: &Path) -> bool;
     fn get_path_size(&self, path: &Path) -> u64;
@@ -20,6 +25,7 @@ pub trait FileSystem {
     fn rename_file(&self, from: &Path, to: &Path) -> Result<()>;
     fn copy_file(&self, from: &Path, to: &Path) -> Result<()>;
     fn remove_file(&self, path: &Path) -> Result<()>;
+    fn lock_file(&self, path: &Path, wait: bool) -> Result<Option<FileLock>>;
 
     fn read_file_to_string(&self, path: &Path) -> Result<String> {
         let mut content = String::new();

@@ -3,6 +3,7 @@ use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::SnapshotName;
 use crate::qemu::QemuImg;
+use crate::util::ResourceLock;
 use clap::Parser;
 
 /// Create a snapshot of a VM instance
@@ -32,6 +33,7 @@ impl Command for SnapshotCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let instance_name = self.snapshot.get_instance();
 
+        let _lock = ResourceLock::acquire_instances(context, &[instance_name.as_str()])?;
         let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
 
         if context.get_monitor(&instance).is_running() {

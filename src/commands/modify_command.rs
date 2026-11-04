@@ -3,6 +3,7 @@ use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::{DataSize, PortForward, ResourceAllocator};
 use crate::qemu::QemuImg;
+use crate::util::ResourceLock;
 use clap::{ArgAction, Parser};
 
 /// Modify a VM instance
@@ -69,6 +70,7 @@ pub struct ModifyCommand {
 impl Command for ModifyCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let console = context.get_console();
+        let _lock = ResourceLock::acquire_instances(context, &[self.instance.value.as_str()])?;
         let mut instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
 
         let mut monitor = context.get_monitor(&instance);

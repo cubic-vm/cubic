@@ -7,6 +7,7 @@ use crate::models::{
     LOW_DISK_SPACE_WARNING, PortForward, ResourceAllocator, Template, UserName,
 };
 use crate::platform::System;
+use crate::util::ResourceLock;
 use crate::view::Spinner;
 use clap::{ArgAction, Parser};
 use std::path::Path;
@@ -196,6 +197,7 @@ impl CreateCommand {
         let env = context.get_env();
 
         let name = self.resolve_name(context);
+        let _instance_lock = ResourceLock::acquire_instances(context, &[name.as_str()])?;
         context.claim_name(name.as_str())?;
 
         if ResourceAllocator::is_disk_space_low(context.get_system(), env) {
@@ -210,6 +212,7 @@ impl CreateCommand {
 
         // Fetch image
         let image = &ImageFactory::find_image(&image_name)?;
+        let _image_lock = ResourceLock::acquire_image(context, image)?;
         ImageFetcher::new().fetch(context, image).await?;
 
         let text = format!("Creating {name}");

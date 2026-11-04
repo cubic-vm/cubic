@@ -4,6 +4,7 @@ use crate::error::{Error, Result};
 use crate::models::{InstanceName, SnapshotName};
 use crate::qemu::QemuImg;
 use crate::util::Either;
+use crate::util::ResourceLock;
 use crate::view::ConfirmDialog;
 use clap::Parser;
 use std::collections::HashSet;
@@ -111,6 +112,7 @@ impl Command for DeleteCommand {
 
         for target in &targets {
             let instance_name = Self::get_instance(target);
+            let _lock = ResourceLock::acquire_instances(context, &[instance_name.as_str()])?;
 
             // Free the disk lock first. A full instance delete can kill it, a
             // snapshot needs the instance shut down cleanly.
