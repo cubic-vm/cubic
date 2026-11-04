@@ -5,7 +5,7 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
 const SPINNER_CHARS: &[char] = &['-', '\\', '|', '/'];
-const UNICODE_SPINNER_CHARS: &[char] = &['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const UNICODE_SPINNER_CHARS: &[char] = &['⠙', '⠸', '⢰', '⣠', '⣄', '⡆', '⠇', '⠋'];
 const TICK: Duration = Duration::from_millis(100);
 
 // A running spinner. It ticks on its own thread and clears the line when the
@@ -110,7 +110,7 @@ mod tests {
         assert_eq!(frame4, "/ Cloning foobar     0.3s");
 
         let unicode = Spinner::render_frame(text, Duration::from_millis(200), line_length, true);
-        assert_eq!(unicode, "⠹ Cloning foobar     0.2s");
+        assert_eq!(unicode, "⢰ Cloning foobar     0.2s");
     }
 
     #[test]
