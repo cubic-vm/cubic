@@ -1,3 +1,4 @@
+mod claim_instance_name_action;
 mod create_instance_action;
 mod delete_instance_action;
 mod list_instances_action;
@@ -6,6 +7,7 @@ mod start_instance_action;
 mod stop_instance_action;
 mod store_instance_action;
 
+pub use claim_instance_name_action::ClaimInstanceNameAction;
 pub use create_instance_action::CreateInstanceAction;
 pub use delete_instance_action::DeleteInstanceAction;
 pub use list_instances_action::ListInstancesAction;

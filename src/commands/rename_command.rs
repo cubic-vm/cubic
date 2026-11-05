@@ -1,4 +1,4 @@
-use crate::actions::LoadInstanceAction;
+use crate::actions::{ClaimInstanceNameAction, LoadInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::InstanceName;
@@ -30,7 +30,7 @@ impl Command for RenameCommand {
             return Err(Error::InstanceNotStopped(instance.name.to_string()));
         }
 
-        context.claim_name(self.new_name.as_str())?;
+        ClaimInstanceNameAction::new().run(context, self.new_name.as_str())?;
         let env = context.get_env();
         let old_dir = env.get_instance_dir2(&instance.name);
         let new_dir = env.get_instance_dir2(self.new_name.as_str());

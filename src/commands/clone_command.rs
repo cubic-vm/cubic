@@ -1,4 +1,4 @@
-use crate::actions::{CreateInstanceAction, LoadInstanceAction};
+use crate::actions::{ClaimInstanceNameAction, CreateInstanceAction, LoadInstanceAction};
 use crate::commands::{Command, Context};
 use crate::error::{Error, Result};
 use crate::models::{InstanceName, LOW_DISK_SPACE_WARNING, ResourceAllocator};
@@ -43,7 +43,7 @@ impl Command for CloneCommand {
         }
 
         // Verify that the target name is available
-        context.claim_name(self.new_name.as_str())?;
+        ClaimInstanceNameAction::new().run(context, self.new_name.as_str())?;
 
         let text = format!("Cloning {} to {}", self.name, self.new_name);
         let _spinner = Spinner::new(Arc::clone(console), text);

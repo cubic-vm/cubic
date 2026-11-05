@@ -1,4 +1,4 @@
-use crate::actions::CreateInstanceAction;
+use crate::actions::{ClaimInstanceNameAction, CreateInstanceAction};
 use crate::commands::{Command, Context};
 use crate::error::Result;
 use crate::image::{ImageFactory, ImageFetcher};
@@ -198,7 +198,7 @@ impl CreateCommand {
 
         let name = self.resolve_name(context);
         let _instance_lock = ResourceLock::acquire_instances(context, &[name.as_str()])?;
-        context.claim_name(name.as_str())?;
+        ClaimInstanceNameAction::new().run(context, name.as_str())?;
 
         if ResourceAllocator::is_disk_space_low(context.get_system(), env) {
             console.warn(LOW_DISK_SPACE_WARNING);
