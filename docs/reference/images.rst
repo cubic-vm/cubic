@@ -145,7 +145,8 @@ Cached Images
 
 A downloaded image is shared by every VM instance that uses it. ``cubic images``
 shows which ones are cached. :ref:`file locations` names the cache directory and
-the file name of each image.
+the file name of each image. ``cubic delete ubuntu:latest`` removes one cached
+image and ``cubic prune`` removes them all.
 
 Related
 -------

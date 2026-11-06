@@ -1,19 +1,20 @@
 use crate::actions::{DeleteInstanceAction, LoadInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
-use crate::models::{InstanceName, SnapshotName};
+use crate::image::{ImageFactory, ImageStore};
+use crate::models::{ImageName, InstanceName, ResourceName};
 use crate::qemu::QemuImg;
-use crate::util::Either;
 use crate::util::ResourceLock;
 use crate::view::ConfirmDialog;
 use clap::Parser;
 use std::collections::HashSet;
 
-/// Delete VM instances and snapshots
+/// Delete VM instances, snapshots and images
 ///
 /// A target written as <INSTANCE> deletes the whole VM instance including all
 /// of its snapshots. A target written as <INSTANCE>/<SNAPSHOT> deletes only
-/// that one snapshot and leaves the VM instance alone.
+/// that one snapshot and leaves the VM instance alone. A target written as
+/// <DISTRO>:<TAG> deletes the cached VM image file.
 ///
 /// Examples:
 ///
@@ -26,6 +27,9 @@ use std::collections::HashSet;
 ///   Delete the snapshot 'clean' of the VM instance 'my-instance':
 ///   $ cubic delete my-instance/clean
 ///
+///   Delete the cached VM image of the latest Ubuntu release:
+///   $ cubic delete ubuntu:latest
+///
 ///   Delete multiple VM instances without confirmation:
 ///   $ cubic delete --yes trixie noble
 ///
@@ -37,49 +41,44 @@ pub struct DeleteCommand {
     force: bool,
     #[clap(flatten)]
     yes: commands::YesArg,
-    /// Names of the virtual machine instances or their snapshots
+    /// Names of the virtual machine instances, their snapshots or images
     #[clap(value_name = "TARGETS", required = true)]
-    targets: Vec<Either<InstanceName, SnapshotName>>,
+    targets: Vec<ResourceName>,
 }
 
 impl DeleteCommand {
-    fn get_instance(target: &Either<InstanceName, SnapshotName>) -> &InstanceName {
-        match target {
-            Either::Left(instance) => instance,
-            Either::Right(snapshot) => snapshot.get_instance(),
-        }
-    }
-
-    fn is_instance(target: &Either<InstanceName, SnapshotName>) -> bool {
-        matches!(target, Either::Left(_))
-    }
-
     /// The targets to act on. A snapshot whose instance is deleted as a whole is
     /// dropped, because deleting the instance already removes its snapshots.
     /// Duplicates are dropped so a target is never deleted twice.
-    fn get_targets(&self) -> Vec<&Either<InstanceName, SnapshotName>> {
+    fn get_targets(&self) -> Vec<&ResourceName> {
         let deleted_instances: HashSet<&InstanceName> = self
             .targets
             .iter()
-            .filter(|target| Self::is_instance(target))
-            .map(Self::get_instance)
+            .filter_map(|target| match target {
+                ResourceName::Instance(instance) => Some(instance),
+                _ => None,
+            })
             .collect();
 
         let mut seen = HashSet::new();
         self.targets
             .iter()
-            .filter(|target| {
-                Self::is_instance(target) || !deleted_instances.contains(Self::get_instance(target))
+            .filter(|target| match target {
+                ResourceName::Snapshot(snapshot) => {
+                    !deleted_instances.contains(snapshot.get_instance())
+                }
+                _ => true,
             })
-            .filter(|target| seen.insert(*target))
+            .filter(|target| seen.insert(target.to_string()))
             .collect()
     }
 
-    async fn delete_target(
-        context: &commands::Context,
-        target: &Either<InstanceName, SnapshotName>,
-    ) -> Result<()> {
-        let instance_name = Self::get_instance(target);
+    async fn delete_target(context: &commands::Context, target: &ResourceName) -> Result<()> {
+        let instance_name = match target {
+            ResourceName::Instance(instance) => instance,
+            ResourceName::Snapshot(snapshot) => snapshot.get_instance(),
+            ResourceName::Image(name) => return Self::delete_image(context, name),
+        };
         let _lock = ResourceLock::acquire_instances(context, &[instance_name.as_str()])?;
 
         // Free the disk lock first. A full instance delete can kill it, a
@@ -87,7 +86,7 @@ impl DeleteCommand {
         commands::StopCommand {
             all: false.into(),
             wait: true,
-            kill: Self::is_instance(target),
+            kill: matches!(target, ResourceName::Instance(_)),
             instances: vec![instance_name.clone()].into(),
         }
         .run(context)
@@ -95,12 +94,31 @@ impl DeleteCommand {
 
         let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
         match target {
-            Either::Right(snapshot_name) => {
+            ResourceName::Snapshot(snapshot_name) => {
                 let image = context.get_env().get_instance_image_file(&instance.name);
                 QemuImg::new(context.get_system()).delete_snapshot(&image, snapshot_name.as_str())
             }
-            Either::Left(_) => DeleteInstanceAction::new().run(context, &instance),
+            _ => DeleteInstanceAction::new().run(context, &instance),
         }
+    }
+
+    fn check_image(context: &commands::Context, name: &ImageName) -> Result<()> {
+        let image = ImageFactory::find_image(name)?;
+        if !ImageStore::new().exists(context.get_system(), context.get_env(), &image) {
+            return Err(Error::NotFound(name.to_string()));
+        }
+        Ok(())
+    }
+
+    fn delete_image(context: &commands::Context, name: &ImageName) -> Result<()> {
+        let image = ImageFactory::find_image(name)?;
+        let _lock = ResourceLock::acquire_image(context, &image)?;
+        // Two tags such as ubuntu:latest and ubuntu:resolute share one file
+        let file = context.get_env().get_image_file(&image.to_file_name());
+        if context.get_system().exists_path(&file) {
+            context.get_system().remove_file(&file)?;
+        }
+        Ok(())
     }
 }
 
@@ -109,14 +127,21 @@ impl Command for DeleteCommand {
         let console = context.get_console();
 
         for target in &self.targets {
-            let instance_name = Self::get_instance(target);
+            let instance_name = match target {
+                ResourceName::Instance(instance) => instance,
+                ResourceName::Snapshot(snapshot) => snapshot.get_instance(),
+                ResourceName::Image(name) => {
+                    Self::check_image(context, name)?;
+                    continue;
+                }
+            };
             if !context.has_instance(instance_name.as_str()) {
                 return Err(Error::NotFound(instance_name.to_string()));
             }
 
-            if let Either::Right(snapshot_name) = target {
-                let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
-                let image = context.get_env().get_instance_image_file(&instance.name);
+            if let ResourceName::Snapshot(snapshot_name) = target {
+                let env = context.get_env();
+                let image = env.get_instance_image_file(instance_name.as_str());
                 let qemu_img = QemuImg::new(context.get_system());
                 if !qemu_img.has_snapshot(&image, snapshot_name.as_str()) {
                     return Err(Error::NotFound(target.to_string()));
@@ -126,7 +151,11 @@ impl Command for DeleteCommand {
 
         let targets = self.get_targets();
 
-        console.info("Running instances are stopped before deletion.");
+        let is_image = |target: &&ResourceName| matches!(target, ResourceName::Image(_));
+        let only_images = targets.iter().all(is_image);
+        if !only_images {
+            console.info("Running instances are stopped before deletion.");
+        }
         if !self.yes.value && !ConfirmDialog::new("Do you want to proceed?").confirm(console) {
             return Ok(0);
         }
@@ -267,5 +296,30 @@ mod tests {
             Err(Error::NotFound(name)) if name == "test/clean"
         ));
         assert!(recorders.has_instance());
+    }
+
+    #[tokio::test]
+    async fn test_delete_image_removes_the_cached_file() {
+        let file = Environment::default().get_image_file("debian_bookworm_amd64");
+        let builder = ContextBuilder::new(SystemMock::new().add_file(&file, b"image"));
+        let system = Arc::clone(builder.get_system());
+
+        build_command(&["debian:bookworm:amd64"])
+            .run(&builder.build())
+            .await
+            .unwrap();
+
+        assert!(!system.exists_path(&file));
+    }
+
+    #[tokio::test]
+    async fn test_reject_an_uncached_image() {
+        let (context, _) = build_context(&[]);
+        let image: ImageName = "debian:bookworm:amd64".parse().unwrap();
+
+        assert!(matches!(
+            build_command(&["debian:bookworm:amd64"]).run(&context).await,
+            Err(Error::NotFound(name)) if name == image.to_string()
+        ));
     }
 }

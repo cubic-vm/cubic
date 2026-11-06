@@ -101,6 +101,9 @@ pub enum Error {
     #[error("Cannot shrink the disk of the instance '{0}'")]
     CannotShrinkDisk(String),
 
+    #[error("Cannot show the snapshot '{0}'")]
+    CannotShowSnapshot(String),
+
     #[error("Instance '{0}' already has a snapshot '{1}'")]
     SnapshotAlreadyExists(String, String),
 
