@@ -203,7 +203,7 @@ impl ImageFactory {
 
     pub fn find_image(name: &ImageName) -> Result<Image> {
         Self::find_matching_image(ImageList::read(), name)
-            .ok_or_else(|| Error::UnknownImage(name.to_string()))
+            .ok_or_else(|| Error::NotFound(name.to_string()))
     }
 
     pub fn get_display_name(image: &Image) -> String {

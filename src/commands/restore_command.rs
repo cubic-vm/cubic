@@ -49,10 +49,7 @@ impl Command for RestoreCommand {
         let image = context.get_env().get_instance_image_file(&instance.name);
         let qemu_img = QemuImg::new(context.get_system());
         if !qemu_img.has_snapshot(&image, snapshot_name) {
-            return Err(Error::UnknownSnapshot(
-                instance_name.to_string(),
-                snapshot_name.to_string(),
-            ));
+            return Err(Error::NotFound(self.snapshot.to_string()));
         }
 
         console.info("The instance is stopped and all changes since the snapshot are lost.");
@@ -143,8 +140,7 @@ mod tests {
 
         assert!(matches!(
             build_command("test/clean", true).run(&context).await,
-            Err(Error::UnknownSnapshot(instance, snapshot))
-                if instance == "test" && snapshot == "clean"
+            Err(Error::NotFound(name)) if name == "test/clean"
         ));
     }
 }

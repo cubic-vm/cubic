@@ -32,7 +32,7 @@ impl LoadInstanceAction {
     /// Reads the config as it is, without replacing a broken one
     pub fn read(&self, context: &Context, name: &str) -> Result<Instance> {
         if !context.has_instance(name) {
-            return Err(Error::UnknownInstance(name.to_string()));
+            return Err(Error::NotFound(name.to_string()));
         }
 
         let path = context.get_env().get_instance_toml_config_file(name);
@@ -144,7 +144,7 @@ ssh_port = 14357
 
         assert!(matches!(
             LoadInstanceAction::new().run(&context, "missing"),
-            Err(Error::UnknownInstance(name)) if name == "missing"
+            Err(Error::NotFound(name)) if name == "missing"
         ));
     }
 

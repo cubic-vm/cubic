@@ -15,7 +15,7 @@ impl StopInstanceAction {
 
     pub fn run(&mut self, context: &Context, kill: bool) -> Result<()> {
         if !context.has_instance(&self.instance.name) {
-            return Err(Error::UnknownInstance(self.instance.name.clone()));
+            return Err(Error::NotFound(self.instance.name.clone()));
         }
 
         let mut monitor = context.get_monitor(&self.instance);
@@ -69,7 +69,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(Error::UnknownInstance(ref name)) if name == "missing"
+            Err(Error::NotFound(ref name)) if name == "missing"
         ));
     }
 
