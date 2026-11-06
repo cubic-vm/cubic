@@ -38,7 +38,7 @@ pub struct DeleteCommand {
     #[clap(flatten)]
     yes: commands::YesArg,
     /// Names of the virtual machine instances or their snapshots
-    #[clap(value_name = "TARGETS")]
+    #[clap(value_name = "TARGETS", required = true)]
     targets: Vec<Either<InstanceName, SnapshotName>>,
 }
 
@@ -74,15 +74,39 @@ impl DeleteCommand {
             .filter(|target| seen.insert(*target))
             .collect()
     }
+
+    async fn delete_target(
+        context: &commands::Context,
+        target: &Either<InstanceName, SnapshotName>,
+    ) -> Result<()> {
+        let instance_name = Self::get_instance(target);
+        let _lock = ResourceLock::acquire_instances(context, &[instance_name.as_str()])?;
+
+        // Free the disk lock first. A full instance delete can kill it, a
+        // snapshot needs the instance shut down cleanly.
+        commands::StopCommand {
+            all: false.into(),
+            wait: true,
+            kill: Self::is_instance(target),
+            instances: vec![instance_name.clone()].into(),
+        }
+        .run(context)
+        .await?;
+
+        let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
+        match target {
+            Either::Right(snapshot_name) => {
+                let image = context.get_env().get_instance_image_file(&instance.name);
+                QemuImg::new(context.get_system()).delete_snapshot(&image, snapshot_name.as_str())
+            }
+            Either::Left(_) => DeleteInstanceAction::new().run(context, &instance),
+        }
+    }
 }
 
 impl Command for DeleteCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let console = context.get_console();
-
-        if self.targets.is_empty() {
-            return Err(Error::MissingInstanceName);
-        }
 
         for target in &self.targets {
             let instance_name = Self::get_instance(target);
@@ -93,8 +117,8 @@ impl Command for DeleteCommand {
             if let Either::Right(snapshot_name) = target {
                 let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
                 let image = context.get_env().get_instance_image_file(&instance.name);
-                if !QemuImg::new(context.get_system()).has_snapshot(&image, snapshot_name.as_str())
-                {
+                let qemu_img = QemuImg::new(context.get_system());
+                if !qemu_img.has_snapshot(&image, snapshot_name.as_str()) {
                     return Err(Error::NotFound(target.to_string()));
                 }
             }
@@ -107,33 +131,20 @@ impl Command for DeleteCommand {
             return Ok(0);
         }
 
+        let mut failed = false;
         for target in &targets {
-            let instance_name = Self::get_instance(target);
-            let _lock = ResourceLock::acquire_instances(context, &[instance_name.as_str()])?;
-
-            // Free the disk lock first. A full instance delete can kill it, a
-            // snapshot needs the instance shut down cleanly.
-            commands::StopCommand {
-                all: false.into(),
-                wait: true,
-                kill: Self::is_instance(target),
-                instances: vec![instance_name.clone()].into(),
-            }
-            .run(context)
-            .await?;
-
-            let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
-            match target {
-                Either::Right(snapshot_name) => {
-                    let image = context.get_env().get_instance_image_file(&instance.name);
-                    QemuImg::new(context.get_system())
-                        .delete_snapshot(&image, snapshot_name.as_str())?
+            match Self::delete_target(context, target).await {
+                Ok(()) => console.debug(&format!("Deleted {target}")),
+                Err(error) => {
+                    console.error(&format!("Failed to delete {target}: {error}"));
+                    failed = true;
                 }
-                Either::Left(_) => DeleteInstanceAction::new().run(context, &instance)?,
             }
-            console.debug(&format!("Deleted {target}"));
         }
 
+        if failed {
+            return Ok(1);
+        }
         console.print("Successfully deleted all targets");
         Ok(0)
     }
@@ -237,13 +248,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_reject_an_empty_target_list() {
-        let (context, _) = build_context(&[]);
+    async fn test_delete_continues_after_a_failed_target() {
+        // Deleting test/deps fails because qemu-img has no recorded answer for it
+        let (context, recorders) = build_context(&["deps", "clean"]);
 
-        assert!(matches!(
-            build_command(&[]).run(&context).await,
-            Err(Error::MissingInstanceName)
-        ));
+        let command = build_command(&["test/deps", "test/clean"]);
+
+        assert!(matches!(command.run(&context).await, Ok(1)));
+        assert_eq!(recorders.count_snapshot_deletes(), 1);
     }
 
     #[tokio::test]
