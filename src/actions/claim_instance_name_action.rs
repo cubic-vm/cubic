@@ -13,7 +13,7 @@ impl ClaimInstanceNameAction {
 
     pub fn run(&self, context: &Context, name: &str) -> Result<()> {
         match LoadInstanceAction::new().read(context, name) {
-            Err(Error::UnknownInstance(_)) => Ok(()),
+            Err(Error::NotFound(_)) => Ok(()),
             Ok(instance) if context.is_stale(&instance) => {
                 DeleteInstanceAction::new().run(context, &instance)
             }

@@ -87,7 +87,7 @@ impl Command for DeleteCommand {
         for target in &self.targets {
             let instance_name = Self::get_instance(target);
             if !context.has_instance(instance_name.as_str()) {
-                return Err(Error::UnknownInstance(instance_name.to_string()));
+                return Err(Error::NotFound(instance_name.to_string()));
             }
 
             if let Either::Right(snapshot_name) = target {
@@ -95,10 +95,7 @@ impl Command for DeleteCommand {
                 let image = context.get_env().get_instance_image_file(&instance.name);
                 if !QemuImg::new(context.get_system()).has_snapshot(&image, snapshot_name.as_str())
                 {
-                    return Err(Error::UnknownSnapshot(
-                        instance_name.to_string(),
-                        snapshot_name.as_str().to_string(),
-                    ));
+                    return Err(Error::NotFound(target.to_string()));
                 }
             }
         }
@@ -255,8 +252,7 @@ mod tests {
 
         assert!(matches!(
             build_command(&["test/clean"]).run(&context).await,
-            Err(Error::UnknownSnapshot(instance, snapshot))
-                if instance == "test" && snapshot == "clean"
+            Err(Error::NotFound(name)) if name == "test/clean"
         ));
         assert!(recorders.has_instance());
     }

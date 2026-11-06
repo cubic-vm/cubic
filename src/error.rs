@@ -44,12 +44,10 @@ impl fmt::Display for FsOperation {
 
 #[derive(Error, Debug)]
 pub enum Error {
-    // Instances
-    #[error(
-        "Instance '{0}' does not exist.\n\nOptions:\n  - Use an existing instance name\n  - Create it first: `cubic create {0} [...]`"
-    )]
-    UnknownInstance(String),
+    #[error("'{0}' does not exist")]
+    NotFound(String),
 
+    // Instances
     #[error("Config of instance '{name}' is invalid.\n\n{source}")]
     InvalidInstanceConfig {
         name: String,
@@ -103,9 +101,6 @@ pub enum Error {
     #[error("Cannot shrink the disk of the instance '{0}'")]
     CannotShrinkDisk(String),
 
-    #[error("Instance '{0}' has no snapshot '{1}'")]
-    UnknownSnapshot(String, String),
-
     #[error("Instance '{0}' already has a snapshot '{1}'")]
     SnapshotAlreadyExists(String, String),
 
@@ -115,9 +110,6 @@ pub enum Error {
     ArchMismatch(String, Arch, Arch),
 
     // Images
-    #[error("Image '{0}' not found.\n\nList available images with: `cubic images`")]
-    UnknownImage(String),
-
     #[error("Verification of image failed")]
     InvalidChecksum,
 
