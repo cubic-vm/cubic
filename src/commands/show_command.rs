@@ -1,7 +1,6 @@
 use crate::commands::{self, Command};
-use crate::error::Result;
-use crate::models::{ImageName, InstanceName};
-use crate::util::Either;
+use crate::error::{Error, Result};
+use crate::models::ResourceName;
 use clap::Parser;
 
 /// Show VM images and instances
@@ -58,7 +57,7 @@ pub struct ShowCommand {
     ///
     /// A plain name is an instance. An image needs a name or a tag,
     /// for example ubuntu:latest.
-    name: Either<InstanceName, ImageName>,
+    name: ResourceName,
 
     #[clap(flatten)]
     all: commands::AllInfoArg,
@@ -67,7 +66,7 @@ pub struct ShowCommand {
 impl Command for ShowCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         match &self.name {
-            Either::Left(instance) => {
+            ResourceName::Instance(instance) => {
                 commands::ShowInstanceCommand {
                     instance: instance.clone().into(),
                     all: self.all.value.into(),
@@ -75,7 +74,7 @@ impl Command for ShowCommand {
                 .run(context)
                 .await
             }
-            Either::Right(name) => {
+            ResourceName::Image(name) => {
                 commands::ShowImageCommand {
                     name: name.clone(),
                     all: self.all.value.into(),
@@ -83,6 +82,7 @@ impl Command for ShowCommand {
                 .run(context)
                 .await
             }
+            ResourceName::Snapshot(name) => Err(Error::CannotShowSnapshot(name.to_string())),
         }
     }
 }
