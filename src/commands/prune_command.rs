@@ -72,8 +72,19 @@ impl Command for PruneCommand {
 
         let legacy_dir = env.get_cache_dir().join(LEGACY_INSTANCES_DIR);
 
-        // Calculate size
         let cache_file = env.get_image_cache_file();
+        if tmp_dirs.is_empty()
+            && downloads.is_empty()
+            && stale_dirs.is_empty()
+            && legacy_certs.is_empty()
+            && !system.exists_path(&cache_file)
+            && !system.exists_path(&legacy_dir)
+        {
+            console.print("Nothing to prune");
+            return Ok(0);
+        }
+
+        // Calculate size
         let bytes = tmp_dirs
             .iter()
             .chain(downloads.iter())
@@ -84,7 +95,7 @@ impl Command for PruneCommand {
         let total = DataSize::new(bytes as usize).to_size();
 
         // Print size of files to be deleted
-        console.print(&format!("Pruning caches frees {total} of disk space.\n"));
+        console.print(&format!("Pruning frees {total} of disk space.\n"));
 
         if self.yes.value
             || ConfirmDialog::new("Are you sure you want to continue?").confirm(console)
@@ -294,6 +305,13 @@ mod tests {
 
         assert!(system.exists_path(&busy));
         assert!(!system.exists_path(&idle));
+    }
+
+    #[tokio::test]
+    async fn test_report_nothing_to_prune() {
+        let builder = build_context(SystemMock::new());
+
+        assert_eq!(run_prune(builder).await, "Nothing to prune\n");
     }
 
     #[tokio::test]
