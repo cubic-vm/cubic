@@ -89,7 +89,7 @@ pub enum Error {
     StartTimeout,
 
     #[error(
-        "Timed out waiting for the console of instance '{0}'.\n\nTroubleshoot:\n  - Check that the instance is running: `cubic list`\n  - Run with --verbose to see the QEMU command\n  - Try again; the system may be under load\n"
+        "Timed out waiting for the console of instance '{0}'.\n\nTroubleshoot:\n  - Check that the instance is running: `cubic instances`\n  - Run with --verbose to see the QEMU command\n  - Try again; the system may be under load\n"
     )]
     ConsoleTimeout(String),
 
