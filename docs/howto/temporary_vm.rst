@@ -40,12 +40,6 @@ The disk of a throwaway VM instance is a thin overlay on the cached image rather
 than a full copy, so it is created at once and stores only what the guest
 writes. This makes ``--rm`` cheap to run again and again.
 
-The overlay refers back to the image in the cache, so a throwaway VM instance is
-not self-contained. ``cubic prune`` clears the whole image cache, so avoid it
-while a throwaway VM instance still runs, or the overlay loses the base image it
-reads from. A VM instance created without ``--rm`` holds a full copy and is not
-affected.
-
 Combine with Isolation
 ----------------------
 

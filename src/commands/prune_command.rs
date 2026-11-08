@@ -17,11 +17,10 @@ const LEGACY_CERT_FILES: [&str; 5] = [
     "client-key.pem",
 ];
 
-/// Clear caches
+/// Remove stale files
 ///
-/// This command removes cached VM image files, stopped temporary instances
-/// and instance files left behind by interrupted runs or older versions of
-/// cubic.
+/// This command removes stopped temporary instances and files left behind
+/// by interrupted runs or older versions of cubic.
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
@@ -54,11 +53,12 @@ impl Command for PruneCommand {
             .filter(|path| path.extension().is_some_and(|ext| ext == "tmp"))
             .collect();
 
-        let image_files: Vec<PathBuf> = system
+        // An interrupted download leaves a .tmp file
+        let downloads: Vec<PathBuf> = system
             .read_dir(&env.get_image_dir())
             .unwrap_or_default()
             .into_iter()
-            .filter(|path| path.extension().is_none_or(|ext| ext != "lock"))
+            .filter(|path| path.extension().is_some_and(|ext| ext == "tmp"))
             .collect();
 
         let legacy_certs: Vec<PathBuf> = instance_names
@@ -76,7 +76,7 @@ impl Command for PruneCommand {
         let cache_file = env.get_image_cache_file();
         let bytes = tmp_dirs
             .iter()
-            .chain(image_files.iter())
+            .chain(downloads.iter())
             .chain(stale_dirs.iter())
             .chain(legacy_certs.iter())
             .chain([&cache_file, &legacy_dir])
@@ -101,7 +101,7 @@ impl Command for PruneCommand {
                     system.remove_dir(dir).ok();
                 }
             }
-            for file in &image_files {
+            for file in &downloads {
                 if let Some(name) = file.file_name().and_then(OsStr::to_str)
                     && let Ok(Some(_lock)) = ResourceLock::try_acquire_image(context, name)
                 {
@@ -170,12 +170,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_delete_the_image_cache_and_the_legacy_cache_instance_dir() {
+    async fn test_delete_the_legacy_image_list_and_cache_instance_dir() {
         let env = build_env();
         let builder = build_context(
             SystemMock::new()
                 .add_file(env.get_image_cache_file(), b"cache")
-                .add_file(env.get_image_file("debian"), b"image")
                 .add_file("/cache/instances/test/user-data.img", b"seed"),
         );
         let system = Arc::clone(builder.get_system());
@@ -183,8 +182,19 @@ mod tests {
         run_prune(builder).await;
 
         assert!(!system.exists_path(&env.get_image_cache_file()));
-        assert!(!system.exists_path(&env.get_image_file("debian")));
         assert!(!system.exists_path(Path::new("/cache/instances")));
+    }
+
+    #[tokio::test]
+    async fn test_keep_cached_images() {
+        let env = build_env();
+        let image = env.get_image_file("debian");
+        let builder = build_context(SystemMock::new().add_file(&image, b"image"));
+        let system = Arc::clone(builder.get_system());
+
+        run_prune(builder).await;
+
+        assert!(system.exists_path(&image));
     }
 
     #[tokio::test]
@@ -267,16 +277,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_keep_an_image_that_another_command_uses() {
+    async fn test_keep_a_download_that_another_command_runs() {
         let env = build_env();
-        let busy = env.get_image_file("busy");
-        let download = env.get_image_file("busy.tmp");
-        let idle = env.get_image_file("idle");
+        let busy = env.get_image_file("busy.tmp");
+        let idle = env.get_image_file("idle.tmp");
         let builder = build_context(
             SystemMock::new()
-                .add_file(&busy, b"image")
-                .add_file(&download, b"part")
-                .add_file(&idle, b"image"),
+                .add_file(&busy, b"part")
+                .add_file(&idle, b"part"),
         );
         let system = Arc::clone(builder.get_system());
         let lock = env.get_image_dir().join("busy.lock");
@@ -285,7 +293,6 @@ mod tests {
         run_prune(builder).await;
 
         assert!(system.exists_path(&busy));
-        assert!(system.exists_path(&download));
         assert!(!system.exists_path(&idle));
     }
 
@@ -294,7 +301,7 @@ mod tests {
         let env = build_env();
         let builder = build_context(
             SystemMock::new()
-                .add_file(env.get_image_file("debian"), &[0; 1024])
+                .add_file(env.get_image_file("debian.tmp"), &[0; 1024])
                 .add_file("/cache/instances/test/user-data.img", &[0; 1024]),
         );
 
