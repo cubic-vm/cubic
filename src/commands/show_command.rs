@@ -13,7 +13,7 @@ use clap::Parser;
 ///   $ cubic show trixie
 ///   OS:         debian:13
 ///   Running:    yes
-///   Arch:       amd64
+///   Arch:       x86-64
 ///   vCPUs:      6
 ///   Memory:     16 G
 ///   Disk Used:  5325 M
@@ -38,7 +38,7 @@ use clap::Parser;
 ///   Name:   Ubuntu 26.04
 ///   OS:     ubuntu
 ///   Tags:   26.04, resolute, stable, latest
-///   Arch:   amd64
+///   Arch:   x86-64
 ///   Cached: yes
 ///
 ///   Show all image information, adding checksum, file path and URLs

@@ -40,7 +40,7 @@ The name ``demo/clean`` is the snapshot ``clean`` of the VM instance ``demo``.
 
     $ cubic show demo
     Running:      no
-    Arch:         amd64
+    Arch:         x86-64
     vCPUs:        4
     Memory:       2048 M
     Disk Used:    408 M

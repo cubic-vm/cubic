@@ -26,7 +26,7 @@ Format
    * - ``name``
      - Release, given as a version, a codename or a tag. Defaults to ``stable``.
    * - ``arch``
-     - ``amd64`` or ``arm64``. Defaults to the architecture of the host.
+     - ``x86-64`` or ``aarch64``. Defaults to the architecture of the host.
 
 Examples:
 
@@ -44,8 +44,8 @@ Examples:
      - The same release by codename.
    * - ``ubuntu:latest``
      - Newest Ubuntu release, long term or not.
-   * - ``debian:trixie:arm64``
-     - Debian trixie as an arm64 guest.
+   * - ``debian:trixie:aarch64``
+     - Debian trixie as an aarch64 guest.
    * - ``archlinux:rolling``
      - Arch Linux, which has one rolling image instead of releases.
 

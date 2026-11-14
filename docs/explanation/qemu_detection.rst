@@ -49,7 +49,7 @@ install prefix, and :ref:`qemu not found` lists that order in full.
 
 A descriptor is used when it maps a flash device with a UEFI interface and names
 a target that matches the architecture and the machine type of the VM instance,
-``q35`` for amd64 and ``virt`` for arm64. Descriptors with a feature that needs
+``q35`` for x86-64 and ``virt`` for aarch64. Descriptors with a feature that needs
 setup a plain guest does not have are skipped, which covers secure boot, SMM,
 AMD SEV-SNP and Intel TDX.
 

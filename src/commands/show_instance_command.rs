@@ -125,7 +125,7 @@ mod tests {
             "\
 OS:         ubuntu:24.04
 Running:    no
-Arch:       amd64
+Arch:       x86-64
 vCPUs:      1
 Memory:     1024 B
 Disk Used:  512 K
@@ -180,7 +180,7 @@ Forward:    127.0.0.1:4000:40/tcp
             format!(
                 "\
 Running:      no
-Arch:         arm64
+Arch:         aarch64
 vCPUs:        2
 Memory:       1 B
 Disk Used:    1 B

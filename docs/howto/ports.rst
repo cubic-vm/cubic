@@ -63,7 +63,7 @@ including every port forwarding rule:
 
     $ cubic show --all webserver
     Running:      yes
-    Arch:         amd64
+    Arch:         x86-64
     vCPUs:        4
     Memory:       4096 M
     Disk Used:    1229 M

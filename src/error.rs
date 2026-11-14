@@ -242,7 +242,7 @@ Troubleshoot:
 
     // Parsing
     #[error(
-        "CPU arch '{0}' is not supported.\n\nChoose a supported architecture: 'amd64' or 'arm64'"
+        "CPU arch '{0}' is not supported.\n\nChoose a supported architecture: 'x86-64' or 'aarch64'"
     )]
     UnknownArch(String),
 
@@ -324,8 +324,8 @@ fn format_qemu_not_found_help() -> String {
         "QEMU or its UEFI firmware was not found.
 
 Cubic needs the following to run virtual machines:
-  - qemu-system-x86_64  (amd64 VMs)
-  - qemu-system-aarch64 (arm64 VMs)
+  - qemu-system-x86_64  (x86-64 VMs)
+  - qemu-system-aarch64 (aarch64 VMs)
   - qemu-img            (disk image management)
   - UEFI firmware
 

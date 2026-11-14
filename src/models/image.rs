@@ -100,7 +100,8 @@ impl Image {
     }
 
     pub fn to_file_name(&self) -> String {
-        format!("{}_{}_{}", self.distro, self.get_name(), self.arch)
+        let arch = self.arch.as_vendor_str();
+        format!("{}_{}_{arch}", self.distro, self.get_name())
     }
 }
 
