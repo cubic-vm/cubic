@@ -156,7 +156,7 @@ impl Command for DeleteCommand {
         if !only_images {
             console.info("Running instances are stopped before deletion.");
         }
-        if !self.yes.value && !ConfirmDialog::new("Do you want to proceed?").confirm(console) {
+        if !self.yes.value && !ConfirmDialog::new("Do you want to proceed?").confirm(console)? {
             return Ok(0);
         }
 

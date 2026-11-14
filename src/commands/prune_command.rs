@@ -98,7 +98,7 @@ impl Command for PruneCommand {
         console.print(&format!("Pruning frees {total} of disk space.\n"));
 
         if self.yes.value
-            || ConfirmDialog::new("Are you sure you want to continue?").confirm(console)
+            || ConfirmDialog::new("Are you sure you want to continue?").confirm(console)?
         {
             // Delete files
             let mut freed = system.get_path_size(&cache_file) + system.get_path_size(&legacy_dir);

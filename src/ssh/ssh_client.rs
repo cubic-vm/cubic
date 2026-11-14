@@ -127,8 +127,8 @@ impl<'a> SshClient<'a> {
             let password = self
                 .context
                 .get_console()
-                .prompt(&format!("Enter password for {user}@{machine}: "), true)
-                .map_err(|_| Error::SshAuthCancelled(machine.to_string()))?;
+                .prompt(&format!("Enter password for {user}@{machine}: "), true)?
+                .ok_or_else(|| Error::SshAuthCancelled(machine.to_string()))?;
 
             if session
                 .authenticate_password(user, password)
@@ -222,7 +222,9 @@ impl<'a> SshClient<'a> {
             checker.get_fingerprint(offered)
         ));
 
-        ConfirmDialog::new("Do you want to trust the new key and continue?").confirm(console)
+        ConfirmDialog::new("Do you want to trust the new key and continue?")
+            .confirm(console)
+            .unwrap_or(false)
     }
 
     async fn connect(
