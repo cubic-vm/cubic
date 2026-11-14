@@ -45,6 +45,13 @@ impl Arch {
             Arch::ARM64 => "aarch64",
         }
     }
+
+    pub fn get_display_str(&self) -> &str {
+        match self {
+            Arch::AMD64 => "x86-64",
+            Arch::ARM64 => "aarch64",
+        }
+    }
 }
 
 impl FromStr for Arch {
@@ -61,7 +68,7 @@ impl FromStr for Arch {
 
 impl fmt::Display for Arch {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.as_vendor_str())
+        write!(f, "{}", self.get_display_str())
     }
 }
 
@@ -91,11 +98,13 @@ mod tests {
     fn test_render_an_arch() {
         assert_eq!(Arch::AMD64.as_vendor_str(), "amd64");
         assert_eq!(Arch::AMD64.as_canonical_str(), "x86_64");
-        assert_eq!(Arch::AMD64.to_string(), "amd64");
+        assert_eq!(Arch::AMD64.get_display_str(), "x86-64");
+        assert_eq!(Arch::AMD64.to_string(), "x86-64");
 
         assert_eq!(Arch::ARM64.as_vendor_str(), "arm64");
         assert_eq!(Arch::ARM64.as_canonical_str(), "aarch64");
-        assert_eq!(Arch::ARM64.to_string(), "arm64");
+        assert_eq!(Arch::ARM64.get_display_str(), "aarch64");
+        assert_eq!(Arch::ARM64.to_string(), "aarch64");
     }
 
     #[test]

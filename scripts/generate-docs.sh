@@ -122,7 +122,7 @@ Features
 
 * :ref:`Runs on Linux, macOS and Windows hosts <Install Cubic>`
 * :ref:`Ships Alma Linux, Alpine Linux, Arch Linux, CentOS Stream, Debian, Fedora, Gentoo, openSUSE Leap, openSUSE Tumbleweed, Rocky Linux and Ubuntu <image names>`
-* :ref:`Runs amd64 and arm64 guests <image names>`
+* :ref:`Runs x86-64 and aarch64 guests <image names>`
 * :ref:`Uses the hardware accelerator of the host, KVM on Linux, Hypervisor on macOS, WHPX on Windows and NVMM on BSD <hardware acceleration>`
 
 **Everyday work**

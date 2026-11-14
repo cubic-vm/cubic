@@ -37,7 +37,7 @@ Check the Result
 
     $ cubic show demo
     Running:      no
-    Arch:         amd64
+    Arch:         x86-64
     vCPUs:        2
     Memory:       2048 M
     Disk Used:    448 M

@@ -45,7 +45,7 @@ impl FromStr for ImageName {
                 arch,
             })
         } else {
-            Err("Image name must have the format: distro[:name][:arch] (e.g. debian, debian:bookworm, debian:stable:amd64)"
+            Err("Image name must have the format: distro[:name][:arch] (e.g. debian, debian:bookworm, debian:stable:aarch64)"
                 .to_string())
         }
     }

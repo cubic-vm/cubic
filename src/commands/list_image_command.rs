@@ -10,15 +10,15 @@ use clap::Parser;
 /// Examples:
 ///
 ///   $ cubic images
-///   Name                 OS              Tags                              Arch    Cached
-///   Arch Linux           archlinux       rolling, stable, latest           amd64       no
-///   Debian 12            debian          12, bookworm                      amd64       no
-///   Debian 13            debian          13, trixie, stable, latest        amd64      yes
-///   Fedora 43            fedora          43                                amd64       no
-///   Fedora 44            fedora          44, stable, latest                amd64       no
+///   Name                 OS              Tags                              Arch     Cached
+///   Arch Linux           archlinux       rolling, stable, latest           x86-64       no
+///   Debian 12            debian          12, bookworm                      x86-64       no
+///   Debian 13            debian          13, trixie, stable, latest        x86-64      yes
+///   Fedora 43            fedora          43                                x86-64       no
+///   Fedora 44            fedora          44, stable, latest                x86-64       no
 ///   [...]
-///   Ubuntu 24.04         ubuntu          24.04, noble                      amd64       no
-///   Ubuntu 26.04         ubuntu          26.04, resolute, stable, latest   amd64      yes
+///   Ubuntu 24.04         ubuntu          24.04, noble                      x86-64       no
+///   Ubuntu 26.04         ubuntu          26.04, resolute, stable, latest   x86-64      yes
 ///   [...]
 ///
 ///   Use the OS to get the stable release, or add a tag to pick another one,
@@ -38,7 +38,7 @@ pub struct ListImageCommand {
     all: AllImagesArg,
 
     /// Show images of this architecture, defaults to the host architecture
-    #[clap(long = "arch", value_name = "amd64|arm64")]
+    #[clap(long = "arch", value_name = "x86-64|aarch64")]
     arch: Option<Arch>,
 }
 

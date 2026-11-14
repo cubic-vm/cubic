@@ -11,10 +11,10 @@ use clap::Parser;
 /// Examples:
 ///
 ///   $ cubic instances
-///   Name          OS             Arch    vCPUs   Memory       Disk   Running
-///   noble-arm64   ubuntu:24.04   arm64       8   8192 M    4/100 G       yes
-///   trixie        debian:13      amd64       6     16 G      100 G       yes
-///   fedora        fedora:42      amd64       4   4096 M   10/100 G        no
+///   Name          OS             Arch      vCPUs   Memory       Disk   Running
+///   noble-arm64   ubuntu:24.04   aarch64       8   8192 M    4/100 G       yes
+///   trixie        debian:13      x86-64        6     16 G      100 G       yes
+///   fedora        fedora:42      x86-64        4   4096 M   10/100 G        no
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
@@ -125,9 +125,9 @@ mod tests {
         assert_eq!(
             system.get_output(),
             "\
-Name    OS             Arch    vCPUs   Memory         Disk   Running
-test    ubuntu:24.04   amd64       1   1024 B   512/1024 K        no
-test2                  amd64       5      0 B                     no
+Name    OS             Arch     vCPUs   Memory         Disk   Running
+test    ubuntu:24.04   x86-64       1   1024 B   512/1024 K        no
+test2                  x86-64       5      0 B                     no
 "
         );
     }
@@ -149,8 +149,8 @@ test2                  amd64       5      0 B                     no
         assert_eq!(
             system.get_output(),
             "\
-Name    OS   Arch    vCPUs   Memory   Disk   Running
-test2        amd64       5      0 B              yes
+Name    OS   Arch     vCPUs   Memory   Disk   Running
+test2        x86-64       5      0 B              yes
 "
         );
     }

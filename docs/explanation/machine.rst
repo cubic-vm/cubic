@@ -46,7 +46,7 @@ CPU and Machine Type
 --------------------
 
 A guest gets the machine type its architecture and its UEFI firmware expect,
-``q35`` on amd64 and ``virt`` on arm64.
+``q35`` on x86-64 and ``virt`` on aarch64.
 
 With hardware acceleration a guest runs on the CPU of the host itself and sees
 its real features. Windows is the one exception, where the hypervisor accepts a
@@ -66,8 +66,8 @@ inside a snap, and only starting a machine settles it.
 When the answer is no, a guest runs in software emulation instead of failing.
 ``--accel auto`` is that default. ``--accel on`` insists on hardware
 acceleration and fails without it, and ``--accel off`` always emulates.
-Acceleration also needs the guest architecture to match the host, so an arm64
-guest on an amd64 host is always emulated.
+Acceleration also needs the guest architecture to match the host, so an aarch64
+guest on an x86-64 host is always emulated.
 
 A VM Instance Costs What It Uses
 --------------------------------
