@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use crate::platform::{Stream, System};
 use crate::view::Styler;
 use crossterm::cursor::{MoveToColumn, MoveUp};
@@ -187,12 +188,15 @@ impl Console {
         self.get_geometry().map_or(80, |(w, _)| w as usize)
     }
 
-    pub fn prompt(&self, text: &str, masked: bool) -> Result<String, ()> {
+    pub fn prompt(&self, text: &str, masked: bool) -> Result<Option<String>> {
+        if !self.system.is_stdin_terminal() {
+            return Err(Error::TerminalRequired);
+        }
         self.set_paused(true);
-        self.system.write(Stream::Stdout, text);
+        self.system.write(Stream::Stderr, text);
         let reply = self.system.read_input(masked);
         self.set_paused(false);
-        reply
+        Ok(reply.ok())
     }
 
     pub fn set_raw_mode(&self, enabled: bool) {

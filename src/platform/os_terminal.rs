@@ -60,7 +60,7 @@ impl Terminal for OsSystem {
                 // Ctrl+C
                 0x03 => {
                     self.set_raw_mode(false);
-                    self.write(Stream::Stdout, "\n");
+                    self.write(Stream::Stderr, "\n");
                     std::process::exit(1)
                 }
 
@@ -90,7 +90,7 @@ impl Terminal for OsSystem {
             }
         }
         self.set_raw_mode(false);
-        self.write(Stream::Stdout, "\r\n");
+        self.write(Stream::Stderr, "\r\n");
 
         if failed || !pending.is_empty() {
             return Err(());

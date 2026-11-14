@@ -54,7 +54,7 @@ impl Command for RestoreCommand {
 
         console.info("The instance is stopped and all changes since the snapshot are lost.");
 
-        if !self.yes.value && !ConfirmDialog::new("Do you want to proceed?").confirm(console) {
+        if !self.yes.value && !ConfirmDialog::new("Do you want to proceed?").confirm(console)? {
             return Ok(0);
         }
 

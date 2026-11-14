@@ -160,7 +160,7 @@ impl StartCommand {
             mem.to_size(),
         ));
 
-        if self.yes.value || ConfirmDialog::new("Reduce and start?").confirm(console) {
+        if self.yes.value || ConfirmDialog::new("Reduce and start?").confirm(console)? {
             instance.cpus = cpus;
             instance.mem = mem;
             StoreInstanceAction::new().run(context, instance)?;

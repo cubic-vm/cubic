@@ -8,6 +8,7 @@ pub struct TerminalMock {
     output: String,
     input: VecDeque<String>,
     is_terminal: bool,
+    stdin_terminal: bool,
 }
 
 impl TerminalMock {
@@ -20,6 +21,7 @@ impl TerminalMock {
     }
 
     fn push_input(&mut self, line: &str) {
+        self.stdin_terminal = true;
         self.input.push_back(line.to_string());
     }
 
@@ -57,7 +59,7 @@ impl Terminal for SystemMock {
     }
 
     fn is_stdin_terminal(&self) -> bool {
-        false
+        self.terminal.lock().unwrap().stdin_terminal
     }
 
     fn get_size(&self) -> Option<(u32, u32)> {
