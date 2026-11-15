@@ -26,7 +26,8 @@ No Privileged System Service
 Many virtual machine managers rely on a background service that runs with
 system wide privileges. Cubic does not. Each time you run a cubic command it
 starts a short lived process that launches or stops a QEMU process owned by your
-own user account, and then it exits.
+own user account, and then it exits. Each running VM keeps one supervisor
+process beside QEMU, owned by the same user account.
 
 Because QEMU runs as your normal user with no extra rights, a guest that breaks
 out of its virtual machine cannot gain system wide privileges on the host. Any
