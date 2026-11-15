@@ -1,9 +1,30 @@
 use crate::error::{Error, Result};
-use crate::platform::{OsSystem, Process};
+use crate::platform::{Child, ChildOutput, OsSystem, Process};
 use crate::util::CommandLine;
 use std::io::{ErrorKind, Write};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
+
+struct OsChild {
+    child: tokio::process::Child,
+}
+
+impl Child for OsChild {
+    fn try_wait(&mut self) -> Option<bool> {
+        let status = self.child.try_wait().ok()??;
+        Some(status.success())
+    }
+
+    fn take_stdout(&mut self) -> Option<ChildOutput> {
+        let pipe = self.child.stdout.take()?;
+        Some(Box::new(pipe))
+    }
+
+    fn take_stderr(&mut self) -> Option<ChildOutput> {
+        let pipe = self.child.stderr.take()?;
+        Some(Box::new(pipe))
+    }
+}
 
 impl OsSystem {
     // A missing binary is worth telling apart from a binary that refused to
@@ -76,7 +97,7 @@ impl Process for OsSystem {
         }
     }
 
-    fn run_detached(&self, mut command: Command) -> Result<()> {
+    fn run_detached(&self, mut command: Command) -> Result<Box<dyn Child>> {
         #[cfg(unix)]
         unsafe {
             use std::os::unix::process::CommandExt;
@@ -86,38 +107,19 @@ impl Process for OsSystem {
         #[cfg(target_os = "windows")]
         {
             use std::os::windows::process::CommandExt;
-            const DETACHED_PROCESS: u32 = 0x0000_0008;
-            command.creation_flags(DETACHED_PROCESS);
+            const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+            command.creation_flags(CREATE_NO_WINDOW);
         }
 
-        let mut child = command
+        command
             .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        let mut command = tokio::process::Command::from(command);
+        let child = command
             .spawn()
-            .map_err(|e| Self::map_spawn_error(&command, e))?;
+            .map_err(|e| Self::map_spawn_error(command.as_std(), e))?;
 
-        // Check immediately for instant failures, then again after a brief window
-        // to catch startup errors (KVM permission denied, bad firmware, port conflicts).
-        for ms in [0, 100] {
-            std::thread::sleep(Duration::from_millis(ms));
-            if let Ok(Some(_)) = child.try_wait() {
-                let stderr = child
-                    .wait_with_output()
-                    .map(|o| String::from_utf8_lossy(&o.stderr).into_owned())
-                    .unwrap_or_default();
-                return Err(Error::SystemCommandFailed(command.get_command(), stderr));
-            }
-        }
-
-        // Drains stderr and reaps the child.
-        std::thread::spawn(move || {
-            if let Some(mut stderr) = child.stderr.take() {
-                let _ = std::io::copy(&mut stderr, &mut std::io::sink());
-            }
-            let _ = child.wait();
-        });
-
-        Ok(())
+        Ok(Box::new(OsChild { child }))
     }
 }

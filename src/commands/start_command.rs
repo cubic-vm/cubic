@@ -2,6 +2,8 @@ use crate::actions::{LoadInstanceAction, StartInstanceAction, StoreInstanceActio
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::{DataSize, HOST_MEMORY_RESERVE, Instance, ResourceAllocator};
+use crate::platform::{Child, ChildOutput};
+use crate::qemu::QemuMonitorClient;
 use crate::ssh::PortChecker;
 use crate::util::ResourceLock;
 use crate::view::ConfirmDialog;
@@ -10,6 +12,9 @@ use clap::Parser;
 use std::process::Command as ProcessCommand;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::io::{self, AsyncBufReadExt, BufReader};
+
+const LAUNCH_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Start VM instances
 ///
@@ -73,17 +78,13 @@ impl Command for StartCommand {
 
                 self.fit_to_host(context, instance)?;
 
-                let command = self.build_vm_command(context, instance);
-                context.get_system().run_detached(command)?;
                 let monitor = context.get_monitor(instance);
-                let launched = async {
-                    while !monitor.is_running() {
-                        tokio::time::sleep(Duration::from_millis(50)).await;
-                    }
-                };
-                tokio::time::timeout(Duration::from_secs(5), launched)
-                    .await
-                    .ok();
+                let command = self.build_vm_command(context, instance);
+                let supervisor = context.get_system().run_detached(command)?;
+                let launched = Self::forward_until_launched(context, &monitor, supervisor);
+                if let Ok(false) = tokio::time::timeout(LAUNCH_TIMEOUT, launched).await {
+                    return Err(Error::StartFailed(instance.name.clone()));
+                }
 
                 actions.push(StartInstanceAction::new(instance));
                 // Only the instances that are launched are named
@@ -115,6 +116,41 @@ impl Command for StartCommand {
 }
 
 impl StartCommand {
+    async fn forward_until_launched(
+        context: &commands::Context,
+        monitor: &QemuMonitorClient,
+        mut supervisor: Box<dyn Child>,
+    ) -> bool {
+        let console = context.get_console();
+        let empty = || -> ChildOutput { Box::new(io::empty()) };
+        let stdout = supervisor.take_stdout().unwrap_or_else(empty);
+        let stderr = supervisor.take_stderr().unwrap_or_else(empty);
+        let mut stdout = BufReader::new(stdout).lines();
+        let mut stderr = BufReader::new(stderr).lines();
+        let mut tick = tokio::time::interval(Duration::from_millis(50));
+        loop {
+            tokio::select! {
+                // Output first, so a launch is only seen once all of it is shown.
+                biased;
+                Ok(Some(line)) = stdout.next_line() => console.print(&line),
+                Ok(Some(line)) = stderr.next_line() => console.eprint(&line),
+                _ = tick.tick() => match supervisor.try_wait() {
+                    Some(success) => {
+                        while let Ok(Some(line)) = stdout.next_line().await {
+                            console.print(&line);
+                        }
+                        while let Ok(Some(line)) = stderr.next_line().await {
+                            console.eprint(&line);
+                        }
+                        return success;
+                    }
+                    None if monitor.is_running() => return true,
+                    None => {}
+                },
+            }
+        }
+    }
+
     fn build_vm_command(&self, context: &commands::Context, instance: &Instance) -> ProcessCommand {
         let mut command = ProcessCommand::new(context.get_system().get_current_exe());
         command.arg("vm").arg(&instance.name);
@@ -122,6 +158,7 @@ impl StartCommand {
         if let Some(args) = &self.qemu_args {
             command.arg(format!("--qemu-args={args}"));
         }
+        command.args(context.get_console().get_verbosity_arg());
         command
     }
 
@@ -220,6 +257,39 @@ mod tests {
         let mut instance = build_instance();
         let result = command.fit_to_host(&context, &mut instance);
         (result, instance)
+    }
+
+    #[tokio::test]
+    async fn test_starts_the_instance_through_the_supervisor() {
+        let line = "cubic vm test --accel off --qemu-args=-sandbox on -v";
+        let system = SystemMock::new().add_command_output(line, b"debug: launched\n");
+        let builder = ContextBuilder::new(system);
+        builder.add_instances(vec![build_instance()]);
+        let system = Arc::clone(builder.get_system());
+        let context = builder.build();
+        context.get_console().set_verbosity(1);
+        let args = ["start", "--accel", "off", "--qemu-args=-sandbox on", "test"];
+        let command = StartCommand::try_parse_from(args).unwrap();
+
+        command.run(&context).await.unwrap();
+
+        assert_eq!(system.get_executed_commands(), vec![line]);
+        assert!(system.get_output().ends_with("debug: launched\n"));
+    }
+
+    #[tokio::test]
+    async fn test_shows_the_error_of_a_failed_supervisor_and_names_the_instance() {
+        let line = "cubic vm test --accel auto";
+        let system = SystemMock::new().add_failing_command(line, "error: QEMU not found\n");
+        let builder = ContextBuilder::new(system);
+        builder.add_instances(vec![build_instance()]);
+        let system = Arc::clone(builder.get_system());
+        let command = StartCommand::try_parse_from(["start", "test"]).unwrap();
+
+        let result = command.run(&builder.build()).await;
+
+        assert!(matches!(result, Err(Error::StartFailed(name)) if name == "test"));
+        assert_eq!(system.get_output(), "error: QEMU not found\n");
     }
 
     #[tokio::test]

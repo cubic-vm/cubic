@@ -126,6 +126,9 @@ pub enum Error {
     #[error("{}", format_qemu_not_found_help())]
     QemuNotFound,
 
+    #[error("Failed to start instance '{0}'")]
+    StartFailed(String),
+
     #[error("System command '{0}' was not found on PATH")]
     SystemCommandNotFound(String),
 
