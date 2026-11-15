@@ -29,6 +29,7 @@ pub enum Commands {
     Delete(commands::DeleteCommand),
     Prune(commands::PruneCommand),
     Completions(commands::CompletionsCommand),
+    Vm(commands::VmCommand),
 }
 
 #[derive(Parser, Default)]
@@ -107,6 +108,7 @@ impl CommandDispatcher {
             Commands::Delete(cmd) => cmd.run(context).await,
             Commands::Prune(cmd) => cmd.run(context).await,
             Commands::Completions(cmd) => cmd.run(context).await,
+            Commands::Vm(cmd) => cmd.run(context).await,
         };
 
         // Clear any animation the command left running, including on error.

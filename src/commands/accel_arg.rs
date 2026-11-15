@@ -10,6 +10,16 @@ pub enum Accel {
     Off,
 }
 
+impl Accel {
+    pub fn get_name(&self) -> &'static str {
+        match self {
+            Accel::Auto => "auto",
+            Accel::On => "on",
+            Accel::Off => "off",
+        }
+    }
+}
+
 #[derive(Clone, Copy, Default, Parser)]
 #[clap(verbatim_doc_comment)]
 pub struct AccelArg {

@@ -1,5 +1,6 @@
 use crate::models::TimezoneName;
 use crate::platform::{Host, OsSystem};
+use std::path::PathBuf;
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind};
 
 impl Host for OsSystem {
@@ -29,5 +30,9 @@ impl Host for OsSystem {
 
     fn get_timezone_name(&self) -> Option<TimezoneName> {
         iana_time_zone::get_timezone().ok()?.parse().ok()
+    }
+
+    fn get_current_exe(&self) -> PathBuf {
+        std::env::current_exe().unwrap_or_else(|_| PathBuf::from("cubic"))
     }
 }

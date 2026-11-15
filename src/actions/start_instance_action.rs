@@ -131,7 +131,10 @@ impl StartInstanceAction {
 
         let command = qemu_system.build_command();
         console.debug(&command.get_command());
-        system.run_detached(command).map_err(QemuSystem::map_error)
+        system
+            .run_and_wait(command, None, None)
+            .map(|_| ())
+            .map_err(QemuSystem::map_error)
     }
 
     // An accelerator runs guest code on the host CPU, so it needs both archs to

@@ -1,6 +1,7 @@
 use crate::models::TimezoneName;
 use crate::platform::{Host, SystemMock};
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 // The environment the host was started with, alongside what it reports about
 // its own size.
@@ -84,5 +85,9 @@ impl Host for SystemMock {
 
     fn get_timezone_name(&self) -> Option<TimezoneName> {
         self.host.timezone.clone()
+    }
+
+    fn get_current_exe(&self) -> PathBuf {
+        PathBuf::from("cubic")
     }
 }
