@@ -65,6 +65,9 @@ impl Command for SshCommand {
             .open_channel(&instance.name, &client_key, &user, ssh_port)
             .await?;
         spinner.stop();
-        ssh.shell(&instance.name, channel).await
+        console.set_title(&format!("{user}@{}", instance.name));
+        let result = ssh.shell(&instance.name, channel).await;
+        console.restore_title();
+        result
     }
 }
