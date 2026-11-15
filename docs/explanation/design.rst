@@ -13,8 +13,8 @@ No Background Service
 ---------------------
 
 A ``cubic`` command is a short lived process. It reads the settings of a VM
-instance, starts or stops a QEMU process, and exits. Nothing of Cubic keeps
-running and nothing of Cubic runs as root.
+instance, starts or stops a QEMU process, and exits. Only a supervisor process
+stays with each running VM and nothing of Cubic runs as root.
 
 Most VM managers put a privileged service in the middle instead. That service
 has to be installed, kept running, kept up to date and trusted, and every VM on
