@@ -7,6 +7,7 @@ use crate::util::ResourceLock;
 use crate::view::ConfirmDialog;
 use crate::view::Spinner;
 use clap::Parser;
+use std::process::Command as ProcessCommand;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -72,8 +73,8 @@ impl Command for StartCommand {
 
                 self.fit_to_host(context, instance)?;
 
-                let mut action = StartInstanceAction::new(instance);
-                action.run(context, &self.qemu_args, self.accel.value)?;
+                let command = self.build_vm_command(context, instance);
+                context.get_system().run_detached(command)?;
                 let monitor = context.get_monitor(instance);
                 let launched = async {
                     while !monitor.is_running() {
@@ -84,7 +85,7 @@ impl Command for StartCommand {
                     .await
                     .ok();
 
-                actions.push(action);
+                actions.push(StartInstanceAction::new(instance));
                 // Only the instances that are launched are named
                 starting.push(instance.name.clone());
             }
@@ -114,6 +115,16 @@ impl Command for StartCommand {
 }
 
 impl StartCommand {
+    fn build_vm_command(&self, context: &commands::Context, instance: &Instance) -> ProcessCommand {
+        let mut command = ProcessCommand::new(context.get_system().get_current_exe());
+        command.arg("vm").arg(&instance.name);
+        command.arg("--accel").arg(self.accel.value.get_name());
+        if let Some(args) = &self.qemu_args {
+            command.arg(format!("--qemu-args={args}"));
+        }
+        command
+    }
+
     /// Reduce an instance to a size that fits the host's available memory and
     /// CPU count.
     ///

@@ -31,6 +31,7 @@ mod snapshot_command;
 mod ssh_command;
 mod start_command;
 mod stop_command;
+mod vm_command;
 mod yes_arg;
 
 pub use accel_arg::*;
@@ -66,6 +67,7 @@ pub use snapshot_command::*;
 pub use ssh_command::*;
 pub use start_command::*;
 pub use stop_command::*;
+pub use vm_command::*;
 pub use yes_arg::*;
 
 use crate::error::Result;
