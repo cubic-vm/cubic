@@ -48,7 +48,7 @@ impl Command for RestoreCommand {
 
         let image = context.get_env().get_instance_image_file(&instance.name);
         let qemu_img = QemuImg::new(context.get_system());
-        if !qemu_img.has_snapshot(&image, snapshot_name) {
+        if !qemu_img.has_snapshot(&image, snapshot_name).await {
             return Err(Error::NotFound(self.snapshot.to_string()));
         }
 
@@ -68,7 +68,7 @@ impl Command for RestoreCommand {
         .run(context)
         .await?;
 
-        qemu_img.restore_snapshot(&image, snapshot_name)?;
+        qemu_img.restore_snapshot(&image, snapshot_name).await?;
 
         console.print(&format!("Successfully restored {}", self.snapshot));
         Ok(0)

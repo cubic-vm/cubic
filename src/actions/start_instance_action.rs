@@ -6,7 +6,7 @@ use crate::qemu::{
     QemuAcceleratorProbe, QemuFirmware, QemuInstall, QemuPathBuilder, QemuSystem, SOFTWARE_ACCEL,
 };
 use crate::ssh::PortChecker;
-use crate::util::CommandLine;
+use crate::util::{CommandLine, SystemCommand};
 use crate::view::Console;
 use std::sync::Arc;
 
@@ -21,7 +21,7 @@ impl StartInstanceAction {
         }
     }
 
-    pub fn run(
+    pub async fn run(
         &mut self,
         context: &Context,
         qemu_args: &Option<String>,
@@ -91,13 +91,15 @@ impl StartInstanceAction {
             module_dir.as_deref(),
             datadir.as_deref(),
         );
-        let accelerator = self.select_accelerator(
-            accel,
-            QemuAcceleratorProbe::get_host_accelerator(),
-            host_arch,
-            &probe,
-            console,
-        );
+        let accelerator = self
+            .select_accelerator(
+                accel,
+                QemuAcceleratorProbe::get_host_accelerator(),
+                host_arch,
+                &probe,
+                console,
+            )
+            .await;
         console.debug(&format!(
             "Using accelerator '{}' with CPU model '{}'",
             accelerator,
@@ -131,8 +133,9 @@ impl StartInstanceAction {
 
         let command = qemu_system.build_command();
         console.debug(&command.get_command());
-        system
-            .run_and_wait(command, None, None)
+        SystemCommand::new(command)
+            .run(system, None, None)
+            .await
             .map(|_| ())
             .map_err(QemuSystem::map_error)
     }
@@ -153,12 +156,12 @@ impl StartInstanceAction {
     // `on` and `off` overrule the probe and go straight to QEMU. A guest arch
     // that differs from the host arch rules out every hardware accelerator, so
     // it needs no probe.
-    fn select_accelerator(
+    async fn select_accelerator(
         &self,
         accel: Accel,
         host_accel: &'static str,
         host_arch: Arch,
-        probe: &QemuAcceleratorProbe,
+        probe: &QemuAcceleratorProbe<'_>,
         console: &Arc<Console>,
     ) -> &'static str {
         match accel {
@@ -171,7 +174,7 @@ impl StartInstanceAction {
                 ));
                 SOFTWARE_ACCEL
             }
-            Accel::Auto => match probe.detect(host_accel) {
+            Accel::Auto => match probe.detect(host_accel).await {
                 Ok(()) => host_accel,
                 Err(reason) => {
                     console.debug(&format!("No hardware acceleration: {reason}"));
@@ -204,7 +207,7 @@ mod tests {
         })
     }
 
-    fn select_for(
+    async fn select_for(
         system: &SystemMock,
         accel: Accel,
         guest_arch: Arch,
@@ -218,34 +221,36 @@ mod tests {
             None,
             None,
         );
-        build_action(guest_arch).select_accelerator(accel, "kvm", host_arch, &probe, &console)
+        build_action(guest_arch)
+            .select_accelerator(accel, "kvm", host_arch, &probe, &console)
+            .await
     }
 
-    fn select(system: &SystemMock, accel: Accel) -> &'static str {
-        select_for(system, accel, Arch::AMD64, Arch::AMD64)
+    async fn select(system: &SystemMock, accel: Accel) -> &'static str {
+        select_for(system, accel, Arch::AMD64, Arch::AMD64).await
     }
 
-    #[test]
-    fn test_accel_off_runs_on_tcg_without_asking_qemu() {
+    #[tokio::test]
+    async fn test_accel_off_runs_on_tcg_without_asking_qemu() {
         let system = SystemMock::new();
 
-        assert_eq!(select(&system, Accel::Off), "tcg");
+        assert_eq!(select(&system, Accel::Off).await, "tcg");
         assert!(system.get_executed_commands().is_empty());
     }
 
-    #[test]
-    fn test_accel_on_takes_the_accelerator_without_asking_qemu() {
+    #[tokio::test]
+    async fn test_accel_on_takes_the_accelerator_without_asking_qemu() {
         let system = SystemMock::new();
 
-        assert_eq!(select(&system, Accel::On), "kvm");
+        assert_eq!(select(&system, Accel::On).await, "kvm");
         assert!(system.get_executed_commands().is_empty());
     }
 
-    #[test]
-    fn test_accel_auto_asks_qemu() {
+    #[tokio::test]
+    async fn test_accel_auto_asks_qemu() {
         let system = SystemMock::new();
 
-        let accelerator = select(&system, Accel::Auto);
+        let accelerator = select(&system, Accel::Auto).await;
 
         assert_eq!(accelerator, "tcg");
         assert_eq!(system.get_executed_commands().len(), 1);
@@ -279,11 +284,11 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_accel_auto_skips_the_probe_on_a_foreign_arch() {
+    #[tokio::test]
+    async fn test_accel_auto_skips_the_probe_on_a_foreign_arch() {
         let system = SystemMock::new();
 
-        let accelerator = select_for(&system, Accel::Auto, Arch::ARM64, Arch::AMD64);
+        let accelerator = select_for(&system, Accel::Auto, Arch::ARM64, Arch::AMD64).await;
 
         assert_eq!(accelerator, "tcg");
         assert!(system.get_executed_commands().is_empty());

@@ -14,7 +14,7 @@ impl CreateInstanceAction {
         Self
     }
 
-    pub fn run(
+    pub async fn run(
         &mut self,
         context: &Context,
         image_path: &Path,
@@ -30,6 +30,7 @@ impl CreateInstanceAction {
 
         let result = self
             .build_staging_dir(context, &tmp_name, image_path, instance, disk, auto_remove)
+            .await
             .and_then(|()| system.rename_file(tmp_dir, target_dir));
 
         // Free the space of a partial image, the error that broke the create wins
@@ -39,7 +40,7 @@ impl CreateInstanceAction {
         result
     }
 
-    fn build_staging_dir(
+    async fn build_staging_dir(
         &self,
         context: &Context,
         tmp_name: &str,
@@ -52,6 +53,7 @@ impl CreateInstanceAction {
         let env = context.get_env();
         let tmp_image = &env.get_instance_image_file(tmp_name);
         let tmp_config = &env.get_instance_toml_config_file(tmp_name);
+        let qemu_img = QemuImg::new(system);
 
         // Create directory
         system.create_dir(&env.get_instance_dir2(tmp_name))?;
@@ -61,13 +63,13 @@ impl CreateInstanceAction {
 
         // Create virtual machine instance image file
         if auto_remove {
-            QemuImg::new(system).create_overlay(image_path, tmp_image)?;
+            qemu_img.create_overlay(image_path, tmp_image).await?;
         } else {
             system.copy_file(image_path, tmp_image)?;
         }
 
         if let Some(disk) = disk {
-            QemuImg::new(system).resize(tmp_image, disk.get_bytes() as u64)?;
+            qemu_img.resize(tmp_image, disk.get_bytes() as u64).await?;
         }
 
         // Write configuration file
@@ -85,8 +87,8 @@ mod tests {
     use crate::platform::{FileSystem, SystemMock};
     use std::sync::Arc;
 
-    #[test]
-    fn test_run_removes_the_staging_dir_when_a_step_fails() {
+    #[tokio::test]
+    async fn test_run_removes_the_staging_dir_when_a_step_fails() {
         let builder = ContextBuilder::new(SystemMock::new());
         let system = Arc::clone(builder.get_system());
         let context = builder.build();
@@ -97,7 +99,8 @@ mod tests {
 
         // The image is missing, so copying it fails after the dir and key exist
         let image = Path::new("/missing.img");
-        let result = CreateInstanceAction::new().run(&context, image, instance, None, false);
+        let mut action = CreateInstanceAction::new();
+        let result = action.run(&context, image, instance, None, false).await;
 
         assert!(result.is_err());
         let tmp_dir = Environment::default().get_instance_dir2("test.tmp");

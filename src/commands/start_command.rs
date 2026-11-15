@@ -2,7 +2,7 @@ use crate::actions::{LoadInstanceAction, StartInstanceAction, StoreInstanceActio
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::{DataSize, HOST_MEMORY_RESERVE, Instance, ResourceAllocator};
-use crate::platform::{Child, ChildOutput};
+use crate::platform::Child;
 use crate::qemu::QemuMonitorClient;
 use crate::ssh::PortChecker;
 use crate::util::ResourceLock;
@@ -12,7 +12,7 @@ use clap::Parser;
 use std::process::Command as ProcessCommand;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::io::{self, AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt, BufReader};
 
 const LAUNCH_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -80,7 +80,7 @@ impl Command for StartCommand {
 
                 let monitor = context.get_monitor(instance);
                 let command = self.build_vm_command(context, instance);
-                let supervisor = context.get_system().run_detached(command)?;
+                let supervisor = context.get_system().spawn(command, true)?;
                 let launched = Self::forward_until_launched(context, &monitor, supervisor);
                 if let Ok(false) = tokio::time::timeout(LAUNCH_TIMEOUT, launched).await {
                     return Err(Error::StartFailed(instance.name.clone()));
@@ -122,11 +122,8 @@ impl StartCommand {
         mut supervisor: Box<dyn Child>,
     ) -> bool {
         let console = context.get_console();
-        let empty = || -> ChildOutput { Box::new(io::empty()) };
-        let stdout = supervisor.take_stdout().unwrap_or_else(empty);
-        let stderr = supervisor.take_stderr().unwrap_or_else(empty);
-        let mut stdout = BufReader::new(stdout).lines();
-        let mut stderr = BufReader::new(stderr).lines();
+        let mut stdout = BufReader::new(supervisor.take_stdout()).lines();
+        let mut stderr = BufReader::new(supervisor.take_stderr()).lines();
         let mut tick = tokio::time::interval(Duration::from_millis(50));
         loop {
             tokio::select! {
@@ -134,18 +131,17 @@ impl StartCommand {
                 biased;
                 Ok(Some(line)) = stdout.next_line() => console.print(&line),
                 Ok(Some(line)) = stderr.next_line() => console.eprint(&line),
-                _ = tick.tick() => match supervisor.try_wait() {
-                    Some(success) => {
-                        while let Ok(Some(line)) = stdout.next_line().await {
-                            console.print(&line);
-                        }
-                        while let Ok(Some(line)) = stderr.next_line().await {
-                            console.eprint(&line);
-                        }
-                        return success;
+                success = supervisor.wait() => {
+                    while let Ok(Some(line)) = stdout.next_line().await {
+                        console.print(&line);
                     }
-                    None if monitor.is_running() => return true,
-                    None => {}
+                    while let Ok(Some(line)) = stderr.next_line().await {
+                        console.eprint(&line);
+                    }
+                    return success;
+                }
+                _ = tick.tick() => if monitor.is_running() {
+                    return true;
                 },
             }
         }

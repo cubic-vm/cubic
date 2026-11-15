@@ -43,14 +43,14 @@ impl Command for SnapshotCommand {
         let snapshot = self.snapshot.as_str();
         let image = context.get_env().get_instance_image_file(&instance.name);
         let qemu_img = QemuImg::new(context.get_system());
-        if qemu_img.has_snapshot(&image, snapshot) {
+        if qemu_img.has_snapshot(&image, snapshot).await {
             return Err(Error::SnapshotAlreadyExists(
                 instance.name.to_string(),
                 snapshot.to_string(),
             ));
         }
 
-        qemu_img.create_snapshot(&image, snapshot)?;
+        qemu_img.create_snapshot(&image, snapshot).await?;
 
         context
             .get_console()

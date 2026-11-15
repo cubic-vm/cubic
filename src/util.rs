@@ -3,9 +3,11 @@ mod hex;
 mod resource_lock;
 mod shortcut_decoder;
 mod string;
+mod system_command;
 
 pub use command_line::*;
 pub use hex::*;
 pub use resource_lock::*;
 pub use shortcut_decoder::*;
 pub use string::*;
+pub use system_command::*;

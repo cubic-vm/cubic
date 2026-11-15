@@ -2,6 +2,7 @@ use crate::error::{Error, Result};
 use crate::models::{DataSize, Snapshot};
 use crate::platform::System;
 use crate::qemu::QemuPathBuilder;
+use crate::util::SystemCommand;
 use serde::Deserialize;
 use std::path::Path;
 use std::process::Command;
@@ -39,9 +40,16 @@ impl<'a> QemuImg<'a> {
         }
     }
 
+    async fn run(&self, command: Command) -> Result<Vec<u8>> {
+        SystemCommand::new(command)
+            .run(self.system, None, None)
+            .await
+            .map_err(Self::map_error)
+    }
+
     // Returns None when the info cannot be read, from a host without qemu to
     // an image the tool cannot parse.
-    pub fn get_image_info(&self, image: &Path) -> Option<ImageInfo> {
+    pub async fn get_image_info(&self, image: &Path) -> Option<ImageInfo> {
         let mut command = self.command();
         command
             .arg("info")
@@ -50,20 +58,21 @@ impl<'a> QemuImg<'a> {
             .arg("json")
             .arg(image);
 
-        self.system
-            .run_and_wait(command, None, None)
+        self.run(command)
+            .await
             .ok()
             .and_then(|stdout| String::from_utf8(stdout).ok())
             .and_then(|stdout| serde_json::from_str(&stdout).ok())
     }
 
     // An unreadable image holds no snapshots as far as the caller can tell.
-    pub fn has_snapshot(&self, image: &Path, name: &str) -> bool {
+    pub async fn has_snapshot(&self, image: &Path, name: &str) -> bool {
         self.get_image_info(image)
+            .await
             .is_some_and(|info| info.snapshots.iter().any(|snapshot| snapshot.name == name))
     }
 
-    pub fn create_overlay(&self, base_image: &Path, image: &Path) -> Result<()> {
+    pub async fn create_overlay(&self, base_image: &Path, image: &Path) -> Result<()> {
         let mut command = self.command();
         command
             .arg("create")
@@ -76,42 +85,33 @@ impl<'a> QemuImg<'a> {
             .arg(base_image)
             .arg(image);
 
-        self.system
-            .run_and_wait(command, None, None)
-            .map(|_| ())
-            .map_err(Self::map_error)
+        self.run(command).await.map(|_| ())
     }
 
-    pub fn resize(&self, image: &Path, size: u64) -> Result<()> {
+    pub async fn resize(&self, image: &Path, size: u64) -> Result<()> {
         let mut command = self.command();
         command.arg("resize").arg(image).arg(size.to_string());
 
-        self.system
-            .run_and_wait(command, None, None)
-            .map(|_| ())
-            .map_err(Self::map_error)
+        self.run(command).await.map(|_| ())
     }
 
-    pub fn create_snapshot(&self, image: &Path, name: &str) -> Result<()> {
-        self.run_snapshot_command(image, name, "-c")
+    pub async fn create_snapshot(&self, image: &Path, name: &str) -> Result<()> {
+        self.run_snapshot_command(image, name, "-c").await
     }
 
-    pub fn restore_snapshot(&self, image: &Path, name: &str) -> Result<()> {
-        self.run_snapshot_command(image, name, "-a")
+    pub async fn restore_snapshot(&self, image: &Path, name: &str) -> Result<()> {
+        self.run_snapshot_command(image, name, "-a").await
     }
 
-    pub fn delete_snapshot(&self, image: &Path, name: &str) -> Result<()> {
-        self.run_snapshot_command(image, name, "-d")
+    pub async fn delete_snapshot(&self, image: &Path, name: &str) -> Result<()> {
+        self.run_snapshot_command(image, name, "-d").await
     }
 
-    fn run_snapshot_command(&self, image: &Path, name: &str, action: &str) -> Result<()> {
+    async fn run_snapshot_command(&self, image: &Path, name: &str, action: &str) -> Result<()> {
         let mut command = self.command();
         command.arg("snapshot").arg(action).arg(name).arg(image);
 
-        self.system
-            .run_and_wait(command, None, None)
-            .map(|_| ())
-            .map_err(Self::map_error)
+        self.run(command).await.map(|_| ())
     }
 }
 
@@ -126,8 +126,8 @@ mod tests {
         format!("qemu-img info --force-share --output json {IMAGE}")
     }
 
-    #[test]
-    fn test_get_image_info_reads_the_reported_sizes() {
+    #[tokio::test]
+    async fn test_get_image_info_reads_the_reported_sizes() {
         let system = SystemMock::new().add_command_output(
             &build_info_command(),
             br#"{"virtual-size": 1073741824, "actual-size": 200704}"#,
@@ -135,46 +135,51 @@ mod tests {
 
         let info = QemuImg::new(&system)
             .get_image_info(Path::new(IMAGE))
+            .await
             .unwrap();
 
         assert_eq!(info.virtual_size.get_bytes(), 1073741824);
         assert_eq!(info.actual_size.get_bytes(), 200704);
     }
 
-    #[test]
-    fn test_get_image_info_is_none_without_qemu() {
+    #[tokio::test]
+    async fn test_get_image_info_is_none_without_qemu() {
         let system = SystemMock::new();
 
         assert!(
             QemuImg::new(&system)
                 .get_image_info(Path::new(IMAGE))
+                .await
                 .is_none()
         );
     }
 
-    #[test]
-    fn test_get_image_info_is_none_when_the_output_is_not_readable() {
+    #[tokio::test]
+    async fn test_get_image_info_is_none_when_the_output_is_not_readable() {
         let system = SystemMock::new().add_command_output(&build_info_command(), b"not json");
 
         assert!(
             QemuImg::new(&system)
                 .get_image_info(Path::new(IMAGE))
+                .await
                 .is_none()
         );
     }
 
-    #[test]
-    fn test_resize_reports_a_missing_qemu() {
+    #[tokio::test]
+    async fn test_resize_reports_a_missing_qemu() {
         let system = SystemMock::new();
 
         assert!(matches!(
-            QemuImg::new(&system).resize(Path::new("/data/machines/test/image"), 2048),
+            QemuImg::new(&system)
+                .resize(Path::new("/data/machines/test/image"), 2048)
+                .await,
             Err(Error::QemuNotFound)
         ));
     }
 
-    #[test]
-    fn test_create_overlay_backs_the_image_by_the_base_image() {
+    #[tokio::test]
+    async fn test_create_overlay_backs_the_image_by_the_base_image() {
         let command = "qemu-img create -q -f qcow2 -F qcow2 -b /cache/images/debian /data/machines/test/machine.img";
         let system = SystemMock::new().add_command_output(command, b"");
 
@@ -183,18 +188,20 @@ mod tests {
                 Path::new("/cache/images/debian"),
                 Path::new("/data/machines/test/machine.img"),
             )
+            .await
             .unwrap();
 
         assert_eq!(system.get_executed_commands(), vec![command]);
     }
 
-    #[test]
-    fn test_resize_passes_the_size_to_qemu_img() {
+    #[tokio::test]
+    async fn test_resize_passes_the_size_to_qemu_img() {
         let system = SystemMock::new()
             .add_command_output("qemu-img resize /data/machines/test/image 2048", b"");
 
         QemuImg::new(&system)
             .resize(Path::new("/data/machines/test/image"), 2048)
+            .await
             .unwrap();
 
         assert_eq!(
@@ -245,8 +252,8 @@ mod tests {
         assert_eq!(result.snapshots[0].name, "clean");
     }
 
-    #[test]
-    fn test_snapshot_commands_pass_the_flag_and_name_to_qemu_img() {
+    #[tokio::test]
+    async fn test_snapshot_commands_pass_the_flag_and_name_to_qemu_img() {
         let image = "/data/machines/test/machine.img";
         let system = SystemMock::new()
             .add_command_output(&format!("qemu-img snapshot -c clean {image}"), b"")
@@ -254,11 +261,18 @@ mod tests {
             .add_command_output(&format!("qemu-img snapshot -d clean {image}"), b"");
         let qemu_img = QemuImg::new(&system);
 
-        qemu_img.create_snapshot(Path::new(image), "clean").unwrap();
+        qemu_img
+            .create_snapshot(Path::new(image), "clean")
+            .await
+            .unwrap();
         qemu_img
             .restore_snapshot(Path::new(image), "clean")
+            .await
             .unwrap();
-        qemu_img.delete_snapshot(Path::new(image), "clean").unwrap();
+        qemu_img
+            .delete_snapshot(Path::new(image), "clean")
+            .await
+            .unwrap();
 
         assert_eq!(
             system.get_executed_commands(),
@@ -270,8 +284,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_has_snapshot_reads_the_snapshots_of_the_image() {
+    #[tokio::test]
+    async fn test_has_snapshot_reads_the_snapshots_of_the_image() {
         let system = SystemMock::new().add_command_output(
             &build_info_command(),
             br#"{"virtual-size": 1073741824, "actual-size": 200704,
@@ -279,8 +293,8 @@ mod tests {
         );
         let qemu_img = QemuImg::new(&system);
 
-        assert!(qemu_img.has_snapshot(Path::new(IMAGE), "deps"));
-        assert!(!qemu_img.has_snapshot(Path::new(IMAGE), "other"));
+        assert!(qemu_img.has_snapshot(Path::new(IMAGE), "deps").await);
+        assert!(!qemu_img.has_snapshot(Path::new(IMAGE), "other").await);
     }
 
     #[test]

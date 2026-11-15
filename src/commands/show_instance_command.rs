@@ -36,7 +36,8 @@ impl Command for ShowInstanceCommand {
         view.add("vCPUs", &instance.cpus.to_string());
         view.add("Memory", &instance.mem.to_size());
         let image_file = env.get_instance_image_file(&instance.name);
-        let info = QemuImg::new(context.get_system()).get_image_info(&image_file);
+        let qemu_img = QemuImg::new(context.get_system());
+        let info = qemu_img.get_image_info(&image_file).await;
         if let Some(info) = &info {
             view.add("Disk Used", &info.actual_size.to_size());
             view.add("Disk Total", &info.virtual_size.to_size());
