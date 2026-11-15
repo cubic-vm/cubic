@@ -6,6 +6,7 @@ use crate::error::{Error, Result};
 use crate::models::Arch;
 use crate::platform::System;
 use crate::qemu::{QemuSystem, SOFTWARE_ACCEL};
+use crate::util::SystemCommand;
 
 // Only reached by a QEMU that hangs.
 const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
@@ -90,12 +91,13 @@ impl<'a> QemuAcceleratorProbe<'a> {
     }
 
     // Reports what QEMU said, not the generic wrapper around a failed command.
-    pub fn detect(&self, accel: &str) -> std::result::Result<(), String> {
+    pub async fn detect(&self, accel: &str) -> std::result::Result<(), String> {
         let command = self
             .build_command(accel)
             .map_err(|error| error.to_string())?;
-        self.system
-            .run_and_wait(command, Some(QMP_QUIT), Some(PROBE_TIMEOUT))
+        SystemCommand::new(command)
+            .run(self.system, Some(QMP_QUIT), Some(PROBE_TIMEOUT))
+            .await
             .map(|_| ())
             .map_err(|error| match error {
                 Error::SystemCommandFailed(_, stderr) if stderr.trim().is_empty() => {
@@ -166,46 +168,47 @@ mod tests {
         assert!(!hints[0].contains("snap"));
     }
 
-    #[test]
-    fn test_detect_accepts_an_accelerator_that_comes_up() {
+    #[tokio::test]
+    async fn test_detect_accepts_an_accelerator_that_comes_up() {
         let system =
             SystemMock::new().add_command_output(&build_probe_command(Arch::AMD64, "kvm"), b"");
 
-        assert!(build_probe(&system, Arch::AMD64).detect("kvm").is_ok());
+        let result = build_probe(&system, Arch::AMD64).detect("kvm").await;
+        assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_detect_reports_what_qemu_said() {
+    #[tokio::test]
+    async fn test_detect_reports_what_qemu_said() {
         let system = SystemMock::new()
             .add_failing_command(&build_probe_command(Arch::AMD64, "kvm"), "no kvm");
 
-        let result = build_probe(&system, Arch::AMD64).detect("kvm");
+        let result = build_probe(&system, Arch::AMD64).detect("kvm").await;
         assert_eq!(result, Err("no kvm".to_string()));
     }
 
-    #[test]
-    fn test_detect_names_a_qemu_that_says_nothing() {
+    #[tokio::test]
+    async fn test_detect_names_a_qemu_that_says_nothing() {
         let system =
             SystemMock::new().add_failing_command(&build_probe_command(Arch::AMD64, "kvm"), "  ");
 
-        let result = build_probe(&system, Arch::AMD64).detect("kvm");
+        let result = build_probe(&system, Arch::AMD64).detect("kvm").await;
         assert_eq!(result, Err("QEMU did not come up".to_string()));
     }
 
-    #[test]
-    fn test_detect_probes_the_binary_of_the_arch() {
+    #[tokio::test]
+    async fn test_detect_probes_the_binary_of_the_arch() {
         let system = SystemMock::new();
 
-        build_probe(&system, Arch::ARM64).detect("kvm").ok();
+        build_probe(&system, Arch::ARM64).detect("kvm").await.ok();
 
         assert!(system.get_executed_commands()[0].starts_with("qemu-system-aarch64 -machine virt"));
     }
 
-    #[test]
-    fn test_detect_probes_with_the_firmware_of_the_start() {
+    #[tokio::test]
+    async fn test_detect_probes_with_the_firmware_of_the_start() {
         let system = SystemMock::new();
 
-        build_probe(&system, Arch::AMD64).detect("kvm").ok();
+        build_probe(&system, Arch::AMD64).detect("kvm").await.ok();
 
         assert!(
             system.get_executed_commands()[0]
@@ -224,8 +227,8 @@ mod tests {
         assert!(command.get_command().ends_with("-S -qmp stdio"));
     }
 
-    #[test]
-    fn test_detect_probes_with_the_data_dir_of_the_install() {
+    #[tokio::test]
+    async fn test_detect_probes_with_the_data_dir_of_the_install() {
         let system = SystemMock::new();
 
         QemuAcceleratorProbe::new(
@@ -236,6 +239,7 @@ mod tests {
             Some(Path::new("/usr/share/qemu")),
         )
         .detect("kvm")
+        .await
         .ok();
 
         assert!(system.get_executed_commands()[0].contains("-L /usr/share/qemu"));

@@ -1,22 +1,20 @@
 use crate::error::Result;
+use std::pin::Pin;
 use std::process::Command;
-use std::time::Duration;
-use tokio::io::AsyncRead;
+use tokio::io::{AsyncRead, AsyncWrite};
 
+pub type ChildInput = Box<dyn AsyncWrite + Unpin>;
 pub type ChildOutput = Box<dyn AsyncRead + Unpin>;
+pub type ChildExit<'a> = Pin<Box<dyn Future<Output = bool> + 'a>>;
 
 pub trait Child {
-    fn try_wait(&mut self) -> Option<bool>;
-    fn take_stdout(&mut self) -> Option<ChildOutput>;
-    fn take_stderr(&mut self) -> Option<ChildOutput>;
+    fn wait(&mut self) -> ChildExit<'_>;
+    fn take_stdin(&mut self) -> ChildInput;
+    fn take_stdout(&mut self) -> ChildOutput;
+    fn take_stderr(&mut self) -> ChildOutput;
 }
 
 pub trait Process {
-    fn run_and_wait(
-        &self,
-        command: Command,
-        stdin: Option<&str>,
-        timeout: Option<Duration>,
-    ) -> Result<Vec<u8>>;
-    fn run_detached(&self, command: Command) -> Result<Box<dyn Child>>;
+    // A detached child outlives cubic. Any other child dies with its handle.
+    fn spawn(&self, command: Command, detach: bool) -> Result<Box<dyn Child>>;
 }

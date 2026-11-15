@@ -96,7 +96,10 @@ impl DeleteCommand {
         match target {
             ResourceName::Snapshot(snapshot_name) => {
                 let image = context.get_env().get_instance_image_file(&instance.name);
-                QemuImg::new(context.get_system()).delete_snapshot(&image, snapshot_name.as_str())
+                let qemu_img = QemuImg::new(context.get_system());
+                qemu_img
+                    .delete_snapshot(&image, snapshot_name.as_str())
+                    .await
             }
             _ => DeleteInstanceAction::new().run(context, &instance),
         }
@@ -143,7 +146,7 @@ impl Command for DeleteCommand {
                 let env = context.get_env();
                 let image = env.get_instance_image_file(instance_name.as_str());
                 let qemu_img = QemuImg::new(context.get_system());
-                if !qemu_img.has_snapshot(&image, snapshot_name.as_str()) {
+                if !qemu_img.has_snapshot(&image, snapshot_name.as_str()).await {
                     return Err(Error::NotFound(target.to_string()));
                 }
             }

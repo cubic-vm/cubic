@@ -46,7 +46,8 @@ impl Command for ListInstanceCommand {
 
             let row = view.add_row();
             let image = context.get_env().get_instance_image_file(&instance.name);
-            let disk = match QemuImg::new(context.get_system()).get_image_info(&image) {
+            let qemu_img = QemuImg::new(context.get_system());
+            let disk = match qemu_img.get_image_info(&image).await {
                 Some(info) => format!(
                     "{}/{}",
                     info.actual_size.to_value_in(&info.virtual_size),

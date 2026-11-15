@@ -17,7 +17,9 @@ pub struct VmCommand {
 impl Command for VmCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
-        StartInstanceAction::new(&instance).run(context, &self.qemu_args, self.accel.value)?;
+        StartInstanceAction::new(&instance)
+            .run(context, &self.qemu_args, self.accel.value)
+            .await?;
         Ok(0)
     }
 }

@@ -115,12 +115,12 @@ impl Command for ModifyCommand {
             let image = context.get_env().get_instance_image_file(&instance.name);
             let qemu_img = QemuImg::new(context.get_system());
             // Without image info, qemu-img resize still refuses to shrink
-            let info = qemu_img.get_image_info(&image);
+            let info = qemu_img.get_image_info(&image).await;
             if info.is_some_and(|info| info.virtual_size.get_bytes() >= disk.get_bytes()) {
                 return Err(Error::CannotShrinkDisk(instance.name.to_string()));
             }
 
-            qemu_img.resize(&image, disk.get_bytes() as u64)?;
+            qemu_img.resize(&image, disk.get_bytes() as u64).await?;
         }
 
         if self.isolate {

@@ -1,10 +1,10 @@
 use crate::error::{Error, Result};
-use crate::platform::{Child, ChildOutput, Process, SystemMock};
+use crate::platform::{Child, ChildExit, ChildInput, ChildOutput, Process, SystemMock};
 use crate::util::CommandLine;
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::process::Command;
-use std::time::Duration;
+use tokio::io;
 
 // How a seeded command answers a run.
 enum CommandResult {
@@ -32,7 +32,7 @@ impl CommandMock {
         self.executed.clone()
     }
 
-    fn run(&mut self, command: &Command) -> Result<Vec<u8>> {
+    fn spawn(&mut self, command: &Command) -> Result<ChildMock> {
         let line = command.get_command();
         self.executed.push(line.clone());
 
@@ -40,10 +40,16 @@ impl CommandMock {
             None => Err(Error::SystemCommandNotFound(
                 command.get_program().to_string_lossy().into_owned(),
             )),
-            Some(CommandResult::Failure(stderr)) => {
-                Err(Error::SystemCommandFailed(line, stderr.clone()))
-            }
-            Some(CommandResult::Output(stdout)) => Ok(stdout.clone()),
+            Some(CommandResult::Output(stdout)) => Ok(ChildMock {
+                stdout: stdout.clone(),
+                success: true,
+                ..ChildMock::default()
+            }),
+            Some(CommandResult::Failure(stderr)) => Ok(ChildMock {
+                stderr: stderr.clone().into_bytes(),
+                success: false,
+                ..ChildMock::default()
+            }),
         }
     }
 }
@@ -83,95 +89,43 @@ struct ChildMock {
 }
 
 impl Child for ChildMock {
-    fn try_wait(&mut self) -> Option<bool> {
-        Some(self.success)
+    fn wait(&mut self) -> ChildExit<'_> {
+        Box::pin(std::future::ready(self.success))
     }
 
-    fn take_stdout(&mut self) -> Option<ChildOutput> {
-        Some(Box::new(Cursor::new(std::mem::take(&mut self.stdout))))
+    fn take_stdin(&mut self) -> ChildInput {
+        Box::new(io::sink())
     }
 
-    fn take_stderr(&mut self) -> Option<ChildOutput> {
-        Some(Box::new(Cursor::new(std::mem::take(&mut self.stderr))))
+    fn take_stdout(&mut self) -> ChildOutput {
+        Box::new(Cursor::new(std::mem::take(&mut self.stdout)))
+    }
+
+    fn take_stderr(&mut self) -> ChildOutput {
+        Box::new(Cursor::new(std::mem::take(&mut self.stderr)))
     }
 }
 
 impl Process for SystemMock {
-    fn run_and_wait(
-        &self,
-        command: Command,
-        _stdin: Option<&str>,
-        _timeout: Option<Duration>,
-    ) -> Result<Vec<u8>> {
-        self.commands.lock().unwrap().run(&command)
-    }
-
-    fn run_detached(&self, command: Command) -> Result<Box<dyn Child>> {
-        let child = match self.commands.lock().unwrap().run(&command) {
-            Ok(stdout) => ChildMock {
-                stdout,
-                success: true,
-                ..ChildMock::default()
-            },
-            Err(Error::SystemCommandFailed(_, stderr)) => ChildMock {
-                stderr: stderr.into_bytes(),
-                ..ChildMock::default()
-            },
-            Err(error) => return Err(error),
-        };
+    fn spawn(&self, command: Command, _detach: bool) -> Result<Box<dyn Child>> {
+        let child = self.commands.lock().unwrap().spawn(&command)?;
         Ok(Box::new(child))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::error::Error;
     use crate::platform::{Process, SystemMock};
     use std::process::Command;
 
     #[test]
-    fn run_and_wait_returns_the_seeded_output() {
-        let system = SystemMock::new().add_command_output("echo hello", b"hello\n");
-
-        let mut command = Command::new("echo");
-        command.arg("hello");
-
-        let output = system.run_and_wait(command, None, None).unwrap();
-        assert_eq!(output, b"hello\n");
-    }
-
-    #[test]
-    fn run_and_wait_fails_for_an_unseeded_command() {
-        let system = SystemMock::new();
-
-        assert!(matches!(
-            system.run_and_wait(Command::new("qemu-img"), None, None),
-            Err(Error::SystemCommandNotFound(program)) if program == "qemu-img"
-        ));
-    }
-
-    #[test]
-    fn run_and_wait_reports_a_seeded_failure_with_its_stderr() {
-        let system = SystemMock::new().add_failing_command("qemu-img resize", "no such file");
-
-        let mut command = Command::new("qemu-img");
-        command.arg("resize");
-
-        assert!(matches!(
-            system.run_and_wait(command, None, None),
-            Err(Error::SystemCommandFailed(line, stderr))
-                if line == "qemu-img resize" && stderr == "no such file"
-        ));
-    }
-
-    #[test]
-    fn run_and_wait_matches_on_the_arguments() {
+    fn spawn_matches_on_the_arguments() {
         let system = SystemMock::new().add_command_output("qemu-img info a", b"a");
 
         let mut other = Command::new("qemu-img");
         other.arg("info").arg("b");
 
-        assert!(system.run_and_wait(other, None, None).is_err());
+        assert!(system.spawn(other, false).is_err());
     }
 
     #[test]
@@ -180,11 +134,11 @@ mod tests {
 
         let mut first = Command::new("echo");
         first.arg("one");
-        system.run_and_wait(first, None, None).unwrap();
+        system.spawn(first, false).unwrap();
 
         let mut second = Command::new("echo");
         second.arg("two");
-        system.run_and_wait(second, None, None).ok();
+        system.spawn(second, false).ok();
 
         // The failed attempt is recorded too, since the host was still asked
         // to run it.

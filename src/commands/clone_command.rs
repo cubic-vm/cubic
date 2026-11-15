@@ -63,7 +63,8 @@ impl Command for CloneCommand {
 
         // Create VM instance
         // The copied image keeps the size of the source
-        CreateInstanceAction::new().run(context, image_path, target, None, false)?;
+        let mut action = CreateInstanceAction::new();
+        action.run(context, image_path, target, None, false).await?;
 
         Ok(0)
     }

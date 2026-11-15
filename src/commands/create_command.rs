@@ -253,7 +253,9 @@ impl CreateCommand {
         ));
 
         let image_path = &env.get_image_file(&image.to_file_name());
-        CreateInstanceAction::new().run(context, image_path, instance, Some(&disk), auto_remove)?;
+        CreateInstanceAction::new()
+            .run(context, image_path, instance, Some(&disk), auto_remove)
+            .await?;
 
         Ok(name)
     }
