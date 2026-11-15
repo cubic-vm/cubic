@@ -71,6 +71,14 @@ impl Console {
         self.verbosity.load(Ordering::Relaxed)
     }
 
+    pub fn get_verbosity_arg(&self) -> Option<&'static str> {
+        match self.get_verbosity() {
+            1.. => Some("-v"),
+            0 => None,
+            _ => Some("-q"),
+        }
+    }
+
     pub fn is_enabled(&self) -> bool {
         self.is_tty && self.get_verbosity() >= Self::INFO_VERBOSITY
     }
@@ -156,6 +164,10 @@ impl Console {
 
     pub fn print(&self, msg: &str) {
         self.emit(Stream::Stdout, msg, None);
+    }
+
+    pub fn eprint(&self, msg: &str) {
+        self.emit(Stream::Stderr, msg, None);
     }
 
     pub fn debug(&self, msg: &str) {

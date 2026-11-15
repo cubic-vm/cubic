@@ -1,7 +1,8 @@
 use crate::error::{Error, Result};
-use crate::platform::{Process, SystemMock};
+use crate::platform::{Child, ChildOutput, Process, SystemMock};
 use crate::util::CommandLine;
 use std::collections::HashMap;
+use std::io::Cursor;
 use std::process::Command;
 use std::time::Duration;
 
@@ -74,6 +75,27 @@ impl SystemMock {
     }
 }
 
+#[derive(Default)]
+struct ChildMock {
+    stdout: Vec<u8>,
+    stderr: Vec<u8>,
+    success: bool,
+}
+
+impl Child for ChildMock {
+    fn try_wait(&mut self) -> Option<bool> {
+        Some(self.success)
+    }
+
+    fn take_stdout(&mut self) -> Option<ChildOutput> {
+        Some(Box::new(Cursor::new(std::mem::take(&mut self.stdout))))
+    }
+
+    fn take_stderr(&mut self) -> Option<ChildOutput> {
+        Some(Box::new(Cursor::new(std::mem::take(&mut self.stderr))))
+    }
+}
+
 impl Process for SystemMock {
     fn run_and_wait(
         &self,
@@ -84,10 +106,20 @@ impl Process for SystemMock {
         self.commands.lock().unwrap().run(&command)
     }
 
-    // A detached start has nothing to wait for, so it only reports whether the
-    // host could launch the command at all.
-    fn run_detached(&self, command: Command) -> Result<()> {
-        self.commands.lock().unwrap().run(&command).map(|_| ())
+    fn run_detached(&self, command: Command) -> Result<Box<dyn Child>> {
+        let child = match self.commands.lock().unwrap().run(&command) {
+            Ok(stdout) => ChildMock {
+                stdout,
+                success: true,
+                ..ChildMock::default()
+            },
+            Err(Error::SystemCommandFailed(_, stderr)) => ChildMock {
+                stderr: stderr.into_bytes(),
+                ..ChildMock::default()
+            },
+            Err(error) => return Err(error),
+        };
+        Ok(Box::new(child))
     }
 }
 
@@ -140,15 +172,6 @@ mod tests {
         other.arg("info").arg("b");
 
         assert!(system.run_and_wait(other, None, None).is_err());
-    }
-
-    #[test]
-    fn run_detached_succeeds_without_returning_output() {
-        let system = SystemMock::new().add_command_output("qemu-system-x86_64", b"ignored");
-
-        system
-            .run_detached(Command::new("qemu-system-x86_64"))
-            .unwrap();
     }
 
     #[test]
