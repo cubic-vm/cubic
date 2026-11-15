@@ -202,6 +202,17 @@ impl Console {
     pub fn set_raw_mode(&self, enabled: bool) {
         self.system.set_raw_mode(enabled);
     }
+
+    pub fn set_title(&self, title: &str) {
+        // Save the current title on the terminal's stack, then set the new one
+        let sequence = format!("\x1b[22;0t\x1b]0;{title}\x07");
+        self.system.write(Stream::Stdout, &sequence);
+    }
+
+    pub fn restore_title(&self) {
+        // Restore the title saved by set_title
+        self.system.write(Stream::Stdout, "\x1b[23;0t");
+    }
 }
 
 #[cfg(test)]
@@ -260,6 +271,17 @@ mod tests {
         assert!(!detect(&[("LC_ALL", "C"), ("LANG", "en_US.UTF-8")]));
         assert!(!detect(&[("TERM", "linux"), ("LANG", "en_US.UTF-8")]));
         assert!(!detect(&[("TERM", "dumb"), ("LANG", "en_US.UTF-8")]));
+    }
+
+    #[test]
+    fn test_title_is_saved_set_and_restored() {
+        let system = Arc::new(SystemMock::new());
+        let console = Console::new(system.clone());
+
+        console.set_title("a");
+        console.restore_title();
+
+        assert_eq!(system.get_output(), "\x1b[22;0t\x1b]0;a\x07\x1b[23;0t");
     }
 
     #[test]
