@@ -43,11 +43,12 @@ impl ContextBuilder {
         }
     }
 
-    // Opens a monitor socket for each name, so the instance counts as running
     pub fn set_running(&self, names: &[&str]) {
         for name in names {
             let socket = self.env.get_monitor_socket(name);
             self.system.insert_socket(socket, QMP_REPLIES);
+            let socket = self.env.get_api_socket(name);
+            self.system.insert_socket(socket, &[]);
         }
     }
 

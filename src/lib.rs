@@ -14,6 +14,7 @@ mod qemu;
 mod ssh;
 mod util;
 mod view;
+mod vm;
 mod web;
 
 pub use cubic_app::CubicApp;

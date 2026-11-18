@@ -26,7 +26,7 @@ impl Command for RenameCommand {
         let names = [self.old_name.as_str(), self.new_name.as_str()];
         let _locks = ResourceLock::acquire_instances(context, &names)?;
         let instance = LoadInstanceAction::new().run(context, self.old_name.as_str())?;
-        if context.get_monitor(&instance).is_running() {
+        if context.is_running(&instance) {
             return Err(Error::InstanceNotStopped(instance.name.to_string()));
         }
 

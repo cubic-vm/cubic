@@ -62,7 +62,7 @@ impl Command for StartCommand {
         for name in &self.instances.value {
             let _lock = ResourceLock::acquire_instances(context, &[name.as_str()])?;
             let instance = &mut LoadInstanceAction::new().run(context, name.as_str())?;
-            if !context.get_monitor(instance).is_running() {
+            if !context.is_running(instance) {
                 if port_checker
                     .is_open(context.get_system(), instance.ssh_port)
                     .await

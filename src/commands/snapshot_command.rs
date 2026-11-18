@@ -36,7 +36,7 @@ impl Command for SnapshotCommand {
         let _lock = ResourceLock::acquire_instances(context, &[instance_name.as_str()])?;
         let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
 
-        if context.get_monitor(&instance).is_running() {
+        if context.is_running(&instance) {
             return Err(Error::InstanceNotStopped(instance_name.to_string()));
         }
 

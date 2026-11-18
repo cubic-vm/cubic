@@ -42,7 +42,7 @@ const STOP_TIMEOUT: Duration = Duration::from_secs(60);
 
 impl StopCommand {
     async fn wait_until_stopped(context: &commands::Context, stopping: &[Instance]) {
-        while stopping.iter().any(|i| context.get_monitor(i).is_running()) {
+        while stopping.iter().any(|i| context.is_running(i)) {
             tokio::time::sleep(Duration::from_secs(1)).await
         }
     }
@@ -90,7 +90,7 @@ impl Command for StopCommand {
         let mut stopping = Vec::new();
         for name in &stop_instances {
             let instance = LoadInstanceAction::new().run(context, name.as_str())?;
-            if context.get_monitor(&instance).is_running() {
+            if context.is_running(&instance) {
                 stopping.push(instance);
             }
         }

@@ -28,10 +28,7 @@ impl Command for ShowInstanceCommand {
         if let Some(os) = &instance.os {
             view.add("OS", os);
         }
-        view.add(
-            "Running",
-            util::to_yes_no(context.get_monitor(&instance).is_running()),
-        );
+        view.add("Running", util::to_yes_no(context.is_running(&instance)));
         view.add("Arch", &instance.arch.to_string());
         view.add("vCPUs", &instance.cpus.to_string());
         view.add("Memory", &instance.mem.to_size());

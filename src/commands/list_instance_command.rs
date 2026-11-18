@@ -55,7 +55,7 @@ impl Command for ListInstanceCommand {
                 ),
                 None => String::new(),
             };
-            let running = util::to_yes_no(context.get_monitor(&instance).is_running());
+            let running = util::to_yes_no(context.is_running(&instance));
             row.add(&instance.name, Alignment::Left)
                 .add(instance.os.as_deref().unwrap_or_default(), Alignment::Left)
                 .add(&instance.arch.to_string(), Alignment::Left)
