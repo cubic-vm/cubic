@@ -1,7 +1,9 @@
+use crate::error::Result;
 use crate::models::{Environment, Instance};
 use crate::platform::System;
 use crate::qemu::QemuMonitorClient;
 use crate::view::Console;
+use crate::vm::VmClient;
 use std::sync::Arc;
 
 pub struct Context {
@@ -39,8 +41,17 @@ impl Context {
         QemuMonitorClient::new(self.system.clone(), &self.env, instance)
     }
 
+    pub fn get_vm(&self, instance: &Instance) -> Result<VmClient> {
+        VmClient::connect(self.system.as_ref(), &self.env, instance)
+    }
+
+    // QEMU can outlive its supervisor, so a live monitor counts as running too.
+    pub fn is_running(&self, instance: &Instance) -> bool {
+        self.get_vm(instance).is_ok() || self.get_monitor(instance).is_running()
+    }
+
     /// A stopped --rm instance that its session never cleaned up
     pub fn is_stale(&self, instance: &Instance) -> bool {
-        instance.auto_remove && !self.get_monitor(instance).is_running()
+        instance.auto_remove && !self.is_running(instance)
     }
 }

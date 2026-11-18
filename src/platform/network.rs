@@ -1,5 +1,5 @@
 use crate::error::Result;
-use crate::platform::{AsyncSocketFuture, Socket};
+use crate::platform::{AsyncSocketFuture, Listener, Socket};
 use std::path::Path;
 use std::time::Duration;
 
@@ -10,4 +10,5 @@ pub trait Network {
     fn connect_socket(&self, path: &Path, timeout: Option<Duration>) -> Result<Box<dyn Socket>>;
     // Takes a free loopback port from the host and reports its number.
     fn bind_port(&self) -> Result<u16>;
+    fn bind_socket(&self, path: &Path) -> Result<Box<dyn Listener>>;
 }

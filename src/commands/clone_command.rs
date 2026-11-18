@@ -38,7 +38,7 @@ impl Command for CloneCommand {
         let source = &LoadInstanceAction::new().run(context, self.name.as_str())?;
 
         // Verify that the source instance is stopped
-        if context.get_monitor(source).is_running() {
+        if context.is_running(source) {
             return Err(Error::InstanceNotStopped(source.name.to_string()));
         }
 

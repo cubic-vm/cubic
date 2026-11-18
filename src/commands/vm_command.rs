@@ -1,7 +1,11 @@
 use crate::actions::{LoadInstanceAction, StartInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
+use crate::vm::VmServer;
 use clap::Parser;
+use std::time::Duration;
+
+const ACCEPT_INTERVAL: Duration = Duration::from_millis(50);
 
 #[derive(Parser)]
 #[clap(hide = true)]
@@ -17,10 +21,18 @@ pub struct VmCommand {
 impl Command for VmCommand {
     async fn run(&self, context: &commands::Context) -> Result<u8> {
         let instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
-        StartInstanceAction::new(&instance)
-            .run(context, &self.qemu_args, self.accel.value)
-            .await?;
-        Ok(0)
+        let server = VmServer::bind(context.get_system(), context.get_env(), &instance)?;
+        let mut action = StartInstanceAction::new(&instance);
+        let mut run = std::pin::pin!(action.run(context, &self.qemu_args, self.accel.value));
+        let result = loop {
+            tokio::select! {
+                biased;
+                result = &mut run => break result,
+                true = async { server.accept_client() } => {}
+                () = tokio::time::sleep(ACCEPT_INTERVAL) => {}
+            }
+        };
+        result.map(|_| 0)
     }
 }
 

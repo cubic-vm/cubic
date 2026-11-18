@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::platform::{AsyncSocket, AsyncSocketFuture, Network, Socket, SystemMock};
+use crate::platform::{AsyncSocket, AsyncSocketFuture, Listener, Network, Socket, SystemMock};
 use std::io::{Cursor, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -126,6 +126,14 @@ impl Socket for SocketMock {
     }
 }
 
+struct ListenerMock;
+
+impl Listener for ListenerMock {
+    fn accept(&self) -> Result<Box<dyn Socket>> {
+        Err(std::io::Error::from(std::io::ErrorKind::WouldBlock).into())
+    }
+}
+
 impl SystemMock {
     pub fn add_socket(self, path: impl AsRef<Path>, replies: &[u8]) -> Self {
         self.insert_socket(path, replies);
@@ -187,6 +195,11 @@ impl Network for SystemMock {
 
     fn bind_port(&self) -> Result<u16> {
         self.network.lock().unwrap().bind()
+    }
+
+    fn bind_socket(&self, path: &Path) -> Result<Box<dyn Listener>> {
+        self.insert_socket(path, &[]);
+        Ok(Box::new(ListenerMock))
     }
 }
 

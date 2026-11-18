@@ -28,7 +28,7 @@ fn resolve_target_path(
 fn check_target_is_running(context: &commands::Context, target: &TargetPath) -> Result<()> {
     if let Some(target) = target.get_target() {
         let instance = LoadInstanceAction::new().run(context, target.get_instance().as_str())?;
-        if !context.get_monitor(&instance).is_running() {
+        if !context.is_running(&instance) {
             return Err(Error::InstanceNotRunning(instance.name.clone()));
         }
     }

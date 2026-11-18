@@ -1,5 +1,6 @@
 mod file_system;
 mod host;
+mod listener;
 mod network;
 mod os_file_system;
 mod os_host;
@@ -28,6 +29,7 @@ mod terminal_mock;
 
 pub use file_system::*;
 pub use host::*;
+pub use listener::*;
 pub use network::*;
 pub use os_system::*;
 pub use process::*;

@@ -67,6 +67,10 @@ impl Environment {
         self.get_instance_dir2(instance).join("monitor.sock")
     }
 
+    pub fn get_api_socket(&self, instance: &str) -> PathBuf {
+        self.get_instance_dir2(instance).join("api.sock")
+    }
+
     pub fn get_console_socket(&self, instance: &str) -> PathBuf {
         self.get_instance_dir2(instance).join("console.sock")
     }
