@@ -1,6 +1,7 @@
 use crate::error::{Error, Result};
 use crate::models::{Environment, Instance};
 use crate::platform::{Socket, System};
+use crate::vm::VmControl;
 use crate::vm::vm_message::VmMessage;
 use std::io::{BufRead, BufReader, Write};
 use std::time::Duration;
@@ -21,8 +22,10 @@ impl VmClient {
             stream: BufReader::new(socket),
         })
     }
+}
 
-    pub fn stop(&mut self) -> Result<()> {
+impl VmControl for VmClient {
+    fn stop(&mut self) -> Result<()> {
         let mut request = serde_json::to_string(&VmMessage::build_request("stop"))?;
         request.push('\n');
         let socket = self.stream.get_mut();

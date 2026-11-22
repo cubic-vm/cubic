@@ -8,6 +8,8 @@ use std::sync::Arc;
 // Greeting plus replies for the handshake and a few commands
 pub const QMP_REPLIES: &[u8] = b"{\"QMP\": {}}\n{\"return\": {}, \"id\": \"0\"}\n{\"return\": {}, \"id\": \"1\"}\n{\"return\": {}, \"id\": \"2\"}\n";
 
+const API_REPLY: &[u8] = b"{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}\n";
+
 pub struct ContextBuilder {
     system: Arc<SystemMock>,
     env: Environment,
@@ -48,7 +50,7 @@ impl ContextBuilder {
             let socket = self.env.get_monitor_socket(name);
             self.system.insert_socket(socket, QMP_REPLIES);
             let socket = self.env.get_api_socket(name);
-            self.system.insert_socket(socket, &[]);
+            self.system.insert_socket(socket, API_REPLY);
         }
     }
 
