@@ -2,8 +2,10 @@ use crate::error::{Error, Result};
 use crate::models::{Environment, Instance};
 use crate::platform::{Listener, Socket, System};
 use crate::qemu::QemuMonitorClient;
-use crate::vm::VmControl;
 use crate::vm::vm_message::{INVALID_REQUEST, METHOD_NOT_FOUND, PARSE_ERROR, VmMessage, VmMethod};
+use crate::vm::{VmControl, VmState};
+use serde_json::Value;
+use std::cell::Cell;
 use std::convert::Infallible;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -16,6 +18,7 @@ pub struct VmServer<'a> {
     system: &'a dyn System,
     path: PathBuf,
     listener: Box<dyn Listener>,
+    state: Cell<VmState>,
 }
 
 impl<'a> VmServer<'a> {
@@ -30,6 +33,7 @@ impl<'a> VmServer<'a> {
             system,
             path,
             listener,
+            state: Cell::new(VmState::Starting),
         })
     }
 
@@ -50,12 +54,11 @@ impl<'a> VmServer<'a> {
     fn handle_client(&self, socket: Box<dyn Socket>, monitor: &mut QemuMonitorClient) {
         let mut client = BufReader::new(socket);
         let mut line = String::new();
-        // A probe connects and closes without sending anything
         if !matches!(client.read_line(&mut line), Ok(count) if count > 0) {
             return;
         }
         let response = match serde_json::from_str(&line) {
-            Ok(VmMessage::Request { method, .. }) => Self::answer_request(method, monitor),
+            Ok(VmMessage::Request { method, .. }) => self.answer_request(method, monitor),
             Ok(_) => VmMessage::build_error(INVALID_REQUEST, "Invalid Request"),
             Err(_) => VmMessage::build_error(PARSE_ERROR, "Parse error"),
         };
@@ -65,18 +68,36 @@ impl<'a> VmServer<'a> {
         }
     }
 
-    fn answer_request(method: VmMethod, monitor: &mut QemuMonitorClient) -> VmMessage {
+    fn answer_request(&self, method: VmMethod, monitor: &mut QemuMonitorClient) -> VmMessage {
         let result = match method {
-            VmMethod::Stop => monitor.stop(),
-            VmMethod::Quit => monitor.quit(),
+            VmMethod::Stop => self.stop(monitor, false),
+            VmMethod::Quit => self.stop(monitor, true),
+            VmMethod::GetState => serde_json::to_value(self.get_state(monitor)).map_err(Into::into),
             VmMethod::Unknown => {
                 return VmMessage::build_error(METHOD_NOT_FOUND, "Method not found");
             }
         };
         match result {
-            Ok(()) => VmMessage::build_result(),
+            Ok(value) => VmMessage::build_result(value),
             Err(e) => VmMessage::build_error(SERVER_ERROR, &e.to_string()),
         }
+    }
+
+    fn stop(&self, monitor: &mut QemuMonitorClient, kill: bool) -> Result<Value> {
+        if kill {
+            monitor.quit()?;
+        } else {
+            monitor.stop()?;
+        }
+        self.state.set(VmState::Stopping);
+        Ok(Value::Null)
+    }
+
+    fn get_state(&self, monitor: &QemuMonitorClient) -> VmState {
+        if self.state.get() == VmState::Starting && monitor.is_running() {
+            self.state.set(VmState::Running);
+        }
+        self.state.get()
     }
 }
 
@@ -126,42 +147,54 @@ mod tests {
         assert!(VmClient::connect(&system, &env, &build_instance()).is_ok());
     }
 
-    fn send_line(line: &str) -> (String, String) {
-        let env = Environment::default();
-        let monitor_path = env.get_monitor_socket("test");
-        let system = SystemMock::new()
-            .add_socket(&monitor_path, QMP_REPLIES)
-            .add_socket(CLIENT_SOCKET, line.as_bytes());
+    fn ask(server: &VmServer, monitor: &mut QemuMonitorClient, line: &str) -> String {
+        let system = SystemMock::new().add_socket(CLIENT_SOCKET, line.as_bytes());
+        let path = Path::new(CLIENT_SOCKET);
+        let socket = system.connect_socket(path, None).unwrap();
+        server.handle_client(socket, monitor);
+        system.get_socket_output(CLIENT_SOCKET)
+    }
+
+    fn build_monitor(system: SystemMock) -> (Arc<SystemMock>, QemuMonitorClient) {
         let system = Arc::new(system);
-        let server = VmServer::bind(system.as_ref(), &env, &build_instance()).unwrap();
-        let socket = system.connect_socket(Path::new(CLIENT_SOCKET), None);
-        let mut monitor = QemuMonitorClient::new(system.clone(), &env, &build_instance());
+        let env = Environment::default();
+        let monitor = QemuMonitorClient::new(system.clone(), &env, &build_instance());
+        (system, monitor)
+    }
 
-        server.handle_client(socket.unwrap(), &mut monitor);
+    fn build_running_monitor() -> (Arc<SystemMock>, QemuMonitorClient) {
+        let path = Environment::default().get_monitor_socket("test");
+        build_monitor(SystemMock::new().add_socket(path, QMP_REPLIES))
+    }
 
-        let reply = system.get_socket_output(CLIENT_SOCKET);
-        (reply, system.get_socket_output(monitor_path))
+    fn send_line(line: &str) -> (String, String) {
+        let system = SystemMock::new();
+        let server = VmServer::bind(&system, &Environment::default(), &build_instance()).unwrap();
+        let (qemu, mut monitor) = build_running_monitor();
+
+        let reply = ask(&server, &mut monitor, line);
+
+        let qmp = qemu.get_socket_output(Environment::default().get_monitor_socket("test"));
+        (reply, qmp)
+    }
+
+    fn build_request(method: &str) -> String {
+        format!("{{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"{method}\"}}\n")
     }
 
     #[test]
-    fn test_stop_powers_the_guest_down_and_replies() {
-        let (reply, qmp) = send_line("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"stop\"}\n");
+    fn test_stop_and_quit_reach_qemu_and_reply() {
+        for (method, command) in [("stop", "system_powerdown"), ("quit", "quit")] {
+            let (reply, qmp) = send_line(&build_request(method));
 
-        assert_eq!(reply, "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}\n");
-        assert!(qmp.ends_with(r#"{"id":"1","execute":"system_powerdown"}"#));
-    }
-
-    #[test]
-    fn test_quit_stops_qemu_and_replies() {
-        let (reply, qmp) = send_line("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"quit\"}\n");
-
-        assert_eq!(reply, "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}\n");
-        assert!(qmp.ends_with(r#"{"id":"1","execute":"quit"}"#));
+            assert_eq!(reply, "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}\n");
+            assert!(qmp.ends_with(&format!(r#"{{"id":"1","execute":"{command}"}}"#)));
+        }
     }
 
     #[test]
     fn test_unknown_method_is_rejected_without_touching_qemu() {
-        let (reply, qmp) = send_line("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"jump\"}\n");
+        let (reply, qmp) = send_line(&build_request("jump"));
 
         assert!(reply.contains(r#""error":{"code":-32601"#));
         assert!(qmp.is_empty());
@@ -172,5 +205,21 @@ mod tests {
         let (reply, _) = send_line("not json\n");
 
         assert!(reply.contains(r#""error":{"code":-32700"#));
+    }
+
+    #[test]
+    fn test_get_state_follows_the_lifecycle() {
+        let system = SystemMock::new();
+        let server = VmServer::bind(&system, &Environment::default(), &build_instance()).unwrap();
+        let get_state = build_request("get-state");
+        let (_, mut silent) = build_monitor(SystemMock::new());
+        let (_, mut running) = build_running_monitor();
+
+        assert!(ask(&server, &mut silent, &get_state).contains(r#""result":"starting""#));
+        assert!(ask(&server, &mut running, &get_state).contains(r#""result":"running""#));
+        assert!(ask(&server, &mut silent, &get_state).contains(r#""result":"running""#));
+
+        ask(&server, &mut running, &build_request("stop"));
+        assert!(ask(&server, &mut silent, &get_state).contains(r#""result":"stopping""#));
     }
 }

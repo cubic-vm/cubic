@@ -12,7 +12,7 @@ use clap::Parser;
 ///   Show information of a VM instance
 ///   $ cubic show trixie
 ///   OS:         debian:13
-///   Running:    yes
+///   State:      running
 ///   Arch:       x86-64
 ///   vCPUs:      6
 ///   Memory:     16 G
@@ -113,6 +113,6 @@ mod tests {
         .await
         .unwrap();
 
-        assert!(system.get_output().starts_with("Running:"));
+        assert!(system.get_output().starts_with("State:"));
     }
 }

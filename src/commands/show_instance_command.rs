@@ -28,7 +28,7 @@ impl Command for ShowInstanceCommand {
         if let Some(os) = &instance.os {
             view.add("OS", os);
         }
-        view.add("Running", util::to_yes_no(context.is_running(&instance)));
+        view.add("State", context.get_state(&instance).get_name());
         view.add("Arch", &instance.arch.to_string());
         view.add("vCPUs", &instance.cpus.to_string());
         view.add("Memory", &instance.mem.to_size());
@@ -122,7 +122,7 @@ mod tests {
             system.get_output(),
             "\
 OS:         ubuntu:24.04
-Running:    no
+State:      stopped
 Arch:       x86-64
 vCPUs:      1
 Memory:     1024 B
@@ -177,7 +177,7 @@ Forward:    127.0.0.1:4000:40/tcp
             system.get_output(),
             format!(
                 "\
-Running:      no
+State:        stopped
 Arch:         aarch64
 vCPUs:        2
 Memory:       1 B

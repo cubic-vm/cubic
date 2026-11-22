@@ -2,7 +2,6 @@ use crate::actions::{ListInstancesAction, LoadInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::qemu::QemuImg;
-use crate::util;
 use crate::view::{Alignment, TableView};
 use clap::Parser;
 
@@ -11,10 +10,10 @@ use clap::Parser;
 /// Examples:
 ///
 ///   $ cubic instances
-///   Name          OS             Arch      vCPUs   Memory       Disk   Running
-///   noble-arm64   ubuntu:24.04   aarch64       8   8192 M    4/100 G       yes
-///   trixie        debian:13      x86-64        6     16 G      100 G       yes
-///   fedora        fedora:42      x86-64        4   4096 M   10/100 G        no
+///   Name          OS             Arch      vCPUs   Memory       Disk      State
+///   noble-arm64   ubuntu:24.04   aarch64       8   8192 M    4/100 G    running
+///   trixie        debian:13      x86-64        6     16 G      100 G   stopping
+///   fedora        fedora:42      x86-64        4   4096 M   10/100 G    stopped
 ///
 #[derive(Parser)]
 #[clap(verbatim_doc_comment)]
@@ -36,7 +35,7 @@ impl Command for ListInstanceCommand {
             .add("vCPUs", Alignment::Right)
             .add("Memory", Alignment::Right)
             .add("Disk", Alignment::Right)
-            .add("Running", Alignment::Right);
+            .add("State", Alignment::Right);
 
         for instance_name in &instance_names {
             let instance = LoadInstanceAction::new().run(context, instance_name.as_str())?;
@@ -55,14 +54,14 @@ impl Command for ListInstanceCommand {
                 ),
                 None => String::new(),
             };
-            let running = util::to_yes_no(context.is_running(&instance));
+            let state = context.get_state(&instance).get_name();
             row.add(&instance.name, Alignment::Left)
                 .add(instance.os.as_deref().unwrap_or_default(), Alignment::Left)
                 .add(&instance.arch.to_string(), Alignment::Left)
                 .add(&instance.cpus.to_string(), Alignment::Right)
                 .add(&instance.mem.to_size(), Alignment::Right)
                 .add(&disk, Alignment::Right)
-                .add(running, Alignment::Right);
+                .add(state, Alignment::Right);
         }
         view.print(context.get_console());
         Ok(0)
@@ -126,9 +125,9 @@ mod tests {
         assert_eq!(
             system.get_output(),
             "\
-Name    OS             Arch     vCPUs   Memory         Disk   Running
-test    ubuntu:24.04   x86-64       1   1024 B   512/1024 K        no
-test2                  x86-64       5      0 B                     no
+Name    OS             Arch     vCPUs   Memory         Disk     State
+test    ubuntu:24.04   x86-64       1   1024 B   512/1024 K   stopped
+test2                  x86-64       5      0 B                stopped
 "
         );
     }
@@ -150,8 +149,8 @@ test2                  x86-64       5      0 B                     no
         assert_eq!(
             system.get_output(),
             "\
-Name    OS   Arch     vCPUs   Memory   Disk   Running
-test2        x86-64       5      0 B              yes
+Name    OS   Arch     vCPUs   Memory   Disk     State
+test2        x86-64       5      0 B          running
 "
         );
     }

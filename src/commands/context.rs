@@ -2,7 +2,7 @@ use crate::models::{Environment, Instance};
 use crate::platform::System;
 use crate::qemu::QemuMonitorClient;
 use crate::view::Console;
-use crate::vm::{VmClient, VmControl};
+use crate::vm::{VmClient, VmControl, VmState};
 use std::sync::Arc;
 
 pub struct Context {
@@ -40,8 +40,8 @@ impl Context {
         QemuMonitorClient::new(self.system.clone(), &self.env, instance)
     }
 
-    // Prefers the supervisor API. Instances of older versions have no API
-    // socket, and QEMU can outlive its supervisor, so a live monitor counts too.
+    // Older instances have no API socket, and QEMU can outlive its
+    // supervisor, so a live monitor counts too
     pub fn get_vm(&self, instance: &Instance) -> Option<Box<dyn VmControl>> {
         if let Ok(api) = VmClient::connect(self.system.as_ref(), &self.env, instance) {
             return Some(Box::new(api));
@@ -55,6 +55,13 @@ impl Context {
 
     pub fn is_running(&self, instance: &Instance) -> bool {
         self.get_vm(instance).is_some()
+    }
+
+    pub fn get_state(&self, instance: &Instance) -> VmState {
+        match self.get_vm(instance) {
+            Some(mut vm) => vm.get_state().unwrap_or(VmState::Running),
+            None => VmState::Stopped,
+        }
     }
 
     /// A stopped --rm instance that its session never cleaned up
