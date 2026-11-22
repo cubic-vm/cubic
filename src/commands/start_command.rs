@@ -1,7 +1,7 @@
 use crate::actions::{LoadInstanceAction, StartInstanceAction, StoreInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
-use crate::models::{DataSize, HOST_MEMORY_RESERVE, Instance, ResourceAllocator};
+use crate::models::{DataSize, HOST_MEMORY_RESERVE, Instance, MIN_CPUS, ResourceAllocator};
 use crate::platform::Child;
 use crate::qemu::QemuMonitorClient;
 use crate::ssh::PortChecker;
@@ -158,19 +158,18 @@ impl StartCommand {
         command
     }
 
-    /// Reduce an instance to a size that fits the host's available memory and
-    /// CPU count.
-    ///
-    /// QEMU fails to start when the host cannot back the requested memory or
-    /// CPU count, so this proposes the largest resource level that fits the
-    /// available memory minus a host reserve, capped at the host's CPU count.
-    /// The reduced size is persisted on accept. The start is aborted when the
-    /// user declines or nothing fits.
+    /// Offers to shrink an instance that exceeds the host, since QEMU fails to
+    /// start it otherwise. Skipped when the host size is unknown.
     fn fit_to_host(&self, context: &commands::Context, instance: &mut Instance) -> Result<()> {
         let console = context.get_console();
         let system = context.get_system();
-        let available = system.get_available_memory() as usize;
+        let available = system.get_available_memory();
         let host_cpus = system.get_cpu_count();
+        let (Some(available), Some(host_cpus)) = (available, host_cpus) else {
+            console.debug("Host memory or CPU count is unknown, skipping the size check");
+            return Ok(());
+        };
+        let available = available as usize;
 
         console.debug(&format!(
             "Instance '{}' requests {} vCPUs and {}, host has {} vCPUs and {} available with {} reserved",
@@ -191,7 +190,7 @@ impl StartCommand {
 
         let (cpus, mem) = ResourceAllocator::get_resources_for_budget(available)
             .ok_or_else(|| Error::NotEnoughHostResources(instance.name.clone()))?;
-        let cpus = cpus.min(instance.cpus).min(host_cpus);
+        let cpus = cpus.min(instance.cpus).min(host_cpus).max(MIN_CPUS);
 
         console.warn(&format!(
             "Instance '{}' requests {} vCPUs and {} but the host has {} vCPUs and {} available.\nIt can be started with {} vCPUs and {} instead.",

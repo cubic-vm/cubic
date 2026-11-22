@@ -5,7 +5,7 @@ Thank you for taking the time to contribute to Cubic!
 
 ## Development Environment
 
-Cubic requires Rust 1.92 or newer. Any installation method works, such
+Cubic requires Rust 1.95 or newer. Any installation method works, such
 as a package manager or [rustup](https://rustup.rs/). With rustup, the
 matching version is selected automatically from `rust-toolchain.toml`.
 Some platforms also require a C compiler for linking.

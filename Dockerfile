@@ -1,4 +1,4 @@
-FROM rust:1.92-slim
+FROM rust:1.95-slim
 WORKDIR /usr/local/app
 
 ENV DEBIAN_FRONTEND=noninteractive

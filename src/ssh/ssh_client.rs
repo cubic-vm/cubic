@@ -371,10 +371,10 @@ impl<'a> SshClient<'a> {
 
         while let Some(msg) = ssh_in.wait().await {
             match msg {
-                ChannelMsg::Data { data } | ChannelMsg::ExtendedData { data, .. } => {
-                    if stdout.write_all(&data).await.is_err() || stdout.flush().await.is_err() {
-                        break;
-                    }
+                ChannelMsg::Data { data } | ChannelMsg::ExtendedData { data, .. }
+                    if stdout.write_all(&data).await.is_err() || stdout.flush().await.is_err() =>
+                {
+                    break;
                 }
                 ChannelMsg::ExitStatus {
                     exit_status: status,

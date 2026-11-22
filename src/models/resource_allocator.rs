@@ -50,14 +50,11 @@ impl ResourceAllocator {
         }
     }
 
-    /// Read the live host total memory and cpu count and build an allocator.
-    ///
-    /// The cpu count is the number of logical processors, so a host with
-    /// simultaneous multithreading reports its thread count rather than its
-    /// physical cores. This matches the vCPU count handed to a machine, which
-    /// also maps to threads.
+    /// Build an allocator from the host totals. An unknown total selects the
+    /// smallest machine.
     pub fn read_from_host(system: &dyn Host) -> Self {
-        Self::new(system.get_total_memory() as usize, system.get_cpu_count())
+        let host_mem_bytes = system.get_total_memory().unwrap_or_default() as usize;
+        Self::new(host_mem_bytes, system.get_cpu_count().unwrap_or_default())
     }
 
     /// Return the default vCPU count and memory for a new machine by selecting
@@ -79,7 +76,7 @@ impl ResourceAllocator {
     /// returns None when not even that fits.
     pub fn get_resources_for_budget(available_bytes: usize) -> Option<(u16, DataSize)> {
         let budget = available_bytes.saturating_sub(HOST_MEMORY_RESERVE);
-        (budget >= 512 * MIB).then(|| Self::resources_for_level(budget / GIB))
+        (budget >= MIN_MEMORY).then(|| Self::resources_for_level(budget / GIB))
     }
 
     pub fn is_disk_space_low(system: &dyn FileSystem, env: &Environment) -> bool {
@@ -129,7 +126,7 @@ impl ResourceAllocator {
     /// level 0 floor is 1 vCPU and 512 MiB.
     fn resources_for_level(level: usize) -> (u16, DataSize) {
         if level == 0 {
-            (1, DataSize::new(512 * MIB))
+            (MIN_CPUS, DataSize::new(MIN_MEMORY))
         } else {
             ((level * 2) as u16, DataSize::new(level * GIB))
         }

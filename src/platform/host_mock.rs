@@ -71,16 +71,16 @@ impl Host for SystemMock {
         self.host.get_env_var(key)
     }
 
-    fn get_total_memory(&self) -> u64 {
-        self.host.total_memory
+    fn get_total_memory(&self) -> Option<u64> {
+        Some(self.host.total_memory)
     }
 
-    fn get_available_memory(&self) -> u64 {
-        self.host.available_memory
+    fn get_available_memory(&self) -> Option<u64> {
+        Some(self.host.available_memory)
     }
 
-    fn get_cpu_count(&self) -> u16 {
-        self.host.cpu_count
+    fn get_cpu_count(&self) -> Option<u16> {
+        Some(self.host.cpu_count)
     }
 
     fn get_timezone_name(&self) -> Option<TimezoneName> {

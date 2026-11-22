@@ -16,9 +16,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - check: rustup component add rustfmt && cargo fmt --check
+          - check: cargo fmt --check
           - check: |
-              rustup component add clippy && cargo clippy --version &&
+              cargo clippy --version &&
               cargo clippy --locked --all-targets -- -D warnings
           - check: cargo install cargo-audit --locked && cargo audit
 
@@ -28,9 +28,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Rust
-        run: |
-            rustup toolchain install 1.92.0
-            rustup override set 1.92.0
+        run: rustup toolchain install
 
       - name: Run Check
         run: ${{ matrix.check }}
@@ -88,9 +86,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Rust
-        run: |
-          rustup toolchain install 1.92.0
-          rustup override set 1.92.0
+        run: rustup toolchain install
 
       - name: Build Source Code
         run: cargo build --locked
