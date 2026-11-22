@@ -8,24 +8,23 @@ impl Host for OsSystem {
         std::env::var(key).ok()
     }
 
-    fn get_total_memory(&self) -> u64 {
-        let mut system = sysinfo::System::new();
+    fn get_total_memory(&self) -> Option<u64> {
+        let mut system = sysinfo::System::new().ok()?;
         system.refresh_memory_specifics(MemoryRefreshKind::nothing().with_ram());
-        system.total_memory()
+        Some(system.total_memory())
     }
 
-    fn get_available_memory(&self) -> u64 {
-        let mut system = sysinfo::System::new();
+    fn get_available_memory(&self) -> Option<u64> {
+        let mut system = sysinfo::System::new().ok()?;
         system.refresh_memory_specifics(MemoryRefreshKind::nothing().with_ram());
-        system.available_memory()
+        Some(system.available_memory())
     }
 
-    // Counts logical processors, so a host with simultaneous multithreading
-    // reports its thread count rather than its physical cores.
-    fn get_cpu_count(&self) -> u16 {
-        let mut system = sysinfo::System::new();
+    // Counts logical processors, matching how vCPUs map to host threads.
+    fn get_cpu_count(&self) -> Option<u16> {
+        let mut system = sysinfo::System::new().ok()?;
         system.refresh_cpu_list(CpuRefreshKind::nothing());
-        system.cpus().len() as u16
+        Some(system.cpus().len() as u16)
     }
 
     fn get_timezone_name(&self) -> Option<TimezoneName> {

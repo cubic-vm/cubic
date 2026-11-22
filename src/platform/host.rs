@@ -4,9 +4,9 @@ use std::path::PathBuf;
 pub trait Host {
     fn read_env_var(&self, key: &str) -> Option<String>;
 
-    fn get_total_memory(&self) -> u64;
-    fn get_available_memory(&self) -> u64;
-    fn get_cpu_count(&self) -> u16;
+    fn get_total_memory(&self) -> Option<u64>;
+    fn get_available_memory(&self) -> Option<u64>;
+    fn get_cpu_count(&self) -> Option<u16>;
     fn get_timezone_name(&self) -> Option<TimezoneName>;
     fn get_current_exe(&self) -> PathBuf;
 }

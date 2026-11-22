@@ -10,7 +10,7 @@ repository = "https://github.com/cubic-vm/cubic"
 keywords = ["cli", "vm", "qemu", "virtual-machine", "cloud-init"]
 categories = ["command-line-utilities"]
 edition = "2024"
-rust-version = "1.92"
+rust-version = "1.95"
 default-run = "cubic"
 
 [dependencies]
@@ -23,12 +23,12 @@ regex = "1"
 reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
 russh = { version = "0.65", default-features = false, features = ["ring", "rsa"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
-russh-sftp = "3"
+russh-sftp = "4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.11"
 socket2 = "0.6"
-sysinfo = { version = "0.38", default-features = false, features = ["disk", "system"] }
+sysinfo = { version = "0.40", default-features = false, features = ["disk", "system"] }
 thiserror = "2"
 tokio = { version = "1", default-features = false, features = [
     "fs",

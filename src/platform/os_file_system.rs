@@ -32,7 +32,7 @@ impl FileSystem for OsSystem {
         let path = path.canonicalize().ok()?;
 
         Disks::new_with_refreshed_list_specifics(DiskRefreshKind::nothing().with_storage())
-            .list()
+            .ok()?
             .iter()
             .filter(|disk| path.starts_with(disk.mount_point()))
             .max_by_key(|disk| disk.mount_point().as_os_str().len())
