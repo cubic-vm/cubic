@@ -2,6 +2,7 @@ use crate::error::{Error, Result};
 use crate::models::{Environment, Instance, PortForward};
 use crate::platform::{Socket, System};
 use crate::qemu::{NETDEV_ID, QmpMessage};
+use crate::vm::VmControl;
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -40,10 +41,6 @@ impl QemuMonitorClient {
             Err(Error::InstanceNotRunning(_)) => Ok(()),
             result => result,
         }
-    }
-
-    pub fn shutdown(&mut self) -> Result<()> {
-        self.execute("system_powerdown")
     }
 
     pub fn quit(&mut self) -> Result<()> {
@@ -159,6 +156,12 @@ impl QemuMonitorClient {
     }
 }
 
+impl VmControl for QemuMonitorClient {
+    fn stop(&mut self) -> Result<()> {
+        self.execute("system_powerdown")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -227,7 +230,7 @@ mod tests {
     }
 
     #[test]
-    fn test_shutdown_negotiates_capabilities_and_skips_an_event_before_the_reply() {
+    fn test_stop_negotiates_capabilities_and_skips_an_event_before_the_reply() {
         let env = build_env();
         let system = build_system(
             &env,
@@ -237,7 +240,7 @@ mod tests {
         );
 
         QemuMonitorClient::new(system.clone(), &env, &build_instance())
-            .shutdown()
+            .stop()
             .unwrap();
 
         assert_eq!(

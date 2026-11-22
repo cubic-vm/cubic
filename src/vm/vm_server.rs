@@ -2,6 +2,7 @@ use crate::error::{Error, Result};
 use crate::models::{Environment, Instance};
 use crate::platform::{Listener, Socket, System};
 use crate::qemu::QemuMonitorClient;
+use crate::vm::VmControl;
 use crate::vm::vm_message::{INVALID_REQUEST, METHOD_NOT_FOUND, PARSE_ERROR, VmMessage};
 use std::convert::Infallible;
 use std::io::{BufRead, BufReader, Write};
@@ -68,7 +69,7 @@ impl<'a> VmServer<'a> {
         if method != "stop" {
             return VmMessage::build_error(METHOD_NOT_FOUND, "Method not found");
         }
-        match monitor.shutdown() {
+        match monitor.stop() {
             Ok(()) => VmMessage::build_result(),
             Err(e) => VmMessage::build_error(SERVER_ERROR, &e.to_string()),
         }

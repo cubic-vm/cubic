@@ -18,23 +18,13 @@ impl StopInstanceAction {
             return Err(Error::NotFound(self.instance.name.clone()));
         }
 
-        if !kill {
-            match context.get_vm(&self.instance).and_then(|mut vm| vm.stop()) {
-                Ok(()) => return Ok(()),
-                // A live supervisor already tried QEMU, so its error is final
-                Err(e @ Error::VmRequestFailed(_)) => return Err(e),
-                // No supervisor or no answer, as with instances of older versions
-                Err(_) => {}
-            }
-        }
-
-        let mut monitor = context.get_monitor(&self.instance);
-        if monitor.is_running() {
-            if kill {
+        if kill {
+            let mut monitor = context.get_monitor(&self.instance);
+            if monitor.is_running() {
                 monitor.kill()?;
-            } else {
-                monitor.shutdown()?;
             }
+        } else if let Some(mut vm) = context.get_vm(&self.instance) {
+            vm.stop()?;
         }
 
         Ok(())
@@ -56,8 +46,8 @@ mod tests {
         }
     }
 
-    // Runs the action on a running instance and returns what reached its monitor
-    fn run_on_running_instance(kill: bool) -> String {
+    // Kills a running instance and returns what reached its monitor
+    fn kill_running_instance() -> String {
         let instance = build_instance("test");
         let builder = ContextBuilder::new(SystemMock::new());
         builder.add_instances(vec![instance.clone()]);
@@ -65,7 +55,7 @@ mod tests {
         let system = Arc::clone(builder.get_system());
 
         StopInstanceAction::new(&instance)
-            .run(&builder.build(), kill)
+            .run(&builder.build(), true)
             .unwrap();
 
         system.get_socket_output(Environment::default().get_monitor_socket("test"))
@@ -85,14 +75,22 @@ mod tests {
 
     #[test]
     fn test_stop_kills_running_instance() {
-        assert!(run_on_running_instance(true).ends_with(r#"{"id":"1","execute":"quit"}"#));
+        assert!(kill_running_instance().ends_with(r#"{"id":"1","execute":"quit"}"#));
     }
 
     #[test]
-    fn test_stop_falls_back_to_the_monitor_without_a_supervisor_reply() {
-        let output = run_on_running_instance(false);
+    fn test_stop_uses_the_monitor_without_an_api_socket() {
+        let env = Environment::default();
+        let system = SystemMock::new().add_socket(env.get_monitor_socket("test"), QMP_REPLIES);
+        let builder = ContextBuilder::new(system);
+        builder.add_instances(vec![build_instance("test")]);
+        let system = Arc::clone(builder.get_system());
 
-        assert!(output.ends_with(r#"{"id":"1","execute":"system_powerdown"}"#));
+        let result = StopInstanceAction::new(&build_instance("test")).run(&builder.build(), false);
+
+        assert!(result.is_ok());
+        let qmp = system.get_socket_output(env.get_monitor_socket("test"));
+        assert!(qmp.ends_with(r#"{"id":"1","execute":"system_powerdown"}"#));
     }
 
     fn run_with_supervisor_reply(reply: &str) -> (Result<()>, String, String) {
@@ -123,7 +121,7 @@ mod tests {
     }
 
     #[test]
-    fn test_stop_shows_a_supervisor_error_without_falling_back() {
+    fn test_stop_shows_a_supervisor_error() {
         let reply =
             "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32000,\"message\":\"busy\"}}\n";
 
