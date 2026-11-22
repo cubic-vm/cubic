@@ -2,7 +2,7 @@ use crate::error::{Error, Result};
 use crate::models::{Environment, Instance, PortForward};
 use crate::platform::{Socket, System};
 use crate::qemu::{NETDEV_ID, QmpMessage};
-use crate::vm::VmControl;
+use crate::vm::{VmControl, VmState};
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -155,6 +155,10 @@ impl VmControl for QemuMonitorClient {
             Err(Error::InstanceNotRunning(_)) => Ok(()),
             result => result,
         }
+    }
+
+    fn get_state(&mut self) -> Result<VmState> {
+        Ok(VmState::Running)
     }
 }
 

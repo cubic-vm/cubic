@@ -45,7 +45,6 @@ mod tests {
         }
     }
 
-    // Kills a running instance and returns what reached its api socket
     fn kill_running_instance() -> String {
         let instance = build_instance("test");
         let builder = ContextBuilder::new(SystemMock::new());

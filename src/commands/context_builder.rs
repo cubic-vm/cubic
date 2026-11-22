@@ -8,7 +8,7 @@ use std::sync::Arc;
 // Greeting plus replies for the handshake and a few commands
 pub const QMP_REPLIES: &[u8] = b"{\"QMP\": {}}\n{\"return\": {}, \"id\": \"0\"}\n{\"return\": {}, \"id\": \"1\"}\n{\"return\": {}, \"id\": \"2\"}\n";
 
-const API_REPLY: &[u8] = b"{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}\n";
+const API_REPLY: &[u8] = b"{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"running\"}\n";
 
 pub struct ContextBuilder {
     system: Arc<SystemMock>,

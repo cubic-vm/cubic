@@ -1,8 +1,9 @@
 use crate::error::{Error, Result};
 use crate::models::{Environment, Instance};
 use crate::platform::{Socket, System};
-use crate::vm::VmControl;
 use crate::vm::vm_message::{VmMessage, VmMethod};
+use crate::vm::{VmControl, VmState};
+use serde_json::Value;
 use std::io::{BufRead, BufReader, Write};
 use std::time::Duration;
 
@@ -23,7 +24,7 @@ impl VmClient {
         })
     }
 
-    fn call(&mut self, method: VmMethod) -> Result<()> {
+    fn call(&mut self, method: VmMethod) -> Result<Value> {
         let mut request = serde_json::to_string(&VmMessage::build_request(method))?;
         request.push('\n');
         let socket = self.stream.get_mut();
@@ -33,7 +34,7 @@ impl VmClient {
         let mut line = String::new();
         self.stream.read_line(&mut line)?;
         match serde_json::from_str(&line)? {
-            VmMessage::Result { .. } => Ok(()),
+            VmMessage::Result { result, .. } => Ok(result),
             VmMessage::Error { error, .. } => Err(Error::VmRequestFailed(error.message)),
             VmMessage::Request { .. } => Err(Error::VmRequestFailed("Invalid reply".to_string())),
         }
@@ -42,11 +43,15 @@ impl VmClient {
 
 impl VmControl for VmClient {
     fn stop(&mut self) -> Result<()> {
-        self.call(VmMethod::Stop)
+        self.call(VmMethod::Stop).map(|_| ())
     }
 
     fn quit(&mut self) -> Result<()> {
-        self.call(VmMethod::Quit)
+        self.call(VmMethod::Quit).map(|_| ())
+    }
+
+    fn get_state(&mut self) -> Result<VmState> {
+        Ok(serde_json::from_value(self.call(VmMethod::GetState)?)?)
     }
 }
 
@@ -72,10 +77,12 @@ mod tests {
     }
 
     #[test]
-    fn test_connect_follows_the_api_socket() {
+    fn test_get_state_reads_the_state_from_the_reply() {
         let env = Environment::default();
-        let system = SystemMock::new().add_socket(env.get_api_socket("test"), b"");
+        let reply = b"{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"stopping\"}\n";
+        let system = SystemMock::new().add_socket(env.get_api_socket("test"), reply);
+        let mut client = VmClient::connect(&system, &env, &build_instance()).unwrap();
 
-        assert!(VmClient::connect(&system, &env, &build_instance()).is_ok());
+        assert_eq!(client.get_state().unwrap(), VmState::Stopping);
     }
 }

@@ -14,10 +14,11 @@ pub struct VmError {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "kebab-case")]
 pub enum VmMethod {
     Stop,
     Quit,
+    GetState,
     #[serde(other)]
     Unknown,
 }
@@ -52,11 +53,11 @@ impl VmMessage {
         }
     }
 
-    pub fn build_result() -> Self {
+    pub fn build_result(result: Value) -> Self {
         VmMessage::Result {
             jsonrpc: JSONRPC_VERSION.to_string(),
             id: ID.into(),
-            result: Value::Null,
+            result,
         }
     }
 
