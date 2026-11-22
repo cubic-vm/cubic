@@ -219,7 +219,6 @@ hash_alg = "Sha256"
 distro = "fedora"
 display_name = "Fedora"
 version = "44"
-tags = ["stable", "latest"]
 arch = "AMD64"
 base_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images/"
 image_file = "Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2"
@@ -230,11 +229,32 @@ hash_alg = "Sha256"
 distro = "fedora"
 display_name = "Fedora"
 version = "44"
-tags = ["stable", "latest"]
 arch = "ARM64"
 base_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/aarch64/images/"
 image_file = "Fedora-Cloud-Base-Generic-44-1.7.aarch64.qcow2"
 checksum_file = "Fedora-Cloud-44-1.7-aarch64-CHECKSUM"
+hash_alg = "Sha256"
+
+[[images]]
+distro = "fedora"
+display_name = "Fedora"
+version = "45"
+tags = ["stable", "latest"]
+arch = "AMD64"
+base_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/45/Cloud/x86_64/images/"
+image_file = "Fedora-Cloud-Base-Generic-45-1.4.x86_64.qcow2"
+checksum_file = "Fedora-Cloud-45-1.4-x86_64-CHECKSUM"
+hash_alg = "Sha256"
+
+[[images]]
+distro = "fedora"
+display_name = "Fedora"
+version = "45"
+tags = ["stable", "latest"]
+arch = "ARM64"
+base_url = "https://dl.fedoraproject.org/pub/fedora/linux/releases/45/Cloud/aarch64/images/"
+image_file = "Fedora-Cloud-Base-Generic-45-1.4.aarch64.qcow2"
+checksum_file = "Fedora-Cloud-45-1.4-aarch64-CHECKSUM"
 hash_alg = "Sha256"
 
 [[images]]
