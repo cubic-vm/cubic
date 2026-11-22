@@ -1,4 +1,4 @@
-use crate::actions::{LoadInstanceAction, StartInstanceAction, StoreInstanceAction};
+use crate::actions::{LoadInstanceAction, StoreInstanceAction};
 use crate::commands::{self, Command};
 use crate::error::{Error, Result};
 use crate::models::{DataSize, HOST_MEMORY_RESERVE, Instance, MIN_CPUS, ResourceAllocator};
@@ -8,6 +8,7 @@ use crate::ssh::PortChecker;
 use crate::util::ResourceLock;
 use crate::view::ConfirmDialog;
 use crate::view::Spinner;
+use crate::vm::VmState;
 use clap::Parser;
 use std::process::Command as ProcessCommand;
 use std::sync::Arc;
@@ -57,8 +58,7 @@ impl Command for StartCommand {
         let port_checker = PortChecker::new();
 
         // Launch virtual machine instances
-        let mut actions = Vec::new();
-        let mut starting = Vec::new();
+        let mut instances = Vec::new();
         for name in &self.instances.value {
             let _lock = ResourceLock::acquire_instances(context, &[name.as_str()])?;
             let instance = &mut LoadInstanceAction::new().run(context, name.as_str())?;
@@ -85,30 +85,19 @@ impl Command for StartCommand {
                 if let Ok(false) = tokio::time::timeout(LAUNCH_TIMEOUT, launched).await {
                     return Err(Error::StartFailed(instance.name.clone()));
                 }
-
-                actions.push(StartInstanceAction::new(instance));
-                // Only the instances that are launched are named
-                starting.push(instance.name.clone());
             }
+            instances.push(instance.clone());
         }
 
         // Wait for virtual machine instances to be started
-        if self.wait && !starting.is_empty() {
-            let text = format!("Starting {}", starting.join(", "));
+        if self.wait {
+            let names: Vec<_> = instances.iter().map(|i| i.name.as_str()).collect();
+            let text = format!("Starting {}", names.join(", "));
             let _spinner = Spinner::new(Arc::clone(console), text);
-            let wait = async {
-                for action in &actions {
-                    while !action.is_done(context).await {
-                        tokio::time::sleep(Duration::from_secs(1)).await;
-                    }
-                }
-            };
-            if tokio::time::timeout(Duration::from_secs(300), wait)
+            let wait = Self::wait_until_running(context, &instances);
+            tokio::time::timeout(Duration::from_secs(300), wait)
                 .await
-                .is_err()
-            {
-                return Err(Error::StartTimeout);
-            }
+                .map_err(|_| Error::StartTimeout)??;
         }
 
         Ok(0)
@@ -116,6 +105,21 @@ impl Command for StartCommand {
 }
 
 impl StartCommand {
+    async fn wait_until_running(context: &commands::Context, instances: &[Instance]) -> Result<()> {
+        for instance in instances {
+            loop {
+                match context.get_state(instance) {
+                    VmState::Starting => tokio::time::sleep(Duration::from_secs(1)).await,
+                    VmState::Stopping | VmState::Stopped => {
+                        return Err(Error::StartFailed(instance.name.clone()));
+                    }
+                    VmState::Running | VmState::Unknown => break,
+                }
+            }
+        }
+        Ok(())
+    }
+
     async fn forward_until_launched(
         context: &commands::Context,
         monitor: &QemuMonitorClient,
@@ -285,6 +289,22 @@ mod tests {
 
         assert!(matches!(result, Err(Error::StartFailed(name)) if name == "test"));
         assert_eq!(system.get_output(), "error: QEMU not found\n");
+    }
+
+    #[tokio::test]
+    async fn test_wait_fails_when_the_instance_is_stopping() {
+        let reply = b"{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"stopping\"}\n";
+        let mut builder = ContextBuilder::new(SystemMock::new());
+        builder.add_instances(vec![build_instance()]);
+        let socket = builder.get_env().get_api_socket("test");
+        builder.get_system().insert_socket(socket, reply);
+        let system = Arc::clone(builder.get_system());
+        let command = StartCommand::try_parse_from(["start", "--wait", "test"]).unwrap();
+
+        let result = command.run(&builder.build()).await;
+
+        assert!(matches!(result, Err(Error::StartFailed(name)) if name == "test"));
+        assert!(system.get_executed_commands().is_empty());
     }
 
     #[tokio::test]

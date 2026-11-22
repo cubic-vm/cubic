@@ -5,7 +5,6 @@ use crate::models::{Arch, Instance};
 use crate::qemu::{
     QemuAcceleratorProbe, QemuFirmware, QemuInstall, QemuPathBuilder, QemuSystem, SOFTWARE_ACCEL,
 };
-use crate::ssh::PortChecker;
 use crate::util::{CommandLine, SystemCommand};
 use crate::view::Console;
 use std::sync::Arc;
@@ -182,12 +181,6 @@ impl StartInstanceAction {
                 }
             },
         }
-    }
-
-    pub async fn is_done(&self, context: &Context) -> bool {
-        PortChecker::new()
-            .is_ssh_ready(context.get_system(), self.instance.ssh_port)
-            .await
     }
 }
 
