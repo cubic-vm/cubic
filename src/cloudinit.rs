@@ -1,4 +1,5 @@
 mod cloud_init_image_factory;
+mod iso_image;
 mod meta_data_factory;
 mod user_data_factory;
 

@@ -7,7 +7,6 @@ mod error;
 mod generate_image_list_app;
 mod image;
 mod instance;
-mod iso9660;
 mod models;
 mod platform;
 mod qemu;
