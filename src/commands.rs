@@ -44,7 +44,7 @@ pub use completions_command::*;
 pub use console_command::*;
 pub use context::*;
 #[cfg(test)]
-pub use context_builder::ContextBuilder;
+pub use context_builder::{ContextBuilder, QMP_REPLIES};
 pub use create_command::*;
 pub use delete_command::*;
 pub use env_args::*;

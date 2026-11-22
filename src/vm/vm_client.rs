@@ -1,16 +1,41 @@
 use crate::error::{Error, Result};
 use crate::models::{Environment, Instance};
-use crate::platform::System;
+use crate::platform::{Socket, System};
+use crate::vm::vm_message::VmMessage;
+use std::io::{BufRead, BufReader, Write};
+use std::time::Duration;
 
-pub struct VmClient;
+const API_TIMEOUT: Duration = Duration::from_secs(5);
+
+pub struct VmClient {
+    stream: BufReader<Box<dyn Socket>>,
+}
 
 impl VmClient {
     pub fn connect(system: &dyn System, env: &Environment, instance: &Instance) -> Result<Self> {
         let socket = env.get_api_socket(&instance.name);
-        system
-            .connect_socket(&socket, None)
+        let socket = system
+            .connect_socket(&socket, Some(API_TIMEOUT))
             .map_err(|_| Error::InstanceNotRunning(instance.name.clone()))?;
-        Ok(VmClient)
+        Ok(VmClient {
+            stream: BufReader::new(socket),
+        })
+    }
+
+    pub fn stop(&mut self) -> Result<()> {
+        let mut request = serde_json::to_string(&VmMessage::build_request("stop"))?;
+        request.push('\n');
+        let socket = self.stream.get_mut();
+        socket.write_all(request.as_bytes())?;
+        socket.flush()?;
+
+        let mut line = String::new();
+        self.stream.read_line(&mut line)?;
+        match serde_json::from_str(&line)? {
+            VmMessage::Result { .. } => Ok(()),
+            VmMessage::Error { error, .. } => Err(Error::VmRequestFailed(error.message)),
+            VmMessage::Request { .. } => Err(Error::VmRequestFailed("Invalid reply".to_string())),
+        }
     }
 }
 

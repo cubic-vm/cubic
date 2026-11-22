@@ -3,9 +3,6 @@ use crate::commands::{self, Command};
 use crate::error::Result;
 use crate::vm::VmServer;
 use clap::Parser;
-use std::time::Duration;
-
-const ACCEPT_INTERVAL: Duration = Duration::from_millis(50);
 
 #[derive(Parser)]
 #[clap(hide = true)]
@@ -23,16 +20,11 @@ impl Command for VmCommand {
         let instance = LoadInstanceAction::new().run(context, self.instance.value.as_str())?;
         let server = VmServer::bind(context.get_system(), context.get_env(), &instance)?;
         let mut action = StartInstanceAction::new(&instance);
-        let mut run = std::pin::pin!(action.run(context, &self.qemu_args, self.accel.value));
-        let result = loop {
-            tokio::select! {
-                biased;
-                result = &mut run => break result,
-                true = async { server.accept_client() } => {}
-                () = tokio::time::sleep(ACCEPT_INTERVAL) => {}
-            }
-        };
-        result.map(|_| 0)
+        let build_monitor = || context.get_monitor(&instance);
+        tokio::select! {
+            result = action.run(context, &self.qemu_args, self.accel.value) => result.map(|_| 0),
+            never = server.run(build_monitor) => match never {},
+        }
     }
 }
 
