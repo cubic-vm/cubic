@@ -165,11 +165,15 @@ impl SystemMock {
 
     // A port that sends `replies` on every connection.
     pub fn add_replying_port(self, port: u16, replies: &[u8]) -> Self {
+        self.insert_replying_port(port, replies);
+        self
+    }
+
+    pub fn insert_replying_port(&self, port: u16, replies: &[u8]) {
         self.network
             .lock()
             .unwrap()
             .add(port, PortState::Replying(replies.to_vec()));
-        self
     }
 
     // Every port the host was asked to connect to, seeded or not, in order.
