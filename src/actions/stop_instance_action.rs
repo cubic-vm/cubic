@@ -18,6 +18,16 @@ impl StopInstanceAction {
             return Err(Error::NotFound(self.instance.name.clone()));
         }
 
+        if !kill {
+            match context.get_vm(&self.instance).and_then(|mut vm| vm.stop()) {
+                Ok(()) => return Ok(()),
+                // A live supervisor already tried QEMU, so its error is final
+                Err(e @ Error::VmRequestFailed(_)) => return Err(e),
+                // No supervisor or no answer, as with instances of older versions
+                Err(_) => {}
+            }
+        }
+
         let mut monitor = context.get_monitor(&self.instance);
         if monitor.is_running() {
             if kill {
@@ -34,7 +44,7 @@ impl StopInstanceAction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::ContextBuilder;
+    use crate::commands::{ContextBuilder, QMP_REPLIES};
     use crate::models::Environment;
     use crate::platform::SystemMock;
     use std::sync::Arc;
@@ -79,9 +89,47 @@ mod tests {
     }
 
     #[test]
-    fn test_stop_without_kill_requests_monitor_shutdown() {
+    fn test_stop_falls_back_to_the_monitor_without_a_supervisor_reply() {
         let output = run_on_running_instance(false);
 
         assert!(output.ends_with(r#"{"id":"1","execute":"system_powerdown"}"#));
+    }
+
+    fn run_with_supervisor_reply(reply: &str) -> (Result<()>, String, String) {
+        let env = Environment::default();
+        let system = SystemMock::new()
+            .add_socket(env.get_api_socket("test"), reply.as_bytes())
+            .add_socket(env.get_monitor_socket("test"), QMP_REPLIES);
+        let builder = ContextBuilder::new(system);
+        builder.add_instances(vec![build_instance("test")]);
+        let system = Arc::clone(builder.get_system());
+
+        let result = StopInstanceAction::new(&build_instance("test")).run(&builder.build(), false);
+
+        let api = system.get_socket_output(env.get_api_socket("test"));
+        let qmp = system.get_socket_output(env.get_monitor_socket("test"));
+        (result, api, qmp)
+    }
+
+    #[test]
+    fn test_stop_goes_through_the_supervisor() {
+        let reply = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}\n";
+
+        let (result, api, qmp) = run_with_supervisor_reply(reply);
+
+        assert!(result.is_ok());
+        assert!(api.contains(r#""method":"stop""#));
+        assert!(qmp.is_empty());
+    }
+
+    #[test]
+    fn test_stop_shows_a_supervisor_error_without_falling_back() {
+        let reply =
+            "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32000,\"message\":\"busy\"}}\n";
+
+        let (result, _, qmp) = run_with_supervisor_reply(reply);
+
+        assert!(matches!(result, Err(Error::VmRequestFailed(message)) if message == "busy"));
+        assert!(qmp.is_empty());
     }
 }

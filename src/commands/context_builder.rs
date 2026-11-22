@@ -6,7 +6,7 @@ use crate::view::Console;
 use std::sync::Arc;
 
 // Greeting plus replies for the handshake and a few commands
-const QMP_REPLIES: &[u8] = b"{\"QMP\": {}}\n{\"return\": {}, \"id\": \"0\"}\n{\"return\": {}, \"id\": \"1\"}\n{\"return\": {}, \"id\": \"2\"}\n";
+pub const QMP_REPLIES: &[u8] = b"{\"QMP\": {}}\n{\"return\": {}, \"id\": \"0\"}\n{\"return\": {}, \"id\": \"1\"}\n{\"return\": {}, \"id\": \"2\"}\n";
 
 pub struct ContextBuilder {
     system: Arc<SystemMock>,

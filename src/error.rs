@@ -83,6 +83,9 @@ pub enum Error {
     #[error("Instance '{0}' is not running")]
     InstanceNotRunning(String),
 
+    #[error("The instance supervisor rejected the request: {0}")]
+    VmRequestFailed(String),
+
     #[error(
         "Timed out waiting for instance(s) to start.\n\nTroubleshoot:\n  - Run with --verbose to see the QEMU command\n  - Check that QEMU can open /dev/kvm and firmware files\n  - Try again; the system may be under load\n"
     )]
