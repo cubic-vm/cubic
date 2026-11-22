@@ -8,6 +8,7 @@ project:
 
 releases:
   - id: 0.27.1
+  - id: 0.27.2
 
 vulnerabilities:
 
@@ -75,3 +76,64 @@ vulnerabilities:
     resolution:
       in: 0.27.1
       note: Updated crypto-bigint from 0.7.5 to 0.7.6
+
+  - id: RUSTSEC-2026-0495
+    description: |-
+      The russh agent server signs with confirm-constrained keys without
+      calling Agent::confirm.
+    releases: []
+    packages: ["pkg:cargo/russh@0.64.1"]
+    reports:
+      - reporter: cargo-audit
+    analysis: |-
+      Cubic uses russh only as an SSH client and never runs the agent
+      server.
+    verdict: not affected
+    justification: vulnerable code not in execute path
+    resolution:
+      in: 0.27.2
+      note: Updated russh from 0.64.1 to 0.65.4
+
+  - id: RUSTSEC-2026-0592
+    description: "Url::origin() overflows the stack on deeply nested blob URLs."
+    releases: []
+    packages: ["pkg:cargo/url@2.5.8"]
+    reports:
+      - reporter: cargo-audit
+    analysis: |-
+      Cubic parses only HTTP and HTTPS image URLs through reqwest and never
+      handles blob URLs. The worst case is a crash during a download.
+    verdict: not affected
+    justification: vulnerable code not in execute path
+    resolution:
+      in: 0.27.2
+      note: Updated url from 2.5.8 to 2.5.9
+
+  - id: RUSTSEC-2026-0486
+    description: |-
+      The rustix xattr functions mark unwritten bytes as initialized when
+      given a zero-length buffer.
+    releases: []
+    packages: ["pkg:cargo/rustix@1.1.5"]
+    reports:
+      - reporter: cargo-audit
+    analysis: |-
+      rustix is a dependency of crossterm for terminal handling. Neither
+      cubic nor crossterm call the xattr functions.
+    verdict: not affected
+    justification: vulnerable code not in execute path
+    resolution:
+      in: 0.27.2
+      note: Updated rustix from 1.1.5 to 1.1.6
+
+  - id: RUSTSEC-2026-0543
+    description: The chrono crate is unmaintained.
+    releases: []
+    packages: ["pkg:cargo/chrono@0.4.45"]
+    reports:
+      - reporter: cargo-audit
+    analysis: |-
+      chrono is a dependency of russh and russh-sftp. The advisory reports
+      no known vulnerability, and cubic can only drop chrono once russh does.
+    verdict: not affected
+    justification: vulnerable code not present
