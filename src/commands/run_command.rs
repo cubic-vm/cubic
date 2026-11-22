@@ -125,8 +125,8 @@ mod tests {
             .unwrap()
             .cleanup(&context, &InstanceName::from_str("web").unwrap());
 
-        let monitor = system.get_socket_output(Environment::default().get_monitor_socket("web"));
-        assert!(monitor.contains(r#""execute":"quit""#));
+        let api = system.get_socket_output(Environment::default().get_api_socket("web"));
+        assert!(api.contains(r#""method":"quit""#));
         let dir = Environment::default().get_instance_dir2("web");
         assert!(!system.exists_path(&dir));
     }

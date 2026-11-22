@@ -18,13 +18,12 @@ impl StopInstanceAction {
             return Err(Error::NotFound(self.instance.name.clone()));
         }
 
-        if kill {
-            let mut monitor = context.get_monitor(&self.instance);
-            if monitor.is_running() {
-                monitor.kill()?;
+        if let Some(mut vm) = context.get_vm(&self.instance) {
+            if kill {
+                vm.quit()?;
+            } else {
+                vm.stop()?;
             }
-        } else if let Some(mut vm) = context.get_vm(&self.instance) {
-            vm.stop()?;
         }
 
         Ok(())
@@ -46,7 +45,7 @@ mod tests {
         }
     }
 
-    // Kills a running instance and returns what reached its monitor
+    // Kills a running instance and returns what reached its api socket
     fn kill_running_instance() -> String {
         let instance = build_instance("test");
         let builder = ContextBuilder::new(SystemMock::new());
@@ -58,7 +57,7 @@ mod tests {
             .run(&builder.build(), true)
             .unwrap();
 
-        system.get_socket_output(Environment::default().get_monitor_socket("test"))
+        system.get_socket_output(Environment::default().get_api_socket("test"))
     }
 
     #[test]
@@ -75,7 +74,7 @@ mod tests {
 
     #[test]
     fn test_stop_kills_running_instance() {
-        assert!(kill_running_instance().ends_with(r#"{"id":"1","execute":"quit"}"#));
+        assert!(kill_running_instance().contains(r#""method":"quit""#));
     }
 
     #[test]

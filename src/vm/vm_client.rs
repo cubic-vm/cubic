@@ -2,7 +2,7 @@ use crate::error::{Error, Result};
 use crate::models::{Environment, Instance};
 use crate::platform::{Socket, System};
 use crate::vm::VmControl;
-use crate::vm::vm_message::VmMessage;
+use crate::vm::vm_message::{VmMessage, VmMethod};
 use std::io::{BufRead, BufReader, Write};
 use std::time::Duration;
 
@@ -22,11 +22,9 @@ impl VmClient {
             stream: BufReader::new(socket),
         })
     }
-}
 
-impl VmControl for VmClient {
-    fn stop(&mut self) -> Result<()> {
-        let mut request = serde_json::to_string(&VmMessage::build_request("stop"))?;
+    fn call(&mut self, method: VmMethod) -> Result<()> {
+        let mut request = serde_json::to_string(&VmMessage::build_request(method))?;
         request.push('\n');
         let socket = self.stream.get_mut();
         socket.write_all(request.as_bytes())?;
@@ -39,6 +37,16 @@ impl VmControl for VmClient {
             VmMessage::Error { error, .. } => Err(Error::VmRequestFailed(error.message)),
             VmMessage::Request { .. } => Err(Error::VmRequestFailed("Invalid reply".to_string())),
         }
+    }
+}
+
+impl VmControl for VmClient {
+    fn stop(&mut self) -> Result<()> {
+        self.call(VmMethod::Stop)
+    }
+
+    fn quit(&mut self) -> Result<()> {
+        self.call(VmMethod::Quit)
     }
 }
 

@@ -36,17 +36,6 @@ impl QemuMonitorClient {
         self.system.connect_socket(&self.socket, None).is_ok()
     }
 
-    pub fn kill(&mut self) -> Result<()> {
-        match self.quit() {
-            Err(Error::InstanceNotRunning(_)) => Ok(()),
-            result => result,
-        }
-    }
-
-    pub fn quit(&mut self) -> Result<()> {
-        self.execute("quit")
-    }
-
     pub fn add_hostfwd(&mut self, fwd: &PortForward) -> Result<()> {
         let output = self.run_hmp_command(&format!("hostfwd_add {NETDEV_ID} {}", fwd.to_qemu()))?;
         if output.is_empty() {
@@ -160,6 +149,13 @@ impl VmControl for QemuMonitorClient {
     fn stop(&mut self) -> Result<()> {
         self.execute("system_powerdown")
     }
+
+    fn quit(&mut self) -> Result<()> {
+        match self.execute("quit") {
+            Err(Error::InstanceNotRunning(_)) => Ok(()),
+            result => result,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -206,20 +202,20 @@ mod tests {
     }
 
     #[test]
-    fn test_kill_is_ok_when_not_running() {
+    fn test_quit_is_ok_when_not_running() {
         let system = Arc::new(SystemMock::new());
         let mut client = QemuMonitorClient::new(system, &build_env(), &build_instance());
 
-        assert!(client.kill().is_ok());
+        assert!(client.quit().is_ok());
     }
 
     #[test]
-    fn test_kill_quits_over_the_monitor() {
+    fn test_quit_sends_quit_over_the_monitor() {
         let env = build_env();
         let system = build_system(&env, "{\"return\": {}, \"id\": \"1\"}\n");
 
         QemuMonitorClient::new(system.clone(), &env, &build_instance())
-            .kill()
+            .quit()
             .unwrap();
 
         assert!(

@@ -13,6 +13,15 @@ pub struct VmError {
     pub message: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum VmMethod {
+    Stop,
+    Quit,
+    #[serde(other)]
+    Unknown,
+}
+
 // Serde tries the variants in order, so a reply never parses as a request
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -20,7 +29,7 @@ pub enum VmMessage {
     Request {
         jsonrpc: String,
         id: Value,
-        method: String,
+        method: VmMethod,
     },
     Result {
         jsonrpc: String,
@@ -35,11 +44,11 @@ pub enum VmMessage {
 }
 
 impl VmMessage {
-    pub fn build_request(method: &str) -> Self {
+    pub fn build_request(method: VmMethod) -> Self {
         VmMessage::Request {
             jsonrpc: JSONRPC_VERSION.to_string(),
             id: ID.into(),
-            method: method.to_string(),
+            method,
         }
     }
 
