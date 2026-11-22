@@ -57,9 +57,8 @@ impl StopCommand {
         if tokio::time::timeout(timeout, wait).await.is_err() {
             // The guest ignored the shutdown request, so ask QEMU to quit
             for instance in stopping {
-                let mut monitor = context.get_monitor(instance);
-                if monitor.is_running() {
-                    monitor.kill()?;
+                if let Some(mut vm) = context.get_vm(instance) {
+                    vm.quit()?;
                     context.get_console().warn(&format!(
                         "{} did not shut down in {}s and was forced to quit",
                         instance.name,

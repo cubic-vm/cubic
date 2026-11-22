@@ -3,7 +3,7 @@ use crate::models::{Environment, Instance};
 use crate::platform::{Listener, Socket, System};
 use crate::qemu::QemuMonitorClient;
 use crate::vm::VmControl;
-use crate::vm::vm_message::{INVALID_REQUEST, METHOD_NOT_FOUND, PARSE_ERROR, VmMessage};
+use crate::vm::vm_message::{INVALID_REQUEST, METHOD_NOT_FOUND, PARSE_ERROR, VmMessage, VmMethod};
 use std::convert::Infallible;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
@@ -55,7 +55,7 @@ impl<'a> VmServer<'a> {
             return;
         }
         let response = match serde_json::from_str(&line) {
-            Ok(VmMessage::Request { method, .. }) => Self::answer_request(&method, monitor),
+            Ok(VmMessage::Request { method, .. }) => Self::answer_request(method, monitor),
             Ok(_) => VmMessage::build_error(INVALID_REQUEST, "Invalid Request"),
             Err(_) => VmMessage::build_error(PARSE_ERROR, "Parse error"),
         };
@@ -65,11 +65,15 @@ impl<'a> VmServer<'a> {
         }
     }
 
-    fn answer_request(method: &str, monitor: &mut QemuMonitorClient) -> VmMessage {
-        if method != "stop" {
-            return VmMessage::build_error(METHOD_NOT_FOUND, "Method not found");
-        }
-        match monitor.stop() {
+    fn answer_request(method: VmMethod, monitor: &mut QemuMonitorClient) -> VmMessage {
+        let result = match method {
+            VmMethod::Stop => monitor.stop(),
+            VmMethod::Quit => monitor.quit(),
+            VmMethod::Unknown => {
+                return VmMessage::build_error(METHOD_NOT_FOUND, "Method not found");
+            }
+        };
+        match result {
             Ok(()) => VmMessage::build_result(),
             Err(e) => VmMessage::build_error(SERVER_ERROR, &e.to_string()),
         }
@@ -145,6 +149,14 @@ mod tests {
 
         assert_eq!(reply, "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}\n");
         assert!(qmp.ends_with(r#"{"id":"1","execute":"system_powerdown"}"#));
+    }
+
+    #[test]
+    fn test_quit_stops_qemu_and_replies() {
+        let (reply, qmp) = send_line("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"quit\"}\n");
+
+        assert_eq!(reply, "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}\n");
+        assert!(qmp.ends_with(r#"{"id":"1","execute":"quit"}"#));
     }
 
     #[test]
